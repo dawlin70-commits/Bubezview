@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=BubezView
+GenericName=Visualizzatore universale di file
+Comment=Visualizzatore e anteprima rapida istantanea di immagini, testi e documenti
+Exec=bubezview %F
+Icon=bubezview
+Terminal=false
+Categories=Graphics;Viewer;Utility;Qt;
+MimeType=image/png;image/jpeg;image/webp;image/svg+xml;image/bmp;image/gif;image/tiff;text/plain;text/markdown;text/x-c;text/x-c++;text/x-python;application/pdf;
+StartupNotify=true

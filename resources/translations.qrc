@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/translations">
+        <file alias="bubezview_it.qm">../translations/bubezview_it.qm</file>
+        <file alias="bubezview_es.qm">../translations/bubezview_es.qm</file>
+        <file alias="bubezview_fr.qm">../translations/bubezview_fr.qm</file>
+        <file alias="bubezview_de.qm">../translations/bubezview_de.qm</file>
+    </qresource>
+</RCC>

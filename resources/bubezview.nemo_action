@@ -1,0 +1,8 @@
+[Nemo Action]
+Name=BubezView (Anteprima rapida)
+Comment=Anteprima istantanea con BubezView
+Exec=bubezview %F
+Icon-Name=bubezview
+Selection=any
+Extensions=any;
+EscapeSpaces=false

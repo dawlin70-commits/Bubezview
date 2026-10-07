@@ -1,0 +1,46 @@
+# Build & Artifacts
+build/
+build_deb/
+build_install/
+build_*/
+*.o
+*.a
+*.so
+bubezview
+poppler
+cmake/
+.cache/
+compile_commands.json
+dist/
+deb_dist/
+*.egg-info/
+
+# Compatibilità locale & symlink
+/BubezView
+/bubezview_cpp
+container/
+.agents/
+test/
+Test/
+appunti/
+AGENTS.md
+PRE_RELEASE_CHECKLIST.md
+trigger_bubez.sh
+
+# Note e promemoria personali
+da sistemare.txt
+funzioni-da-fare.txt
+sistemate.txt
+controllare.txt
+file incollato.txt
+scorciatoie.txt
+
+# Backup & temporanei
+*backup*
+*_backup*/
+*.log
+*.tmp
+*.swp
+*~
+.vscode/
+.idea/
