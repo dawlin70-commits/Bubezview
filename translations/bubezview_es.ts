@@ -2055,6 +2055,7 @@ Do you want to save them before proceeding?</source>
     </message>
     <message>
         <location filename="../src/ui/base_skin.cpp" line="1971"/>
+        <location filename="../src/ui/base_skin.cpp" line="1971"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5325,420 +5326,609 @@ Click to switch to source compilation.</source>
 <context>
     <name>FirstRunWizard</name>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="96"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="97"/>
         <source>BubezView Setup Wizard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="111"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="113"/>
         <source>Next &gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="112"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="114"/>
         <source>&lt; Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="113"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="115"/>
         <source>Finish &amp; Launch BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="114"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="116"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="126"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="128"/>
         <source>Welcome to BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="127"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="129"/>
         <source>High-performance native file viewer and instant preview tool for Linux.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="149"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="151"/>
         <source>Detected Environment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="154"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="156"/>
         <source>&lt;b&gt;Desktop Environment:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Platform:&lt;/b&gt; Native C++ / Qt6 engine (lightweight, hardware-accelerated)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="359"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="250"/>
+        <source>Select which document readers, media players, and preview engines you want to enable.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="266"/>
+        <source>Module Setup Presets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="275"/>
+        <source>⚙️ Custom Configuration
+   Choose each component and engine manually using the checkboxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="289"/>
+        <source>Active Components &amp; Capabilities</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="368"/>
+        <source>PDF Documents &amp; Digital Signatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="383"/>
+        <source>Office Document Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="384"/>
+        <source>Preview Microsoft Office (.docx, .xlsx, .pptx) and OpenDocument files via LibreOffice.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="418"/>
+        <source>ℹ️ Settings can be customized or recompiled at any time from Settings → Extensions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="425"/>
+        <source>⚙️ Advanced Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="532"/>
         <source>Primary Preview Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="171"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="173"/>
         <source>Processor &amp; Hardware Optimization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="172"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="174"/>
         <source>Select the performance profile tailored for your computer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="178"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="180"/>
         <source>Detected Host Processor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="182"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="184"/>
         <source>Generic x86-64 Processor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="186"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="188"/>
         <source>&lt;b&gt;Model:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Architecture tier:&lt;/b&gt; x86-64-%2 (%3 logical cores)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="195"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="197"/>
         <source>Performance Profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="247"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="249"/>
         <source>Engines &amp; Functional Modules</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="248"/>
-        <source>Select which document readers and preview engines you want to enable.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="253"/>
-        <source>Module Setup Preset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="519"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="806"/>
         <source>Custom Configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="539"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="808"/>
+        <source>Complete Suite (All modules enabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="810"/>
+        <source>Documents &amp; Office</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="812"/>
+        <source>Media &amp; Entertainment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="814"/>
+        <source>Minimal Core</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="828"/>
+        <source>Office Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="835"/>
+        <source>Archives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="839"/>
+        <source>None</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="859"/>
         <source>Hardware Performance Profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="317"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="490"/>
         <source>Appearance &amp; Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="318"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="491"/>
         <source>Customize the visual style and UI components of BubezView.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="323"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="496"/>
         <source>Application Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="327"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="500"/>
         <source>Native System Theme (Matches desktop light/dark mode)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="334"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="507"/>
         <source>Viewer Components</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="338"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="511"/>
         <source>Show bottom thumbnail filmstrip when viewing folders, galleries, or multi-page documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="445"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="618"/>
         <source>Remember window size and position across preview sessions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="46"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="47"/>
         <source>Test Spacebar Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="51"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="52"/>
         <source>&lt;h3&gt;🧪 Testing Spacebar Key&lt;/h3&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="56"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="57"/>
         <source>Please press the &lt;b&gt;Spacebar&lt;/b&gt; on your keyboard now to verify key capture.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="64"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="65"/>
         <source>Cancel / Having Issues</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="79"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="80"/>
         <source>&lt;b style=&apos;color:#4ade80;&apos;&gt;✅ Spacebar detected successfully!&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="138"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="140"/>
         <source>This wizard will help you configure your preferred processor optimizations, document modules, visual appearance, and navigation behavior.&lt;br&gt;&lt;br&gt;You can complete this setup in under a minute, and change any preference later from the Settings dialog or directly from application menus.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="200"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="202"/>
         <source>🚀 High Performance (Everything Compiled from Source)
    Maximum speed. All engines compiled with aggressive host optimizations (-O3, -march=native, LTO).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="206"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="208"/>
         <source>📦 Balanced (System Packaged Dependencies)
    Daily use. Uses precompiled system libraries from your distribution with zero compile wait times.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="231"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="233"/>
         <source>&lt;i&gt;Optimal profile detected automatically. Changing it will trigger a recompile (also editable later in Settings).&lt;/i&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="260"/>
-        <source>⭐ Keep Existing Setup (No Installation or Compilation)
-   Does not install or compile anything. Launches BubezView immediately in its current state.</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="365"/>
+        <source>📄 Documents &amp; Office</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="265"/>
-        <source>⚙️ Customize Individually
-   Choose each component and engine manually.</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="369"/>
+        <source>Vector rendering pipeline (Poppler) and cryptographic signature validation (OpenSSL).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="282"/>
-        <source>⚙️ Configure Extensions &amp; Engines...</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="373"/>
+        <source>Optical Character Recognition (Tesseract OCR)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="288"/>
-        <source>ℹ️ You can also configure or recompile individual extensions at any time from Settings → Extensions.</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="374"/>
+        <source>Extract selectable UTF-8 text from scanned pages and visual screen snippets.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="328"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="378"/>
+        <source>PDF Repair &amp; Advanced Tools (QPDF / pdfimages)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="379"/>
+        <source>Fix corrupted PDF streams, linearize for instant loading, and extract embedded lossless images.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="388"/>
+        <source>🎬 Multimedia &amp; Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="391"/>
+        <source>Multimedia Video &amp; Audio Player (MPV)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="392"/>
+        <source>Hardware GPU video decoding (VA-API/NVDEC) and high-fidelity bit-perfect audio streaming.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="396"/>
+        <source>10-Band Equalizer &amp; Visualizer (FFTW3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="397"/>
+        <source>Real-time stereo spectrum visualizer and studio sound equalization.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="401"/>
+        <source>📦 Compressed Archives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="404"/>
+        <source>Archive Manager (LibArchive)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="405"/>
+        <source>Universal archive browsing, cataloging, and direct extraction for ZIP, TAR, 7Z, and ISO.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="409"/>
+        <source>Multi-Core 7-Zip &amp; zstd Compression</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="410"/>
+        <source>Parallel multi-threaded compression across all CPU cores for ZIP, 7Z, and modern zstd archives.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="501"/>
         <source>Dark Slate (Deep modern slate theme)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="329"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="502"/>
         <source>Breeze Dark (KDE Breeze-inspired dark styling)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="352"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="525"/>
         <source>Navigation, Shortcuts &amp; Behavior</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="353"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="526"/>
         <source>Configure shortcuts, dismissal keys, and navigation caching for daily use.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="363"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="536"/>
         <source>&lt;b&gt;Primary Shortcut:&lt;/b&gt; Press &lt;b&gt;Space&lt;/b&gt; on any file in your file manager for instant preview.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="370"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="543"/>
         <source>🧪 Test Shortcut...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="382"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="555"/>
         <source>Use Ctrl + Space fallback (connects to trigger_bubez.sh if Space is reserved by Dolphin)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="400"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="573"/>
         <source>&lt;b&gt;Important note for trigger fallback:&lt;/b&gt; In your desktop system settings (KDE Plasma / GNOME Shortcuts), you will need to bind &lt;b&gt;Ctrl + Space&lt;/b&gt; to the trigger script located at:&lt;br&gt;&lt;code style=&apos;color:#38bdf8;&apos;&gt;%1&lt;/code&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="421"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="594"/>
         <source>&lt;b style=&apos;color:#4ade80;&apos;&gt;✅ Spacebar verified and functioning properly!&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="425"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="598"/>
         <source>&lt;b style=&apos;color:#facc15;&apos;&gt;⚠️ Space key not detected or conflict reported. Fallback available:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="434"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="607"/>
         <source>Navigation &amp; Window Memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="438"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="611"/>
         <source>Instant dismissal: Press Escape (Esc) to close the viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="452"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="625"/>
         <source>Preload adjacent files: Cache next and previous items in background for instant browsing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="459"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="632"/>
         <source>Memory standby: Release preview memory cache when idle to save RAM</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="468"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="641"/>
         <source>Desktop Integration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="472"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="645"/>
         <source>Place a quick launcher on the Desktop (~/Desktop or ~/Scrivania)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="487"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="660"/>
         <source>Setup Complete!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="488"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="661"/>
         <source>Review your configuration before launching BubezView.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="510"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="759"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="764"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="769"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="774"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="779"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="783"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="787"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="792"/>
+        <source>&lt;span style=&apos;color: #10b981; font-weight: 600;&apos;&gt;● Ready&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="775"/>
+        <source>&lt;span style=&apos;color: #64748b;&apos;&gt;○ Optional: libreoffice&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="803"/>
         <source>🚀 High Performance (Compiled from Source)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="511"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="804"/>
         <source>📦 Balanced (System Packages)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="513"/>
-        <source>Default (Keep Current Setup)</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="880"/>
+        <source>🚀 Complete Suite — Host Compiled
+   All features compiled from source with aggressive CPU optimizations (-O3, -march=native).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="515"/>
-        <source>Core Plugins Only</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="884"/>
+        <source>📄 Documents &amp; Office — Host Compiled
+   Optimized PDF vector rendering, LibreOffice preview, OCR, and digital signatures.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="517"/>
-        <source>Complete Suite</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="888"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="905"/>
+        <source>🎬 Media &amp; Entertainment
+   Hardware GPU video playback, 10-band audio equalizer, and archive management.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="522"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="892"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="909"/>
+        <source>🪶 Minimal Core (Zero Extra Dependencies)
+   Fast native image, code, and folder preview with instant cold startup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="897"/>
+        <source>🚀 Complete Suite — System Packages
+   All features using distribution precompiled packages with zero compile wait time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="901"/>
+        <source>📄 Documents &amp; Office — System Packages
+   PDF viewing, LibreOffice integration, OCR, and cryptographic signatures.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="841"/>
         <source>Native</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="537"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="760"/>
+        <source>&lt;span style=&apos;color: #f59e0b;&apos;&gt;○ Available&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="765"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="770"/>
+        <source>&lt;span style=&apos;color: #64748b;&apos;&gt;○ Optional&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="780"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="788"/>
+        <source>&lt;span style=&apos;color: #64748b;&apos;&gt;○ Available&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="793"/>
+        <source>&lt;span style=&apos;color: #64748b;&apos;&gt;○ Optional: 7zip&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="819"/>
+        <source>PDF</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="830"/>
+        <source>Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="831"/>
+        <source> (+Equalizer)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="836"/>
+        <source> (+7-Zip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="857"/>
         <source>Summary of Your Choices:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="538"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="858"/>
         <source>Primary Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="540"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="860"/>
         <source>Modules Preset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="541"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="861"/>
+        <source>Enabled Modules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="862"/>
         <source>Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="542"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="863"/>
         <source>Thumbnail Filmstrip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="542"/>
-        <location filename="../src/ui/first_run_wizard.cpp" line="544"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="863"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="865"/>
         <source>Enabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="542"/>
-        <location filename="../src/ui/first_run_wizard.cpp" line="544"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="863"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="865"/>
         <source>Disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="543"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="864"/>
         <source>Quick Dismissal Key</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="543"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="864"/>
         <source>Escape (Esc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="544"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="865"/>
         <source>Preload Cache</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="559"/>
-        <source>🚀 Complete Suite (BubezView + Core Plugins &amp; Extensions)
-   Builds BubezView and all core plugins from source with aggressive host optimizations,
-   and verifies optional tools (QPDF, Tesseract OCR).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="564"/>
-        <source>📦 Core Plugins Only (Fast Build)
-   Builds BubezView and core viewer plugins from source with high-performance flags.
-   Skips optional extensions (OCR, QPDF).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="570"/>
-        <source>🚀 Complete Suite (System Packages)
-   Uses prebuilt binaries and installs system packages for all extensions (QPDF, Tesseract OCR)
-   with zero compilation time.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="575"/>
-        <source>📦 Core Plugins Only (System Packages)
-   Uses prebuilt binaries for core viewers and skips optional extensions.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="605"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="957"/>
         <source>Compiling BubezView — High Performance Profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="545"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="866"/>
         <source>Click &apos;Finish &amp; Launch BubezView&apos; to apply these settings and begin!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8762,23 +8952,7 @@ Size: %6</source>
 <context>
     <name>PdfPageWidget</name>
     <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="808"/>
-        <source>REDACT</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1314"/>
-        <source>Paste Image / Area</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1314"/>
-        <source>Paste Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2279"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1302"/>
         <source>Copy Text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8789,13 +8963,11 @@ Size: %6</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="513"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="304"/>
         <source>✂️ Text cut and copied to clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="603"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="394"/>
         <source>📋 Clipboard is empty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8818,25 +8990,21 @@ Do you want to paste as uniform text or copy the original area?</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2270"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1293"/>
         <source>Cut Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2273"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1296"/>
         <source>Copy Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2276"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1299"/>
         <source>Clear Area Selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2282"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1305"/>
         <source>Cut Text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8852,31 +9020,26 @@ Do you want to paste as uniform text or copy the original area?</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2304"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1323"/>
         <source>Select Area...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2305"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1324"/>
         <source>Insert Image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2307"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1326"/>
         <source>Copy Page Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2310"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1329"/>
         <source>Copy Entire Document Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2314"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1333"/>
         <source>Select All</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9743,7 +9906,6 @@ Do you want to paste as uniform text or copy the original area?</source>
     <name>PdfTransformBox</name>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="62"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="60"/>
         <source>✏️ Edit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9774,7 +9936,6 @@ Do you want to paste as uniform text or copy the original area?</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="104"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="74"/>
         <source>✓ Apply</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9796,31 +9957,26 @@ Do you want to paste as uniform text or copy the original area?</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="116"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="79"/>
         <source>✂️ Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="119"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="82"/>
         <source>Cut selected area and copy to clipboard (Ctrl+X)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="123"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="86"/>
         <source>📋 Copy</source>
         <translation type="unfinished">📋 Copiar</translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="126"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="89"/>
         <source>Copy selected area to clipboard at 300 DPI (Ctrl+C)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="130"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="93"/>
         <source>✕ Cancel</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9836,23 +9992,7 @@ Do you want to paste as uniform text or copy the original area?</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="607"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="347"/>
         <source>[REDACTED]</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="365"/>
-        <source>⠿ Move</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="65"/>
-        <source>⬇️ Push Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="69"/>
-        <source>Shift existing content below downwards instead of overlaying</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9928,7 +10068,6 @@ Do you want to paste as uniform text or copy the original area?</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="114"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="68"/>
         <source>📑 Document Outline</source>
         <translation>📑 Document Outline</translation>
     </message>
@@ -9992,59 +10131,12 @@ Do you want to paste as uniform text or copy the original area?</source>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1630"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1209"/>
         <source>✂️ Area cut. Press Ctrl+Z to undo anytime.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1660"/>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1292"/>
         <source>QPDF Required</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1153"/>
-        <source>📸 Snapshot copied to clipboard at 300 DPI (%1 × %2 px)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1181"/>
-        <source>📋 Area copied to clipboard at 300 DPI (%1 × %2 px)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1219"/>
-        <source>Select Image to Insert</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1221"/>
-        <source>Images (*.png *.jpg *.jpeg *.webp *.bmp *.svg *.tiff);;All Files (*)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1228"/>
-        <source>Invalid Image</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1228"/>
-        <source>Could not load selected image file.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1293"/>
-        <source>Could not insert page. Please ensure &lt;b&gt;qpdf&lt;/b&gt; is installed on your system.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1378"/>
-        <source>Page Overflow — Insert New Page?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1379"/>
-        <source>&lt;b&gt;The remaining space on Page %1 is insufficient to accommodate the shifted content.&lt;/b&gt;&lt;br&gt;&lt;br&gt;Shifting existing content downwards will push it past the bottom of the page.&lt;br&gt;&lt;br&gt;Would you like to automatically insert a new page (Page %2) and move the overflow content there?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

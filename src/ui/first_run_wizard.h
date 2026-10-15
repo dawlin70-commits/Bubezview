@@ -63,13 +63,56 @@ private:
     QRadioButton *m_radioCpuBalanced = nullptr;
     QLabel *m_lblCpuDetectedNotice = nullptr;
 
-    // Functional Modules & Engines
-    QRadioButton *m_radioModuleDefault = nullptr;
-    QRadioButton *m_radioModuleEnginesOnly = nullptr;
-    QRadioButton *m_radioModuleAll = nullptr;
-    QRadioButton *m_radioModuleCustom = nullptr;
+    // Functional Modules & Engine Presets (Proposal 3)
+    QRadioButton *m_radioPresetFull = nullptr;
+    QRadioButton *m_radioPresetDocs = nullptr;
+    QRadioButton *m_radioPresetMedia = nullptr;
+    QRadioButton *m_radioPresetMinimal = nullptr;
+    QRadioButton *m_radioPresetCustom = nullptr;
+
+    // Granular Module Toggles (Hierarchical Document, Media & Archive structure)
+    QCheckBox *m_chkModulePdf = nullptr;
+    QCheckBox *m_chkSubOcr = nullptr;
+    QCheckBox *m_chkSubQpdf = nullptr;
+
+    QCheckBox *m_chkModuleOffice = nullptr;
+
+    QCheckBox *m_chkModuleMedia = nullptr;
+    QCheckBox *m_chkSubEqualizer = nullptr;
+
+    QCheckBox *m_chkModuleArchive = nullptr;
+    QCheckBox *m_chkSubSevenZip = nullptr;
+
+    // Status Badges
+    QLabel *m_badgePdf = nullptr;
+    QLabel *m_badgeOcr = nullptr;
+    QLabel *m_badgeQpdf = nullptr;
+    QLabel *m_badgeOffice = nullptr;
+    QLabel *m_badgeMedia = nullptr;
+    QLabel *m_badgeEqualizer = nullptr;
+    QLabel *m_badgeArchive = nullptr;
+    QLabel *m_badgeSevenZip = nullptr;
+
     QPushButton *m_btnConfigureExtensions = nullptr;
     QLabel *m_lblModulesHint = nullptr;
+
+    bool m_syncingModules = false;
+
+    /**
+     * @brief Applies a functional preset to the module checkboxes.
+     * @param presetIndex 0=Full, 1=Docs/Office, 2=Media, 3=Minimal.
+     */
+    void applyPreset(int presetIndex);
+
+    /**
+     * @brief Evaluates the current state of module checkboxes to dynamically select the corresponding preset.
+     */
+    void evaluatePresetFromCheckboxes();
+
+    /**
+     * @brief Refreshes the runtime status indicators next to each module.
+     */
+    void updateModuleStatusBadges();
 
     // Appearance & UI
     QComboBox *m_comboTheme = nullptr;
