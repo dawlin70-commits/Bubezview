@@ -53,8 +53,22 @@ public:
     void zoomIn();
     void zoomOut();
 
+    /**
+     * @brief Zooms into or out of the image anchored at a specific viewport position.
+     * Keeps the pixel beneath the viewport coordinate fixed after scaling.
+     * @param viewportPos Target focus point in viewport coordinates.
+     * @param factor Zoom multiplier factor (e.g. 1.25 for zoom-in, 0.8 for zoom-out).
+     */
+    void zoomAt(const QPoint &viewportPos, double factor);
+
     void setZoomToolActive(bool active);
     bool isZoomToolActive() const { return m_zoomToolActive; }
+
+    /**
+     * @brief Returns the inner QScrollArea holding the image canvas.
+     * @return Pointer to scroll area.
+     */
+    QScrollArea *scrollArea() const { return m_scrollArea; }
 
     // Geometric & visual transformations
     void rotateClockwise();
@@ -72,14 +86,32 @@ public:
     void updateTheme();
 
     /**
-     * @brief Handles wheel zoom and scroll delegation.
+     * @brief Handles wheel zoom, pan, and adjacent image file navigation.
      * @param event The wheel event.
      */
     void handleWheel(QWheelEvent *event);
 
+signals:
+    /**
+     * @brief Emitted when the image zoom factor changes.
+     * @param factor Current zoom scale factor.
+     */
+    void zoomChanged(double factor);
+
+    /**
+     * @brief Emitted when mouse wheel scrolling requests navigating to the next image file.
+     */
+    void nextFileRequested();
+
+    /**
+     * @brief Emitted when mouse wheel scrolling requests navigating to the previous image file.
+     */
+    void prevFileRequested();
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     void updateScaledPixmap();
@@ -93,4 +125,7 @@ private:
     bool m_fitToWindow;
     bool m_zoomToolActive;
     bool m_isModified;
+
+    int m_wheelNavAccumulator = 0;
+    qint64 m_lastNavTime = 0;
 };

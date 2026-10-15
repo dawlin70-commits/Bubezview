@@ -32,7 +32,8 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
     m_toolbar = new QWidget(this);
     m_toolbar->setStyleSheet(
         "QWidget { background-color: #141A28; border: 1px solid #38BDF8; border-radius: 14px; }"
-        "QPushButton { background: transparent; border: none; font-size: 11px; font-weight: 700; padding: 4px 8px; }"
+        "QToolTip { background-color: #1E293B; color: #F8FAFC; border: 1px solid #38BDF8; border-radius: 4px; padding: 4px 6px; font-size: 11px; }"
+        "QPushButton { background: transparent; border: none; font-size: 11px; font-weight: 700; padding: 4px 8px; color: #F1F5F9; }"
         "QPushButton#BtnEdit { color: #38BDF8; }"
         "QPushButton#BtnEdit:hover { background-color: #1E293B; border-radius: 10px; }"
         "QPushButton#BtnApply { color: #4ADE80; }"
@@ -56,32 +57,40 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
 
     QHBoxLayout *tbLayout = new QHBoxLayout(m_toolbar);
     tbLayout->setContentsMargins(6, 2, 6, 2);
-    tbLayout->setSpacing(2);
+    tbLayout->setSpacing(3);
 
     m_btnEdit = new QPushButton(tr("✏️ Edit"), m_toolbar);
     m_btnEdit->setObjectName(QStringLiteral("BtnEdit"));
     m_btnEdit->setCursor(Qt::PointingHandCursor);
     connect(m_btnEdit, &QPushButton::clicked, this, &PdfTransformBox::editRequested);
 
-    m_btnRedactBlack = new QPushButton(QStringLiteral("⬛"), m_toolbar);
+    m_btnRedactBlack = new QPushButton(m_toolbar);
+    m_btnRedactBlack->setObjectName(QStringLiteral("BtnRedactBlack"));
+    m_btnRedactBlack->setFixedSize(18, 18);
     m_btnRedactBlack->setCursor(Qt::PointingHandCursor);
     m_btnRedactBlack->setToolTip(tr("Black Redaction"));
     m_btnRedactBlack->setVisible(false);
     connect(m_btnRedactBlack, &QPushButton::clicked, this, [this]() { setRedactionColor(Qt::black); });
 
-    m_btnRedactWhite = new QPushButton(QStringLiteral("⬜"), m_toolbar);
+    m_btnRedactWhite = new QPushButton(m_toolbar);
+    m_btnRedactWhite->setObjectName(QStringLiteral("BtnRedactWhite"));
+    m_btnRedactWhite->setFixedSize(18, 18);
     m_btnRedactWhite->setCursor(Qt::PointingHandCursor);
     m_btnRedactWhite->setToolTip(tr("White Redaction"));
     m_btnRedactWhite->setVisible(false);
     connect(m_btnRedactWhite, &QPushButton::clicked, this, [this]() { setRedactionColor(Qt::white); });
 
-    m_btnRedactGray = new QPushButton(QStringLiteral("🩶"), m_toolbar);
+    m_btnRedactGray = new QPushButton(m_toolbar);
+    m_btnRedactGray->setObjectName(QStringLiteral("BtnRedactGray"));
+    m_btnRedactGray->setFixedSize(18, 18);
     m_btnRedactGray->setCursor(Qt::PointingHandCursor);
     m_btnRedactGray->setToolTip(tr("Gray Redaction"));
     m_btnRedactGray->setVisible(false);
     connect(m_btnRedactGray, &QPushButton::clicked, this, [this]() { setRedactionColor(QColor(128, 128, 128)); });
 
     m_btnRedactCustom = new QPushButton(QStringLiteral("🎨"), m_toolbar);
+    m_btnRedactCustom->setObjectName(QStringLiteral("BtnRedactCustom"));
+    m_btnRedactCustom->setFixedSize(20, 20);
     m_btnRedactCustom->setCursor(Qt::PointingHandCursor);
     m_btnRedactCustom->setToolTip(tr("Custom Color Redaction..."));
     m_btnRedactCustom->setVisible(false);
@@ -134,6 +143,7 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
     tbLayout->addWidget(m_btnCopyArea);
     tbLayout->addWidget(m_btnCancel);
 
+    updateRedactionColorButtons();
     updateHandles();
 }
 
@@ -181,7 +191,11 @@ void PdfTransformBox::showText(const QString &text, const QFont &font, const QCo
     if (m_btnRedactGray) m_btnRedactGray->setVisible(false);
     if (m_btnRedactCustom) m_btnRedactCustom->setVisible(false);
     if (m_btnApply) m_btnApply->setVisible(true);
-    if (m_btnApplyAndContinue) m_btnApplyAndContinue->setVisible(true);
+    if (m_btnApplyAndContinue) {
+        m_btnApplyAndContinue->setText(tr("🔄 Stamp Again"));
+        m_btnApplyAndContinue->setToolTip(tr("Apply current item and place another copy ready on canvas"));
+        m_btnApplyAndContinue->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
     updateHandles();
@@ -240,7 +254,11 @@ void PdfTransformBox::showImage(const QImage &image, const QPoint &initialPos,
     if (m_btnRedactGray) m_btnRedactGray->setVisible(false);
     if (m_btnRedactCustom) m_btnRedactCustom->setVisible(false);
     if (m_btnApply) m_btnApply->setVisible(true);
-    if (m_btnApplyAndContinue) m_btnApplyAndContinue->setVisible(true);
+    if (m_btnApplyAndContinue) {
+        m_btnApplyAndContinue->setText(tr("🔄 Stamp Again"));
+        m_btnApplyAndContinue->setToolTip(tr("Apply current item and place another copy ready on canvas"));
+        m_btnApplyAndContinue->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
     updateHandles();
@@ -272,7 +290,11 @@ void PdfTransformBox::showWatermark(const QString &text, qreal angle, qreal opac
     if (m_btnRedactGray) m_btnRedactGray->setVisible(false);
     if (m_btnRedactCustom) m_btnRedactCustom->setVisible(false);
     if (m_btnApply) m_btnApply->setVisible(true);
-    if (m_btnApplyAndContinue) m_btnApplyAndContinue->setVisible(true);
+    if (m_btnApplyAndContinue) {
+        m_btnApplyAndContinue->setText(tr("🔄 Stamp Again"));
+        m_btnApplyAndContinue->setToolTip(tr("Apply current item and place another copy ready on canvas"));
+        m_btnApplyAndContinue->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
     updateHandles();
@@ -296,6 +318,7 @@ void PdfTransformBox::updateWatermark(const QString &text, qreal angle, qreal op
 void PdfTransformBox::setRedactionColor(const QColor &color)
 {
     m_redactionColor = color;
+    updateRedactionColorButtons();
     update();
 }
 
@@ -379,9 +402,14 @@ void PdfTransformBox::showRedaction(const QRect &initialRect)
     if (m_btnRedactGray) m_btnRedactGray->setVisible(true);
     if (m_btnRedactCustom) m_btnRedactCustom->setVisible(true);
     if (m_btnApply) m_btnApply->setVisible(true);
-    if (m_btnApplyAndContinue) m_btnApplyAndContinue->setVisible(true);
+    if (m_btnApplyAndContinue) {
+        m_btnApplyAndContinue->setText(tr("🔄 Apply & Continue"));
+        m_btnApplyAndContinue->setToolTip(tr("Apply current redaction and keep tool active for another area"));
+        m_btnApplyAndContinue->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
+    updateRedactionColorButtons();
     updateHandles();
     repositionToolbar();
     show();
@@ -443,6 +471,40 @@ void PdfTransformBox::updateHandles()
     m_handles[7] = QRect(left - half, midY - half, HandleSize, HandleSize);      // MidLeft
 }
 
+void PdfTransformBox::updateRedactionColorButtons()
+{
+    if (!m_btnRedactBlack || !m_btnRedactWhite || !m_btnRedactGray || !m_btnRedactCustom) {
+        return;
+    }
+
+    bool isBlack = (m_redactionColor == Qt::black);
+    bool isWhite = (m_redactionColor == Qt::white);
+    bool isGray = (m_redactionColor == QColor(128, 128, 128));
+    bool isCustom = (!isBlack && !isWhite && !isGray);
+
+    m_btnRedactBlack->setStyleSheet(isBlack
+        ? QStringLiteral("QPushButton#BtnRedactBlack { background-color: #000000; border: 2px solid #38BDF8; border-radius: 9px; padding: 0px; }")
+        : QStringLiteral("QPushButton#BtnRedactBlack { background-color: #000000; border: 1px solid #64748B; border-radius: 9px; padding: 0px; } QPushButton#BtnRedactBlack:hover { border: 1.5px solid #94A3B8; }"));
+
+    m_btnRedactWhite->setStyleSheet(isWhite
+        ? QStringLiteral("QPushButton#BtnRedactWhite { background-color: #FFFFFF; border: 2px solid #38BDF8; border-radius: 9px; padding: 0px; }")
+        : QStringLiteral("QPushButton#BtnRedactWhite { background-color: #FFFFFF; border: 1px solid #64748B; border-radius: 9px; padding: 0px; } QPushButton#BtnRedactWhite:hover { border: 1.5px solid #94A3B8; }"));
+
+    m_btnRedactGray->setStyleSheet(isGray
+        ? QStringLiteral("QPushButton#BtnRedactGray { background-color: #808080; border: 2px solid #38BDF8; border-radius: 9px; padding: 0px; }")
+        : QStringLiteral("QPushButton#BtnRedactGray { background-color: #808080; border: 1px solid #64748B; border-radius: 9px; padding: 0px; } QPushButton#BtnRedactGray:hover { border: 1.5px solid #94A3B8; }"));
+
+    if (isCustom) {
+        QString textColor = (m_redactionColor.lightness() < 128) ? QStringLiteral("#FFFFFF") : QStringLiteral("#000000");
+        m_btnRedactCustom->setStyleSheet(QString(
+            "QPushButton#BtnRedactCustom { background-color: %1; color: %2; border: 2px solid #38BDF8; border-radius: 10px; font-size: 11px; padding: 0px; }")
+            .arg(m_redactionColor.name(), textColor));
+    } else {
+        m_btnRedactCustom->setStyleSheet(QStringLiteral(
+            "QPushButton#BtnRedactCustom { background-color: #1E293B; color: #F1F5F9; border: 1px solid #64748B; border-radius: 10px; font-size: 11px; padding: 0px; } QPushButton#BtnRedactCustom:hover { border: 1.5px solid #94A3B8; }"));
+    }
+}
+
 QRect PdfTransformBox::dragHandleRect() const
 {
     int hw = qBound(80, m_boxRect.width() / 2, 140);
@@ -479,8 +541,8 @@ void PdfTransformBox::repositionToolbar()
     // 2. Horizontal placement: centered on m_boxRect, clamped within visible screen
     int tx = qBound(minX, m_boxRect.center().x() - tw / 2, maxX);
 
-    // 3. Vertical placement: prefer placing above m_boxRect
-    int ty = m_boxRect.top() - th - 12;
+    // 3. Vertical placement: prefer placing above m_boxRect with comfortable clearance
+    int ty = m_boxRect.top() - th - 10;
 
     // If above m_boxRect is outside visible screen, try below m_boxRect
     if (ty < minY) {
@@ -535,13 +597,15 @@ void PdfTransformBox::paintEvent(QPaintEvent * /*event*/)
         drawWatermarkStamp(painter, m_boxRect, m_text, m_angle, m_opacity, m_color, m_watermarkStyle);
     } else if (m_itemType == PdfTransformItemType::Redaction) {
         painter.fillRect(m_boxRect, m_redactionColor);
-        if (m_redactionColor.lightness() < 128) {
-            painter.setPen(QColor(248, 113, 113));
-        } else {
-            painter.setPen(QColor(185, 28, 28));
+        if (m_boxRect.width() >= 90 && m_boxRect.height() >= 24) {
+            if (m_redactionColor.lightness() < 128) {
+                painter.setPen(QColor(248, 113, 113));
+            } else {
+                painter.setPen(QColor(185, 28, 28));
+            }
+            painter.setFont(QFont(QStringLiteral("Sans Serif"), 8, QFont::Bold));
+            painter.drawText(m_boxRect, Qt::AlignCenter, tr("[REDACTED]"));
         }
-        painter.setFont(QFont(QStringLiteral("Sans Serif"), 9, QFont::Bold));
-        painter.drawText(m_boxRect, Qt::AlignCenter, tr("[REDACTED]"));
     } else if (m_itemType == PdfTransformItemType::AreaSelection) {
         painter.fillRect(m_boxRect, QColor(14, 165, 233, 20));
     }
@@ -552,18 +616,9 @@ void PdfTransformBox::paintEvent(QPaintEvent * /*event*/)
     painter.setBrush(Qt::NoBrush);
     painter.drawRect(m_boxRect);
 
-    // 2b. Render Top Drag Handle Tab ("⠿ Move")
-    QRect handleR = dragHandleRect();
-    painter.setPen(QPen(QColor(56, 189, 248), 1.2));
-    painter.setBrush(QColor(15, 23, 42, 230));
-    painter.drawRoundedRect(handleR, 4, 4);
-    painter.setPen(QColor(226, 232, 240));
-    painter.setFont(QFont("sans-serif", 8, QFont::Bold));
-    painter.drawText(handleR, Qt::AlignCenter, tr("⠿ Move"));
-
-    // 3. Render 8 Control Handles
+    // 3. Render 8 Control Handles (high-contrast: white fill with cyan border)
     painter.setPen(QPen(QColor(56, 189, 248), 1.5));
-    painter.setBrush(QColor(20, 26, 40));
+    painter.setBrush(Qt::white);
     for (int i = 0; i < 8; ++i) {
         painter.drawRect(m_handles[i]);
     }

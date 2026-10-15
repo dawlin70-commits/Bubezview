@@ -49,12 +49,12 @@ FlippableToolbar::FlippableToolbar(QWidget *parent)
     m_annotationContainer->hide();
     layout->addWidget(m_annotationContainer);
 
-    // 3. Flip Animation: Exactly 400ms with InOutCubic easing curve
+    // 3. Toolbar Transition Animation: 200ms with OutCubic easing curve for smooth cross-fade
     m_flipAnimation = new QVariantAnimation(this);
-    m_flipAnimation->setDuration(400);
-    m_flipAnimation->setEasingCurve(QEasingCurve::InOutCubic);
+    m_flipAnimation->setDuration(200);
+    m_flipAnimation->setEasingCurve(QEasingCurve::OutCubic);
     m_flipAnimation->setStartValue(0.0);
-    m_flipAnimation->setEndValue(180.0);
+    m_flipAnimation->setEndValue(1.0);
 
     connect(m_flipAnimation, &QVariantAnimation::valueChanged, this, &FlippableToolbar::onAnimationValueChanged);
     connect(m_flipAnimation, &QVariantAnimation::finished, this, &FlippableToolbar::onAnimationFinished);
@@ -453,7 +453,7 @@ void FlippableToolbar::startFlipAnimation(FlippableToolbarMode targetMode)
     m_flipAngle = 0.0;
     m_flipAnimation->stop();
     m_flipAnimation->setStartValue(0.0);
-    m_flipAnimation->setEndValue(180.0);
+    m_flipAnimation->setEndValue(1.0);
     m_flipAnimation->start();
     update();
 }
@@ -504,35 +504,30 @@ void FlippableToolbar::paintEvent(QPaintEvent *event)
 
     painter.fillRect(rect(), palette().window());
 
-    // 3D vertical card flip around the center horizontal axis
-    // 0° -> 90°: displays front pixmap rotating away from view
-    // 90° -> 180°: displays back pixmap rotating into view
-    qreal angle = m_flipAngle;
-    bool isFront = (angle < 90.0);
+    // Elegant cross-fade with subtle 4px vertical glide
+    // Progress goes smoothly from 0.0 to 1.0
+    qreal progress = qBound(0.0, m_flipAngle, 1.0);
+    qreal outOpacity = qBound(0.0, 1.0 - progress, 1.0);
+    qreal inOpacity = qBound(0.0, progress, 1.0);
 
-    const QPixmap &pm = isFront ? m_frontPixmap : m_backPixmap;
-    if (pm.isNull()) return;
+    // Direction: switching to annotation glides up slightly (-4px); returning to main glides down (+4px)
+    bool entering = (m_targetMode != FlippableToolbarMode::Main);
+    int dyOut = entering ? -qRound(progress * 4.0) : qRound(progress * 4.0);
+    int dyIn = entering ? qRound((1.0 - progress) * 4.0) : -qRound((1.0 - progress) * 4.0);
 
-    painter.save();
-    painter.translate(w / 2.0, h / 2.0);
-
-    // Apply perspective projection (m23 simulates distance along Z)
-    QTransform transform;
-    transform.setMatrix(1, 0, 0,
-                        0, 1, 0.0015,
-                        0, 0, 1);
-
-    qreal rotAngle = isFront ? -angle : (180.0 - angle);
-    transform.rotate(rotAngle, Qt::XAxis);
-
-    painter.setTransform(transform, true);
-    painter.drawPixmap(-w / 2.0, -h / 2.0, w, h, pm);
-
-    // Subtle dark shading at steep angles to enhance 3D depth
-    qreal darkness = std::sin(angle * M_PI / 180.0) * 0.45;
-    if (darkness > 0.01) {
-        painter.fillRect(QRectF(-w / 2.0, -h / 2.0, w, h), QColor(0, 0, 0, static_cast<int>(darkness * 255)));
+    // Draw outgoing toolbar
+    if (!m_frontPixmap.isNull() && outOpacity > 0.01) {
+        painter.save();
+        painter.setOpacity(outOpacity);
+        painter.drawPixmap(0, dyOut, m_frontPixmap);
+        painter.restore();
     }
 
-    painter.restore();
+    // Draw incoming toolbar
+    if (!m_backPixmap.isNull() && inOpacity > 0.01) {
+        painter.save();
+        painter.setOpacity(inOpacity);
+        painter.drawPixmap(0, dyIn, m_backPixmap);
+        painter.restore();
+    }
 }

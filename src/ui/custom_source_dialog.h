@@ -7,22 +7,13 @@
 
 #include <QDialog>
 #include <QString>
+#include "core/build_config.h"
 
 class QComboBox;
 class QLineEdit;
 class QTextEdit;
 class QPushButton;
-
-/**
- * @struct CustomSourceConfig
- * @brief Holds user-defined Git source, tag, and build configuration.
- */
-struct CustomSourceConfig {
-    QString preset;         ///< "Official Stable", "Development Git", or "Custom URL"
-    QString gitUrl;         ///< Git repository URL or mirror
-    QString branchTag;      ///< Branch or git tag name
-    QString buildFlags;     ///< Additional CMake or build arguments
-};
+class QLabel;
 
 /**
  * @class CustomSourceDialog
@@ -38,7 +29,11 @@ public:
      * @param initialConfig Current source configuration.
      * @param parent Optional parent widget.
      */
-    explicit CustomSourceDialog(const QString &componentId, const CustomSourceConfig &initialConfig, QWidget *parent = nullptr);
+    explicit CustomSourceDialog(const QString &componentId,
+                                const CustomSourceConfig &initialConfig,
+                                const QString &diagnosticCommand = QString(),
+                                bool canCompile = true,
+                                QWidget *parent = nullptr);
 
     /**
      * @brief Destructor.
@@ -53,17 +48,29 @@ public:
 private slots:
     void onPresetChanged(int index);
     void testConnection();
+    void resetToDefaults();
+    void updateEffectivePreview();
+    void runDiagnostic();
 
 private:
     void setupUi();
 
     QString m_componentId;
     CustomSourceConfig m_config;
+    QString m_diagnosticCommand;
+    bool m_canCompile;
 
+    class QTabWidget *m_tabs;
     QComboBox *m_comboPreset;
     QLineEdit *m_editGitUrl;
     QLineEdit *m_editBranchTag;
     QTextEdit *m_editBuildFlags;
+    QLabel *m_lblPreview;
     QPushButton *m_btnTestConnection;
+    QPushButton *m_btnReset;
     QPushButton *m_btnApply;
+
+    // Diagnostic UI
+    class QTextBrowser *m_txtDiagnosticOutput;
+    QPushButton *m_btnRunDiagnostic;
 };

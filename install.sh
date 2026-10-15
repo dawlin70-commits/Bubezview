@@ -9,6 +9,9 @@ set -e
 APP_NAME="BubezView"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build"
+if [ -f "/etc/debian_version" ]; then
+    BUILD_DIR="${SCRIPT_DIR}/build_deb"
+fi
 
 # UI Mode Detection (GUI dialogs if available, fallback to CLI)
 UI_MODE="cli"
@@ -120,8 +123,10 @@ check_dependencies() {
             command -v g++ >/dev/null 2>&1 || missing_pkgs+=("gcc")
             command -v pkg-config >/dev/null 2>&1 || missing_pkgs+=("pkgconf")
             pacman -Q qt6-base >/dev/null 2>&1 || missing_pkgs+=("qt6-base")
-            pacman -Q poppler-qt6 >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6")
+            pacman -Q qt6-svg >/dev/null 2>&1 || missing_pkgs+=("qt6-svg")
+            pacman -Q qrencode >/dev/null 2>&1 || missing_pkgs+=("qrencode")
             pacman -Q libarchive >/dev/null 2>&1 || missing_pkgs+=("libarchive")
+            pacman -Q poppler-qt6 >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6")
             pacman -Q mpv >/dev/null 2>&1 || missing_pkgs+=("mpv")
             ;;
         apt)
@@ -129,8 +134,16 @@ check_dependencies() {
             command -v g++ >/dev/null 2>&1 || missing_pkgs+=("build-essential")
             command -v pkg-config >/dev/null 2>&1 || missing_pkgs+=("pkg-config")
             dpkg -s qt6-base-dev >/dev/null 2>&1 || missing_pkgs+=("qt6-base-dev" "libqt6opengl6-dev")
-            dpkg -s libpoppler-qt6-dev >/dev/null 2>&1 || missing_pkgs+=("libpoppler-qt6-dev")
+            if ! dpkg -s qt6-svg-dev >/dev/null 2>&1 && ! dpkg -s libqt6svg6-dev >/dev/null 2>&1; then
+                if apt-cache show qt6-svg-dev >/dev/null 2>&1; then
+                    missing_pkgs+=("qt6-svg-dev")
+                else
+                    missing_pkgs+=("libqt6svg6-dev")
+                fi
+            fi
+            dpkg -s libqrencode-dev >/dev/null 2>&1 || missing_pkgs+=("libqrencode-dev")
             dpkg -s libarchive-dev >/dev/null 2>&1 || missing_pkgs+=("libarchive-dev")
+            dpkg -s libpoppler-qt6-dev >/dev/null 2>&1 || missing_pkgs+=("libpoppler-qt6-dev")
             dpkg -s libmpv-dev >/dev/null 2>&1 || missing_pkgs+=("libmpv-dev")
             ;;
         dnf)
@@ -138,17 +151,21 @@ check_dependencies() {
             command -v g++ >/dev/null 2>&1 || missing_pkgs+=("gcc-c++")
             command -v pkg-config >/dev/null 2>&1 || missing_pkgs+=("pkgconf-pkg-config")
             rpm -q qt6-qtbase-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtbase-devel")
-            rpm -q poppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6-devel")
+            rpm -q qt6-qtsvg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtsvg-devel")
+            rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
             rpm -q libarchive-devel >/dev/null 2>&1 || missing_pkgs+=("libarchive-devel")
-            rpm -q mpv-libs-devel >/dev/null 2>&1 || missing_pkgs+=("mpv-libs-devel")
+            rpm -q poppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6-devel")
+            rpm -q mpv-devel >/dev/null 2>&1 || missing_pkgs+=("mpv-devel")
             ;;
         zypper)
             command -v cmake >/dev/null 2>&1 || missing_pkgs+=("cmake")
             command -v g++ >/dev/null 2>&1 || missing_pkgs+=("gcc-c++")
             command -v pkg-config >/dev/null 2>&1 || missing_pkgs+=("pkg-config")
             rpm -q qt6-base-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-base-devel")
-            rpm -q poppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6-devel")
+            rpm -q qt6-svg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-svg-devel")
+            rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
             rpm -q libarchive-devel >/dev/null 2>&1 || missing_pkgs+=("libarchive-devel")
+            rpm -q poppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6-devel")
             rpm -q mpv-devel >/dev/null 2>&1 || missing_pkgs+=("mpv-devel")
             ;;
     esac
@@ -159,15 +176,165 @@ check_dependencies() {
     fi
 }
 
+build_source_component() {
+    local comp="$1"
+    local custom_url="$2"
+    local custom_tag="$3"
+    local custom_flags="$4"
+    local repo_url=""
+    local repo_tag="main"
+    local cmake_flags=()
+
+    case "$comp" in
+        tesseract|ocr|tesseract-ocr)
+            repo_url="https://github.com/tesseract-ocr/tesseract.git"
+            repo_tag="5.4.1"
+            cmake_flags+=("-DBUILD_TRAINEDDATA=OFF" "-DBUILD_TRAINING_TOOLS=OFF" "-DBUILD_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
+        qpdf)
+            repo_url="https://github.com/qpdf/qpdf.git"
+            repo_tag="v11.9.1"
+            cmake_flags+=("-DBUILD_STATIC_LIBS=OFF" "-DBUILD_DOC=OFF" "-DREQUIRE_CRYPTO_OPENSSL=ON" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
+        libarchive|archive|engine-libarchive)
+            repo_url="https://github.com/libarchive/libarchive.git"
+            repo_tag="v3.7.4"
+            cmake_flags+=("-DENABLE_TEST=OFF" "-DENABLE_TAR=OFF" "-DENABLE_CPIO=OFF" "-DENABLE_CAT=OFF" "-DENABLE_UNZIP=OFF" "-DCMAKE_C_FLAGS_RELEASE=-O3 -march=native -mcrc32 -fno-strict-aliasing -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe")
+            ;;
+        poppler|engine-poppler)
+            repo_url="https://gitlab.freedesktop.org/poppler/poppler.git"
+            repo_tag="poppler-26.08.0"
+            cmake_flags+=("-DENABLE_QT6=ON" "-DENABLE_QT5=OFF" "-DENABLE_GLIB=OFF" "-DENABLE_CPP=OFF" "-DENABLE_BOOST=OFF" "-DENABLE_UTILS=ON" "-DENABLE_NSS3=OFF" "-DENABLE_GPGME=OFF" "-DENABLE_LIBCURL=OFF" "-DBUILD_QT6_TESTS=OFF" "-DBUILD_CPP_TESTS=OFF" "-DBUILD_MANUAL_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe")
+            ;;
+        7zip|7z|7zz)
+            repo_url="https://github.com/ip7z/7zip.git"
+            repo_tag="24.08"
+            ;;
+        *)
+            echo -e "${RED}${BOLD}[!] Error: Component '${comp}' does not have a source build recipe in install.sh.${NC}"
+            echo -e "${RED}    Supported compilable source components are: poppler, engine-poppler, libarchive, engine-libarchive, 7zip, qpdf, tesseract.${NC}"
+            exit 1
+            ;;
+    esac
+
+    # Apply custom overrides if specified
+    if [ -n "$custom_url" ]; then
+        repo_url="$custom_url"
+    fi
+    if [ -n "$custom_tag" ]; then
+        repo_tag="$custom_tag"
+    fi
+    if [ -n "$custom_flags" ]; then
+        eval "extra_flags_array=($custom_flags)"
+        cmake_flags+=("${extra_flags_array[@]}")
+    fi
+
+    echo -e "${BLUE}${BOLD}[*] Compiling ${comp} (${repo_tag}) from source for user environment (${HOME}/.local)...${NC}"
+    echo -e "${BLUE}    Source: ${repo_url}${NC}"
+    if [ -n "$custom_flags" ]; then
+        echo -e "${BLUE}    Extra Flags: ${custom_flags}${NC}"
+    fi
+
+    local COMP_SRC="${SCRIPT_DIR}/build_deps/${comp}"
+    local COMP_BUILD="${SCRIPT_DIR}/build_deps/${comp}_build"
+    mkdir -p "${SCRIPT_DIR}/build_deps"
+    if [ ! -d "$COMP_SRC/.git" ]; then
+        git clone --depth 1 -b "$repo_tag" "$repo_url" "$COMP_SRC"
+    else
+        # Ensure we checkout the correct repo tag if it differs from current HEAD
+        (cd "$COMP_SRC" && git fetch --depth 1 origin "$repo_tag" 2>/dev/null || true && git checkout "$repo_tag" 2>/dev/null || true)
+    fi
+    local cpu_cores_sub
+    cpu_cores_sub=$(nproc 2>/dev/null || echo "4")
+
+    if [ "$comp" = "7zip" ] || [ "$comp" = "7z" ] || [ "$comp" = "7zz" ]; then
+        local flags_7z="-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto -fomit-frame-pointer -pipe"
+        if [ -n "$custom_flags" ]; then
+            flags_7z="$custom_flags"
+        fi
+        echo -e "${BLUE}${BOLD}[*] Compiling 7-Zip (7zz) via makefile.gcc (${cpu_cores_sub} threads)...${NC}"
+        (cd "${COMP_SRC}/CPP/7zip/Bundles/Alone2" && make -j"${cpu_cores_sub}" -f makefile.gcc LOCAL_FLAGS="${flags_7z}")
+        mkdir -p "${HOME}/.local/bin"
+        install -m 755 "${COMP_SRC}/CPP/7zip/Bundles/Alone2/_o/7zz" "${HOME}/.local/bin/7zz"
+        echo -e "${GREEN}${BOLD}[✓] Component '7zz' successfully installed into ${HOME}/.local/bin/7zz!${NC}"
+        exit 0
+    fi
+
+    mkdir -p "$COMP_BUILD"
+    if ! cmake -B "$COMP_BUILD" -S "$COMP_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"; then
+        echo -e "${YELLOW}[!] CMake configure encountered errors; cleaning stale build cache and retrying...${NC}"
+        rm -rf "${COMP_BUILD}"
+        mkdir -p "${COMP_BUILD}"
+        cmake -B "$COMP_BUILD" -S "$COMP_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"
+    fi
+    cmake --build "$COMP_BUILD" --parallel "$cpu_cores_sub"
+    cmake --install "$COMP_BUILD"
+    echo -e "${GREEN}${BOLD}[✓] Component '${comp}' successfully installed into ${HOME}/.local!${NC}"
+    exit 0
+}
+
 build_and_launch() {
+    local target_comp=""
+    local custom_git_url=""
+    local custom_git_branch=""
+    local custom_build_flags=""
+    local cmake_extra_args=()
+    local build_target=""
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --target)
+                shift
+                build_target="$1"
+                ;;
+            --build-component)
+                shift
+                target_comp="$1"
+                ;;
+            --git-url)
+                shift
+                custom_git_url="$1"
+                ;;
+            --git-branch)
+                shift
+                custom_git_branch="$1"
+                ;;
+            --extra-build-flags)
+                shift
+                custom_build_flags="$1"
+                ;;
+            --no-launch)
+                no_launch=1
+                ;;
+            --update)
+                no_launch=1
+                ;;
+            --build-tesseract)
+                target_comp="tesseract"
+                ;;
+            -D*)
+                cmake_extra_args+=("$1")
+                ;;
+        esac
+        shift
+    done
+
+    if [ -n "$target_comp" ]; then
+        build_source_component "$target_comp" "$custom_git_url" "$custom_git_branch" "$custom_build_flags"
+    fi
+
     echo -e "${BLUE}${BOLD}[*] Configuring project with CMake...${NC}"
     mkdir -p "$BUILD_DIR"
-    cmake -B "$BUILD_DIR" -S "$SCRIPT_DIR" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local"
+    cmake -B "$BUILD_DIR" -S "$SCRIPT_DIR" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" "${cmake_extra_args[@]}"
 
     local cpu_cores
     cpu_cores=$(nproc 2>/dev/null || echo "4")
-    echo -e "${BLUE}${BOLD}[*] Compiling ${APP_NAME} (${cpu_cores} threads)...${NC}"
-    cmake --build "$BUILD_DIR" --parallel "$cpu_cores"
+    if [ -n "$build_target" ]; then
+        echo -e "${BLUE}${BOLD}[*] Compiling target '${build_target}' (${cpu_cores} threads)...${NC}"
+        cmake --build "$BUILD_DIR" --target "$build_target" --parallel "$cpu_cores"
+    else
+        echo -e "${BLUE}${BOLD}[*] Compiling ${APP_NAME} (${cpu_cores} threads)...${NC}"
+        cmake --build "$BUILD_DIR" --parallel "$cpu_cores"
+    fi
 
     echo -e "${BLUE}${BOLD}[*] Installing ${APP_NAME} to ${HOME}/.local...${NC}"
     cmake --install "$BUILD_DIR"
@@ -178,6 +345,11 @@ build_and_launch() {
     fi
     if command -v kbuildsycoca6 >/dev/null 2>&1; then
         kbuildsycoca6 2>/dev/null || true
+    fi
+
+    if [ "$no_launch" = "1" ]; then
+        echo -e "${GREEN}${BOLD}[✓] Compilation and installation finished successfully.${NC}"
+        exit 0
     fi
 
     echo -e "${GREEN}${BOLD}[✓] Installation complete! Launching ${APP_NAME}...${NC}"
@@ -197,7 +369,7 @@ build_and_launch() {
 
 main() {
     check_dependencies
-    build_and_launch
+    build_and_launch "$@"
 }
 
 main "$@"

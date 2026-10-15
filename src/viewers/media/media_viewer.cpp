@@ -21,6 +21,8 @@
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QDBusConnection>
+#include <QCollator>
+#include <algorithm>
 #include <cstring>
 #include <clocale>
 
@@ -132,7 +134,13 @@ MediaViewer::MediaViewer(QWidget *parent)
             mpv_set_option_string(m_mpv, "gapless-audio", "yes");
         } else {
             mpv_set_option_string(m_mpv, "audio-pitch-correction", "yes");
+            // Studio-grade audiophile resampling via libsoxr (28-bit linear phase, zero aliasing)
+            mpv_set_option_string(m_mpv, "audio-swresample-o", "resampler=soxr,precision=28");
+            mpv_set_option_string(m_mpv, "audio-resample-filter-size", "32");
+            mpv_set_option_string(m_mpv, "audio-resample-linear", "yes");
         }
+        // Prevent mpv from squashing stereo dynamic range
+        mpv_set_option_string(m_mpv, "audio-normalize-downmix", "no");
         mpv_set_option_string(m_mpv, "audio-fallback-to-null", "no");
 
         if (m_currentAudioDevice.startsWith("alsa/")) {
@@ -550,8 +558,11 @@ void MediaViewer::setupUi()
     bottomRow->addLayout(rightCluster);
 
     ctrlRootLayout->addLayout(bottomRow);
-
     mainLayout->addWidget(m_controlsWidget);
+
+    connect(this, &MediaViewer::trackChangeRequested, this, [this](const QString &path) {
+        if (m_trackChangeCallback) m_trackChangeCallback(path);
+    });
 
     updateTheme();
 }
@@ -876,8 +887,13 @@ void MediaViewer::scanAudioSiblings()
         "mp3", "flac", "wav", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "wv", "dsf", "dff", "mpc"
     };
 
-    // List all files in the folder without case-sensitive wildcard patterns
-    QStringList files = dir.entryList(QDir::Files, QDir::Name | QDir::LocaleAware);
+    // List all files in the folder with natural numeric collation
+    QStringList files = dir.entryList(QDir::Files, QDir::NoSort);
+    QCollator collator;
+    collator.setNumericMode(true);
+    collator.setCaseSensitivity(Qt::CaseInsensitive);
+    std::sort(files.begin(), files.end(), collator);
+
     QStringList detected;
     for (const QString &f : files) {
         if (f.startsWith('.')) continue;
@@ -1621,10 +1637,10 @@ void MediaViewer::showAudioDeviceMenu()
     );
 
     // Section 1: System Sound Server
-    QAction *secSys = menu.addAction(tr("--- Server Audio di Sistema ---"));
+    QAction *secSys = menu.addAction(tr("--- System Audio Server ---"));
     secSys->setEnabled(false);
 
-    QAction *actAuto = menu.addAction(tr("🌐 Auto / Predefinito (PipeWire / PulseAudio)"));
+    QAction *actAuto = menu.addAction(tr("🌐 Auto / Default (PipeWire / PulseAudio)"));
     actAuto->setCheckable(true);
     actAuto->setChecked(m_currentAudioDevice == "auto" || m_currentAudioDevice.isEmpty());
     connect(actAuto, &QAction::triggered, this, [this]() {
@@ -1634,7 +1650,7 @@ void MediaViewer::showAudioDeviceMenu()
     menu.addSeparator();
 
     // Section 2: Direct ALSA Hardware Endpoints
-    QAction *secHw = menu.addAction(tr("--- Hardware ALSA Diretto (Bit-Perfect Livello 2) ---"));
+    QAction *secHw = menu.addAction(tr("--- Direct ALSA Hardware (Bit-Perfect Level 2) ---"));
     secHw->setEnabled(false);
 
     struct DeviceEntry {
@@ -1730,10 +1746,10 @@ void MediaViewer::showAudioDeviceMenu()
     for (const auto &dev : alsaDevices) {
         QString friendlyTitle;
         if (dev.name.contains("iec958", Qt::CaseInsensitive)) {
-            friendlyTitle = tr("🔊 Uscita Digitale S/PDIF (Ottico / Coassiale)");
+            friendlyTitle = tr("🔊 Digital Output S/PDIF (Optical / Coaxial)");
         } else if (dev.name.contains("front:", Qt::CaseInsensitive)) {
             if (dev.desc.contains("Analog", Qt::CaseInsensitive)) {
-                friendlyTitle = tr("🔊 Uscita Analogica / Cuffie (Jack 3.5mm)");
+                friendlyTitle = tr("🔊 Analog Output / Headphones (3.5mm Jack)");
             } else {
                 friendlyTitle = QString("🔊 %1").arg(dev.desc);
             }
@@ -1744,7 +1760,7 @@ void MediaViewer::showAudioDeviceMenu()
             displayName.remove('/');
             displayName = displayName.trimmed();
             if (displayName.isEmpty()) displayName = "Monitor/TV";
-            friendlyTitle = tr("🔊 Uscita HDMI: %1").arg(displayName);
+            friendlyTitle = tr("🔊 HDMI Output: %1").arg(displayName);
         } else {
             friendlyTitle = QString("🔊 %1").arg(dev.desc.isEmpty() ? dev.name : dev.desc);
         }

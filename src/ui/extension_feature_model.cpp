@@ -17,7 +17,7 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "engine-poppler";
-        m.displayName = tr("Poppler Qt6 Document Engine");
+        m.displayName = tr("PDF Viewer");
         m.systemPackage = "libpoppler-qt6-3";
         m.category = "PDF";
         m.isEngine = true;
@@ -49,13 +49,13 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "pdfimages";
-        m.displayName = tr("Embedded Image Extraction (pdfimages)");
+        m.displayName = tr("Image Extraction");
         m.systemPackage = PackageManagerHelper::packageNameForComponent("pdfimages");
         m.category = "PDF";
         m.summary = tr("High-speed lossless dump of raster streams and photographs embedded inside PDF files.");
-        m.canCompile = true;
-        m.isStaticCompiled = BuildConfig::instance().staticPdf();
-        m.diagnosticCommand = "pdfimages -v";
+        m.canCompile = false;
+        m.isStaticCompiled = false;
+        m.diagnosticCommand = BuildConfig::pdfimagesExecutable().isEmpty() ? "pdfimages -v" : (BuildConfig::pdfimagesExecutable() + " -v");
         m.features = {
             {
                 tr("Lossless Embedded Image Extraction"),
@@ -80,7 +80,7 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "poppler-data";
-        m.displayName = tr("International & Asian Font Support (poppler-data)");
+        m.displayName = tr("Asian & International Font Support");
         m.systemPackage = PackageManagerHelper::packageNameForComponent("poppler-data");
         m.category = "PDF";
         m.summary = tr("CMAP character encoding tables for rendering Chinese, Japanese, Korean, and non-Western glyphs.");
@@ -111,7 +111,7 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "qpdf";
-        m.displayName = tr("Advanced PDF Tools & Optimization (QPDF)");
+        m.displayName = tr("PDF Repair & Advanced Tools");
         m.systemPackage = PackageManagerHelper::packageNameForComponent("qpdf");
         m.category = "PDF";
         m.summary = tr("Linearization, structural decompression, page assembly, and PDF integrity repairs.");
@@ -149,7 +149,7 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "tesseract";
-        m.displayName = tr("Optical Text Recognition (Tesseract OCR)");
+        m.displayName = tr("Optical Character Recognition (OCR)");
         m.systemPackage = PackageManagerHelper::packageNameForComponent("tesseract");
         m.category = "PDF";
         m.summary = tr("Neural-network powered character recognition for scanned PDF pages and images.");
@@ -196,7 +196,7 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         m.systemPackage = PackageManagerHelper::packageNameForComponent("openssl");
         m.category = "PDF";
         m.summary = tr("PAdES and PKCS#12 cryptographic verification and X.509 digital signing of PDF files.");
-        m.canCompile = true;
+        m.canCompile = false;
         m.isStaticCompiled = false;
         m.diagnosticCommand = "openssl version";
         m.features = {
@@ -219,15 +219,15 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         list.append(m);
     }
 
-    // LibArchive Universal Engine
+    // LibArchive Universal Engine (Archive Plugin)
     {
         ExtensionModuleInfo m;
         m.id = "engine-libarchive";
-        m.displayName = tr("LibArchive Universal Compression Engine");
+        m.displayName = tr("Archive Manager (LibArchive)");
         m.systemPackage = "libarchive13";
         m.category = "Archive";
         m.isEngine = true;
-        m.summary = tr("Universal container streaming parser for ZIP, 7-Zip, TAR, CPIO, ISO, and multi-part archives.");
+        m.summary = tr("Core archive plugin: universal container streaming parser for ZIP, 7-Zip, TAR, CPIO, ISO, and multi-part archives.");
         m.canCompile = true;
         m.isStaticCompiled = BuildConfig::instance().staticArchive();
         m.diagnosticCommand = "pkg-config --modversion libarchive 2>/dev/null || echo 'libarchive present'";
@@ -251,16 +251,47 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         list.append(m);
     }
 
+    // 7-Zip Multi-Core Engine
+    {
+        ExtensionModuleInfo m;
+        m.id = "7zip";
+        m.displayName = tr("7-Zip Multi-Core Engine (7zz)");
+        m.systemPackage = PackageManagerHelper::packageNameForComponent("7zip");
+        m.category = "Archive";
+        m.summary = tr("High-performance multi-threaded CLI compression engine driving BubezView Smart Store & Fast Deflate.");
+        m.canCompile = true;
+        m.isStaticCompiled = BuildConfig::hasSourceBinary("7zip");
+        m.diagnosticCommand = "7zz -h 2>/dev/null || 7z -h 2>/dev/null || echo '7-Zip not installed'";
+        m.features = {
+            {
+                tr("Multi-Threaded Parallel Compression"),
+                tr("Saturates all CPU cores (-mmt=on) for blazing fast ZIP and 7Z archive packing."),
+                "runMultiCore7zCompression()",
+                tr("Create Archive Dialog"),
+                true
+            },
+            {
+                tr("Smart Store Video/Media Optimization"),
+                tr("Bypasses re-compression on multimedia files (.mkv, .mp4, .flac, .jpg) preserving maximum I/O throughput."),
+                "isAlreadyCompressedMediaOrArchive()",
+                tr("Create Archive Dialog (ZIP/7Z)"),
+                true
+            }
+        };
+        refreshModuleStatus(m);
+        list.append(m);
+    }
+
     // 6. Zstandard (zstd)
     {
         ExtensionModuleInfo m;
         m.id = "zstd";
-        m.displayName = tr("Zstandard High-Speed Codec (zstd)");
+        m.displayName = tr("Zstandard Codec (zstd)");
         m.systemPackage = PackageManagerHelper::packageNameForComponent("zstd");
         m.category = "Archive";
-        m.summary = tr("Next-generation real-time compression algorithm developed by Meta for high throughput.");
+        m.summary = tr("Next-generation real-time compression algorithm developed by Meta for multi-gigabyte throughput.");
         m.canCompile = true;
-        m.isStaticCompiled = BuildConfig::instance().staticArchive();
+        m.isStaticCompiled = BuildConfig::hasSourceBinary("zstd");
         m.diagnosticCommand = "zstd --version";
         m.features = {
             {
@@ -271,8 +302,8 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
                 true
             },
             {
-                tr("Multi-threaded Compression"),
-                tr("Parallelized compression utilizing all available CPU cores without throttling system responsiveness."),
+                tr("Multi-threaded Zstandard Compression"),
+                tr("Parallelized zstd compression utilizing all available CPU cores without throttling system responsiveness."),
                 "ArchiveViewer::compressFolder()",
                 tr("Menu: File → Compress to Archive..."),
                 false
@@ -286,12 +317,12 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "xz";
-        m.displayName = tr("LZMA Maximum Compression Codec (xz)");
+        m.displayName = tr("LZMA Codec (xz)");
         m.systemPackage = PackageManagerHelper::packageNameForComponent("xz");
         m.category = "Archive";
         m.summary = tr("High-ratio compression format widely adopted across Linux package distributions and source tarballs.");
         m.canCompile = true;
-        m.isStaticCompiled = BuildConfig::instance().staticArchive();
+        m.isStaticCompiled = BuildConfig::hasSourceBinary("xz");
         m.diagnosticCommand = "xz --version";
         m.features = {
             {
@@ -310,12 +341,12 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "engine-office";
-        m.displayName = tr("Internal Office Document Parser Engine");
+        m.displayName = tr("Native Office Parser");
         m.systemPackage = "librevenge-0.0-0";
         m.category = "Office";
         m.isEngine = true;
         m.summary = tr("Embedded structured parser for Microsoft Office and OpenDocument files without external LibreOffice.");
-        m.canCompile = true;
+        m.canCompile = false;
         m.isStaticCompiled = BuildConfig::instance().staticOffice();
         m.diagnosticCommand = "pkg-config --modversion librevenge-0.0 2>/dev/null || echo 'librevenge present'";
         m.features = {
@@ -335,11 +366,11 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "office";
-        m.displayName = tr("Office Document Reader & Converter (LibreOffice)");
+        m.displayName = tr("Office Document Preview");
         m.systemPackage = "libreoffice";
         m.category = "Office";
         m.summary = tr("Headless rendering and conversion of Microsoft Office (.docx, .xlsx, .pptx) and OpenDocument files.");
-        m.canCompile = true;
+        m.canCompile = false;
         m.isStaticCompiled = BuildConfig::instance().staticOffice();
         m.diagnosticCommand = "libreoffice --version";
 
@@ -382,7 +413,7 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "engine-mpv";
-        m.displayName = tr("MPV Video & Audio Playback Engine (libmpv)");
+        m.displayName = tr("Media Player");
         m.systemPackage = "libmpv2";
         m.category = "Media";
         m.isEngine = true;
@@ -414,11 +445,11 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "fftw3";
-        m.displayName = tr("Vectorized FFT & Audio Spectrum Engine (FFTW3)");
+        m.displayName = tr("Audio Equalizer");
         m.systemPackage = "libfftw3-3";
         m.category = "Media";
         m.summary = tr("High-performance mathematical DSP engine computing 60 FPS real-time stereo oscilloscope and spectrum bars.");
-        m.canCompile = true;
+        m.canCompile = false;
         m.isStaticCompiled = false;
         m.diagnosticCommand = "echo 'FFTW3 DSP Engine ready'";
         m.features = {
@@ -445,11 +476,11 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
     {
         ExtensionModuleInfo m;
         m.id = "taglib";
-        m.displayName = tr("Audio Tag & Embedded Cover Art Engine (TagLib)");
+        m.displayName = tr("Metadata & Cover Art");
         m.systemPackage = "libtag1v5";
         m.category = "Media";
         m.summary = tr("Ultra-fast parser for ID3v2, Vorbis Comment, FLAC, and APE audio metadata and album art extraction.");
-        m.canCompile = true;
+        m.canCompile = false;
         m.isStaticCompiled = false;
         m.diagnosticCommand = "echo 'TagLib Engine ready'";
         m.features = {
@@ -488,8 +519,54 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::modulesForCategory(const QS
 
 ExtensionModuleInfo ExtensionFeatureRegistry::moduleById(const QString &id)
 {
+    const QString query = id.trimmed().toLower();
+    if (query.isEmpty()) {
+        return ExtensionModuleInfo{};
+    }
+
+    // Direct match on exact module id
     for (auto mod : allModules()) {
-        if (mod.id == id) {
+        if (mod.id.toLower() == query) {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+    }
+
+    // Check system package identifier or known component aliases
+    for (auto mod : allModules()) {
+        if (mod.systemPackage.toLower() == query) {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if ((query == "pdf" || query == "poppler" || query == "poppler-qt6") && mod.id == "engine-poppler") {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if ((query == "archive" || query == "libarchive") && mod.id == "engine-libarchive") {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if ((query == "ocr" || query == "tesseract-ocr") && mod.id == "tesseract") {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if ((query == "librevenge" || query == "office-engine") && mod.id == "engine-office") {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if ((query == "mpv" || query == "libmpv") && mod.id == "engine-mpv") {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if (query == "poppler-utils" && mod.id == "pdfimages") {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if (query == "liblzma" && mod.id == "xz") {
+            refreshModuleStatus(mod);
+            return mod;
+        }
+        if (query == "fftw" && mod.id == "fftw3") {
             refreshModuleStatus(mod);
             return mod;
         }
@@ -530,5 +607,19 @@ void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
         module.isInstalled = BuildConfig::isPkgInstalled("taglib") || BuildConfig::isPkgInstalled("libtag1v5");
     } else {
         module.isInstalled = PackageManagerHelper::isComponentInstalled(module.id);
+    }
+
+    if (module.canCompile) {
+        if (module.id == "engine-poppler") {
+            module.isStaticCompiled = BuildConfig::instance().staticPdf();
+        } else if (module.id == "engine-libarchive") {
+            module.isStaticCompiled = BuildConfig::instance().staticArchive();
+        } else if (module.id == "engine-office") {
+            module.isStaticCompiled = BuildConfig::instance().staticOffice();
+        } else {
+            module.isStaticCompiled = BuildConfig::hasSourceBinary(module.id);
+        }
+    } else {
+        module.isStaticCompiled = false;
     }
 }

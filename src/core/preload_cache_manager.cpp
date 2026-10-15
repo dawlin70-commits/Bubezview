@@ -9,7 +9,6 @@
 #include <QSettings>
 #include <QFileInfo>
 #include <QDebug>
-#include <poppler/qt6/poppler-qt6.h>
 
 namespace {
 /**
@@ -34,19 +33,6 @@ public:
             QImageReader reader(m_filePath);
             reader.setAutoTransform(true);
             loadedImage = reader.read();
-        } else if (cat == FileCategory::Pdf) {
-            std::unique_ptr<Poppler::Document> doc(Poppler::Document::load(m_filePath));
-            if (doc && !doc->isLocked() && doc->numPages() > 0) {
-                // Configure render hints for background rasterization
-                doc->setRenderHint(Poppler::Document::Antialiasing, true);
-                doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
-                doc->setRenderHint(Poppler::Document::ThinLineSolid, true);
-
-                std::unique_ptr<Poppler::Page> page(doc->page(0));
-                if (page) {
-                    loadedImage = page->renderToImage(96.0, 96.0);
-                }
-            }
         }
 
         if (!loadedImage.isNull()) {
@@ -56,38 +42,6 @@ public:
 
 private:
     QString m_filePath;
-};
-
-/**
- * @class PopplerWarmupWorker
- * @brief Background task warms up Poppler shared libraries and font caches when a PDF is found in folder.
- */
-class PopplerWarmupWorker : public QRunnable {
-public:
-    explicit PopplerWarmupWorker(const QString &samplePdfPath)
-        : m_samplePdf(samplePdfPath)
-    {
-        setAutoDelete(true);
-    }
-
-    void run() override {
-        if (m_samplePdf.isEmpty()) return;
-
-        // Perform lightweight load of the candidate PDF to force dynamic linkage & fontconfig init
-        std::unique_ptr<Poppler::Document> doc(Poppler::Document::load(m_samplePdf));
-        if (doc && !doc->isLocked() && doc->numPages() > 0) {
-            std::unique_ptr<Poppler::Page> page(doc->page(0));
-            if (page) {
-                QImage img = page->renderToImage(72.0, 72.0);
-                if (!img.isNull()) {
-                    PreloadCacheManager::instance().insert(m_samplePdf, img);
-                }
-            }
-        }
-    }
-
-private:
-    QString m_samplePdf;
 };
 }
 
@@ -120,7 +74,6 @@ void PreloadCacheManager::setBudgetMb(int maxMegaBytes)
     m_budgetMb = maxMegaBytes;
     if (m_budgetMb <= 0) {
         m_cache.clear();
-        m_docMap.clear();
         m_cache.setMaxCost(0);
     } else {
         // Convert MB to bytes for precise RAM accounting
@@ -182,32 +135,9 @@ void PreloadCacheManager::insert(const QString &filePath, const QImage &image)
     m_cache.insert(filePath, new QImage(image), costBytes);
 }
 
-std::unique_ptr<Poppler::Document> PreloadCacheManager::takeDocument(const QString &filePath)
-{
-    QMutexLocker locker(&m_mutex);
-    if (m_docMap.contains(filePath)) {
-        // Shared reference cleanup
-        m_docMap.remove(filePath);
-    }
-    return nullptr;
-}
-
 void PreloadCacheManager::inspectFolderForPdfs(const QStringList &siblingFiles)
 {
-    if (!isEnabled() || siblingFiles.isEmpty() || m_popplerWarmedUp) return;
-
-    QString foundPdf;
-    for (const QString &file : siblingFiles) {
-        if (file.endsWith(".pdf", Qt::CaseInsensitive)) {
-            foundPdf = file;
-            break;
-        }
-    }
-
-    if (!foundPdf.isEmpty()) {
-        m_popplerWarmedUp = true;
-        m_threadPool.start(new PopplerWarmupWorker(foundPdf), QThread::LowPriority);
-    }
+    Q_UNUSED(siblingFiles);
 }
 
 void PreloadCacheManager::requestPrefetchNeighbors(const QStringList &siblingFiles, int currentIndex)
@@ -245,5 +175,4 @@ void PreloadCacheManager::clear()
 {
     QMutexLocker locker(&m_mutex);
     m_cache.clear();
-    m_docMap.clear();
 }

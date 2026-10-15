@@ -11,14 +11,15 @@
 
 class ImageViewer;
 class TextViewer;
-class PdfViewer;
-class ArchiveViewer;
-class MediaViewer;
+class IPdfViewer;
+class IArchiveViewer;
+class IMediaViewer;
 class OfficeViewer;
 class FolderViewer;
 class SearchBarWidget;
 class FilmstripWidget;
 class QPushButton;
+class EnginePromptCard;
 
 
 /**
@@ -56,10 +57,10 @@ public:
     FolderViewer *folderViewer() const { return m_folderViewer; }
     OfficeViewer *officeViewer() const { return m_officeViewer; }
     ImageViewer *imageViewer() const { return m_imageViewer; }
-    PdfViewer *pdfViewer() const { return m_pdfViewer; }
-    MediaViewer *mediaViewer() const { return m_mediaViewer; }
+    IPdfViewer *pdfViewer() const { return m_pdfViewer; }
+    IMediaViewer *mediaViewer() const { return m_mediaViewer; }
     TextViewer *textViewer() const { return m_textViewer; }
-    ArchiveViewer *archiveViewer() const { return m_archiveViewer; }
+    IArchiveViewer *archiveViewer() const { return m_archiveViewer; }
     SearchBarWidget *searchBar() const { return m_searchBar; }
     QStringList siblingFiles() const { return m_siblingFiles; }
     bool isArchivePreview() const { return !m_archiveOriginPath.isEmpty(); }
@@ -157,10 +158,14 @@ public slots:
     void setFilmstripVisible(bool visible);
     bool isFilmstripVisible() const;
 
-    // Folder actions
+    // Folder & Archive actions
     void renameCurrentFolderItem();
     void deleteCurrentFolderItem();
     void createFolderInCurrentFolder();
+    void openCreateArchiveDialog();
+    void addFilesToCurrentArchive();
+    void addFolderToCurrentArchive();
+    void removeSelectedFromCurrentArchive();
 
     /**
      * @brief Configures whether BubezView is running in previewer daemon mode.
@@ -208,11 +213,12 @@ protected:
     FilmstripWidget *m_filmstrip;
     ImageViewer *m_imageViewer;
     TextViewer *m_textViewer;
-    PdfViewer *m_pdfViewer;
-    ArchiveViewer *m_archiveViewer;
-    MediaViewer *m_mediaViewer;
+    IPdfViewer *m_pdfViewer;
+    IArchiveViewer *m_archiveViewer;
+    IMediaViewer *m_mediaViewer;
     OfficeViewer *m_officeViewer;
     FolderViewer *m_folderViewer;
+    EnginePromptCard *m_enginePromptCard;
     QWidget *m_unsupportedViewer;
     QLabel *m_lblUnsupportedIcon;
     QLabel *m_lblUnsupportedName;

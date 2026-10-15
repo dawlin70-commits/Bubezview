@@ -13,6 +13,8 @@
 #include <QComboBox>
 #include <QScrollArea>
 #include <QFrame>
+#include <QSettings>
+#include <QMessageBox>
 
 SettingsAppearanceTab::SettingsAppearanceTab(QWidget *parent)
     : QWidget(parent)
@@ -45,8 +47,8 @@ void SettingsAppearanceTab::setupUi()
     m_comboTheme = new QComboBox(grpTheme);
     m_comboTheme->setCursor(Qt::PointingHandCursor);
     m_comboTheme->addItem(tr("System Native"), static_cast<int>(ThemePreset::SystemNative));
-    m_comboTheme->addItem("Dark Slate", static_cast<int>(ThemePreset::DarkSlate));
-    m_comboTheme->addItem("Breeze Dark", static_cast<int>(ThemePreset::BreezeDark));
+    m_comboTheme->addItem(tr("Dark Slate"), static_cast<int>(ThemePreset::DarkSlate));
+    m_comboTheme->addItem(tr("Breeze Dark"), static_cast<int>(ThemePreset::BreezeDark));
 
     ThemePreset currentTheme = ThemeManager::currentPreset();
     for (int i = 0; i < m_comboTheme->count(); ++i) {
@@ -89,6 +91,34 @@ void SettingsAppearanceTab::setupUi()
     layTransition->addWidget(m_comboTransition, 1);
     layout->addWidget(grpTransition);
 
+    // 3. Language Selection Group
+    QGroupBox *grpLang = new QGroupBox(tr("Language"), content);
+    QHBoxLayout *layLang = new QHBoxLayout(grpLang);
+    layLang->setContentsMargins(12, 10, 12, 12);
+
+    QLabel *lblLang = new QLabel(tr("Interface language:"), grpLang);
+    m_comboLanguage = new QComboBox(grpLang);
+    m_comboLanguage->setCursor(Qt::PointingHandCursor);
+    m_comboLanguage->addItem(tr("System Default (Automatic)"), "system");
+    m_comboLanguage->addItem("Italiano", "it");
+    m_comboLanguage->addItem("English", "en");
+    m_comboLanguage->addItem("Español", "es");
+    m_comboLanguage->addItem("Français", "fr");
+    m_comboLanguage->addItem("Deutsch", "de");
+
+    QSettings settings("Bubez", "BubezView");
+    QString savedLang = settings.value("language", "system").toString();
+    int langIdx = m_comboLanguage->findData(savedLang);
+    if (langIdx >= 0) {
+        m_comboLanguage->setCurrentIndex(langIdx);
+    }
+    connect(m_comboLanguage, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SettingsAppearanceTab::onLanguageChanged);
+
+    layLang->addWidget(lblLang);
+    layLang->addWidget(m_comboLanguage, 1);
+    layout->addWidget(grpLang);
+
     layout->addStretch();
 
     scrollArea->setWidget(content);
@@ -110,4 +140,18 @@ void SettingsAppearanceTab::onTransitionChanged(int index)
     int val = m_comboTransition->itemData(index).toInt();
     TransitionEffect effect = static_cast<TransitionEffect>(val);
     ThemeManager::setTransition(effect);
+}
+
+void SettingsAppearanceTab::onLanguageChanged(int index)
+{
+    if (!m_comboLanguage || index < 0) return;
+    QString langCode = m_comboLanguage->itemData(index).toString();
+    QSettings settings("Bubez", "BubezView");
+    settings.setValue("language", langCode);
+
+    QMessageBox::information(
+        this,
+        tr("Language Changed"),
+        tr("Language preference saved.<br><br>Please restart BubezView for the changes to take full effect across all components.")
+    );
 }

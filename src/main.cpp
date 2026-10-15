@@ -2,6 +2,7 @@
 #include "dbus_previewer.h"
 #include "theme_manager.h"
 #include "first_run_wizard.h"
+#include "plugin_manager.h"
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QFileDialog>
@@ -13,7 +14,53 @@
 #include <QLibraryInfo>
 #include <QSettings>
 #include <QDebug>
+#include <QLoggingCategory>
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
+#include <QStandardPaths>
+#include <QDir>
+#include <iostream>
+#include <memory>
 #include <clocale>
+
+static std::unique_ptr<QFile> s_debugLogFile;
+static std::unique_ptr<QTextStream> s_debugLogStream;
+
+/**
+ * @brief Custom Qt message handler redirecting logs to console and bubezview.log.
+ */
+static void bubezLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    Q_UNUSED(context);
+    const QString timeStr = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
+    const char *typeStr = "INFO";
+    switch (type) {
+    case QtDebugMsg:    typeStr = "DEBUG"; break;
+    case QtInfoMsg:     typeStr = "INFO"; break;
+    case QtWarningMsg:  typeStr = "WARN"; break;
+    case QtCriticalMsg: typeStr = "CRIT"; break;
+    case QtFatalMsg:    typeStr = "FATAL"; break;
+    }
+
+    const QString formattedMsg = QString("[%1] [%2] %3\n").arg(timeStr, QString::fromLatin1(typeStr), msg);
+
+    // 1. Output live to stderr
+    std::cerr << formattedMsg.toUtf8().constData();
+    std::cerr.flush();
+
+    // 2. Output to log file if open with 2 MB safety cap
+    if (s_debugLogFile && s_debugLogFile->isOpen() && s_debugLogStream) {
+        if (s_debugLogFile->size() < 2 * 1024 * 1024) {
+            *s_debugLogStream << formattedMsg;
+            s_debugLogStream->flush();
+        }
+    }
+
+    if (type == QtFatalMsg) {
+        abort();
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -115,9 +162,40 @@ int main(int argc, char *argv[])
     );
     parser.addOption(screenshotOption);
 
+    QCommandLineOption debugOption(
+        QStringList() << "d" << "debug",
+        QCoreApplication::translate("main", "Enable verbose debug and diagnostic console output.")
+    );
+    parser.addOption(debugOption);
+
     parser.addPositionalArgument("file", QCoreApplication::translate("main", "File or folder to preview (optional)"));
 
     parser.process(app);
+
+    // Configure logging verbosity if debug mode was requested via CLI or saved settings
+    const bool debugMode = parser.isSet(debugOption) || settings.value("debug_mode", false).toBool();
+    if (debugMode) {
+        QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true\nqt.*.debug=false"));
+
+        // Setup log file in cache directory: ~/.cache/BubezView/bubezview.log
+        QString logDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+        if (logDir.isEmpty()) {
+            logDir = QDir::homePath() + "/.cache/BubezView";
+        }
+        QDir().mkpath(logDir);
+        const QString logFilePath = logDir + "/bubezview.log";
+
+        s_debugLogFile = std::make_unique<QFile>(logFilePath);
+        if (s_debugLogFile->open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+            s_debugLogStream = std::make_unique<QTextStream>(s_debugLogFile.get());
+        }
+
+        qInstallMessageHandler(bubezLogMessageHandler);
+        qDebug() << "[BubezView] Debug mode active. Live log streaming to console and:" << logFilePath;
+    }
+
+    // Discover and load modular plugins (.so)
+    PluginManager::instance().discoverPlugins();
 
     MainWindow window;
     window.setDaemonMode(parser.isSet(previewerOption));

@@ -18,6 +18,7 @@
 #include <QFileInfo>
 #include <QThread>
 #include <QDateTime>
+#include <QPointer>
 #include <atomic>
 
 /**
@@ -115,7 +116,9 @@ private:
  * Features fast hierarchical tree navigation, on-demand file previewing, directory extraction,
  * password decryption handling, integrity testing, and live name filtering.
  */
-class ArchiveViewer : public QWidget
+#include "core/interfaces/i_archive_viewer.h"
+
+class ArchiveViewer : public QWidget, public IArchiveViewer
 {
     Q_OBJECT
 
@@ -136,13 +139,16 @@ public:
     explicit ArchiveViewer(QWidget *parent = nullptr);
     ~ArchiveViewer() override;
 
+    QWidget *widget() override { return this; }
+
     /**
      * @brief Opens an archive and parses its directory asynchronously.
      * @param filePath Absolute path to the archive file.
      * @param passphrase Optional password to decrypt archive headers/content.
      * @return True if file exists and worker started; false otherwise.
      */
-    bool loadFile(const QString &filePath, const QString &passphrase = QString());
+    bool loadFile(const QString &filePath) override { return loadFile(filePath, QString()); }
+    bool loadFile(const QString &filePath, const QString &passphrase);
 
     /**
      * @brief Clears tree items, cancels active archive workers, and resets state.
@@ -152,13 +158,18 @@ public:
     /**
      * @brief Updates theme palette colors for the top toolbar and tree view.
      */
-    void updateTheme();
+    void updateTheme() override;
+
+    /**
+     * @brief Extracts all files from the current archive into a target destination.
+     */
+    void extractAll() override { extractAll(QString()); }
 
     /**
      * @brief Extracts all files from the current archive into a target destination.
      * @param destDir Destination folder path. If empty, a folder picker dialog is shown.
      */
-    void extractAll(const QString &destDir = QString());
+    void extractAll(const QString &destDir);
 
     /**
      * @brief Extracts currently selected items from the archive into a target destination.
@@ -169,17 +180,61 @@ public:
     /**
      * @brief Tests the CRC/checksum integrity of all entries in the current archive.
      */
-    void testArchiveIntegrity();
+    void testArchiveIntegrity() override;
 
-    int entryCount() const { return m_entryCount; }
-    qint64 totalUncompressedSize() const { return m_totalSize; }
+    /**
+     * @brief Prompts the user to select files and adds them into the currently open archive.
+     */
+    void addFilesToArchive() override;
+
+    /**
+     * @brief Prompts the user to select a folder and adds it recursively into the currently open archive.
+     */
+    void addFolderToArchive() override;
+
+    /**
+     * @brief Removes the currently selected items from the open archive.
+     */
+    void removeSelectedFromArchive() override;
+
+    /**
+     * @brief Creates a new compressed archive from the given list of source files and directories.
+     */
+    bool createArchive(const QStringList &sourcePaths,
+                       const QString &destArchivePath,
+                       const QString &format = QStringLiteral("zip"),
+                       const QString &passphrase = QString(),
+                       QWidget *parentWidget = nullptr) override;
+
+    /**
+     * @brief Opens the interactive Create / Compress Archive dialog (Case B).
+     */
+    QString openCreateArchiveDialog(const QString &currentFilePath,
+                                    const QString &currentFolderPath,
+                                    QWidget *parentWidget = nullptr,
+                                    bool *outSendWithLocalSend = nullptr,
+                                    bool *outOpenWhenDone = nullptr) override;
+
+    int entryCount() const override { return m_entryCount; }
+    qint64 totalUncompressedSize() const override { return m_totalSize; }
     QString currentArchiveFilePath() const { return m_currentArchiveFilePath; }
+
+    /**
+     * @brief Determines whether the current archive format is safe to modify in-place.
+     * @return True if format is writable (e.g. ZIP, TAR) and unencrypted 7z; false for read-only formats (RAR, ISO, DEB, RPM) or encrypted 7z.
+     */
+    bool isArchiveEditable() const;
+
+    /**
+     * @brief Cleans up temporary preview files extracted in cache directory.
+     */
+    void cleanupPreviewCache();
 
     /**
      * @brief Returns an ordered list of normalized relative paths for all previewable file entries.
      * @return List of file paths inside the archive.
      */
-    QStringList previewableEntries() const;
+    QStringList previewableEntries() const override;
 
     /**
      * @brief Extracts a single targeted file from the specified archive to a temporary path.
@@ -187,7 +242,14 @@ public:
      * @param internalName Normalized relative path inside the archive.
      * @return Path to extracted temporary file, or empty string on failure.
      */
-    QString extractSingleFile(const QString &archivePath, const QString &internalName);
+    QString extractSingleFile(const QString &archivePath, const QString &internalName) override;
+
+    /**
+     * @brief Requests an in-app file preview for the given extracted archive entry.
+     */
+    void requestFilePreview(const QString &extractedFilePath, const QString &archiveOriginPath, const QString &internalEntryPath = QString()) override {
+        emit filePreviewRequested(extractedFilePath, archiveOriginPath, internalEntryPath);
+    }
 
 signals:
     /**
@@ -221,17 +283,19 @@ private:
     QIcon createVectorIcon(IconType type) const;
     IconType detectIconType(const QString &fileName, bool isDir) const;
     void extractFiles(const QStringList &filterPaths, const QString &destDir);
+    bool modifyCurrentArchive(const QStringList &pathsToAdd, const QStringList &entriesToRemove);
 
     QWidget *m_topBar;
     QFrame *m_pillBadge;
     QLabel *m_pillText;
     QLabel *m_pillIcon;
     QLineEdit *m_searchEdit;
+    QPushButton *m_addBtn;
     QPushButton *m_extractBtn;
     QPushButton *m_testBtn;
     QTreeWidget *m_treeWidget;
 
-    ArchiveWorker *m_worker;
+    QPointer<ArchiveWorker> m_worker;
     QString m_currentArchiveFilePath;
     QString m_currentPassphrase;
     QList<ArchiveItemRecord> m_entries;

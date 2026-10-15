@@ -27,12 +27,11 @@ public:
      */
     enum PageId {
         Page_Welcome = 0,
-        Page_DesktopIntegration = 1,
-        Page_CpuOptimization = 2,
-        Page_Modules = 3,
-        Page_Appearance = 4,
-        Page_Behavior = 5,
-        Page_Summary = 6
+        Page_CpuOptimization = 1,
+        Page_Modules = 2,
+        Page_Appearance = 3,
+        Page_Behavior = 4,
+        Page_Summary = 5
     };
 
     /**
@@ -53,44 +52,43 @@ public:
 
 private:
     QWizardPage *createWelcomePage();
-    QWizardPage *createDesktopIntegrationPage();
     QWizardPage *createCpuOptimizationPage();
     QWizardPage *createModulesPage();
     QWizardPage *createAppearancePage();
     QWizardPage *createBehaviorPage();
     QWizardPage *createSummaryPage();
 
-    // Integration & Shortcut selections
-    QRadioButton *m_radioSpaceShortcut = nullptr;
-    QRadioButton *m_radioCtrlSpaceShortcut = nullptr;
-    QCheckBox *m_chkFileManagerMenu = nullptr;
-    QCheckBox *m_chkGlobalShortcut = nullptr;
-
     // CPU Performance Profile
     QRadioButton *m_radioCpuDesktop = nullptr;
-    QRadioButton *m_radioCpuLaptop = nullptr;
     QRadioButton *m_radioCpuBalanced = nullptr;
-    QPushButton *m_btnCpuCustomize = nullptr;
+    QLabel *m_lblCpuDetectedNotice = nullptr;
 
-    // Functional Modules
-    QRadioButton *m_radioModuleMinimal = nullptr;
-    QRadioButton *m_radioModuleRecommended = nullptr;
+    // Functional Modules & Engines
+    QRadioButton *m_radioModuleDefault = nullptr;
     QRadioButton *m_radioModuleEnginesOnly = nullptr;
     QRadioButton *m_radioModuleAll = nullptr;
     QRadioButton *m_radioModuleCustom = nullptr;
-    QPushButton *m_btnModuleCustomize = nullptr;
+    QPushButton *m_btnConfigureExtensions = nullptr;
+    QLabel *m_lblModulesHint = nullptr;
 
     // Appearance & UI
     QComboBox *m_comboTheme = nullptr;
     QCheckBox *m_chkFilmstrip = nullptr;
 
-    // Navigation & Behavior
-    QCheckBox *m_chkCloseOnSpaceOrEsc = nullptr;
+    // Navigation, Behavior & Shortcuts
+    QPushButton *m_btnTestShortcut = nullptr;
+    QLabel *m_lblTestResult = nullptr;
+    QCheckBox *m_chkUseCtrlSpace = nullptr;
+    QLabel *m_lblTriggerHelp = nullptr;
+    QCheckBox *m_chkCloseOnEsc = nullptr;
     QCheckBox *m_chkRememberGeometry = nullptr;
     QCheckBox *m_chkDesktopShortcut = nullptr;
+    QCheckBox *m_chkPreloadCache = nullptr;
+    QCheckBox *m_chkStandbyMode = nullptr;
 
     // Summary Page label
     QLabel *m_lblSummaryDetails = nullptr;
 
     void updateSummaryText();
+    void updateModuleOptionTexts();
 };

@@ -1,12 +1,13 @@
 /**
  * @file settings_performance_tab.cpp
- * @brief Implementation of the performance and compiler settings tab.
+ * @brief Implementation of the performance, hardware profiles, and compiler settings tab.
  */
 
 #include "settings_performance_tab.h"
 #include "build_config.h"
 #include "preload_cache_manager.h"
 #include "compiler_wizard_dialog.h"
+#include "fallback_notice_dialog.h"
 #include "cpu_info.h"
 
 #include <QVBoxLayout>
@@ -26,27 +27,123 @@ SettingsPerformanceTab::SettingsPerformanceTab(QWidget *parent)
 {
     BuildConfig &bcfg = BuildConfig::instance();
     bcfg.load();
-    m_initialOptLevel = bcfg.isO3() ? "O3" : "O2";
-    m_optLevel = m_initialOptLevel;
+    m_optLevel = bcfg.optimizationLevel();
+    if (m_optLevel.isEmpty()) {
+        m_optLevel = "O2";
+    }
+    m_initialOptLevel = m_optLevel;
+    m_initialCpuProfile = bcfg.cpuProfile();
     m_initialCustomFlags = bcfg.customCompilerFlags();
+
+    m_activeProfile = detectActiveProfile();
+    m_initialProfile = m_activeProfile;
 
     setupUi();
 }
 
-void SettingsPerformanceTab::applyOptSegmentedStyle(bool isO3)
+SettingsPerformanceTab::Profile SettingsPerformanceTab::detectActiveProfile() const
 {
-    if (!m_btnOptO2 || !m_btnOptO3) {
+    BuildConfig &bcfg = BuildConfig::instance();
+    BuildConfig::HardwareProfile hp = bcfg.activeHardwareProfile();
+    switch (hp) {
+    case BuildConfig::HardwareProfile::HighPerformance:
+        return Profile::Desktop;
+    case BuildConfig::HardwareProfile::Balanced:
+        return Profile::Balanced;
+    case BuildConfig::HardwareProfile::Custom:
+        return Profile::Custom;
+    }
+    return Profile::Balanced;
+}
+
+void SettingsPerformanceTab::updateProfileButtons(Profile active)
+{
+    m_activeProfile = active;
+
+    const QString activeStyle =
+        "QPushButton {"
+        "  background-color: #0284c7;"
+        "  color: #ffffff;"
+        "  font-weight: bold;"
+        "  border: 1px solid #0284c7;"
+        "  padding: 8px 12px;"
+        "  border-radius: 6px;"
+        "  font-size: 11px;"
+        "}";
+
+    const QString inactiveStyle =
+        "QPushButton {"
+        "  background-color: rgba(100, 116, 139, 0.08);"
+        "  color: #475569;"
+        "  font-weight: 500;"
+        "  border: 1px solid rgba(100, 116, 139, 0.2);"
+        "  padding: 8px 12px;"
+        "  border-radius: 6px;"
+        "  font-size: 11px;"
+        "}"
+        "QPushButton:hover {"
+        "  background-color: rgba(100, 116, 139, 0.16);"
+        "  color: #1e293b;"
+        "}";
+
+    if (m_btnProfileDesktop) m_btnProfileDesktop->setStyleSheet(active == Profile::Desktop ? activeStyle : inactiveStyle);
+    if (m_btnProfileBalanced) m_btnProfileBalanced->setStyleSheet(active == Profile::Balanced ? activeStyle : inactiveStyle);
+    if (m_btnProfileCustom) m_btnProfileCustom->setStyleSheet(active == Profile::Custom ? activeStyle : inactiveStyle);
+
+    if (m_lblProfileDesc) {
+        switch (active) {
+        case Profile::Desktop:
+            m_lblProfileDesc->setText(
+                tr("🚀 <b>High Performance (Fully Compiled from Source):</b> All engines and components "
+                   "(PDF, Archives, QPDF, OCR) compiled from source with extreme optimizations (-O3, -march=native, LTO, CRC32). "
+                   "Expanded 512 MB RAM cache for maximum responsiveness.")
+            );
+            break;
+        case Profile::Balanced:
+            m_lblProfileDesc->setText(
+                tr("📦 <b>Balanced (System Packages):</b> Uses precompiled distribution packages and shared libraries "
+                   "provided by your Linux distro. Zero compilation time, low CPU usage, and balanced memory footprint.")
+            );
+            break;
+        case Profile::Custom:
+            m_lblProfileDesc->setText(
+                tr("🧙 <b>Custom Configuration:</b> Microarchitecture CPU flags, instruction sets, and component build modes "
+                   "manually tuned via the Compiler Wizard.")
+            );
+            break;
+        }
+    }
+}
+
+void SettingsPerformanceTab::selectProfile(Profile profile)
+{
+    if (profile == Profile::Custom) {
+        openCompilerWizard();
         return;
     }
-    QString activeStyle = "QPushButton { background-color: #0284c7; color: white; font-weight: bold; border: 1px solid #0284c7; padding: 5px 14px; border-radius: 4px; font-size: 11px; }";
-    QString inactiveStyle = "QPushButton { background-color: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); padding: 5px 14px; border-radius: 4px; font-size: 11px; } QPushButton:hover { background-color: rgba(100, 116, 139, 0.25); color: #334155; }";
-    if (isO3) {
-        m_btnOptO2->setStyleSheet(inactiveStyle);
-        m_btnOptO3->setStyleSheet(activeStyle);
-    } else {
-        m_btnOptO2->setStyleSheet(activeStyle);
-        m_btnOptO3->setStyleSheet(inactiveStyle);
+
+    BuildConfig &bcfg = BuildConfig::instance();
+
+    switch (profile) {
+    case Profile::Desktop:
+        bcfg.applyHardwareProfile(BuildConfig::HardwareProfile::HighPerformance);
+        break;
+    case Profile::Balanced:
+        bcfg.applyHardwareProfile(BuildConfig::HardwareProfile::Balanced);
+        break;
+    default:
+        break;
     }
+
+    // Refresh preload checkbox to reflect profile cache settings
+    if (m_chkEnablePreload) {
+        QSettings settings("Bubez", "BubezView");
+        int curDist = settings.value("prefetch_distance", 1).toInt();
+        m_chkEnablePreload->setChecked(curDist > 0);
+    }
+
+    updateProfileButtons(profile);
+    emit pendingStateChanged();
 }
 
 void SettingsPerformanceTab::setupUi()
@@ -65,85 +162,51 @@ void SettingsPerformanceTab::setupUi()
     layout->setSpacing(14);
     layout->setContentsMargins(14, 14, 14, 14);
 
-    // 1. Compiler Optimization Level (-O2 vs -O3)
-    QGroupBox *grpCompiler = new QGroupBox(tr("Compiler Optimization && CPU Tuning"), content);
+    // 1. Hardware Performance Profile Group
+    QGroupBox *grpCompiler = new QGroupBox(tr("Hardware Performance Profile && CPU Tuning"), content);
     QVBoxLayout *layComp = new QVBoxLayout(grpCompiler);
-    layComp->setSpacing(8);
+    layComp->setSpacing(10);
     layComp->setContentsMargins(12, 10, 12, 12);
 
     QFrame *frameComp = new QFrame(grpCompiler);
-    frameComp->setStyleSheet("QFrame { background-color: rgba(100, 116, 139, 0.06); border: 1px solid rgba(100, 116, 139, 0.15); border-radius: 6px; }");
+    frameComp->setStyleSheet("QFrame { background-color: rgba(100, 116, 139, 0.05); border: 1px solid rgba(100, 116, 139, 0.15); border-radius: 8px; }");
     QVBoxLayout *layFrame = new QVBoxLayout(frameComp);
-    layFrame->setContentsMargins(10, 8, 10, 8);
-    layFrame->setSpacing(8);
+    layFrame->setContentsMargins(12, 12, 12, 12);
+    layFrame->setSpacing(10);
 
-    QHBoxLayout *rowOpt = new QHBoxLayout();
-    QLabel *lblOpt = new QLabel(tr("Optimization Profile:"), frameComp);
-    lblOpt->setStyleSheet("font-weight: bold;");
+    QHBoxLayout *rowButtons = new QHBoxLayout();
+    rowButtons->setSpacing(8);
 
-    m_btnOptO2 = new QPushButton(tr("🛡️ -O2 (Balanced)"), frameComp);
-    m_btnOptO2->setCursor(Qt::PointingHandCursor);
-    m_btnOptO3 = new QPushButton(tr("🚀 -O3 (Aggressive)"), frameComp);
-    m_btnOptO3->setCursor(Qt::PointingHandCursor);
-
-    applyOptSegmentedStyle(m_optLevel == "O3");
-
-    connect(m_btnOptO2, &QPushButton::clicked, this, [this]() {
-        m_optLevel = "O2";
-        applyOptSegmentedStyle(false);
-        emit pendingStateChanged();
-    });
-    connect(m_btnOptO3, &QPushButton::clicked, this, [this]() {
-        m_optLevel = "O3";
-        applyOptSegmentedStyle(true);
-        emit pendingStateChanged();
+    m_btnProfileDesktop = new QPushButton(tr("🚀 High Performance (Compiled)"), frameComp);
+    m_btnProfileDesktop->setCursor(Qt::PointingHandCursor);
+    m_btnProfileDesktop->setToolTip(tr("All engines compiled from source with extreme optimization and 512 MB expanded RAM cache."));
+    connect(m_btnProfileDesktop, &QPushButton::clicked, this, [this]() {
+        selectProfile(Profile::Desktop);
     });
 
-    QPushButton *btnOptInfo = new QPushButton("i", frameComp);
-    btnOptInfo->setFixedSize(24, 24);
-    btnOptInfo->setCursor(Qt::PointingHandCursor);
-    btnOptInfo->setToolTip(tr("Detailed information about -O2 vs -O3 optimization"));
-    btnOptInfo->setStyleSheet("QPushButton { font-weight: bold; border-radius: 12px; background-color: rgba(100, 116, 139, 0.15); color: #475569; } QPushButton:hover { background-color: #0284c7; color: white; }");
-    connect(btnOptInfo, &QPushButton::clicked, this, [this]() {
-        QMessageBox::information(this, tr("Compiler Optimization: -O2 vs -O3"),
-            tr("<h3>Compiler Optimization Comparison</h3>"
-               "<p><b>🛡️ -O2 (Balanced & Recommended for Laptops):</b><br>"
-               "• <b>Best for:</b> Laptops, low-power CPUs, battery operation, and daily use.<br>"
-               "• <b>Energy efficiency:</b> Minimizes power draw and lets the CPU quickly return to low-power sleep states.<br>"
-               "• <b>Prevents Overheating:</b> Avoids thermal throttling and eliminates loud laptop cooling fan noise.<br>"
-               "• <b>Snappy UI & Fast Startup:</b> Generates compact code that easily fits in the CPU's ultra-fast L1 instruction cache, resulting in instant cold launch and lightning-fast navigation for light files.</p>"
-               "<p><b>🚀 -O3 (Aggressive / High-Performance Desktop & Large Files):</b><br>"
-               "• <b>Best for:</b> Powerful desktop workstations, gaming PCs with robust cooling, and heavy data workflows.<br>"
-               "• <b>Heavy Compute & Vectorization:</b> Aggressively vectorizes loops and uses wide SIMD/AVX2 instruction sets.<br>"
-               "• <b>Ideal for Large Files:</b> Drastically speeds up rendering of complex multi-page vector PDFs (CAD/architectural drawings), huge RAW/TIFF photos, and heavy spreadsheets.<br>"
-               "• <i>Note:</i> On thin laptops, -O3 can trigger thermal throttling, which paradoxically slows down the processor.</p>"));
+    m_btnProfileBalanced = new QPushButton(tr("📦 Balanced (Packages)"), frameComp);
+    m_btnProfileBalanced->setCursor(Qt::PointingHandCursor);
+    m_btnProfileBalanced->setToolTip(tr("All components based on precompiled system packages with zero build waiting time."));
+    connect(m_btnProfileBalanced, &QPushButton::clicked, this, [this]() {
+        selectProfile(Profile::Balanced);
     });
 
-    rowOpt->addWidget(lblOpt);
-    rowOpt->addSpacing(8);
-    rowOpt->addWidget(m_btnOptO2);
-    rowOpt->addWidget(m_btnOptO3);
-    rowOpt->addWidget(btnOptInfo);
-    rowOpt->addStretch();
-    layFrame->addLayout(rowOpt);
+    m_btnProfileCustom = new QPushButton(tr("🧙 Custom..."), frameComp);
+    m_btnProfileCustom->setCursor(Qt::PointingHandCursor);
+    m_btnProfileCustom->setToolTip(tr("Custom configuration: opens the Compiler Wizard to choose fine-grained options."));
+    connect(m_btnProfileCustom, &QPushButton::clicked, this, [this]() {
+        selectProfile(Profile::Custom);
+    });
 
-    QHBoxLayout *rowWizard = new QHBoxLayout();
-    QVBoxLayout *colWizDesc = new QVBoxLayout();
-    colWizDesc->setSpacing(2);
-    QLabel *lblWizTitle = new QLabel(tr("<b>Fine-Grained CPU Instructions & Flags:</b>"), frameComp);
-    QLabel *lblWizDesc = new QLabel(tr("Customize vector instruction sets (v3/v4), LTO, and hardware tuning."), frameComp);
-    lblWizDesc->setStyleSheet("color: #64748b; font-size: 11px;");
-    colWizDesc->addWidget(lblWizTitle);
-    colWizDesc->addWidget(lblWizDesc);
-    rowWizard->addLayout(colWizDesc, 1);
+    rowButtons->addWidget(m_btnProfileDesktop);
+    rowButtons->addWidget(m_btnProfileBalanced);
+    rowButtons->addWidget(m_btnProfileCustom);
+    layFrame->addLayout(rowButtons);
 
-    QPushButton *btnWizard = new QPushButton(tr("🧙 Compiler Wizard..."), frameComp);
-    btnWizard->setCursor(Qt::PointingHandCursor);
-    btnWizard->setStyleSheet("QPushButton { background-color: rgba(2, 132, 199, 0.1); border: 1px solid rgba(2, 132, 199, 0.35); color: #0284c7; font-weight: bold; padding: 5px 12px; border-radius: 4px; font-size: 11px; } QPushButton:hover { background-color: #0284c7; color: white; }");
-    btnWizard->setToolTip(tr("Open interactive wizard to configure fine-grained CPU instructions, v3/v4 tiers, and vectorization flags"));
-    connect(btnWizard, &QPushButton::clicked, this, &SettingsPerformanceTab::openCompilerWizard);
-    rowWizard->addWidget(btnWizard);
-    layFrame->addLayout(rowWizard);
+    m_lblProfileDesc = new QLabel(frameComp);
+    m_lblProfileDesc->setWordWrap(true);
+    m_lblProfileDesc->setStyleSheet("color: #475569; font-size: 11px; padding: 4px 2px;");
+    layFrame->addWidget(m_lblProfileDesc);
 
     layComp->addWidget(frameComp);
 
@@ -152,6 +215,8 @@ void SettingsPerformanceTab::setupUi()
     layComp->addWidget(lblOptHint);
 
     layout->addWidget(grpCompiler);
+
+    updateProfileButtons(m_activeProfile);
 
     // 2. Adjacent File Pre-caching (The Preload Trick)
     QGroupBox *grpPreload = new QGroupBox(tr("Adjacent File Pre-caching (Instant Next/Prev)"), content);
@@ -268,6 +333,33 @@ void SettingsPerformanceTab::setupUi()
     layStandby->addWidget(lblStandbyHint);
 
     layout->addWidget(grpStandby);
+
+    // 4. Performance Notices Management
+    QGroupBox *grpNotices = new QGroupBox(tr("Optimization Alerts"), content);
+    QVBoxLayout *layNotices = new QVBoxLayout(grpNotices);
+    layNotices->setSpacing(8);
+    layNotices->setContentsMargins(12, 10, 12, 12);
+
+    QLabel *lblNoticesDesc = new QLabel(
+        tr("When using the High-Performance profile, BubezView alerts you if an individual tool (like OCR or PDF repair) is running via an unoptimized system package rather than a custom-compiled source binary."),
+        grpNotices
+    );
+    lblNoticesDesc->setStyleSheet("color: #64748b; font-size: 11px;");
+    lblNoticesDesc->setWordWrap(true);
+    layNotices->addWidget(lblNoticesDesc);
+
+    QPushButton *btnResetNotices = new QPushButton(tr("Reset All Optimization Alerts"), grpNotices);
+    btnResetNotices->setCursor(Qt::PointingHandCursor);
+    connect(btnResetNotices, &QPushButton::clicked, this, [this]() {
+        const QStringList components = {"tesseract", "qpdf", "pdfimages", "engine-poppler", "engine-libarchive"};
+        for (const QString &c : components) {
+            FallbackNoticeDialog::setNoticeSuppressed(c, false);
+        }
+        QMessageBox::information(this, tr("Alerts Reset"), tr("All performance optimization alerts have been re-enabled."));
+    });
+    layNotices->addWidget(btnResetNotices, 0, Qt::AlignLeft);
+
+    layout->addWidget(grpNotices);
     layout->addStretch();
 
     scrollArea->setWidget(content);
@@ -277,41 +369,55 @@ void SettingsPerformanceTab::setupUi()
 void SettingsPerformanceTab::openCompilerWizard()
 {
     if (!CpuInfo::isV3OrHigher()) {
-        QMessageBox::information(this, tr("Compiler Wizard - CPU Not Supported"),
+        QMessageBox::information(this, tr("Compiler Wizard — CPU Architecture"),
             tr("<h3>Feature Not Supported for this CPU</h3>"
-               "<p>The <b>Compiler Wizard</b> requires a modern 64-bit processor supporting at least the <b>x86-64-v3</b> microarchitecture tier (AVX2, FMA, BMI2) or higher.</p>"
+               "<p>The <b>Compiler Wizard</b> requires a 64-bit processor supporting at least the <b>x86-64-v3</b> microarchitecture tier (AVX2, FMA, BMI2) or higher.</p>"
                "<p>Your current CPU tier: <b>x86-64-%1</b><br>"
                "Hardware Model: <i>%2</i></p>"
-               "<p>On older processors, fine-grained vector tuning can cause illegal instruction faults or performance regressions. Universal standard compilation (-O2) is used instead.</p>")
+               "<p>On older processors, fine-grained vector tuning can cause illegal instruction faults. Universal standard compilation (-O2) is used instead.</p>")
                .arg(CpuInfo::microarchitectureTier().toUpper(), CpuInfo::modelName()));
         return;
     }
 
     CompilerWizardDialog dlg(this);
     connect(&dlg, &CompilerWizardDialog::configurationSaved, this, [this]() {
+        m_activeProfile = detectActiveProfile();
+        updateProfileButtons(m_activeProfile);
         emit pendingStateChanged();
     });
-    connect(&dlg, &CompilerWizardDialog::recompileRequested, this, &SettingsPerformanceTab::recompileRequested);
+    connect(&dlg, &CompilerWizardDialog::recompileRequested, this, [this](const QString &target) {
+        emit recompileRequested(target);
+    });
+    connect(&dlg, &CompilerWizardDialog::openExtensionsTabRequested, this, &SettingsPerformanceTab::openExtensionsTabRequested);
+
     dlg.exec();
 }
 
 bool SettingsPerformanceTab::hasPendingChanges() const
 {
-    bool optChanged = (m_optLevel != m_initialOptLevel);
+    bool profileChanged = (m_activeProfile != m_initialProfile);
     bool flagsChanged = (BuildConfig::instance().customCompilerFlags() != m_initialCustomFlags);
-    return optChanged || flagsChanged;
+    bool cpuChanged = (BuildConfig::instance().cpuProfile() != m_initialCpuProfile);
+    bool optChanged = (BuildConfig::instance().optimizationLevel() != m_initialOptLevel);
+    return profileChanged || flagsChanged || cpuChanged || optChanged;
 }
 
 void SettingsPerformanceTab::revertPendingChanges()
 {
-    m_optLevel = m_initialOptLevel;
-    applyOptSegmentedStyle(m_optLevel == "O3");
-    BuildConfig::instance().setCustomCompilerFlags(m_initialCustomFlags);
-    BuildConfig::instance().save();
+    m_activeProfile = m_initialProfile;
+    updateProfileButtons(m_activeProfile);
+
+    BuildConfig &bcfg = BuildConfig::instance();
+    bcfg.setCpuProfile(m_initialCpuProfile);
+    bcfg.setOptimizationLevel(m_initialOptLevel);
+    bcfg.setCustomCompilerFlags(m_initialCustomFlags);
+    bcfg.save();
 }
 
 void SettingsPerformanceTab::onBuildSucceeded()
 {
-    m_initialOptLevel = m_optLevel;
+    m_initialProfile = m_activeProfile;
+    m_initialOptLevel = BuildConfig::instance().optimizationLevel();
+    m_initialCpuProfile = BuildConfig::instance().cpuProfile();
     m_initialCustomFlags = BuildConfig::instance().customCompilerFlags();
 }

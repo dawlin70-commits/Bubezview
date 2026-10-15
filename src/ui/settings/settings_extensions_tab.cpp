@@ -27,8 +27,7 @@ void SettingsExtensionsTab::setupUi()
     layout->setContentsMargins(14, 12, 14, 12);
 
     QLabel *lblHeader = new QLabel(
-        tr("<b>Modular Functional Engines & Extensions</b><br>"
-           "<span style='color: #64748b; font-size: 11px;'>Instant one-click installation, package updates, integrity verification, and custom source builds.</span>"),
+        tr("<b>Plugins & Extensions</b>"),
         this
     );
     lblHeader->setWordWrap(true);
@@ -69,10 +68,38 @@ void SettingsExtensionsTab::setupUi()
     );
 
     m_catTabs->addTab(createCategoryPage("All"), tr("All"));
-    m_catTabs->addTab(createCategoryPage("PDF"), tr("Document Engines"));
-    m_catTabs->addTab(createCategoryPage("Media"), tr("Audio && Media"));
-    m_catTabs->addTab(createCategoryPage("Archive"), tr("Archiving"));
-    m_catTabs->addTab(createCategoryPage("Office"), tr("Office"));
+
+    // Lazy load specific category pages only when clicked by user
+    QWidget *dummyPdf = new QWidget();
+    dummyPdf->setProperty("catFilter", "PDF");
+    m_catTabs->addTab(dummyPdf, tr("PDF"));
+
+    QWidget *dummyArchive = new QWidget();
+    dummyArchive->setProperty("catFilter", "Archive");
+    m_catTabs->addTab(dummyArchive, tr("Archives"));
+
+    QWidget *dummyMedia = new QWidget();
+    dummyMedia->setProperty("catFilter", "Media");
+    m_catTabs->addTab(dummyMedia, tr("Audio & Video"));
+
+    QWidget *dummyOffice = new QWidget();
+    dummyOffice->setProperty("catFilter", "Office");
+    m_catTabs->addTab(dummyOffice, tr("Office"));
+
+    connect(m_catTabs, &QTabWidget::currentChanged, this, [this](int index) {
+        if (index > 0) {
+            QWidget *w = m_catTabs->widget(index);
+            if (w && w->property("catFilter").isValid()) {
+                QString filter = w->property("catFilter").toString();
+                QString title = m_catTabs->tabText(index);
+                QWidget *realPage = createCategoryPage(filter);
+                m_catTabs->removeTab(index);
+                m_catTabs->insertTab(index, realPage, title);
+                m_catTabs->setCurrentIndex(index);
+                w->deleteLater();
+            }
+        }
+    });
 
     layout->addWidget(m_catTabs, 1);
 }
@@ -107,10 +134,10 @@ QWidget *SettingsExtensionsTab::createCategoryPage(const QString &catFilter)
             lLine->setStyleSheet("color: rgba(100, 116, 139, 0.25);");
 
             QString catTitle = lastCategory;
-            if (catTitle == "PDF") catTitle = tr("Document & PDF Engines");
-            else if (catTitle == "Archive") catTitle = tr("Archiving & Compression Codecs");
-            else if (catTitle == "Office") catTitle = tr("Office & Document Parsers");
-            else if (catTitle == "Media") catTitle = tr("Audio & Multimedia Framework");
+            if (catTitle == "PDF") catTitle = tr("PDF");
+            else if (catTitle == "Archive") catTitle = tr("Archives");
+            else if (catTitle == "Office") catTitle = tr("Office Documents");
+            else if (catTitle == "Media") catTitle = tr("Audio & Video");
 
             QLabel *lblCat = new QLabel(QString("— %1 —").arg(catTitle), sepFrame);
             lblCat->setStyleSheet("font-size: 11px; font-weight: bold; color: #64748b;");
@@ -128,6 +155,7 @@ QWidget *SettingsExtensionsTab::createCategoryPage(const QString &catFilter)
 
         ExtensionRowWidget *row = new ExtensionRowWidget(m, page);
         connect(row, &ExtensionRowWidget::statusChanged, this, [this]() {
+            refreshAllRows();
             emit pendingStateChanged();
         });
         pageLay->addWidget(row);
@@ -144,4 +172,12 @@ QWidget *SettingsExtensionsTab::createCategoryPage(const QString &catFilter)
     scrollArea->setWidget(page);
 
     return scrollArea;
+}
+
+void SettingsExtensionsTab::refreshAllRows()
+{
+    const auto rows = findChildren<ExtensionRowWidget*>();
+    for (ExtensionRowWidget *row : rows) {
+        row->refreshState();
+    }
 }

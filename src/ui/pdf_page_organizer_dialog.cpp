@@ -5,6 +5,8 @@
 
 #include "pdf_page_organizer_dialog.h"
 #include "package_manager_helper.h"
+#include "build_config.h"
+#include "fallback_notice_dialog.h"
 #include <poppler/qt6/poppler-qt6.h>
 
 #include <QVBoxLayout>
@@ -449,7 +451,7 @@ bool PdfPageOrganizerDialog::executeQpdfReorder(const QString &destinationPath)
         return false;
     }
 
-    QString qpdfExe = QStandardPaths::findExecutable("qpdf");
+    QString qpdfExe = BuildConfig::qpdfExecutable();
     if (qpdfExe.isEmpty()) {
         QMessageBox::StandardButton ask = QMessageBox::question(
             this,
@@ -459,10 +461,13 @@ bool PdfPageOrganizerDialog::executeQpdfReorder(const QString &destinationPath)
         );
         if (ask == QMessageBox::Yes) {
             if (PackageManagerHelper::installComponentInteractive("qpdf", this)) {
-                qpdfExe = QStandardPaths::findExecutable("qpdf");
+                qpdfExe = BuildConfig::qpdfExecutable();
             }
         }
         if (qpdfExe.isEmpty()) return false;
+    } else {
+        FallbackNoticeDialog::checkAndPrompt("qpdf", tr("QPDF Engine"), qpdfExe, this);
+        qpdfExe = BuildConfig::qpdfExecutable();
     }
 
     // Build page range specification
@@ -503,7 +508,7 @@ bool PdfPageOrganizerDialog::executeQpdfReorder(const QString &destinationPath)
     int exitCode = proc.exitCode();
     QString stdErr = QString::fromUtf8(proc.readAllStandardError()).trimmed();
 
-    if (exitCode == 0 && QFile::exists(destinationPath) && QFileInfo(destinationPath).size() > 0) {
+    if ((exitCode == 0 || exitCode == 3) && QFile::exists(destinationPath) && QFileInfo(destinationPath).size() > 0) {
         return true;
     }
 

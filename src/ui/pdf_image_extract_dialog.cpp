@@ -1,4 +1,6 @@
 #include "pdf_image_extract_dialog.h"
+#include "build_config.h"
+#include "fallback_notice_dialog.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -137,11 +139,14 @@ int PdfImageExtractDialog::loadImages()
         return -1;
     }
 
-    // Verify poppler-utils pdfimages command availability
-    QString pdfimagesExe = QStandardPaths::findExecutable("pdfimages");
+    // Verify pdfimages command availability (prioritizes locally built binary)
+    QString pdfimagesExe = BuildConfig::pdfimagesExecutable();
     if (pdfimagesExe.isEmpty()) {
         return -2; // Indicates poppler-utils package missing
     }
+
+    FallbackNoticeDialog::checkAndPrompt("pdfimages", tr("Poppler Image Extractor (pdfimages)"), pdfimagesExe, this);
+    pdfimagesExe = BuildConfig::pdfimagesExecutable();
 
     m_tempDir = std::make_unique<QTemporaryDir>();
     if (!m_tempDir->isValid()) {

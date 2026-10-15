@@ -68,7 +68,8 @@ void SettingsDialog::setupUi()
 
     m_performanceTab = new SettingsPerformanceTab(this);
     connect(m_performanceTab, &SettingsPerformanceTab::pendingStateChanged, this, &SettingsDialog::updatePendingBanner);
-    connect(m_performanceTab, &SettingsPerformanceTab::recompileRequested, this, &SettingsDialog::startRecompilation);
+    connect(m_performanceTab, &SettingsPerformanceTab::recompileRequested, this, [this](const QString &t) { startRecompilation(t); });
+    connect(m_performanceTab, &SettingsPerformanceTab::openExtensionsTabRequested, this, [this]() { setCurrentTab(TabIndex::Extensions); });
     m_tabWidget->addTab(m_performanceTab, tr("Performance"));
 
     m_extensionsTab = new SettingsExtensionsTab(this);
@@ -78,7 +79,8 @@ void SettingsDialog::setupUi()
     m_extraTab = new SettingsExtraTab(this);
     connect(m_extraTab, &SettingsExtraTab::themeChanged, this, &SettingsDialog::themeChanged);
     connect(m_extraTab, &SettingsExtraTab::setupWizardCompleted, this, &SettingsDialog::refreshStatuses);
-    m_tabWidget->addTab(m_extraTab, tr("General"));
+    connect(m_extraTab, &SettingsExtraTab::recompileRequested, this, [this](const QString &t) { startRecompilation(t); });
+    m_tabWidget->addTab(m_extraTab, tr("Diagnostics && Maintenance"));
 
     mainLayout->addWidget(m_tabWidget);
 
@@ -112,7 +114,7 @@ void SettingsDialog::setupUi()
         "QPushButton { background-color: #0284c7; color: white; font-weight: bold; padding: 5px 14px; border-radius: 4px; font-size: 11px; } "
         "QPushButton:hover { background-color: #0369a1; }"
     );
-    connect(m_btnBannerRecompile, &QPushButton::clicked, this, &SettingsDialog::startRecompilation);
+    connect(m_btnBannerRecompile, &QPushButton::clicked, this, [this]() { startRecompilation(); });
     layBanner->addWidget(m_btnBannerRecompile);
 
     m_bannerPending->hide();
@@ -178,6 +180,11 @@ void SettingsDialog::onRevertPendingClicked()
 
 void SettingsDialog::startRecompilation()
 {
+    startRecompilation(QString());
+}
+
+void SettingsDialog::startRecompilation(const QString &target)
+{
     // 1. Check optional dependency prompt for librevenge if enabled
     BuildConfig &cfg = BuildConfig::instance();
     if (cfg.enableInternalOffice() && !BuildConfig::isPkgInstalled("librevenge-0.0")) {
@@ -189,8 +196,8 @@ void SettingsDialog::startRecompilation()
         }
     }
 
-    // 2. Persist updated compiler optimization level to disk
-    if (m_performanceTab) {
+    // 2. Persist updated compiler optimization level to disk (if not targeting a specific debug rebuild)
+    if (m_performanceTab && target.isEmpty()) {
         cfg.setOptimizationLevel(m_performanceTab->optimizationLevel());
     }
     cfg.save();
@@ -214,5 +221,9 @@ void SettingsDialog::startRecompilation()
     m_buildConsoleDialog->show();
     m_buildConsoleDialog->raise();
     m_buildConsoleDialog->activateWindow();
-    m_buildConsoleDialog->startBuild();
+    if (!target.isEmpty()) {
+        m_buildConsoleDialog->startBuildTarget(target);
+    } else {
+        m_buildConsoleDialog->startBuild();
+    }
 }

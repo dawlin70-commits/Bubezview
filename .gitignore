@@ -42,5 +42,10 @@ scorciatoie.txt
 *.tmp
 *.swp
 *~
+*.tar.gz
+*.zip
+*.7z
+otimizzazioneplugin.txt
+PROFILI_HARDWARE_SCHEDULER.md
 .vscode/
 .idea/

@@ -2,11 +2,11 @@
 #include "theme_manager.h"
 #include "image_viewer.h"
 #include "text_viewer.h"
-#include "pdf_viewer.h"
-#include "archive_viewer.h"
+#include "core/interfaces/i_pdf_viewer.h"
+#include "core/interfaces/i_archive_viewer.h"
 #include "office_viewer.h"
 #include "folder_viewer.h"
-#include "media_viewer.h"
+#include "core/interfaces/i_media_viewer.h"
 #include "share_dialog.h"
 #include "share_manager.h"
 #include "app_launcher.h"
@@ -16,6 +16,7 @@
 #include "build_config.h"
 #include "package_manager_helper.h"
 #include "filmstrip_widget.h"
+#include "settings_dialog.h"
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QDir>
@@ -63,6 +64,10 @@ MainWindow::MainWindow(QWidget *parent)
     , m_actFolderRename(nullptr)
     , m_actFolderTrash(nullptr)
     , m_actFolderNew(nullptr)
+    , m_actCreateArchive(nullptr)
+    , m_actArchiveAddFiles(nullptr)
+    , m_actArchiveAddFolder(nullptr)
+    , m_actArchiveRemoveSelected(nullptr)
     , m_actToggleTextEdit(nullptr)
     , m_actLineNumbers(nullptr)
     , m_actSyntaxHighlight(nullptr)
@@ -88,7 +93,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_actZoomTool(nullptr)
     , m_actSlideshow(nullptr)
     , m_actFilmstrip(nullptr)
-    , m_actPdfToolsHub(nullptr)
     , m_actPdfHighlighter(nullptr)
     , m_actPdfTypewriter(nullptr)
     , m_actPdfSignature(nullptr)
@@ -130,18 +134,43 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setupUi();
     setupUpdateBanner();
+    setupDebugBanner();
     setupUpdateChecker();
 
-    connect(m_pdfViewer, &PdfViewer::pageChanged, this, [this](int, int) {
-        updateStatusBar();
-        updateContextualMenuStates();
-    });
-    connect(m_pdfViewer, &PdfViewer::selectionChanged, this, &MainWindow::updateContextualMenuStates);
-    connect(m_pdfViewer, &PdfViewer::documentModified, this, &MainWindow::updateContextualMenuStates);
-    connect(m_pdfViewer, &PdfViewer::historyChanged, this, &MainWindow::updateContextualMenuStates);
-    connect(m_archiveViewer, &ArchiveViewer::archiveLoaded, this, [this](const QString&, int, qint64) {
-        updateStatusBar();
-    });
+    if (m_pdfViewer) {
+        m_pdfViewer->setOnPageChanged([this](int, int) {
+            updateStatusBar();
+            updateContextualMenuStates();
+        });
+        m_pdfViewer->setOnZoomChanged([this](double) {
+            updateStatusBar();
+        });
+        m_pdfViewer->setOnSelectionChanged([this]() {
+            updateContextualMenuStates();
+        });
+        m_pdfViewer->setOnDocumentModified([this](bool) {
+            updateContextualMenuStates();
+        });
+        m_pdfViewer->setOnHistoryChanged([this]() {
+            updateContextualMenuStates();
+        });
+        m_pdfViewer->setOnFileOrganized([this](const QString &newPath) {
+            openFile(newPath);
+        });
+    }
+
+    if (m_imageViewer) {
+        connect(m_imageViewer, &ImageViewer::zoomChanged, this, [this](double) {
+            updateStatusBar();
+        });
+        connect(m_imageViewer, &ImageViewer::nextFileRequested, this, &BaseSkin::nextFile);
+        connect(m_imageViewer, &ImageViewer::prevFileRequested, this, &BaseSkin::prevFile);
+    }
+    if (m_archiveViewer) {
+        m_archiveViewer->setOnArchiveLoaded([this](const QString&, int, qint64) {
+            updateStatusBar();
+        });
+    }
     connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString&, int, qint64) {
         updateStatusBar();
     });
@@ -180,8 +209,10 @@ MainWindow::MainWindow(QWidget *parent)
         connect(m_flippableToolbar, &FlippableToolbar::annotationModeExited, this, [this]() {
             if (m_pdfViewer) m_pdfViewer->exitContinuousToolMode();
         });
-        if (m_pdfViewer && m_pdfViewer->pageWidget()) {
-            connect(m_pdfViewer->pageWidget(), &PdfPageWidget::continuousModeExited, m_flippableToolbar, &FlippableToolbar::flipToMain);
+        if (m_pdfViewer) {
+            m_pdfViewer->setOnContinuousModeExited([this]() {
+                if (m_flippableToolbar) m_flippableToolbar->flipToMain();
+            });
         }
     }
 }
@@ -218,6 +249,9 @@ void MainWindow::setupUi()
 
     m_actSaveAs = m_menuFile->addAction(QIcon::fromTheme("document-save-as"), tr("Save Copy As..."), this, &BaseSkin::saveAsCurrentFile);
     m_actSaveAs->setShortcut(QKeySequence("Ctrl+Shift+S"));
+
+    m_actCreateArchive = m_menuFile->addAction(QIcon::fromTheme("package-x-generic"), tr("Compress / Create Archive..."), this, &BaseSkin::openCreateArchiveDialog);
+    m_actCreateArchive->setShortcut(QKeySequence("Ctrl+Alt+C"));
 
     m_actTrashFile = m_menuFile->addAction(QIcon::fromTheme("user-trash"), tr("Move to Trash"), this, &BaseSkin::deleteCurrentFile);
     m_actTrashFile->setShortcut(QKeySequence::Delete);
@@ -309,6 +343,11 @@ void MainWindow::setupUi()
     m_actFolderNew = m_menuEdit->addAction(QIcon::fromTheme("folder-new"), tr("New Folder..."), this, &BaseSkin::createFolderInCurrentFolder);
     m_actFolderNew->setShortcut(QKeySequence("F7"));
 
+    // Archive modification actions (visible in Edit menu only when viewing an Archive)
+    m_actArchiveAddFiles = m_menuEdit->addAction(QIcon::fromTheme("list-add"), tr("Add Files to Archive..."), this, &BaseSkin::addFilesToCurrentArchive);
+    m_actArchiveAddFolder = m_menuEdit->addAction(QIcon::fromTheme("folder-new"), tr("Add Folder to Archive..."), this, &BaseSkin::addFolderToCurrentArchive);
+    m_actArchiveRemoveSelected = m_menuEdit->addAction(QIcon::fromTheme("edit-delete"), tr("Remove Selected from Archive"), this, &BaseSkin::removeSelectedFromCurrentArchive);
+
     m_menuEdit->addSeparator();
 
     // Text File Edit Mode
@@ -343,18 +382,24 @@ void MainWindow::setupUi()
 
     m_menuEdit->addSeparator();
 
-    // 1. PDF Markup & Tools Hub (multi-tab: Highlighter, Shapes, Redaction, Watermark, Image, Signature)
-    m_actPdfToolsHub = m_menuEdit->addAction(QIcon::fromTheme("document-edit"), tr("PDF Markup & Tools Hub..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openToolsDialog(0);
+    // 1. Select Area (draw rectangular selection on canvas)
+    m_actPdfSelectArea = m_menuEdit->addAction(QIcon::fromTheme("edit-select"), tr("Select Area..."), this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->startSelectArea();
     });
-    m_actPdfToolsHub->setShortcut(QKeySequence("Ctrl+Shift+M"));
+    m_actPdfSelectArea->setShortcut(QKeySequence("Ctrl+Shift+A"));
+    addAction(m_actPdfSelectArea);
 
-    // 2. Typewriter / Text insertion
+    // 2. Insert Image directly into PDF
+    m_actPdfInsertImage = m_menuEdit->addAction(QIcon::fromTheme("insert-image"), tr("Insert Image..."), this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openInsertImageDialog();
+    });
+
+    // 3. Typewriter / Text insertion
     m_actPdfTypewriter = m_menuEdit->addAction(QIcon::fromTheme("insert-text"), tr("Typewriter / Text Insert..."), this, [this]() {
         if (m_pdfViewer) m_pdfViewer->openTypewriterDialog();
     });
 
-    // 3. Submenu: Direct shortcuts to individual markup tools
+    // 4. Submenu: Direct shortcuts to individual markup tools
     m_menuPdfMarkup = m_menuEdit->addMenu(QIcon::fromTheme("document-edit"), tr("Annotations & Markup Tools"));
 
     m_actPdfHighlighter = m_menuPdfMarkup->addAction(QIcon::fromTheme("draw-highlight"), tr("Highlighter..."), this, [this]() {
@@ -378,15 +423,15 @@ void MainWindow::setupUi()
         if (m_pdfViewer) m_pdfViewer->openWatermarkDialog();
     });
 
-    m_actPdfInsertImage = m_menuPdfMarkup->addAction(QIcon::fromTheme("insert-image"), tr("Insert Image..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openInsertImageDialog();
-    });
-
     m_actPdfSignature = m_menuPdfMarkup->addAction(QIcon::fromTheme("document-sign"), tr("Signature (Visual & Digital)..."), this, [this]() {
         if (m_pdfViewer) m_pdfViewer->openSignatureDialog();
     });
 
-    // 4. Submenu: PDF Document Structure Operations
+    m_menuPdfMarkup->addAction(QIcon::fromTheme("security-high"), tr("Cryptographic Digital Signature (PAdES / .p7m)..."), this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openCryptoSignatureDialog(0);
+    });
+
+    // 5. Submenu: PDF Document Structure Operations
     m_menuPdfDocOps = m_menuEdit->addMenu(QIcon::fromTheme("document-properties"), tr("PDF Page & Document Operations"));
 
     m_actPdfInsertBlankPage = m_menuPdfDocOps->addAction(QIcon::fromTheme("document-new"), tr("Insert Blank A4 Page..."), this, [this]() {
@@ -403,14 +448,6 @@ void MainWindow::setupUi()
     m_actRepairPdf = m_menuPdfDocOps->addAction(QIcon::fromTheme("tools-check-spelling"), tr("Repair PDF Document..."), this, [this]() {
         openPdfRepairDialog();
     });
-
-    // Select Area remains available as an accelerator & toolbar action, and inside PDF canvas context menu
-    m_actPdfSelectArea = new QAction(QIcon::fromTheme("edit-select"), tr("Select Area..."), this);
-    m_actPdfSelectArea->setShortcut(QKeySequence("Ctrl+Shift+A"));
-    connect(m_actPdfSelectArea, &QAction::triggered, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->startSelectArea();
-    });
-    addAction(m_actPdfSelectArea);
 
     connect(m_menuEdit, &QMenu::aboutToShow, this, &MainWindow::updateContextualMenuStates);
 
@@ -850,7 +887,6 @@ void MainWindow::setupToolbarActionsMap()
     registerAction("ocr", m_actOcr, tr("Extract Text (OCR)"));
     registerAction("extract_images", m_actExtractImages, tr("Extract Images from PDF"));
     registerAction("pdf_cut_text", m_actCut, tr("Cut (Text / Area)"));
-    registerAction("pdf_tools_hub", m_actPdfToolsHub, tr("PDF Markup & Tools Hub"));
     registerAction("pdf_highlighter", m_actPdfHighlighter, tr("Highlighter"));
     registerAction("pdf_select_area", m_actPdfSelectArea, tr("Select Area"));
     registerAction("pdf_typewriter", m_actPdfTypewriter, tr("Typewriter / Text Insert"));
@@ -1061,6 +1097,11 @@ void MainWindow::updateContextualMenuStates()
         m_actSaveAs->setEnabled(hasFile && !isFolder);
     }
 
+    if (m_actCreateArchive) {
+        m_actCreateArchive->setVisible(true);
+        m_actCreateArchive->setEnabled(true);
+    }
+
     if (m_actExportAs) {
         m_actExportAs->setVisible((isImage || isPdf || isText || isOffice) && !isFolder);
         m_actExportAs->setEnabled(hasFile && !isFolder);
@@ -1077,12 +1118,13 @@ void MainWindow::updateContextualMenuStates()
     }
 
     if (m_menuShare) {
-        m_menuShare->menuAction()->setVisible(hasFile);
+        m_menuShare->menuAction()->setVisible(hasFile || isFolder);
     }
 
     // 2. EDIT MENU
+    bool isArchiveDoc = (isArchive && !isFolder);
     if (m_menuEdit) {
-        m_menuEdit->menuAction()->setVisible(isFolder || (!isArchive && !isMedia));
+        m_menuEdit->menuAction()->setVisible(isFolder || isArchiveDoc || !isMedia);
     }
 
     if (m_actUndo) {
@@ -1150,6 +1192,19 @@ void MainWindow::updateContextualMenuStates()
         m_actFolderNew->setEnabled(isFolder);
     }
 
+    if (m_actArchiveAddFiles) {
+        m_actArchiveAddFiles->setVisible(isArchiveDoc);
+        m_actArchiveAddFiles->setEnabled(isArchiveDoc);
+    }
+    if (m_actArchiveAddFolder) {
+        m_actArchiveAddFolder->setVisible(isArchiveDoc);
+        m_actArchiveAddFolder->setEnabled(isArchiveDoc);
+    }
+    if (m_actArchiveRemoveSelected) {
+        m_actArchiveRemoveSelected->setVisible(isArchiveDoc);
+        m_actArchiveRemoveSelected->setEnabled(isArchiveDoc);
+    }
+
     // Text File Editing in Edit Menu
     bool isTextDoc = (isText && !isFolder);
     if (m_actToggleTextEdit) {
@@ -1203,10 +1258,6 @@ void MainWindow::updateContextualMenuStates()
     // PDF Tools in Edit Menu
     bool isPdfDoc = (isPdf && !isFolder);
 
-    if (m_actPdfToolsHub) {
-        m_actPdfToolsHub->setVisible(isPdfDoc);
-        m_actPdfToolsHub->setEnabled(isPdfDoc);
-    }
     if (m_actPdfHighlighter) {
         m_actPdfHighlighter->setVisible(isPdfDoc);
         m_actPdfHighlighter->setEnabled(isPdfDoc);
@@ -1480,6 +1531,90 @@ void MainWindow::setupUpdateBanner()
     QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(m_centralContainer->layout());
     if (vbox) {
         vbox->insertWidget(0, m_updateBanner, 0);
+    }
+}
+
+void MainWindow::setupDebugBanner()
+{
+    // Banner appears only if debug mode was explicitly activated by user
+    QSettings settings("Bubez", "BubezView");
+    const bool debugActive = settings.value("debug_mode", false).toBool();
+    if (!debugActive) {
+        return;
+    }
+
+    m_debugBanner = new QFrame(this);
+    m_debugBanner->setStyleSheet(
+        "QFrame {"
+        "   background-color: #7c2d12;"
+        "   border-bottom: 1px solid #c2410c;"
+        "   padding: 3px 12px;"
+        "}"
+    );
+
+    QHBoxLayout *bannerLayout = new QHBoxLayout(m_debugBanner);
+    bannerLayout->setContentsMargins(10, 4, 10, 4);
+    bannerLayout->setSpacing(10);
+
+    QLabel *iconLabel = new QLabel("🛠️", m_debugBanner);
+    iconLabel->setStyleSheet("font-size: 15px; background: transparent;");
+    bannerLayout->addWidget(iconLabel);
+
+    QLabel *lblText = new QLabel(
+        tr("<b>Debug Mode Active:</b> Remember to deactivate debug mode in Settings to restore standard fast user mode."),
+        m_debugBanner
+    );
+    lblText->setStyleSheet("color: #ffedd5; font-size: 12px; font-weight: 500; background: transparent;");
+    bannerLayout->addWidget(lblText, 1);
+
+    QPushButton *btnSettings = new QPushButton(tr("Settings..."), m_debugBanner);
+    btnSettings->setCursor(Qt::PointingHandCursor);
+    btnSettings->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #ea580c;"
+        "   color: #ffffff;"
+        "   font-weight: bold;"
+        "   font-size: 11px;"
+        "   padding: 3px 12px;"
+        "   border-radius: 4px;"
+        "   border: none;"
+        "}"
+        "QPushButton:hover { background-color: #c2410c; }"
+    );
+    connect(btnSettings, &QPushButton::clicked, this, [this]() {
+        SettingsDialog dlg(this, SettingsDialog::TabIndex::Extra);
+        dlg.exec();
+    });
+    bannerLayout->addWidget(btnSettings);
+
+    QPushButton *btnCloseBanner = new QPushButton("✕", m_debugBanner);
+    btnCloseBanner->setCursor(Qt::PointingHandCursor);
+    btnCloseBanner->setToolTip(tr("Dismiss"));
+    btnCloseBanner->setStyleSheet(
+        "QPushButton {"
+        "   background: transparent;"
+        "   color: #fed7aa;"
+        "   font-size: 13px;"
+        "   font-weight: bold;"
+        "   border: none;"
+        "   padding: 2px 6px;"
+        "}"
+        "QPushButton:hover {"
+        "   color: #ffffff;"
+        "   background-color: rgba(255, 255, 255, 0.1);"
+        "   border-radius: 4px;"
+        "}"
+    );
+    connect(btnCloseBanner, &QPushButton::clicked, this, [this]() {
+        if (m_debugBanner) {
+            m_debugBanner->hide();
+        }
+    });
+    bannerLayout->addWidget(btnCloseBanner);
+
+    QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(m_centralContainer->layout());
+    if (vbox) {
+        vbox->insertWidget(0, m_debugBanner, 0);
     }
 }
 

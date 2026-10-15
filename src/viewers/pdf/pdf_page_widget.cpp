@@ -1723,8 +1723,10 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
                     px = QPixmap::fromImage(img);
                     m_pageCache.insert(pl.pageIndex, px);
 
-                    // Keep cache bounded to max 8 pages
-                    if (m_pageCache.size() > 8) {
+                    // Keep cache bounded (20 pages in HighPerformance, 8 in Balanced)
+                    QSettings settings("Bubez", "BubezView");
+                    int maxCachePages = (settings.value("hardware_profile", "balanced").toString() == "desktop") ? 20 : 8;
+                    if (m_pageCache.size() > maxCachePages) {
                         int furthest = pl.pageIndex;
                         int maxDist = -1;
                         for (auto it = m_pageCache.begin(); it != m_pageCache.end(); ++it) {

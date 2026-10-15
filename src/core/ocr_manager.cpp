@@ -61,6 +61,18 @@ bool OcrManager::isTesseractInstalled() const
 
 QString OcrManager::tesseractExecutablePath() const
 {
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString localApp = appDir + "/tesseract";
+    if (QFile::exists(localApp) && QFileInfo(localApp).isExecutable()) return localApp;
+    const QString localBin = appDir + "/bin/tesseract";
+    if (QFile::exists(localBin) && QFileInfo(localBin).isExecutable()) return localBin;
+    const QString homeBin = QDir::homePath() + "/.local/bin/tesseract";
+    if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) return homeBin;
+
+    const QString projectRoot = "/home/davide/Progetti/BubezView";
+    const QString containerBin = projectRoot + "/container/.local/bin/tesseract";
+    if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) return containerBin;
+
     return QStandardPaths::findExecutable("tesseract");
 }
 

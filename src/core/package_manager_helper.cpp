@@ -6,6 +6,7 @@
 #include "package_manager_helper.h"
 #include "build_config.h"
 #include "build_console_dialog.h"
+#include "ui/extension_feature_model.h"
 #include <QFile>
 #include <QTextStream>
 #include <QProcess>
@@ -51,12 +52,28 @@ bool PackageManagerHelper::isGentoo()
 
 DistroFamily PackageManagerHelper::detectFamily()
 {
-    if (isImmutableSystem()) return DistroFamily::Immutable;
-    if (isGentoo()) return DistroFamily::Gentoo;
+    static DistroFamily s_cachedFamily = DistroFamily::Unknown;
+    static bool s_familyDetected = false;
+    if (s_familyDetected) {
+        return s_cachedFamily;
+    }
+
+    if (isImmutableSystem()) {
+        s_cachedFamily = DistroFamily::Immutable;
+        s_familyDetected = true;
+        return s_cachedFamily;
+    }
+    if (isGentoo()) {
+        s_cachedFamily = DistroFamily::Gentoo;
+        s_familyDetected = true;
+        return s_cachedFamily;
+    }
 
     QFile osRelease("/etc/os-release");
     if (!osRelease.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        return DistroFamily::Unknown;
+        s_cachedFamily = DistroFamily::Unknown;
+        s_familyDetected = true;
+        return s_cachedFamily;
     }
 
     QString content = osRelease.readAll().toLower();
@@ -64,26 +81,29 @@ DistroFamily PackageManagerHelper::detectFamily()
         content.contains("mint") || content.contains("pop!_os") ||
         content.contains("zorin") || content.contains("raspbian") ||
         content.contains("kali")) {
-        return DistroFamily::Debian;
-    }
-    if (content.contains("arch") || content.contains("manjaro") ||
+        s_cachedFamily = DistroFamily::Debian;
+    } else if (content.contains("arch") || content.contains("manjaro") ||
         content.contains("garuda") || content.contains("endeavouros") ||
         content.contains("cachy") || content.contains("artix")) {
-        return DistroFamily::Arch;
-    }
-    if (content.contains("fedora") || content.contains("rhel") ||
+        s_cachedFamily = DistroFamily::Arch;
+    } else if (content.contains("fedora") || content.contains("rhel") ||
         content.contains("centos") || content.contains("rocky") ||
         content.contains("almalinux") || content.contains("nobara")) {
-        return DistroFamily::Fedora;
+        s_cachedFamily = DistroFamily::Fedora;
+    } else if (content.contains("opensuse") || content.contains("suse")) {
+        s_cachedFamily = DistroFamily::OpenSuse;
+    } else if (content.contains("void")) {
+        s_cachedFamily = DistroFamily::Void;
+    } else if (content.contains("solus")) {
+        s_cachedFamily = DistroFamily::Solus;
+    } else if (content.contains("alpine")) {
+        s_cachedFamily = DistroFamily::Alpine;
+    } else {
+        s_cachedFamily = DistroFamily::Unknown;
     }
-    if (content.contains("opensuse") || content.contains("suse")) {
-        return DistroFamily::OpenSuse;
-    }
-    if (content.contains("void")) return DistroFamily::Void;
-    if (content.contains("solus")) return DistroFamily::Solus;
-    if (content.contains("alpine")) return DistroFamily::Alpine;
 
-    return DistroFamily::Unknown;
+    s_familyDetected = true;
+    return s_cachedFamily;
 }
 
 QString PackageManagerHelper::distroDisplayName()
@@ -108,6 +128,12 @@ QString PackageManagerHelper::packageNameForComponent(const QString &componentId
     DistroFamily fam = detectFamily();
     QString id = componentId.toLower().trimmed();
 
+    if (id == "engine-poppler" || id == "poppler" || id == "poppler-qt6") {
+        if (fam == DistroFamily::Debian) return "libpoppler-qt6-dev";
+        if (fam == DistroFamily::Fedora || fam == DistroFamily::OpenSuse) return "poppler-qt6-devel";
+        if (fam == DistroFamily::Gentoo) return "app-text/poppler[qt6]";
+        return "poppler-qt6"; // Arch
+    }
     if (id == "pdfimages" || id == "poppler-utils") {
         if (fam == DistroFamily::Arch) return "poppler";
         if (fam == DistroFamily::OpenSuse) return "poppler-tools";
@@ -133,7 +159,7 @@ QString PackageManagerHelper::packageNameForComponent(const QString &componentId
         if (fam == DistroFamily::Gentoo) return "app-text/poppler[qt6]";
         return "poppler-qt6"; // Arch
     }
-    if (id == "libarchive") {
+    if (id == "libarchive" || id == "engine-libarchive" || id == "archive") {
         if (fam == DistroFamily::Debian) return "libarchive-dev";
         if (fam == DistroFamily::Fedora || fam == DistroFamily::OpenSuse) return "libarchive-devel";
         if (fam == DistroFamily::Gentoo) return "app-arch/libarchive";
@@ -160,6 +186,16 @@ QString PackageManagerHelper::packageNameForComponent(const QString &componentId
         if (fam == DistroFamily::Debian) return "liblzma-dev";
         if (fam == DistroFamily::Fedora || fam == DistroFamily::OpenSuse) return "xz-devel";
         return "xz";
+    }
+    if (id == "7zip" || id == "7z" || id == "p7zip") {
+        if (fam == DistroFamily::Debian) return "7zip";
+        if (fam == DistroFamily::Arch) return "7zip";
+        if (fam == DistroFamily::Fedora) return "p7zip";
+        if (fam == DistroFamily::OpenSuse) return "7zip";
+        return "7zip";
+    }
+    if (id == "pigz") {
+        return "pigz";
     }
 
     return componentId;
@@ -196,10 +232,13 @@ QString PackageManagerHelper::getInstallCommand(const QString &componentId)
 
 bool PackageManagerHelper::isCompilableEngine(const QString &componentId)
 {
-    QString id = componentId.toLower().trimmed();
-    return (id == "office" || id == "librevenge" ||
-            id == "pdf" || id == "poppler" || id == "poppler-qt6" ||
-            id == "archive" || id == "libarchive");
+    QString id = componentId.trimmed().toLower();
+    return (id == "poppler" || id == "poppler-qt6" || id == "engine-poppler" || id == "pdf" ||
+            id == "libarchive" || id == "engine-libarchive" || id == "archive" ||
+            id == "office" || id == "librevenge" || id == "engine-office" ||
+            id == "media" || id == "mpv" ||
+            id == "zstd" || id == "xz" || id == "7zip" || id == "7z" || id == "7zz" ||
+            id == "qpdf" || id == "tesseract" || id == "ocr" || id == "tesseract-ocr");
 }
 
 bool PackageManagerHelper::triggerEngineCompilation(const QString &componentId, QWidget *parentWidget)
@@ -207,12 +246,12 @@ bool PackageManagerHelper::triggerEngineCompilation(const QString &componentId, 
     QString id = componentId.toLower().trimmed();
     BuildConfig &cfg = BuildConfig::instance();
 
-    if (id == "office" || id == "librevenge") {
+    if (id == "office" || id == "librevenge" || id == "engine-office") {
         cfg.setEnableInternalOffice(true);
         cfg.setStaticOffice(true);
-    } else if (id == "pdf" || id == "poppler" || id == "poppler-qt6" || id == "pdfimages") {
+    } else if (id == "pdf" || id == "poppler" || id == "poppler-qt6" || id == "engine-poppler") {
         cfg.setStaticPdf(true);
-    } else if (id == "archive" || id == "libarchive" || id == "zstd" || id == "xz") {
+    } else if (id == "archive" || id == "libarchive" || id == "zstd" || id == "xz" || id == "engine-libarchive") {
         cfg.setStaticArchive(true);
     }
     cfg.save();
@@ -222,7 +261,7 @@ bool PackageManagerHelper::triggerEngineCompilation(const QString &componentId, 
     console->show();
     console->raise();
     console->activateWindow();
-    return console->startBuild();
+    return console->startBuildForComponent(id);
 }
 
 bool PackageManagerHelper::installComponentInteractive(const QString &componentId, QWidget *parentWidget)
@@ -230,6 +269,8 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
     DistroFamily fam = detectFamily();
     QString pkg = packageNameForComponent(componentId);
     bool compilable = isCompilableEngine(componentId);
+    ExtensionModuleInfo mod = ExtensionFeatureRegistry::moduleById(componentId);
+    QString displayName = !mod.displayName.isEmpty() ? mod.displayName : componentId;
 
     if (fam == DistroFamily::Immutable) {
         if (compilable) {
@@ -237,7 +278,7 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
             msg.setWindowTitle(QObject::tr("Immutable System Detected"));
             msg.setText(QObject::tr("<h3>Immutable System Detected</h3>"
                                    "<p>Your operating system has a read-only root filesystem.</p>"
-                                   "<p>Would you like to compile the <b>%1</b> engine from source in your user directory?</p>").arg(componentId));
+                                   "<p>Would you like to compile the <b>%1</b> engine from source in your user directory?</p>").arg(displayName));
             QAbstractButton *btnCompile = msg.addButton(QObject::tr("Compile from Source (Recommended)"), QMessageBox::ActionRole);
             QAbstractButton *btnCancel = msg.addButton(QObject::tr("Cancel"), QMessageBox::RejectRole);
             Q_UNUSED(btnCancel);
@@ -279,7 +320,7 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
         msg.setText(QObject::tr("<h3>Activate Engine: %1</h3>"
                                "<p>This engine requires the system package: <code>%2</code></p>"
                                "<p>Detected distribution: <b>%3</b></p>"
-                               "<p>How would you like to proceed?</p>").arg(componentId, pkg, distroDisplayName()));
+                               "<p>How would you like to proceed?</p>").arg(displayName, pkg, distroDisplayName()));
         QAbstractButton *btnSys = msg.addButton(QObject::tr("Install from System (Recommended)"), QMessageBox::ActionRole);
         QAbstractButton *btnCompile = msg.addButton(QObject::tr("Compile from Source"), QMessageBox::ActionRole);
         QAbstractButton *btnCancel = msg.addButton(QObject::tr("Cancel"), QMessageBox::RejectRole);
@@ -298,7 +339,7 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
             QObject::tr("<p>The component <b>%1</b> requires the system package: <code>%2</code></p>"
                        "<p>Detected distribution: <b>%3</b></p>"
                        "<p>Would you like to proceed with automated installation using administrator privileges?</p>")
-                       .arg(componentId, pkg, distroDisplayName()),
+                       .arg(displayName, pkg, distroDisplayName()),
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::Yes
         );
@@ -365,18 +406,18 @@ bool PackageManagerHelper::runPrivilegedInstall(const QStringList &packageNames,
     } else if (fam == DistroFamily::Alpine) {
         cmd = QString("apk add %1").arg(pkgs);
     } else {
-        QMessageBox::warning(parentWidget, QObject::tr("Gestore pacchetti non supportato"),
-                             QObject::tr("Installa manualmente i pacchetti:\n%1").arg(pkgs));
+        QMessageBox::warning(parentWidget, QObject::tr("Unsupported package manager"),
+                             QObject::tr("Please install packages manually:\n%1").arg(pkgs));
         return false;
     }
 
     QProgressDialog progress(
-        QObject::tr("Installazione di %1 in corso...\nAutorizza l'operazione nella finestra di sistema se richiesta.").arg(pkgs),
-        QObject::tr("Annulla"),
+        QObject::tr("Installing %1...\nPlease authorize the operation in the system prompt if requested.").arg(pkgs),
+        QObject::tr("Cancel"),
         0, 0,
         parentWidget
     );
-    progress.setWindowTitle(QObject::tr("Installazione Pacchetti"));
+    progress.setWindowTitle(QObject::tr("Package Installation"));
     progress.setWindowModality(Qt::WindowModal);
     progress.setMinimumDuration(0);
     progress.show();
@@ -426,6 +467,7 @@ bool PackageManagerHelper::runPrivilegedInstall(const QStringList &packageNames,
     progress.close();
 
     if (proc.exitCode() == 0) {
+        clearCaches();
         QMessageBox::information(
             parentWidget,
             QObject::tr("Installation Completed"),
@@ -456,15 +498,7 @@ bool PackageManagerHelper::runPrivilegedInstall(const QStringList &packageNames,
 
 bool PackageManagerHelper::isComponentInstalled(const QString &componentId)
 {
-    QString id = componentId.toLower().trimmed();
-    if (id == "pdfimages" || id == "poppler-utils") return BuildConfig::isPdfimagesAvailable();
-    if (id == "poppler-data") return BuildConfig::isPopplerDataInstalled();
-    if (id == "qpdf") return BuildConfig::isQpdfAvailable();
-    if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") return BuildConfig::isTesseractAvailable();
-    if (id == "openssl") return BuildConfig::isPkgInstalled("openssl") || BuildConfig::isExecutableAvailable("openssl");
-    if (id == "zstd") return BuildConfig::isPkgInstalled("libzstd") || BuildConfig::isExecutableAvailable("zstd");
-    if (id == "xz" || id == "liblzma") return BuildConfig::isPkgInstalled("liblzma") || BuildConfig::isExecutableAvailable("xz");
-    return false;
+    return BuildConfig::isComponentAvailable(componentId);
 }
 
 QString PackageManagerHelper::getUninstallCommand(const QString &componentId)
@@ -617,12 +651,12 @@ bool PackageManagerHelper::runPrivilegedUninstall(const QStringList &packageName
     }
 
     QProgressDialog progress(
-        QObject::tr("Disinstallazione di %1 in corso...\nAutorizza l'operazione nella finestra di sistema se richiesta.").arg(pkgs),
-        QObject::tr("Annulla"),
+        QObject::tr("Uninstalling %1...\nPlease authorize the operation in the system prompt if requested.").arg(pkgs),
+        QObject::tr("Cancel"),
         0, 0,
         parentWidget
     );
-    progress.setWindowTitle(QObject::tr("Disinstallazione Pacchetti"));
+    progress.setWindowTitle(QObject::tr("Package Uninstallation"));
     progress.setWindowModality(Qt::WindowModal);
     progress.setMinimumDuration(0);
     progress.show();
@@ -669,10 +703,11 @@ bool PackageManagerHelper::runPrivilegedUninstall(const QStringList &packageName
     progress.close();
 
     if (proc.exitCode() == 0) {
+        clearCaches();
         QMessageBox::information(
             parentWidget,
-            QObject::tr("Disinstallazione Completata"),
-            QObject::tr("I pacchetti (%1) sono stati rimossi con successo!").arg(pkgs)
+            QObject::tr("Uninstallation Completed"),
+            QObject::tr("The packages (%1) were removed successfully!").arg(pkgs)
         );
         return true;
     } else {
@@ -682,11 +717,11 @@ bool PackageManagerHelper::runPrivilegedUninstall(const QStringList &packageName
         }
         QMessageBox::warning(
             parentWidget,
-            QObject::tr("Disinstallazione Fallita"),
-            QObject::tr("<p>Impossibile completare la rimozione automatica.</p>"
-                       "<p>Comando manuale da terminale:</p>"
+            QObject::tr("Uninstallation Failed"),
+            QObject::tr("<p>Could not complete automatic removal.</p>"
+                       "<p>Manual terminal command:</p>"
                        "<p><code>%1</code></p>"
-                       "<p>Dettaglio errore: %2</p>")
+                       "<p>Error details: %2</p>")
                        .arg(getUninstallCommand(packageNames.first()), errorOut.trimmed())
         );
         return false;
@@ -701,15 +736,15 @@ bool PackageManagerHelper::uninstallComponentInteractive(const QString &componen
     bool isSafe = checkUninstallSafety(componentId, otherDeps);
     if (!isSafe && !otherDeps.isEmpty()) {
         QString listStr = otherDeps.mid(0, 8).join(", ");
-        if (otherDeps.size() > 8) listStr += QString(" (+%1 altri)").arg(otherDeps.size() - 8);
+        if (otherDeps.size() > 8) listStr += QString(" (+%1 more)").arg(otherDeps.size() - 8);
 
         QMessageBox::critical(
             parentWidget,
-            QObject::tr("Disinstallazione Bloccata per Sicurezza"),
-            QObject::tr("<p>Non è possibile disinstallare in modo sicuro il pacchetto <b>%1</b>.</p>"
-                       "<p>I seguenti programmi o componenti di sistema dipendono da esso:</p>"
+            QObject::tr("Uninstallation Blocked for Safety"),
+            QObject::tr("<p>Cannot safely uninstall package <b>%1</b>.</p>"
+                       "<p>The following system packages or applications depend on it:</p>"
                        "<p style='color: #dc2626;'><b>%2</b></p>"
-                       "<p>La rimozione è stata bloccata per evitare instabilità o la cancellazione accidentale di altre applicazioni di sistema.</p>")
+                       "<p>Removal was blocked to prevent breaking system stability or removing other installed applications.</p>")
                        .arg(pkg, listStr)
         );
         return false;
@@ -717,9 +752,9 @@ bool PackageManagerHelper::uninstallComponentInteractive(const QString &componen
 
     QMessageBox::StandardButton reply = QMessageBox::question(
         parentWidget,
-        QObject::tr("Conferma Disinstallazione"),
-        QObject::tr("<p>Sei sicuro di voler disinstallare il pacchetto <b>%1</b> dal sistema?</p>"
-                   "<p><i>Controllo di sicurezza completato: nessun altro programma dipende da questo componente.</i></p>")
+        QObject::tr("Confirm Uninstallation"),
+        QObject::tr("<p>Are you sure you want to uninstall package <b>%1</b> from your system?</p>"
+                   "<p><i>Safety check passed: no other packages depend on this component.</i></p>")
                    .arg(pkg),
         QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No
@@ -732,8 +767,26 @@ bool PackageManagerHelper::uninstallComponentInteractive(const QString &componen
     return runPrivilegedUninstall(QStringList() << pkg, parentWidget);
 }
 
+static QMap<QString, QString> s_candidateVersionCache;
+
+bool PackageManagerHelper::isCandidateVersionCached(const QString &componentId)
+{
+    return s_candidateVersionCache.contains(componentId.trimmed().toLower());
+}
+
+void PackageManagerHelper::clearCaches()
+{
+    s_candidateVersionCache.clear();
+    BuildConfig::clearPackageCache();
+}
+
 QString PackageManagerHelper::queryPackageCandidateVersion(const QString &componentId)
 {
+    const QString compKey = componentId.trimmed().toLower();
+    if (s_candidateVersionCache.contains(compKey)) {
+        return s_candidateVersionCache.value(compKey);
+    }
+
     DistroFamily fam = detectFamily();
     QString pkg = packageNameForComponent(componentId);
 
@@ -747,11 +800,7 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
             break;
         case DistroFamily::Arch:
             program = "pacman";
-            if (QProcess::execute("pacman", QStringList() << "-Qi" << pkg) == 0) {
-                args << "-Qi" << pkg;
-            } else {
-                args << "-Si" << pkg;
-            }
+            args << "-Qi" << pkg;
             break;
         case DistroFamily::Fedora:
             program = "dnf";
@@ -774,6 +823,7 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
     }
 
     if (program.isEmpty() || QStandardPaths::findExecutable(program).isEmpty()) {
+        s_candidateVersionCache.insert(compKey, QString());
         return QString();
     }
 
@@ -781,43 +831,78 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
     proc.start(program, args);
     if (!proc.waitForFinished(3000)) {
         proc.kill();
+        s_candidateVersionCache.insert(compKey, QString());
         return QString();
     }
 
-    QString output = QString::fromUtf8(proc.readAllStandardOutput());
-    if (output.isEmpty()) return QString();
+    if (fam == DistroFamily::Arch && proc.exitCode() != 0) {
+        // Fallback to sync repository if package is not yet locally installed
+        proc.start("pacman", QStringList() << "-Si" << pkg);
+        if (!proc.waitForFinished(2000)) {
+            proc.kill();
+            s_candidateVersionCache.insert(compKey, QString());
+            return QString();
+        }
+    }
 
-    QRegularExpression verRegex;
+    QString output = QString::fromUtf8(proc.readAllStandardOutput());
+    if (output.isEmpty()) {
+        s_candidateVersionCache.insert(compKey, QString());
+        return QString();
+    }
+
+    QString foundVersion;
     switch (fam) {
-        case DistroFamily::Debian:
-            verRegex = QRegularExpression(QStringLiteral(R"((?:Candidate|Installed|Candidato):\s*(\d+\.\d+(?:\.\d+)?))"));
+        case DistroFamily::Debian: {
+            QRegularExpression instRegex(QStringLiteral(R"((?:Installed|Installato):\s*(\S+))"));
+            QRegularExpression candRegex(QStringLiteral(R"((?:Candidate|Candidato):\s*(\S+))"));
+            auto instMatch = instRegex.match(output);
+            auto candMatch = candRegex.match(output);
+            if (instMatch.hasMatch() && candMatch.hasMatch()) {
+                QString instVer = instMatch.captured(1).trimmed();
+                QString candVer = candMatch.captured(1).trimmed();
+                if (instVer != candVer && candVer != "(none)" && candVer != "(nessuno)") {
+                    QRegularExpression numRegex(QStringLiteral(R"((\d+\.\d+(?:\.\d+)?))"));
+                    auto numMatch = numRegex.match(candVer);
+                    if (numMatch.hasMatch()) {
+                        QString ver = numMatch.captured(1);
+                        if (ver.count('.') == 1) ver += ".0";
+                        foundVersion = ver;
+                    } else {
+                        foundVersion = candVer;
+                    }
+                }
+            }
             break;
+        }
         case DistroFamily::Arch:
         case DistroFamily::Fedora:
-        case DistroFamily::OpenSuse:
-            verRegex = QRegularExpression(QStringLiteral(R"(Version\s*:\s*(\d+\.\d+(?:\.\d+)?))"));
+        case DistroFamily::OpenSuse: {
+            QRegularExpression verRegex(QStringLiteral(R"(Version\s*:\s*(\d+\.\d+(?:\.\d+)?))"));
+            auto match = verRegex.match(output);
+            if (match.hasMatch()) {
+                QString ver = match.captured(1);
+                if (ver.count('.') == 1) ver += ".0";
+                foundVersion = ver;
+            }
             break;
-        case DistroFamily::Alpine:
-            verRegex = QRegularExpression(QStringLiteral(R"((\d+\.\d+(?:\.\d+)?))"));
-            break;
-        case DistroFamily::Void:
-            verRegex = QRegularExpression(QStringLiteral(R"(pkgver:\s*.*?(\d+\.\d+(?:\.\d+)?))"));
-            break;
-        default:
-            verRegex = QRegularExpression(QStringLiteral(R"((\d+\.\d+(?:\.\d+)?))"));
-            break;
-    }
-
-    QRegularExpressionMatch match = verRegex.match(output);
-    if (match.hasMatch()) {
-        QString ver = match.captured(1);
-        if (ver.count('.') == 1) {
-            ver += ".0";
         }
-        return ver;
+        case DistroFamily::Alpine:
+        case DistroFamily::Void:
+        default: {
+            QRegularExpression verRegex(QStringLiteral(R"((\d+\.\d+(?:\.\d+)?))"));
+            auto match = verRegex.match(output);
+            if (match.hasMatch()) {
+                QString ver = match.captured(1);
+                if (ver.count('.') == 1) ver += ".0";
+                foundVersion = ver;
+            }
+            break;
+        }
     }
 
-    return QString();
+    s_candidateVersionCache.insert(compKey, foundVersion);
+    return foundVersion;
 }
 
 QStringList PackageManagerHelper::knownStableVersions(const QString &componentId)

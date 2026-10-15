@@ -1,9 +1,11 @@
 #include "base_skin.h"
 #include "image_viewer.h"
 #include "text_viewer.h"
-#include "pdf_viewer.h"
-#include "archive_viewer.h"
-#include "media_viewer.h"
+#include "core/interfaces/i_pdf_viewer.h"
+#include "core/interfaces/i_archive_viewer.h"
+#include "core/interfaces/i_media_viewer.h"
+#include "engine_prompt_card.h"
+#include "build_options_dialog.h"
 #include "office_viewer.h"
 #include "folder_viewer.h"
 #include "theme_manager.h"
@@ -19,7 +21,7 @@
 #include "ocr_dialog.h"
 #include "pdf_image_extract_dialog.h"
 #include "pdf_repair_dialog.h"
-#include "pdf_page_organizer_dialog.h"
+#include "fallback_notice_dialog.h"
 #include "build_config.h"
 #include "package_manager_helper.h"
 #include <QProgressDialog>
@@ -30,6 +32,8 @@
 #include <QVBoxLayout>
 #include <QTextStream>
 #include <QDir>
+#include <QCollator>
+#include <algorithm>
 #include <QTemporaryFile>
 #include <QApplication>
 #include <QClipboard>
@@ -108,9 +112,29 @@ BaseSkin::BaseSkin(QWidget *parent)
         updateWindowTitle();
         updateStatusBar();
     });
-    m_pdfViewer = new PdfViewer(this);
-    m_archiveViewer = new ArchiveViewer(this);
-    m_mediaViewer = new MediaViewer(this);
+    m_enginePromptCard = new EnginePromptCard(this);
+    connect(m_enginePromptCard, &EnginePromptCard::engineActivated, this, [this](const QString &path) {
+        openFile(path);
+    });
+    connect(m_enginePromptCard, &EnginePromptCard::compileRequested, this, [this]() {
+        BuildOptionsDialog dlg(this);
+        if (dlg.exec() == QDialog::Accepted) {
+            PluginManager::instance().discoverPlugins();
+            if (!m_currentFilePath.isEmpty()) {
+                openFile(m_currentFilePath);
+            }
+        }
+    });
+
+    auto *pv = PluginManager::instance().createViewer(FileCategory::Pdf, this);
+    m_pdfViewer = dynamic_cast<IPdfViewer*>(pv);
+
+    auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
+    m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
+
+    auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
+    m_mediaViewer = dynamic_cast<IMediaViewer*>(mv);
+
     m_officeViewer = new OfficeViewer(this);
     m_folderViewer = new FolderViewer(this);
 
@@ -148,13 +172,13 @@ BaseSkin::BaseSkin(QWidget *parent)
     QHBoxLayout *unsupBtnLay = new QHBoxLayout();
     unsupBtnLay->setSpacing(12);
 
-    m_btnUnsupportedOpenWith = new QPushButton(tr("Apri con altra applicazione..."), cardFrame);
+    m_btnUnsupportedOpenWith = new QPushButton(tr("Open with another application..."), cardFrame);
     m_btnUnsupportedOpenWith->setCursor(Qt::PointingHandCursor);
     m_btnUnsupportedOpenWith->setStyleSheet("QPushButton { background-color: #0284c7; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px; font-size: 12px; }"
                                            "QPushButton:hover { background-color: #0369a1; }");
     connect(m_btnUnsupportedOpenWith, &QPushButton::clicked, this, &BaseSkin::openCurrentWithExternal);
 
-    m_btnUnsupportedHexDump = new QPushButton(tr("Visualizza Hex Dump"), cardFrame);
+    m_btnUnsupportedHexDump = new QPushButton(tr("View Hex Dump"), cardFrame);
     m_btnUnsupportedHexDump->setCursor(Qt::PointingHandCursor);
     m_btnUnsupportedHexDump->setStyleSheet("QPushButton { background-color: rgba(100, 116, 139, 0.25); color: #f1f5f9; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(100, 116, 139, 0.35); }"
                                           "QPushButton:hover { background-color: rgba(100, 116, 139, 0.4); color: white; }");
@@ -168,12 +192,13 @@ BaseSkin::BaseSkin(QWidget *parent)
 
     m_stackedWidget->addWidget(m_imageViewer);       // 0
     m_stackedWidget->addWidget(m_textViewer);        // 1
-    m_stackedWidget->addWidget(m_pdfViewer);         // 2
-    m_stackedWidget->addWidget(m_archiveViewer);     // 3
-    m_stackedWidget->addWidget(m_mediaViewer);       // 4
-    m_stackedWidget->addWidget(m_officeViewer);      // 5
-    m_stackedWidget->addWidget(m_folderViewer);      // 6
-    m_stackedWidget->addWidget(m_unsupportedViewer); // 7
+    m_stackedWidget->addWidget(m_pdfViewer ? m_pdfViewer->widget() : new QWidget(this));         // 2
+    m_stackedWidget->addWidget(m_archiveViewer ? m_archiveViewer->widget() : new QWidget(this)); // 3
+    m_stackedWidget->addWidget(m_mediaViewer ? m_mediaViewer->widget() : new QWidget(this));     // 4
+    m_stackedWidget->addWidget(m_officeViewer);                                                  // 5
+    m_stackedWidget->addWidget(m_folderViewer);                                                  // 6
+    m_stackedWidget->addWidget(m_unsupportedViewer);                                             // 7
+    m_stackedWidget->addWidget(m_enginePromptCard);                                              // 8
 
     centralLayout->addWidget(m_stackedWidget, 1);
 
@@ -182,12 +207,20 @@ BaseSkin::BaseSkin(QWidget *parent)
     centralLayout->addWidget(m_filmstrip, 0);
 
     connect(m_filmstrip, &FilmstripWidget::fileSelected, this, [this](const QString &path) {
+        if (path != m_currentFilePath) {
+            int newIdx = m_siblingFiles.indexOf(path);
+            bool forward = (newIdx >= m_currentIndex);
+            startTransitionAnimation(forward);
+            if (newIdx >= 0) m_currentIndex = newIdx;
+        }
         openFile(path);
     });
 
-    connect(m_mediaViewer, &MediaViewer::trackChangeRequested, this, [this](const QString &path) {
-        openFile(path);
-    });
+    if (m_mediaViewer) {
+        m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
+            openFile(path);
+        });
+    }
 
     m_searchBar = new SearchBarWidget(m_centralContainer);
     m_searchBar->hide();
@@ -245,8 +278,9 @@ BaseSkin::BaseSkin(QWidget *parent)
     });
 
     // Transitions
-    m_transitionOverlay = new QLabel(m_stackedWidget);
+    m_transitionOverlay = new QLabel(m_centralContainer);
     m_transitionOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_transitionOverlay->setScaledContents(true);
     m_transitionOverlay->hide();
     m_overlayOpacity = new QGraphicsOpacityEffect(m_transitionOverlay);
     m_transitionOverlay->setGraphicsEffect(m_overlayOpacity);
@@ -255,25 +289,40 @@ BaseSkin::BaseSkin(QWidget *parent)
     connect(m_animGroup, &QParallelAnimationGroup::finished, this, [this]() {
         if (m_transitionOverlay) {
             m_transitionOverlay->hide();
-            m_transitionOverlay->setGeometry(m_stackedWidget->rect());
+            if (m_stackedWidget) {
+                m_transitionOverlay->setGeometry(m_stackedWidget->geometry());
+            }
             if (m_overlayOpacity) m_overlayOpacity->setOpacity(1.0);
         }
     });
 
     // Sub-viewer signals
-    connect(m_archiveViewer, &ArchiveViewer::filePreviewRequested, this,
+    if (m_archiveViewer) {
+        m_archiveViewer->setOnFilePreviewRequested(
             [this](const QString &extractedFilePath, const QString &archiveOriginPath, const QString &internalEntryPath) {
-        m_archiveOriginPath = archiveOriginPath;
-        if (m_archiveViewer) {
-            m_archiveEntries = m_archiveViewer->previewableEntries();
-        }
-        m_archiveCurrentEntryIndex = m_archiveEntries.indexOf(internalEntryPath);
-        if (m_archiveCurrentEntryIndex < 0 && !m_archiveEntries.isEmpty()) {
-            m_archiveCurrentEntryIndex = 0;
-        }
-        openArchiveFile(extractedFilePath, internalEntryPath);
+                m_archiveOriginPath = archiveOriginPath;
+                if (m_archiveViewer) {
+                    m_archiveEntries = m_archiveViewer->previewableEntries();
+                }
+                m_archiveCurrentEntryIndex = m_archiveEntries.indexOf(internalEntryPath);
+                if (m_archiveCurrentEntryIndex < 0 && !m_archiveEntries.isEmpty()) {
+                    m_archiveCurrentEntryIndex = 0;
+                }
+                openArchiveFile(extractedFilePath, internalEntryPath);
+            });
+    }
+
+    ShareManager::setFolderCompressor([this](const QString &folderPath, const QString &destZipPath, QWidget *parentWidget) -> bool {
+        if (!m_archiveViewer) return false;
+        return m_archiveViewer->createArchive({folderPath}, destZipPath, QStringLiteral("zip"), QString(), parentWidget);
     });
 
+    connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString &folderPath, int, qint64) {
+        if (m_currentCategory == FileCategory::Folder && !folderPath.isEmpty()) {
+            m_currentFilePath = folderPath;
+            updateWindowTitle();
+        }
+    });
     connect(m_folderViewer, &FolderViewer::filePreviewRequested, this, [this](const QString &path) {
         openFile(path);
     });
@@ -326,7 +375,9 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         activateWindow();
     }
 
-    m_mediaViewer->stop();
+    if (m_mediaViewer) {
+        m_mediaViewer->stop();
+    }
     m_currentFilePath = info.absoluteFilePath();
     updateWindowTitle();
 
@@ -352,19 +403,23 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         m_stackedWidget->setCurrentIndex(1);
         opened = m_textViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Pdf) {
-        m_stackedWidget->setCurrentIndex(2);
-        QImage cachedPage;
-        if (PreloadCacheManager::instance().tryGet(m_currentFilePath, cachedPage)) {
-            // Load file using pre-rendered initial page for instantaneous display
-            std::unique_ptr<Poppler::Document> doc(Poppler::Document::load(m_currentFilePath));
-            if (doc && !doc->isLocked()) {
-                opened = m_pdfViewer->loadDocument(std::move(doc), m_currentFilePath, cachedPage);
-            } else {
-                opened = m_pdfViewer->loadFile(m_currentFilePath);
+        if (!m_pdfViewer) {
+            auto *pv = PluginManager::instance().createViewer(FileCategory::Pdf, this);
+            m_pdfViewer = dynamic_cast<IPdfViewer*>(pv);
+            if (m_pdfViewer) {
+                QWidget *oldW = m_stackedWidget->widget(2);
+                m_stackedWidget->removeWidget(oldW);
+                delete oldW;
+                m_stackedWidget->insertWidget(2, m_pdfViewer->widget());
             }
-        } else {
-            opened = m_pdfViewer->loadFile(m_currentFilePath);
         }
+        if (!m_pdfViewer) {
+            m_enginePromptCard->setTargetFile(FileCategory::Pdf, m_currentFilePath);
+            m_stackedWidget->setCurrentWidget(m_enginePromptCard);
+            return OpenResult::Success;
+        }
+        m_stackedWidget->setCurrentIndex(2);
+        opened = m_pdfViewer->loadFile(m_currentFilePath);
 
         if (!opened && QFile::exists(m_currentFilePath)) {
             QMessageBox::StandardButton ask = QMessageBox::question(
@@ -382,9 +437,53 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
             }
         }
     } else if (m_currentCategory == FileCategory::Archive) {
+        if (!m_archiveViewer) {
+            auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
+            m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
+            if (m_archiveViewer) {
+                QWidget *oldW = m_stackedWidget->widget(3);
+                m_stackedWidget->removeWidget(oldW);
+                delete oldW;
+                m_stackedWidget->insertWidget(3, m_archiveViewer->widget());
+                m_archiveViewer->setOnFilePreviewRequested([this](const QString &extractedFilePath, const QString &archiveOriginPath, const QString &internalEntryPath) {
+                    m_archiveOriginPath = archiveOriginPath;
+                    if (m_archiveViewer) {
+                        m_archiveEntries = m_archiveViewer->previewableEntries();
+                    }
+                    m_archiveCurrentEntryIndex = m_archiveEntries.indexOf(internalEntryPath);
+                    if (m_archiveCurrentEntryIndex < 0 && !m_archiveEntries.isEmpty()) {
+                        m_archiveCurrentEntryIndex = 0;
+                    }
+                    openArchiveFile(extractedFilePath, internalEntryPath);
+                });
+            }
+        }
+        if (!m_archiveViewer) {
+            m_enginePromptCard->setTargetFile(FileCategory::Archive, m_currentFilePath);
+            m_stackedWidget->setCurrentWidget(m_enginePromptCard);
+            return OpenResult::Success;
+        }
         m_stackedWidget->setCurrentIndex(3);
         opened = m_archiveViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Media) {
+        if (!m_mediaViewer) {
+            auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
+            m_mediaViewer = dynamic_cast<IMediaViewer*>(mv);
+            if (m_mediaViewer) {
+                QWidget *oldW = m_stackedWidget->widget(4);
+                m_stackedWidget->removeWidget(oldW);
+                delete oldW;
+                m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
+                m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
+                    openFile(path);
+                });
+            }
+        }
+        if (!m_mediaViewer) {
+            m_enginePromptCard->setTargetFile(FileCategory::Media, m_currentFilePath);
+            m_stackedWidget->setCurrentWidget(m_enginePromptCard);
+            return OpenResult::Success;
+        }
         m_stackedWidget->setCurrentIndex(4);
         m_mediaViewer->setSiblingFiles(m_siblingFiles);
         opened = m_mediaViewer->loadFile(m_currentFilePath);
@@ -424,6 +523,10 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
             PreloadCacheManager::instance().inspectFolderForPdfs(m_siblingFiles);
         }
 
+        if (m_transitionOverlay && m_animGroup && m_animGroup->state() == QAbstractAnimation::Running) {
+            m_transitionOverlay->raise();
+        }
+
         return OpenResult::Success;
     }
 
@@ -461,7 +564,14 @@ void BaseSkin::scanDirectory(const QString &currentFilePath)
     if (info.isDir()) {
         filters = QDir::Dirs | QDir::NoDotAndDotDot;
     }
-    QStringList entries = dir.entryList(filters, QDir::Name | QDir::IgnoreCase);
+    QStringList entries = dir.entryList(filters, QDir::NoSort);
+
+    // Natural numeric sorting identical to Dolphin / KDE Plasma and terminal (ls -v)
+    QCollator collator;
+    collator.setNumericMode(true);
+    collator.setCaseSensitivity(Qt::CaseInsensitive);
+    std::sort(entries.begin(), entries.end(), collator);
+
     m_siblingFiles.clear();
 
     for (const QString &f : entries) {
@@ -486,7 +596,7 @@ void BaseSkin::startTransitionAnimation(bool forward)
     if (!m_stackedWidget || !m_stackedWidget->isVisible() || m_stackedWidget->width() <= 0) return;
 
     qint64 now = QDateTime::currentMSecsSinceEpoch();
-    if (now - m_lastSwitchTimeMs < 90) {
+    if (now - m_lastSwitchTimeMs < 80) {
         m_lastSwitchTimeMs = now;
         if (m_animGroup && m_animGroup->state() == QAbstractAnimation::Running) {
             m_animGroup->stop();
@@ -506,27 +616,27 @@ void BaseSkin::startTransitionAnimation(bool forward)
     }
     m_animGroup->clear();
 
+    QRect widgetRect = m_stackedWidget->geometry();
+
     m_transitionOverlay->setPixmap(oldPix);
-    m_transitionOverlay->setGeometry(m_stackedWidget->rect());
+    m_transitionOverlay->setGeometry(widgetRect);
     m_transitionOverlay->show();
     m_transitionOverlay->raise();
-
-    QRect widgetRect = m_stackedWidget->rect();
 
     switch (effect) {
     case TransitionEffect::ZoomFade: {
         m_overlayOpacity->setOpacity(1.0);
         auto *fadeAnim = new QPropertyAnimation(m_overlayOpacity, "opacity", m_animGroup);
-        fadeAnim->setDuration(120);
+        fadeAnim->setDuration(150);
         fadeAnim->setStartValue(1.0);
         fadeAnim->setEndValue(0.0);
         fadeAnim->setEasingCurve(QEasingCurve::OutQuad);
         m_animGroup->addAnimation(fadeAnim);
 
-        int zoomDelta = forward ? 16 : -16;
+        int zoomDelta = forward ? 18 : -18;
         QRect zoomRect = widgetRect.adjusted(-zoomDelta, -zoomDelta, zoomDelta, zoomDelta);
         auto *geomAnim = new QPropertyAnimation(m_transitionOverlay, "geometry", m_animGroup);
-        geomAnim->setDuration(120);
+        geomAnim->setDuration(150);
         geomAnim->setStartValue(widgetRect);
         geomAnim->setEndValue(zoomRect);
         geomAnim->setEasingCurve(QEasingCurve::OutQuad);
@@ -539,14 +649,14 @@ void BaseSkin::startTransitionAnimation(bool forward)
         QRect targetRect = widgetRect.translated(slideOffset, 0);
 
         auto *slideAnim = new QPropertyAnimation(m_transitionOverlay, "geometry", m_animGroup);
-        slideAnim->setDuration(110);
+        slideAnim->setDuration(140);
         slideAnim->setStartValue(widgetRect);
         slideAnim->setEndValue(targetRect);
         slideAnim->setEasingCurve(QEasingCurve::OutCubic);
         m_animGroup->addAnimation(slideAnim);
 
         auto *fadeAnim = new QPropertyAnimation(m_overlayOpacity, "opacity", m_animGroup);
-        fadeAnim->setDuration(110);
+        fadeAnim->setDuration(140);
         fadeAnim->setStartValue(1.0);
         fadeAnim->setEndValue(0.0);
         fadeAnim->setEasingCurve(QEasingCurve::OutQuad);
@@ -556,7 +666,7 @@ void BaseSkin::startTransitionAnimation(bool forward)
     case TransitionEffect::CrossFade: {
         m_overlayOpacity->setOpacity(1.0);
         auto *fadeAnim = new QPropertyAnimation(m_overlayOpacity, "opacity", m_animGroup);
-        fadeAnim->setDuration(100);
+        fadeAnim->setDuration(130);
         fadeAnim->setStartValue(1.0);
         fadeAnim->setEndValue(0.0);
         fadeAnim->setEasingCurve(QEasingCurve::InOutQuad);
@@ -665,8 +775,8 @@ void BaseSkin::pasteFromClipboard()
 {
     if (m_stackedWidget->currentIndex() == 1 && m_textViewer) {
         m_textViewer->paste();
-    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer && m_pdfViewer->pageWidget()) {
-        m_pdfViewer->pageWidget()->pasteFromClipboard();
+    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+        m_pdfViewer->paste();
     }
 }
 
@@ -994,29 +1104,16 @@ void BaseSkin::deleteCurrentFile()
 void BaseSkin::extractOcrCurrentFile()
 {
     if (!OcrManager::instance().isTesseractInstalled()) {
-        QString pmName = "apt";
-        if (!QStandardPaths::findExecutable("apt-get").isEmpty()) pmName = "apt";
-        else if (!QStandardPaths::findExecutable("pacman").isEmpty()) pmName = "pacman";
-        else if (!QStandardPaths::findExecutable("dnf").isEmpty()) pmName = "dnf";
-        else if (!QStandardPaths::findExecutable("zypper").isEmpty()) pmName = "zypper";
-
-        QMessageBox::StandardButton res = QMessageBox::question(
-            this, tr("Tesseract OCR Missing"),
-            tr("The <b>Tesseract OCR</b> engine is not installed on your system.<br><br>"
-               "Would you like BubezView to install it automatically using your system package manager (<code>%1</code>)?").arg(pmName),
-            QMessageBox::Yes | QMessageBox::No
-        );
-
-        if (res == QMessageBox::Yes) {
-            QString err;
-            if (!OcrManager::instance().installTesseractSystemPackage(this, &err)) {
-                QMessageBox::warning(this, tr("Installation Failed"),
-                    tr("Could not install Tesseract automatically:<br><code>%1</code><br><br>Please install it manually.").arg(err.toHtmlEscaped()));
-                return;
-            }
-        } else {
+        if (!PackageManagerHelper::installComponentInteractive("tesseract", this)) {
             return;
         }
+        if (!OcrManager::instance().isTesseractInstalled()) {
+            return;
+        }
+    } else {
+        // If High-Performance profile is active and system tesseract is used, notify user
+        QString exePath = OcrManager::instance().tesseractExecutablePath();
+        FallbackNoticeDialog::checkAndPrompt("tesseract", tr("Tesseract OCR"), exePath, this);
     }
 
     if (m_currentFilePath.isEmpty() || !QFile::exists(m_currentFilePath)) return;
@@ -1311,6 +1408,9 @@ void BaseSkin::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
     repositionSearchBar();
+    if (m_transitionOverlay && m_stackedWidget && (!m_animGroup || m_animGroup->state() != QAbstractAnimation::Running)) {
+        m_transitionOverlay->setGeometry(m_stackedWidget->geometry());
+    }
 }
 
 void BaseSkin::closeEvent(QCloseEvent *event)
@@ -1324,7 +1424,7 @@ void BaseSkin::closeEvent(QCloseEvent *event)
     if (m_mediaViewer) {
         m_mediaViewer->stop();
         if (m_mediaViewer->isBitPerfect() || m_mediaViewer->currentAudioDevice().startsWith("alsa/")) {
-            MediaViewer::resetAudioMixer();
+            m_mediaViewer->resetMixer();
         }
     }
 
@@ -1681,11 +1781,12 @@ void BaseSkin::openPdfPageOrganizer(const QString &filePath)
     }
     if (target.isEmpty() || !QFile::exists(target)) return;
 
-    PdfPageOrganizerDialog dlg(target, this);
-    connect(&dlg, &PdfPageOrganizerDialog::fileOrganized, this, [this](const QString &organizedPath) {
-        openFile(organizedPath);
-    });
-    dlg.exec();
+    if (m_pdfViewer) {
+        m_pdfViewer->setOnFileOrganized([this](const QString &organizedPath) {
+            openFile(organizedPath);
+        });
+        m_pdfViewer->openPageOrganizer(target, this);
+    }
 }
 
 
@@ -1694,8 +1795,12 @@ void BaseSkin::zoomInCurrent()
 {
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->zoomIn();
+    } else if (m_stackedWidget->currentIndex() == 1 && m_textViewer) {
+        m_textViewer->zoomInText(1);
     } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
         m_pdfViewer->zoomIn();
+    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        m_officeViewer->pdfViewer()->zoomIn();
     }
 }
 
@@ -1703,8 +1808,12 @@ void BaseSkin::zoomOutCurrent()
 {
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->zoomOut();
+    } else if (m_stackedWidget->currentIndex() == 1 && m_textViewer) {
+        m_textViewer->zoomOutText(1);
     } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
         m_pdfViewer->zoomOut();
+    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        m_officeViewer->pdfViewer()->zoomOut();
     }
 }
 
@@ -1712,8 +1821,12 @@ void BaseSkin::resetZoomCurrent()
 {
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->resetZoom();
+    } else if (m_stackedWidget->currentIndex() == 1 && m_textViewer) {
+        m_textViewer->resetTextZoom();
     } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
         m_pdfViewer->resetZoom();
+    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        m_officeViewer->pdfViewer()->resetZoom();
     }
 }
 
@@ -1723,6 +1836,8 @@ void BaseSkin::fitCurrent()
         m_imageViewer->fitToWindow();
     } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
         m_pdfViewer->fitToWidth();
+    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        m_officeViewer->pdfViewer()->fitToWidth();
     }
 }
 
@@ -1734,6 +1849,9 @@ void BaseSkin::toggleZoomTool(bool active)
     if (m_imageViewer) {
         m_imageViewer->setZoomToolActive(active);
     }
+    if (m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        m_officeViewer->pdfViewer()->toggleZoomTool(active);
+    }
 }
 
 bool BaseSkin::isZoomToolActive() const
@@ -1743,6 +1861,9 @@ bool BaseSkin::isZoomToolActive() const
     }
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         return m_imageViewer->isZoomToolActive();
+    }
+    if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        return m_officeViewer->pdfViewer()->isZoomToolActive();
     }
     return false;
 }
@@ -1855,6 +1976,89 @@ void BaseSkin::createFolderInCurrentFolder()
         } else {
             QMessageBox::warning(this, tr("Error"), tr("Unable to create folder."));
         }
+    }
+}
+
+void BaseSkin::openCreateArchiveDialog()
+{
+    if (!m_archiveViewer) {
+        auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
+        m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
+        if (m_archiveViewer) {
+            QWidget *oldW = m_stackedWidget->widget(3);
+            m_stackedWidget->removeWidget(oldW);
+            delete oldW;
+            m_stackedWidget->insertWidget(3, m_archiveViewer->widget());
+        }
+    }
+    if (!m_archiveViewer) {
+        QMessageBox::information(this, tr("Create Archive"),
+                                 tr("The Archive Engine plugin (libarchive) is not currently active."));
+        return;
+    }
+
+    QString activeFile;
+    QString activeFolder;
+    if (m_currentCategory == FileCategory::Folder && m_folderViewer) {
+        activeFolder = m_folderViewer->currentFolder();
+        QString sel = m_folderViewer->selectedFilePath();
+        if (!sel.isEmpty() && QFileInfo::exists(sel)) {
+            if (QFileInfo(sel).isDir()) {
+                activeFolder = sel;
+            } else {
+                activeFile = sel;
+            }
+        }
+    } else if (!m_currentFilePath.isEmpty()) {
+        QFileInfo fi(m_currentFilePath);
+        if (fi.isDir()) {
+            activeFolder = fi.absoluteFilePath();
+        } else if (fi.isFile()) {
+            activeFile = fi.absoluteFilePath();
+            activeFolder = fi.absolutePath();
+        }
+    }
+
+    bool sendLocalSend = false;
+    bool openWhenDone = false;
+    QString createdPath = m_archiveViewer->openCreateArchiveDialog(
+        activeFile, activeFolder, this, &sendLocalSend, &openWhenDone
+    );
+    if (createdPath.isEmpty() || !QFile::exists(createdPath)) {
+        return;
+    }
+
+    if (m_currentCategory == FileCategory::Folder && m_folderViewer && !m_folderViewer->currentFolder().isEmpty()) {
+        m_folderViewer->loadFolder(m_folderViewer->currentFolder());
+    }
+
+    if (sendLocalSend) {
+        ShareManager::shareLocalSend(createdPath, this);
+    }
+
+    if (openWhenDone) {
+        openFile(createdPath);
+    }
+}
+
+void BaseSkin::addFilesToCurrentArchive()
+{
+    if (m_currentCategory == FileCategory::Archive && m_archiveViewer) {
+        m_archiveViewer->addFilesToArchive();
+    }
+}
+
+void BaseSkin::addFolderToCurrentArchive()
+{
+    if (m_currentCategory == FileCategory::Archive && m_archiveViewer) {
+        m_archiveViewer->addFolderToArchive();
+    }
+}
+
+void BaseSkin::removeSelectedFromCurrentArchive()
+{
+    if (m_currentCategory == FileCategory::Archive && m_archiveViewer) {
+        m_archiveViewer->removeSelectedFromArchive();
     }
 }
 
@@ -2164,6 +2368,8 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
     ShareManager shareMgr(this, [targetPath]() { return targetPath; });
     shareMgr.populateMenu(menuShare);
 
+    menu.addAction(QIcon::fromTheme("package-x-generic"), tr("Compress / Create Archive..."), this, &BaseSkin::openCreateArchiveDialog);
+
     menu.addSeparator();
 
     // 3. Category Specific Actions
@@ -2206,8 +2412,12 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
         }
     } else if (activeCategory == FileCategory::Media && !isFolder) {
         if (m_currentCategory != FileCategory::Folder && m_mediaViewer) {
-            menu.addAction(QIcon::fromTheme("media-playback-start"), tr("Play / Pause"), m_mediaViewer, &MediaViewer::togglePlayPause);
-            menu.addAction(QIcon::fromTheme("media-playback-stop"), tr("Stop"), m_mediaViewer, &MediaViewer::stop);
+            menu.addAction(QIcon::fromTheme("media-playback-start"), tr("Play / Pause"), this, [this]() {
+                if (m_mediaViewer) m_mediaViewer->togglePlayPause();
+            });
+            menu.addAction(QIcon::fromTheme("media-playback-stop"), tr("Stop"), this, [this]() {
+                if (m_mediaViewer) m_mediaViewer->stop();
+            });
             menu.addSeparator();
         }
     }
@@ -2249,14 +2459,14 @@ bool BaseSkin::loadUnsupportedFileInfo(const QString &filePath)
         "<b>%6:</b> %7<br>"
         "<b>%8:</b> %9<br>"
         "<b>%10:</b> %11"
-    ).arg(tr("Tipo MIME"), mimeType.name().isEmpty() ? tr("Sconosciuto") : mimeType.name())
-     .arg(tr("Dimensione"), formatFileSize(info.size()), QString::number(info.size()))
-     .arg(tr("Ultima modifica"), info.lastModified().toString("yyyy-MM-dd hh:mm:ss"))
-     .arg(tr("Permessi"), QString("%1%2%3")
+    ).arg(tr("MIME Type"), mimeType.name().isEmpty() ? tr("Unknown") : mimeType.name())
+     .arg(tr("Size"), formatFileSize(info.size()), QString::number(info.size()))
+     .arg(tr("Last modified"), info.lastModified().toString("yyyy-MM-dd hh:mm:ss"))
+     .arg(tr("Permissions"), QString("%1%2%3")
           .arg(info.isReadable() ? "r" : "-")
           .arg(info.isWritable() ? "w" : "-")
           .arg(info.isExecutable() ? "x" : "-"))
-     .arg(tr("Percorso"), info.absoluteFilePath());
+     .arg(tr("Path"), info.absoluteFilePath());
 
     m_lblUnsupportedDetails->setText(details);
     return true;

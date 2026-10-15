@@ -11,6 +11,9 @@
 #include "cpu_info.h"
 #include "compiler_wizard_dialog.h"
 #include "build_options_dialog.h"
+#include "build_console_dialog.h"
+#include "package_manager_helper.h"
+#include "settings_dialog.h"
 
 #include <QSettings>
 #include <QStandardPaths>
@@ -22,17 +25,80 @@
 #include <QFormLayout>
 #include <QStyle>
 #include <QApplication>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QDialog>
+#include <QKeyEvent>
+#include <QTimer>
+
+namespace {
+
+/**
+ * @class SpaceShortcutTestDialog
+ * @brief Interactive modal dialog that captures key presses to verify spacebar responsiveness.
+ */
+class SpaceShortcutTestDialog : public QDialog {
+public:
+    explicit SpaceShortcutTestDialog(QWidget *parent = nullptr)
+        : QDialog(parent)
+        , m_spaceDetected(false)
+    {
+        setWindowTitle(FirstRunWizard::tr("Test Spacebar Shortcut"));
+        resize(420, 180);
+        auto *layout = new QVBoxLayout(this);
+        layout->setSpacing(14);
+
+        auto *lblTitle = new QLabel(FirstRunWizard::tr("<h3>🧪 Testing Spacebar Key</h3>"), this);
+        lblTitle->setAlignment(Qt::AlignCenter);
+        layout->addWidget(lblTitle);
+
+        m_lblStatus = new QLabel(
+            FirstRunWizard::tr("Please press the <b>Spacebar</b> on your keyboard now to verify key capture."),
+            this
+        );
+        m_lblStatus->setAlignment(Qt::AlignCenter);
+        m_lblStatus->setWordWrap(true);
+        layout->addWidget(m_lblStatus);
+
+        auto *hBox = new QHBoxLayout();
+        auto *btnCancel = new QPushButton(FirstRunWizard::tr("Cancel / Having Issues"), this);
+        connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+        hBox->addStretch();
+        hBox->addWidget(btnCancel);
+        layout->addLayout(hBox);
+
+        setFocusPolicy(Qt::StrongFocus);
+    }
+
+    bool spaceDetected() const { return m_spaceDetected; }
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Space) {
+            m_spaceDetected = true;
+            m_lblStatus->setText(FirstRunWizard::tr("<b style='color:#4ade80;'>✅ Spacebar detected successfully!</b>"));
+            QTimer::singleShot(400, this, &QDialog::accept);
+            return;
+        }
+        QDialog::keyPressEvent(event);
+    }
+
+private:
+    QLabel *m_lblStatus = nullptr;
+    bool m_spaceDetected = false;
+};
+
+} // namespace
 
 FirstRunWizard::FirstRunWizard(QWidget *parent)
     : QWizard(parent)
 {
     setWindowTitle(tr("BubezView Setup Wizard"));
     setWizardStyle(QWizard::ModernStyle);
-    resize(680, 520);
+    resize(700, 540);
 
     // Register pages
     setPage(Page_Welcome, createWelcomePage());
-    setPage(Page_DesktopIntegration, createDesktopIntegrationPage());
     setPage(Page_CpuOptimization, createCpuOptimizationPage());
     setPage(Page_Modules, createModulesPage());
     setPage(Page_Appearance, createAppearancePage());
@@ -69,10 +135,10 @@ QWizardPage *FirstRunWizard::createWelcomePage()
     layout->addWidget(lblIcon);
 
     auto *lblDesc = new QLabel(
-        tr("This wizard will help you configure your preferred keyboard shortcuts, "
-           "file manager integrations, Office rendering engine, and visual appearance.<br><br>"
+        tr("This wizard will help you configure your preferred processor optimizations, "
+           "document modules, visual appearance, and navigation behavior.<br><br>"
            "You can complete this setup in under a minute, and change any preference later "
-           "from the Settings dialog."),
+           "from the Settings dialog or directly from application menus."),
         page
     );
     lblDesc->setWordWrap(true);
@@ -96,59 +162,6 @@ QWizardPage *FirstRunWizard::createWelcomePage()
     layout->addWidget(groupEnv);
     layout->addStretch();
 
-    return page;
-}
-
-QWizardPage *FirstRunWizard::createDesktopIntegrationPage()
-{
-    auto *page = new QWizardPage(this);
-    page->setTitle(tr("Desktop & File Manager Integration"));
-    page->setSubTitle(tr("Configure how BubezView integrates with your file manager and keyboard shortcuts."));
-
-    auto *layout = new QVBoxLayout(page);
-    layout->setSpacing(14);
-
-    // Shortcut selection group
-    auto *groupShortcut = new QGroupBox(tr("Primary Preview Shortcut"), page);
-    auto *shortcutLayout = new QVBoxLayout(groupShortcut);
-
-    m_radioSpaceShortcut = new QRadioButton(
-        tr("Space (macOS Quick Look style - Recommended for single-key preview)"),
-        groupShortcut
-    );
-    m_radioCtrlSpaceShortcut = new QRadioButton(
-        tr("Ctrl + Space (Preserves the Space key for file selection in Dolphin)"),
-        groupShortcut
-    );
-
-    // Default to Space for intuitive quick previews
-    m_radioSpaceShortcut->setChecked(true);
-
-    shortcutLayout->addWidget(m_radioSpaceShortcut);
-    shortcutLayout->addWidget(m_radioCtrlSpaceShortcut);
-    layout->addWidget(groupShortcut);
-
-    // Additional integration options
-    auto *groupIntegrations = new QGroupBox(tr("File Manager Actions"), page);
-    auto *integrationsLayout = new QVBoxLayout(groupIntegrations);
-
-    m_chkFileManagerMenu = new QCheckBox(
-        tr("Add 'Quick Preview with BubezView' to file manager context menus (Dolphin, Nemo, Nautilus)"),
-        groupIntegrations
-    );
-    m_chkFileManagerMenu->setChecked(true);
-
-    m_chkGlobalShortcut = new QCheckBox(
-        tr("Register system-wide global shortcut to preview selected desktop items"),
-        groupIntegrations
-    );
-    m_chkGlobalShortcut->setChecked(true);
-
-    integrationsLayout->addWidget(m_chkFileManagerMenu);
-    integrationsLayout->addWidget(m_chkGlobalShortcut);
-    layout->addWidget(groupIntegrations);
-
-    layout->addStretch();
     return page;
 }
 
@@ -184,40 +197,43 @@ QWizardPage *FirstRunWizard::createCpuOptimizationPage()
     profilesLayout->setSpacing(10);
 
     m_radioCpuDesktop = new QRadioButton(
-        tr("🖥️ PC Desktop / Workstation (High Performance)\n"
-           "   Maximizes compute speed. Ideal for complex PDFs, massive RAW photos, and heavy media."),
-        groupProfiles
-    );
-
-    m_radioCpuLaptop = new QRadioButton(
-        tr("💻 PC Laptop / Efficiency (Low Power Consumption)\n"
-           "   Balanced profile with low battery impact and minimal temperatures. Ready immediately."),
+        tr("🚀 High Performance (Everything Compiled from Source)\n"
+           "   Maximum speed. All engines compiled with aggressive host optimizations (-O3, -march=native, LTO)."),
         groupProfiles
     );
 
     m_radioCpuBalanced = new QRadioButton(
-        tr("⚖️ Balanced (Recommended for Modern Everyday Computing)\n"
-           "   Combines smooth response times with moderate power usage."),
+        tr("📦 Balanced (System Packaged Dependencies)\n"
+           "   Daily use. Uses precompiled system libraries from your distribution with zero compile wait times."),
         groupProfiles
     );
 
-    // Default to Laptop / Efficiency
-    m_radioCpuLaptop->setChecked(true);
-
     profilesLayout->addWidget(m_radioCpuDesktop);
-    profilesLayout->addWidget(m_radioCpuLaptop);
     profilesLayout->addWidget(m_radioCpuBalanced);
 
-    auto *hBoxCustom = new QHBoxLayout();
-    hBoxCustom->addStretch();
-    m_btnCpuCustomize = new QPushButton(tr("⚙️ Customize / Advanced..."), groupProfiles);
-    m_btnCpuCustomize->setCursor(Qt::PointingHandCursor);
-    connect(m_btnCpuCustomize, &QPushButton::clicked, this, [this]() {
-        CompilerWizardDialog dlg(this);
-        dlg.exec();
+    connect(m_radioCpuDesktop, &QRadioButton::toggled, this, [this](bool) {
+        updateModuleOptionTexts();
     });
-    hBoxCustom->addWidget(m_btnCpuCustomize);
-    profilesLayout->addLayout(hBoxCustom);
+    connect(m_radioCpuBalanced, &QRadioButton::toggled, this, [this](bool) {
+        updateModuleOptionTexts();
+    });
+
+    // Intelligent auto-detection of optimal profile
+    QString rec = CpuInfo::recommendedProfile();
+    if (rec == QLatin1String("native")) {
+        m_radioCpuDesktop->setChecked(true);
+    } else {
+        m_radioCpuBalanced->setChecked(true);
+    }
+
+    // Concise informative message regarding auto-detection & recompilation
+    m_lblCpuDetectedNotice = new QLabel(
+        tr("<i>Optimal profile detected automatically. Changing it will trigger a recompile (also editable later in Settings).</i>"),
+        groupProfiles
+    );
+    m_lblCpuDetectedNotice->setStyleSheet("color: #64748b; font-size: 12px; margin-top: 4px;");
+    m_lblCpuDetectedNotice->setWordWrap(true);
+    profilesLayout->addWidget(m_lblCpuDetectedNotice);
 
     layout->addWidget(groupProfiles);
     layout->addStretch();
@@ -238,60 +254,56 @@ QWizardPage *FirstRunWizard::createModulesPage()
     auto *modulesLayout = new QVBoxLayout(groupModules);
     modulesLayout->setSpacing(10);
 
-    m_radioModuleMinimal = new QRadioButton(
-        tr("🔹 Minimal (Ultra-Lightweight Core)\n"
-           "   High-speed image viewer and plain text reader only. Zero extra overhead."),
+    m_radioModuleAll = new QRadioButton(groupModules);
+    m_radioModuleEnginesOnly = new QRadioButton(groupModules);
+    m_radioModuleDefault = new QRadioButton(
+        tr("⭐ Keep Existing Setup (No Installation or Compilation)\n"
+           "   Does not install or compile anything. Launches BubezView immediately in its current state."),
         groupModules
     );
-
-    m_radioModuleRecommended = new QRadioButton(
-        tr("⭐ Recommended (Standard Universal Viewer)\n"
-           "   Core viewers + PDF documents (Poppler), compressed archives, and media playback."),
-        groupModules
-    );
-
-    m_radioModuleEnginesOnly = new QRadioButton(
-        tr("📦 Reader Engines Only\n"
-           "   Enables dedicated parsing engines for PDF, Archives, and Audio/Video."),
-        groupModules
-    );
-
-    m_radioModuleAll = new QRadioButton(
-        tr("🚀 Complete (All Engines & Extensions)\n"
-           "   Full suite including Office documents (LibreOffice / native parser), QPDF tools, and QR codes."),
-        groupModules
-    );
-
     m_radioModuleCustom = new QRadioButton(
-        tr("⚙️ Customize\n"
-           "   Full granular control over each individual engine, library, and compilation option."),
+        tr("⚙️ Customize Individually\n"
+           "   Choose each component and engine manually."),
         groupModules
     );
 
-    m_radioModuleRecommended->setChecked(true);
+    // Initial label text setup based on currently selected profile
+    updateModuleOptionTexts();
 
-    modulesLayout->addWidget(m_radioModuleMinimal);
-    modulesLayout->addWidget(m_radioModuleRecommended);
-    modulesLayout->addWidget(m_radioModuleEnginesOnly);
+    // Default to Complete Suite so new users automatically get a full working setup
+    m_radioModuleAll->setChecked(true);
+
     modulesLayout->addWidget(m_radioModuleAll);
+    modulesLayout->addWidget(m_radioModuleEnginesOnly);
+    modulesLayout->addWidget(m_radioModuleDefault);
     modulesLayout->addWidget(m_radioModuleCustom);
 
-    auto *hBoxCustomMod = new QHBoxLayout();
-    hBoxCustomMod->addStretch();
-    m_btnModuleCustomize = new QPushButton(tr("⚙️ Open Advanced Module Manager..."), groupModules);
-    m_btnModuleCustomize->setCursor(Qt::PointingHandCursor);
-    connect(m_btnModuleCustomize, &QPushButton::clicked, this, [this]() {
-        BuildOptionsDialog dlg(this);
+    // Customization button and note
+    m_btnConfigureExtensions = new QPushButton(tr("⚙️ Configure Extensions & Engines..."), groupModules);
+    m_btnConfigureExtensions->setCursor(Qt::PointingHandCursor);
+    m_btnConfigureExtensions->setVisible(false);
+    modulesLayout->addWidget(m_btnConfigureExtensions);
+
+    m_lblModulesHint = new QLabel(
+        tr("ℹ️ You can also configure or recompile individual extensions at any time from Settings → Extensions."),
+        groupModules
+    );
+    m_lblModulesHint->setStyleSheet("color: #64748b; font-size: 12px; margin-top: 4px;");
+    m_lblModulesHint->setWordWrap(true);
+    m_lblModulesHint->setVisible(false);
+    modulesLayout->addWidget(m_lblModulesHint);
+
+    auto openExtensionsSettings = [this]() {
+        SettingsDialog dlg(this, SettingsDialog::TabIndex::Extensions);
         dlg.exec();
-    });
+    };
+
     connect(m_radioModuleCustom, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            BuildOptionsDialog dlg(this);
-            dlg.exec();
-        }
+        if (m_btnConfigureExtensions) m_btnConfigureExtensions->setVisible(checked);
+        if (m_lblModulesHint) m_lblModulesHint->setVisible(checked);
     });
-    hBoxCustomMod->addWidget(m_btnModuleCustomize);
-    modulesLayout->addLayout(hBoxCustomMod);
+
+    connect(m_btnConfigureExtensions, &QPushButton::clicked, this, openExtensionsSettings);
 
     layout->addWidget(groupModules);
     layout->addStretch();
@@ -313,8 +325,8 @@ QWizardPage *FirstRunWizard::createAppearancePage()
 
     m_comboTheme = new QComboBox(groupTheme);
     m_comboTheme->addItem(tr("Native System Theme (Matches desktop light/dark mode)"), "native");
-    m_comboTheme->addItem(tr("Dark Modern (Deep dark theme for contrast)"), "dark");
-    m_comboTheme->addItem(tr("Light Clean (Bright minimalist theme)"), "light");
+    m_comboTheme->addItem(tr("Dark Slate (Deep modern slate theme)"), "dark_slate");
+    m_comboTheme->addItem(tr("Breeze Dark (KDE Breeze-inspired dark styling)"), "breeze_dark");
 
     themeLayout->addWidget(m_comboTheme);
     layout->addWidget(groupTheme);
@@ -337,21 +349,97 @@ QWizardPage *FirstRunWizard::createAppearancePage()
 QWizardPage *FirstRunWizard::createBehaviorPage()
 {
     auto *page = new QWizardPage(this);
-    page->setTitle(tr("Window & Navigation Behavior"));
-    page->setSubTitle(tr("Configure shortcuts and window memory for seamless daily use."));
+    page->setTitle(tr("Navigation, Shortcuts & Behavior"));
+    page->setSubTitle(tr("Configure shortcuts, dismissal keys, and navigation caching for daily use."));
 
     auto *layout = new QVBoxLayout(page);
     layout->setSpacing(14);
 
-    auto *groupKeys = new QGroupBox(tr("Quick Navigation"), page);
+    // Primary Shortcut & Test
+    auto *groupShortcut = new QGroupBox(tr("Primary Preview Shortcut"), page);
+    auto *scLayout = new QVBoxLayout(groupShortcut);
+
+    auto *lblShortcutInfo = new QLabel(
+        tr("<b>Primary Shortcut:</b> Press <b>Space</b> on any file in your file manager for instant preview."),
+        groupShortcut
+    );
+    lblShortcutInfo->setTextFormat(Qt::RichText);
+    scLayout->addWidget(lblShortcutInfo);
+
+    auto *hBoxTest = new QHBoxLayout();
+    m_btnTestShortcut = new QPushButton(tr("🧪 Test Shortcut..."), groupShortcut);
+    m_btnTestShortcut->setCursor(Qt::PointingHandCursor);
+    hBoxTest->addWidget(m_btnTestShortcut);
+    hBoxTest->addStretch();
+    scLayout->addLayout(hBoxTest);
+
+    m_lblTestResult = new QLabel(groupShortcut);
+    m_lblTestResult->setTextFormat(Qt::RichText);
+    m_lblTestResult->setWordWrap(true);
+    scLayout->addWidget(m_lblTestResult);
+
+    m_chkUseCtrlSpace = new QCheckBox(
+        tr("Use Ctrl + Space fallback (connects to trigger_bubez.sh if Space is reserved by Dolphin)"),
+        groupShortcut
+    );
+    m_chkUseCtrlSpace->setVisible(false);
+    scLayout->addWidget(m_chkUseCtrlSpace);
+
+    QString projectTrigger = QDir(QCoreApplication::applicationDirPath()).filePath("../trigger_bubez.sh");
+    QString triggerPath = QDir::homePath() + "/.local/share/bubezview/trigger_bubez.sh";
+    if (QFile::exists(projectTrigger)) {
+        triggerPath = QFileInfo(projectTrigger).canonicalFilePath();
+    } else if (QFile::exists("/home/davide/Progetti/BubezView/trigger_bubez.sh")) {
+        triggerPath = "/home/davide/Progetti/BubezView/trigger_bubez.sh";
+    }
+
+    m_lblTriggerHelp = new QLabel(groupShortcut);
+    m_lblTriggerHelp->setTextFormat(Qt::RichText);
+    m_lblTriggerHelp->setWordWrap(true);
+    m_lblTriggerHelp->setText(
+        tr("<b>Important note for trigger fallback:</b> In your desktop system settings (KDE Plasma / GNOME Shortcuts), "
+           "you will need to bind <b>Ctrl + Space</b> to the trigger script located at:<br>"
+           "<code style='color:#38bdf8;'>%1</code>")
+        .arg(triggerPath)
+    );
+    m_lblTriggerHelp->setStyleSheet("background-color: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 8px; margin-top: 6px; font-size: 12px;");
+    m_lblTriggerHelp->setVisible(false);
+    scLayout->addWidget(m_lblTriggerHelp);
+
+    auto updateTriggerVisibility = [this](bool visible) {
+        if (m_chkUseCtrlSpace) m_chkUseCtrlSpace->setVisible(visible);
+        if (m_lblTriggerHelp) m_lblTriggerHelp->setVisible(visible && m_chkUseCtrlSpace->isChecked());
+    };
+
+    connect(m_chkUseCtrlSpace, &QCheckBox::toggled, this, [this](bool checked) {
+        if (m_lblTriggerHelp) m_lblTriggerHelp->setVisible(checked);
+    });
+
+    connect(m_btnTestShortcut, &QPushButton::clicked, this, [this, updateTriggerVisibility]() {
+        SpaceShortcutTestDialog dlg(this);
+        if (dlg.exec() == QDialog::Accepted && dlg.spaceDetected()) {
+            m_lblTestResult->setText(tr("<b style='color:#4ade80;'>✅ Spacebar verified and functioning properly!</b>"));
+            m_chkUseCtrlSpace->setChecked(false);
+            updateTriggerVisibility(false);
+        } else {
+            m_lblTestResult->setText(tr("<b style='color:#facc15;'>⚠️ Space key not detected or conflict reported. Fallback available:</b>"));
+            m_chkUseCtrlSpace->setChecked(true);
+            updateTriggerVisibility(true);
+        }
+    });
+
+    layout->addWidget(groupShortcut);
+
+    // Quick Dismissal & Navigation
+    auto *groupKeys = new QGroupBox(tr("Navigation & Window Memory"), page);
     auto *keysLayout = new QVBoxLayout(groupKeys);
 
-    m_chkCloseOnSpaceOrEsc = new QCheckBox(
-        tr("Instant dismissal: Press Space or Escape to instantly close the viewer"),
+    m_chkCloseOnEsc = new QCheckBox(
+        tr("Instant dismissal: Press Escape (Esc) to close the viewer"),
         groupKeys
     );
-    m_chkCloseOnSpaceOrEsc->setChecked(true);
-    keysLayout->addWidget(m_chkCloseOnSpaceOrEsc);
+    m_chkCloseOnEsc->setChecked(true);
+    keysLayout->addWidget(m_chkCloseOnEsc);
 
     m_chkRememberGeometry = new QCheckBox(
         tr("Remember window size and position across preview sessions"),
@@ -360,20 +448,36 @@ QWizardPage *FirstRunWizard::createBehaviorPage()
     m_chkRememberGeometry->setChecked(true);
     keysLayout->addWidget(m_chkRememberGeometry);
 
+    m_chkPreloadCache = new QCheckBox(
+        tr("Preload adjacent files: Cache next and previous items in background for instant browsing"),
+        groupKeys
+    );
+    m_chkPreloadCache->setChecked(true);
+    keysLayout->addWidget(m_chkPreloadCache);
+
+    m_chkStandbyMode = new QCheckBox(
+        tr("Memory standby: Release preview memory cache when idle to save RAM"),
+        groupKeys
+    );
+    m_chkStandbyMode->setChecked(false);
+    keysLayout->addWidget(m_chkStandbyMode);
+
     layout->addWidget(groupKeys);
 
-    auto *groupShortcuts = new QGroupBox(tr("Shortcuts & Launchers"), page);
-    auto *scLayout = new QVBoxLayout(groupShortcuts);
+    // Shortcuts & Launchers
+    auto *groupLaunchers = new QGroupBox(tr("Desktop Integration"), page);
+    auto *launchersLayout = new QVBoxLayout(groupLaunchers);
 
     m_chkDesktopShortcut = new QCheckBox(
         tr("Place a quick launcher on the Desktop (~/Desktop or ~/Scrivania)"),
-        groupShortcuts
+        groupLaunchers
     );
-    m_chkDesktopShortcut->setChecked(true);
-    scLayout->addWidget(m_chkDesktopShortcut);
+    m_chkDesktopShortcut->setChecked(false); // Disabled by default as requested
+    launchersLayout->addWidget(m_chkDesktopShortcut);
 
-    layout->addWidget(groupShortcuts);
+    layout->addWidget(groupLaunchers);
     layout->addStretch();
+
     return page;
 }
 
@@ -401,21 +505,16 @@ void FirstRunWizard::updateSummaryText()
 {
     if (!m_lblSummaryDetails) return;
 
-    QString shortcutText = (m_radioSpaceShortcut && m_radioSpaceShortcut->isChecked()) ? "Space" : "Ctrl+Space";
-    QString cpuText = tr("Laptop / Efficiency (Low Power)");
-    if (m_radioCpuDesktop && m_radioCpuDesktop->isChecked()) {
-        cpuText = tr("Desktop / Workstation (High Performance)");
-    } else if (m_radioCpuBalanced && m_radioCpuBalanced->isChecked()) {
-        cpuText = tr("Balanced (Modern Everyday Computing)");
-    }
+    QString shortcutText = (m_chkUseCtrlSpace && m_chkUseCtrlSpace->isChecked()) ? "Ctrl+Space (trigger)" : "Space";
+    QString cpuText = (m_radioCpuDesktop && m_radioCpuDesktop->isChecked())
+        ? tr("🚀 High Performance (Compiled from Source)")
+        : tr("📦 Balanced (System Packages)");
 
-    QString modulesText = tr("Recommended (PDF, Archives, Media)");
-    if (m_radioModuleMinimal && m_radioModuleMinimal->isChecked()) {
-        modulesText = tr("Minimal Core (Images & Text)");
-    } else if (m_radioModuleEnginesOnly && m_radioModuleEnginesOnly->isChecked()) {
-        modulesText = tr("Engines Only (PDF, Archives, Media)");
+    QString modulesText = tr("Default (Keep Current Setup)");
+    if (m_radioModuleEnginesOnly && m_radioModuleEnginesOnly->isChecked()) {
+        modulesText = tr("Core Plugins Only");
     } else if (m_radioModuleAll && m_radioModuleAll->isChecked()) {
-        modulesText = tr("Complete Suite (All Modules & Office)");
+        modulesText = tr("Complete Suite");
     } else if (m_radioModuleCustom && m_radioModuleCustom->isChecked()) {
         modulesText = tr("Custom Configuration");
     }
@@ -431,20 +530,52 @@ void FirstRunWizard::updateSummaryText()
         "<li><b>%8:</b> %9</li>"
         "<li><b>%10:</b> %11</li>"
         "<li><b>%12:</b> %13</li>"
+        "<li><b>%14:</b> %15</li>"
         "</ul>"
-        "<p>%14</p>"
+        "<p>%16</p>"
     ).arg(
         tr("Summary of Your Choices:"),
         tr("Primary Shortcut"), shortcutText,
         tr("Hardware Performance Profile"), cpuText,
-        tr("Functional Modules Preset"), modulesText,
+        tr("Modules Preset"), modulesText,
         tr("Theme"), themeText,
         tr("Thumbnail Filmstrip"), (m_chkFilmstrip && m_chkFilmstrip->isChecked() ? tr("Enabled") : tr("Disabled")),
-        tr("Quick Dismissal (Space/Esc)"), (m_chkCloseOnSpaceOrEsc && m_chkCloseOnSpaceOrEsc->isChecked() ? tr("Enabled") : tr("Disabled")),
+        tr("Quick Dismissal Key"), tr("Escape (Esc)"),
+        tr("Preload Cache"), (m_chkPreloadCache && m_chkPreloadCache->isChecked() ? tr("Enabled") : tr("Disabled")),
         tr("Click 'Finish & Launch BubezView' to apply these settings and begin!")
     );
 
     m_lblSummaryDetails->setText(summaryHtml);
+}
+
+void FirstRunWizard::updateModuleOptionTexts()
+{
+    if (!m_radioModuleAll || !m_radioModuleEnginesOnly) return;
+
+    bool isHighPerformance = (m_radioCpuDesktop && m_radioCpuDesktop->isChecked());
+
+    if (isHighPerformance) {
+        m_radioModuleAll->setText(
+            tr("🚀 Complete Suite (BubezView + Core Plugins & Extensions)\n"
+               "   Builds BubezView and all core plugins from source with aggressive host optimizations,\n"
+               "   and verifies optional tools (QPDF, Tesseract OCR).")
+        );
+        m_radioModuleEnginesOnly->setText(
+            tr("📦 Core Plugins Only (Fast Build)\n"
+               "   Builds BubezView and core viewer plugins from source with high-performance flags.\n"
+               "   Skips optional extensions (OCR, QPDF).")
+        );
+    } else {
+        m_radioModuleAll->setText(
+            tr("🚀 Complete Suite (System Packages)\n"
+               "   Uses prebuilt binaries and installs system packages for all extensions (QPDF, Tesseract OCR)\n"
+               "   with zero compilation time.")
+        );
+        m_radioModuleEnginesOnly->setText(
+            tr("📦 Core Plugins Only (System Packages)\n"
+               "   Uses prebuilt binaries for core viewers and skips optional extensions.")
+        );
+    }
 }
 
 void FirstRunWizard::accept()
@@ -454,79 +585,120 @@ void FirstRunWizard::accept()
     // 1. Mark first run as completed
     settings.setValue("first_run_completed", true);
 
-    // 2. Shortcut and Desktop Integrations
-    QString chosenShortcut = (m_radioSpaceShortcut && m_radioSpaceShortcut->isChecked()) ? "Space" : "Ctrl+Space";
-    settings.setValue("shortcut", chosenShortcut);
+    // 2. Hardware Performance Profile
+    BuildConfig &cfg = BuildConfig::instance();
+    bool isHighPerformance = (m_radioCpuDesktop && m_radioCpuDesktop->isChecked());
+    if (isHighPerformance) {
+        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::HighPerformance);
+    } else {
+        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::Balanced);
+    }
 
-    if (m_chkFileManagerMenu && m_chkFileManagerMenu->isChecked()) {
-        DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
-        if (de == DesktopIntegrator::DesktopEnv::KDE) {
-            DesktopIntegrator::enableDolphin(chosenShortcut);
-        } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
-            DesktopIntegrator::enableGnomeNemo();
+    // 3. Execution of Compilation / Package Installation based on chosen scope
+    bool scopeBase = (m_radioModuleEnginesOnly && m_radioModuleEnginesOnly->isChecked());
+    bool scopeAll = (m_radioModuleAll && m_radioModuleAll->isChecked());
+
+    if (isHighPerformance) {
+        // High Performance Profile: compile BubezView and all core plugins with host optimizations
+        if (scopeAll || scopeBase) {
+            BuildConsoleDialog console(this);
+            console.setWindowTitle(tr("Compiling BubezView — High Performance Profile"));
+            console.startBuild();
+            console.exec();
+        }
+
+        // For Complete Suite, verify optional system tools (QPDF, Tesseract OCR)
+        if (scopeAll) {
+            QStringList missingExts;
+            const QStringList extIds = {QStringLiteral("qpdf"), QStringLiteral("tesseract")};
+            for (const QString &cid : extIds) {
+                if (!PackageManagerHelper::isComponentInstalled(cid)) {
+                    QString pkg = PackageManagerHelper::packageNameForComponent(cid);
+                    if (!pkg.isEmpty() && !missingExts.contains(pkg)) {
+                        missingExts << pkg;
+                    }
+                }
+            }
+            if (!missingExts.isEmpty()) {
+                PackageManagerHelper::runPrivilegedInstall(missingExts, this);
+            }
+        }
+    } else {
+        // Balanced Profile: check and install missing system packages without compiling
+        QStringList componentsToCheck;
+        if (scopeBase) {
+            componentsToCheck << "engine-poppler" << "engine-libarchive";
+        } else if (scopeAll) {
+            componentsToCheck << "engine-poppler" << "engine-libarchive" << "qpdf" << "tesseract";
+        }
+
+        QStringList missingPackages;
+        for (const QString &cid : componentsToCheck) {
+            if (!PackageManagerHelper::isComponentInstalled(cid)) {
+                QString pkg = PackageManagerHelper::packageNameForComponent(cid);
+                if (!pkg.isEmpty() && !missingPackages.contains(pkg)) {
+                    missingPackages << pkg;
+                }
+            }
+        }
+        if (!missingPackages.isEmpty()) {
+            PackageManagerHelper::runPrivilegedInstall(missingPackages, this);
         }
     }
 
-    // 3. CPU Performance Profile
-    BuildConfig &cfg = BuildConfig::instance();
-    if (m_radioCpuDesktop && m_radioCpuDesktop->isChecked()) {
-        cfg.setCpuProfile(QStringLiteral("native"));
-        cfg.setOptimizationLevel(QStringLiteral("O3"));
-    } else if (m_radioCpuLaptop && m_radioCpuLaptop->isChecked()) {
-        cfg.setCpuProfile(QStringLiteral("standard"));
-        cfg.setOptimizationLevel(QStringLiteral("O2"));
-    } else if (m_radioCpuBalanced && m_radioCpuBalanced->isChecked()) {
-        cfg.setCpuProfile(QStringLiteral("balanced"));
-        cfg.setOptimizationLevel(QStringLiteral("O2"));
-    }
-
-    // 4. Functional Modules Preset
-    if (m_radioModuleMinimal && m_radioModuleMinimal->isChecked()) {
-        cfg.setStaticPdf(false);
-        cfg.setStaticArchive(false);
-        cfg.setEnableInternalOffice(false);
-        settings.setValue("office_use_libreoffice", true);
-    } else if (m_radioModuleRecommended && m_radioModuleRecommended->isChecked()) {
-        cfg.setStaticPdf(false);
-        cfg.setStaticArchive(false);
-        cfg.setEnableInternalOffice(false);
-        settings.setValue("office_use_libreoffice", true);
-    } else if (m_radioModuleEnginesOnly && m_radioModuleEnginesOnly->isChecked()) {
-        cfg.setStaticPdf(false);
-        cfg.setStaticArchive(false);
-        cfg.setEnableInternalOffice(false);
-        settings.setValue("office_use_libreoffice", true);
-    } else if (m_radioModuleAll && m_radioModuleAll->isChecked()) {
-        cfg.setStaticPdf(false);
-        cfg.setStaticArchive(false);
+    if (scopeAll) {
         cfg.setEnableInternalOffice(true);
-        settings.setValue("office_use_libreoffice", false);
+        settings.setValue("office_use_libreoffice", true);
+    } else {
+        cfg.setEnableInternalOffice(false);
+        settings.setValue("office_use_libreoffice", true);
     }
     cfg.save();
 
-    // 4. Appearance
+    // 4. Primary Shortcut and System Integrations
+    bool useCtrlSpace = (m_chkUseCtrlSpace && m_chkUseCtrlSpace->isChecked());
+    QString chosenShortcut = useCtrlSpace ? "Ctrl+Space" : "Space";
+    settings.setValue("shortcut", chosenShortcut);
+
+    // Context menus and global shortcuts are automatically registered in the background
+    DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
+    if (de == DesktopIntegrator::DesktopEnv::KDE) {
+        DesktopIntegrator::enableDolphin(chosenShortcut);
+    } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+        DesktopIntegrator::enableGnomeNemo();
+    }
+
+    // 5. Appearance
     if (m_comboTheme) {
         QString themeCode = m_comboTheme->currentData().toString();
-        settings.setValue("theme", themeCode);
+        ThemeManager::setPreset(ThemeManager::stringToPreset(themeCode));
     }
     if (m_chkFilmstrip) {
         settings.setValue("ui/filmstrip", m_chkFilmstrip->isChecked());
         settings.setValue("show_filmstrip", m_chkFilmstrip->isChecked());
     }
 
-    // 5. Behavior
-    if (m_chkCloseOnSpaceOrEsc) {
-        settings.setValue("quick_close_on_space", m_chkCloseOnSpaceOrEsc->isChecked());
+    // 6. Navigation, Behavior & Cache
+    if (m_chkCloseOnEsc) {
+        settings.setValue("quick_close_on_esc", m_chkCloseOnEsc->isChecked());
     }
+    // Space is reserved for preview/navigation, not closing
+    settings.setValue("quick_close_on_space", false);
+
     if (m_chkRememberGeometry) {
         settings.setValue("remember_geometry", m_chkRememberGeometry->isChecked());
     }
+    if (m_chkPreloadCache) {
+        settings.setValue("cache/preload_adjacent", m_chkPreloadCache->isChecked());
+    }
+    if (m_chkStandbyMode) {
+        settings.setValue("cache/enable_standby", m_chkStandbyMode->isChecked());
+    }
 
-    // 6. Desktop Shortcut
+    // 7. Desktop Shortcut (optional, disabled by default)
     if (m_chkDesktopShortcut && m_chkDesktopShortcut->isChecked()) {
         QString desktopDir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
         if (desktopDir.isEmpty() || !QDir(desktopDir).exists()) {
-            // Check Scrivania / Desktop fallbacks
             if (QDir(QDir::homePath() + "/Scrivania").exists()) {
                 desktopDir = QDir::homePath() + "/Scrivania";
             } else {
@@ -538,15 +710,21 @@ void FirstRunWizard::accept()
             QString desktopFilePath = desktopDir + "/BubezView.desktop";
             QFile file(desktopFilePath);
             if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                QString triggerScript = QDir::homePath() + "/.local/share/bubezview/bubezview";
-                if (QFile::exists("/home/davide/Progetti/BubezView/trigger_bubez.sh")) {
-                    triggerScript = "/home/davide/Progetti/BubezView/trigger_bubez.sh";
-                } else if (QFile::exists(QCoreApplication::applicationFilePath())) {
+                QString projectTrigger = QDir(QCoreApplication::applicationDirPath()).filePath("../trigger_bubez.sh");
+                QString triggerScript = QDir::homePath() + "/.local/share/bubezview/trigger_bubez.sh";
+                if (QFile::exists(projectTrigger)) {
+                    triggerScript = QFileInfo(projectTrigger).canonicalFilePath();
+                } else if (QFile::exists(QDir::homePath() + "/.local/share/bubezview/bubezview")) {
+                    triggerScript = QDir::homePath() + "/.local/share/bubezview/bubezview";
+                } else {
                     triggerScript = QCoreApplication::applicationFilePath();
                 }
 
                 QString iconPath = "bubezview";
-                if (QFile::exists("/home/davide/Progetti/BubezView/assets/bubezview_icon.png")) {
+                QString projectIcon = QDir(QCoreApplication::applicationDirPath()).filePath("../assets/bubezview_icon.png");
+                if (QFile::exists(projectIcon)) {
+                    iconPath = QFileInfo(projectIcon).canonicalFilePath();
+                } else if (QFile::exists("/home/davide/Progetti/BubezView/assets/bubezview_icon.png")) {
                     iconPath = "/home/davide/Progetti/BubezView/assets/bubezview_icon.png";
                 }
                 QString content = QString(

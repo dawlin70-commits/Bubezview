@@ -20,6 +20,8 @@ namespace Poppler {
     class OutlineItem;
 }
 
+#include "core/interfaces/i_pdf_viewer.h"
+
 /**
  * @brief Native PDF viewer utilizing the Poppler-Qt6 engine.
  *
@@ -28,7 +30,7 @@ namespace Poppler {
  * collapsible table of contents (TOC / Outlines), interactive mouse text selection,
  * and high-resolution image extraction.
  */
-class PdfViewer : public QWidget
+class PdfViewer : public QWidget, public IPdfViewer
 {
     Q_OBJECT
 
@@ -36,13 +38,16 @@ public:
     explicit PdfViewer(QWidget *parent = nullptr);
     ~PdfViewer() override;
 
+    QWidget *widget() override { return this; }
+
     /**
      * @brief Loads and parses a PDF document from disk.
      * @param filePath Absolute path of the PDF file.
      * @param preserveHistory If true, preserves existing Undo/Redo history stacks across reload.
      * @return True if opened and unlocked successfully; false on error.
      */
-    bool loadFile(const QString &filePath, bool preserveHistory = false);
+    bool loadFile(const QString &filePath) override { return loadFile(filePath, false); }
+    bool loadFile(const QString &filePath, bool preserveHistory);
 
     /**
      * @brief Loads a pre-parsed Poppler document directly, optionally with a pre-rendered initial page image.
@@ -94,6 +99,8 @@ public:
      * @brief Pastes text from clipboard onto the current page.
      */
     void pasteText();
+    void paste() override { pasteText(); }
+    void goToPage(int page) override { setPage(page); }
 
     /**
      * @brief Checks if text is currently selected on the active page.
@@ -176,20 +183,20 @@ public slots:
      */
     void redo();
 
-    void nextPage();
-    void prevPage();
+    void nextPage() override;
+    void prevPage() override;
     void setPage(int page);
     void scrollToPage(int pageIndex);
-    void zoomIn();
-    void zoomOut();
-    void resetZoom();
-    void fitToWidth();
+    void zoomIn() override;
+    void zoomOut() override;
+    void resetZoom() override;
+    void fitToWidth() override;
     void rotateClockwise();
     void rotateCounterClockwise();
     void zoomAt(const QPoint &viewportPos, double factor);
-    void toggleZoomTool(bool active);
-    bool isZoomToolActive() const { return m_zoomToolActive; }
-    void toggleTocSidebar();
+    void toggleZoomTool(bool active) override;
+    bool isZoomToolActive() const override { return m_zoomToolActive; }
+    void toggleTocSidebar() override;
     void setTocVisible(bool visible);
 
     // PDF Annotation & Tool Launchers
@@ -199,6 +206,7 @@ public slots:
     void exitContinuousToolMode();
     void openTypewriterDialog();
     void openSignatureDialog();
+    void openCryptoSignatureDialog(int defaultTab = 0) override;
     void openInsertImageDialog();
     void openWatermarkDialog();
     void openShapeDialog();
@@ -206,6 +214,7 @@ public slots:
     void startSelectArea();
     void startRedaction();
     bool insertBlankPage(int afterPageIndex = -1);
+    void openPageOrganizer(const QString &target, QWidget *parentWidget = nullptr) override;
 
     void onAddStampAnnotation(const QImage &image, const QRectF &normalizedRect);
     void onAddStampAnnotations(const QList<QPair<QImage, QRectF>> &stamps);
@@ -295,7 +304,15 @@ private:
     void pushUndoState();
     void clearUndoRedoStacks();
     void resetDocument();
+    void verifyAndRefreshSignatureBanner();
     QString currentDocumentSourcePath() const;
+
+    // Top Cryptographic Signature Verification Banner
+    QWidget *m_sigBanner = nullptr;
+    QLabel *m_lblSigBannerText = nullptr;
+    QPushButton *m_btnSigBannerDetails = nullptr;
+    QPushButton *m_btnSigBannerSign = nullptr;
+    QPushButton *m_btnSigBannerClose = nullptr;
 
     QSplitter *m_splitter;
     QWidget *m_tocContainer;
@@ -317,6 +334,7 @@ private:
 
     std::unique_ptr<Poppler::Document> m_doc;
     QString m_filePath;
+    QString m_extractedP7mTempPath;
     int m_currentPage;
     int m_pageCount;
     double m_zoomFactor;
@@ -330,6 +348,10 @@ private:
     QList<QString> m_redoStack;
     QString m_activeSnapshotPath;
     static constexpr int MAX_UNDO_STACK_SIZE = 20;
+
+    int m_wheelAccumulator = 0;
+    qint64 m_lastWheelPageTime = 0;
+    int m_lastWheelPageDir = 0;
 };
 
 

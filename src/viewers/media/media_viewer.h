@@ -22,15 +22,19 @@
  * controls (play/pause, seek slider, timestamp, volume, speed, loop, track and subtitle selection).
  * Also integrates quick Swiss-knife audio tools (Trim, Tag editor, Audio extraction).
  */
+#include "core/interfaces/i_media_viewer.h"
+
 class StereoOscilloscopeWidget;
 
-class MediaViewer : public QWidget
+class MediaViewer : public QWidget, public IMediaViewer
 {
     Q_OBJECT
 
 public:
     explicit MediaViewer(QWidget *parent = nullptr);
     ~MediaViewer() override;
+
+    QWidget *widget() override { return this; }
 
     /**
      * @brief Loads and starts playback of a media file via libmpv.
@@ -104,6 +108,7 @@ public:
      * @brief Restarts PipeWire/WirePlumber user services to immediately release ALSA endpoints and unblock mixer.
      */
     static void resetAudioMixer();
+    void resetMixer() override { resetAudioMixer(); }
 
     /**
      * @brief Requests PipeWire / WirePlumber to release ALSA hardware endpoints via FreeDesktop ReserveDevice1 DBus protocol.

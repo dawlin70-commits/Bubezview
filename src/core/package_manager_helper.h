@@ -126,6 +126,18 @@ public:
     static QString queryPackageCandidateVersion(const QString &componentId);
 
     /**
+     * @brief Checks if candidate version for component is cached.
+     * @param componentId Generic component ID
+     * @return True if version has already been queried and cached.
+     */
+    static bool isCandidateVersionCached(const QString &componentId);
+
+    /**
+     * @brief Clears in-memory package candidate and status caches (e.g. after install or uninstall).
+     */
+    static void clearCaches();
+
+    /**
      * @brief Returns a curated list of known stable releases from recent years for a component.
      * @param componentId Generic component ID, e.g. "poppler-qt6"
      * @return List of version strings (e.g. "24.08.0", "24.02.0", "23.12.0", "22.12.0")

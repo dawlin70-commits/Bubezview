@@ -2,5 +2,8 @@
 <RCC version="1.0">
     <qresource prefix="/icons">
         <file alias="bubezview.png">icons/bubezview.png</file>
+        <file alias="binary_package.svg">icons/binary_package.svg</file>
+        <file alias="source_lightning.svg">icons/source_lightning.svg</file>
+        <file alias="wrench.svg">icons/wrench.svg</file>
     </qresource>
 </RCC>

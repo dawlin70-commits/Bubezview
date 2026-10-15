@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
-project(bubezview VERSION 0.3.1 LANGUAGES CXX)
-add_compile_definitions(BUBEZVIEW_VERSION="${PROJECT_VERSION}")
+project(bubezview VERSION 0.4.0 LANGUAGES CXX)
+set(BUBEZVIEW_VERSION_STRING "0.4.0-beta")
+add_compile_definitions(BUBEZVIEW_VERSION="${BUBEZVIEW_VERSION_STRING}")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,8 +14,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_definitions(QT_NO_DEBUG_OUTPUT)
 endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-alloc-size-larger-than)
+    add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-alloc-size-larger-than -ftls-model=global-dynamic)
 endif()
 
 set(CMAKE_AUTOMOC ON)
@@ -39,109 +42,94 @@ if(STATIC_BUILD)
     set(STATIC_ARCHIVE ON)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml DBus PrintSupport Test Network OpenGLWidgets)
+# -----------------------------------------------------------------------------
+# Global Optimization Level & CPU Architecture Tuning
+# Applied uniformly to the core app, all plugins, and static engines (Poppler, etc.)
+# -----------------------------------------------------------------------------
+set(OPTIMIZATION_LEVEL "O2" CACHE STRING "Compiler optimization level: O0 (no opt/fastest build), O1 (fast dev build), O2 (balanced), or O3 (aggressive/compute)")
+set(CUSTOM_CXX_FLAGS "" CACHE STRING "Custom compiler flags applied uniformly across all targets")
+
+# Sanitize CMake default flags and custom flags to prevent duplicate or conflicting -O levels
+string(REGEX REPLACE "-O[0-3s]" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+string(REGEX REPLACE "-O[0-3s]" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+string(REGEX REPLACE "-O[0-3s]" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+string(REGEX REPLACE "-O[0-3s]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+if(NOT MSVC)
+    if(OPTIMIZATION_LEVEL STREQUAL "O3")
+        add_compile_options(-O3)
+        message(STATUS "Optimization Level: -O3 (Aggressive vectorization & loop unrolling across all targets)")
+    elseif(OPTIMIZATION_LEVEL STREQUAL "O1")
+        add_compile_options(-O1 -g)
+        message(STATUS "Optimization Level: -O1 (Fast compilation for active development with debug symbols)")
+    elseif(OPTIMIZATION_LEVEL STREQUAL "O0")
+        add_compile_options(-O0 -g -fno-omit-frame-pointer)
+        message(STATUS "Optimization Level: -O0 (No optimization, maximum debuggability, frame pointers & debug symbols)")
+    else()
+        add_compile_options(-O2)
+        message(STATUS "Optimization Level: -O2 (Balanced & battery friendly across all targets)")
+    endif()
+    add_compile_definitions(BUBEZ_OPT_LEVEL="${OPTIMIZATION_LEVEL}")
+
+    if(CUSTOM_CXX_FLAGS AND NOT CUSTOM_CXX_FLAGS STREQUAL "")
+        string(REGEX REPLACE "-O[0-3s]" "" _CLEANED_CUSTOM_FLAGS "${CUSTOM_CXX_FLAGS}")
+        if(OPTIMIZE_FOR_NATIVE_CPU AND NOT _CLEANED_CUSTOM_FLAGS MATCHES "-march=")
+            add_compile_options(-march=native)
+        endif()
+        separate_arguments(_CUSTOM_FLAGS_LIST NATIVE_COMMAND "${_CLEANED_CUSTOM_FLAGS}")
+        if(_CUSTOM_FLAGS_LIST)
+            add_compile_options(${_CUSTOM_FLAGS_LIST})
+            message(STATUS "Custom Compiler Flags: ${_CLEANED_CUSTOM_FLAGS} (applied across all targets)")
+        endif()
+    elseif(OPTIMIZE_FOR_NATIVE_CPU AND (OPTIMIZATION_LEVEL STREQUAL "O2" OR OPTIMIZATION_LEVEL STREQUAL "O3"))
+        add_compile_options(-march=native -mcrc32 -funroll-loops -falign-loops=32 -fomit-frame-pointer -pipe)
+        message(STATUS "CPU Instruction Tuning: Native microarchitecture (-march=native -mcrc32 -funroll-loops -falign-loops=32 -fomit-frame-pointer -pipe across all targets)")
+    endif()
+endif()
+
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml DBus PrintSupport Test Network OpenGLWidgets Svg SvgWidgets)
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(MPV REQUIRED mpv)
+pkg_check_modules(MPV mpv)
 
-# Link-Time Optimization (LTO) when any static engine or CPU optimization is active
-if(STATIC_PDF OR STATIC_ARCHIVE OR (CMAKE_BUILD_TYPE STREQUAL "Release"))
+# Link-Time Optimization (LTO): only enable on O3 when not explicitly disabled in CUSTOM_CXX_FLAGS
+set(_ALLOW_LTO FALSE)
+if(OPTIMIZATION_LEVEL STREQUAL "O3")
+    if(NOT CUSTOM_CXX_FLAGS OR CUSTOM_CXX_FLAGS STREQUAL "" OR CUSTOM_CXX_FLAGS MATCHES "-flto")
+        set(_ALLOW_LTO TRUE)
+    endif()
+endif()
+if(_ALLOW_LTO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
     if(ipo_supported)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
         message(STATUS "IPO / Link-Time Optimization (LTO) ENABLED")
     endif()
+else()
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+    message(STATUS "IPO / Link-Time Optimization (LTO) DISABLED (Fast link mode)")
 endif()
 
-include(FetchContent)
-
-# 1. PDF Engine Configuration (Compiled/Built-in vs System Library)
-if(STATIC_PDF)
-    if(NOT DEFINED POPPLER_VERSION OR POPPLER_VERSION STREQUAL "")
-        set(POPPLER_VERSION "24.08.0" CACHE STRING "Poppler source version for static build")
-    endif()
-    message(STATUS ">>> PDF Engine: FETCHING & COMPILING POPPLER ${POPPLER_VERSION} (BUILT-IN STATIC) <<<")
-
-    set(ENABLE_QT6 ON CACHE BOOL "" FORCE)
-    set(ENABLE_QT5 OFF CACHE BOOL "" FORCE)
-    set(ENABLE_GLIB OFF CACHE BOOL "" FORCE)
-    set(ENABLE_CPP OFF CACHE BOOL "" FORCE)
-    set(ENABLE_UTILS OFF CACHE BOOL "" FORCE)
-    set(BUILD_QT6_TESTS OFF CACHE BOOL "" FORCE)
-    set(BUILD_CPP_TESTS OFF CACHE BOOL "" FORCE)
-    set(BUILD_MANUAL_TESTS OFF CACHE BOOL "" FORCE)
-    set(ENABLE_BOOST OFF CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-    set(ENABLE_UNSTABLE_API_ABI_HEADERS ON CACHE BOOL "" FORCE)
-    set(ENABLE_NSS3 OFF CACHE BOOL "" FORCE)
-    set(ENABLE_GPGME OFF CACHE BOOL "" FORCE)
-
-    FetchContent_Declare(
-        poppler
-        URL https://poppler.freedesktop.org/poppler-${POPPLER_VERSION}.tar.xz
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    )
-    FetchContent_GetProperties(poppler)
-    if(NOT poppler_POPULATED)
-        FetchContent_Populate(poppler)
-        if(EXISTS "${poppler_SOURCE_DIR}/CMakeLists.txt")
-            file(READ "${poppler_SOURCE_DIR}/CMakeLists.txt" _POPPLER_CML)
-            string(REPLACE "\${CMAKE_SOURCE_DIR}/poppler/libpoppler.map.in" "\${CMAKE_CURRENT_SOURCE_DIR}/poppler/libpoppler.map.in" _POPPLER_CML "${_POPPLER_CML}")
-            file(WRITE "${poppler_SOURCE_DIR}/CMakeLists.txt" "${_POPPLER_CML}")
-        endif()
-        if(EXISTS "${poppler_SOURCE_DIR}/cmake/modules")
-            file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-            if(IS_SYMLINK "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules" OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
-                file(REMOVE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
-                file(CREATE_LINK "${poppler_SOURCE_DIR}/cmake/modules" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules" SYMBOLIC)
-            endif()
-        endif()
-        if(EXISTS "${poppler_SOURCE_DIR}/poppler")
-            if(IS_SYMLINK "${CMAKE_CURRENT_SOURCE_DIR}/poppler" OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/poppler")
-                file(REMOVE "${CMAKE_CURRENT_SOURCE_DIR}/poppler")
-                file(CREATE_LINK "${poppler_SOURCE_DIR}/poppler" "${CMAKE_CURRENT_SOURCE_DIR}/poppler" SYMBOLIC)
-            endif()
-        endif()
-        add_subdirectory(${poppler_SOURCE_DIR} ${poppler_BINARY_DIR} EXCLUDE_FROM_ALL)
-    endif()
-
-    set(POPPLER_QT6_LIBRARIES poppler-qt6 poppler)
-    set(POPPLER_QT6_INCLUDE_DIRS 
-        ${poppler_SOURCE_DIR}/qt6/src 
-        ${poppler_BINARY_DIR}/qt6/src
-        ${poppler_SOURCE_DIR}/poppler
-        ${poppler_BINARY_DIR}/poppler
-        ${poppler_SOURCE_DIR}
-        ${poppler_BINARY_DIR}
-    )
-    add_compile_definitions(POPPLER_BUILTIN_STATIC)
-else()
-    message(STATUS ">>> PDF Engine: Dynamic System Library <<<")
-    pkg_check_modules(POPPLER_QT6 REQUIRED poppler-qt6)
+# Prioritize user-compiled libraries in ~/.local/lib/pkgconfig if present
+if(EXISTS "$ENV{HOME}/.local/lib/pkgconfig")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{HOME}/.local/lib/pkgconfig:$ENV{HOME}/.local/lib/x86_64-linux-gnu/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 endif()
 
-# 2. Archive Engine Configuration (Compiled/Built-in vs System Library)
-if(STATIC_ARCHIVE)
-    message(STATUS ">>> Archive Engine: FETCHING & COMPILING LIBARCHIVE (BUILT-IN STATIC) <<<")
-    set(ENABLE_TEST OFF CACHE BOOL "" FORCE)
-    set(ENABLE_TAR OFF CACHE BOOL "" FORCE)
-    set(ENABLE_CPIO OFF CACHE BOOL "" FORCE)
-    set(ENABLE_CAT OFF CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-    FetchContent_Declare(
-        libarchive
-        URL https://github.com/libarchive/libarchive/releases/download/v3.8.9/libarchive-3.8.9.tar.xz
-    )
-    FetchContent_MakeAvailable(libarchive)
-
-    set(LIBARCHIVE_LIBRARIES archive_static)
-    set(LIBARCHIVE_INCLUDE_DIRS ${libarchive_SOURCE_DIR}/libarchive ${libarchive_BINARY_DIR})
-    add_compile_definitions(LIBARCHIVE_BUILTIN_STATIC)
+# 1. PDF Engine Discovery (Plugin bubez_pdf links dynamically to ~/.local or system poppler-qt6)
+pkg_check_modules(POPPLER_QT6 poppler-qt6)
+if(POPPLER_QT6_FOUND)
+    message(STATUS ">>> PDF Plugin Engine: Detected poppler-qt6 (${POPPLER_QT6_VERSION}) <<<")
 else()
-    message(STATUS ">>> Archive Engine: Dynamic System Library <<<")
-    pkg_check_modules(LIBARCHIVE REQUIRED libarchive)
+    message(STATUS ">>> PDF Plugin Engine: poppler-qt6 not detected (PDF plugin will be skipped) <<<")
+endif()
+
+# 2. Archive Engine Discovery (Plugin bubez_archive links dynamically to ~/.local or system libarchive)
+pkg_check_modules(LIBARCHIVE libarchive)
+if(LIBARCHIVE_FOUND)
+    message(STATUS ">>> Archive Plugin Engine: Detected libarchive (${LIBARCHIVE_VERSION}) <<<")
+else()
+    message(STATUS ">>> Archive Plugin Engine: libarchive not detected (Archive plugin will be skipped) <<<")
 endif()
 
 # 3. Optional QPDF Engine (Advanced PDF Optimization, Linearization & Merge)
@@ -168,7 +156,7 @@ else()
 endif()
 pkg_check_modules(LIBQRENCODE REQUIRED libqrencode)
 
-set(APP_COMMON_SOURCES
+set(APP_CORE_SOURCES
     src/ui/base_skin.cpp
     src/ui/action_registry.cpp
     src/ui/mainwindow.cpp
@@ -177,11 +165,13 @@ set(APP_COMMON_SOURCES
     src/ui/goto_folder_dialog.cpp
     src/ui/settings_dialog.cpp
     src/ui/build_console_dialog.cpp
+    src/ui/fallback_notice_dialog.cpp
     src/ui/build_options_dialog.cpp
     src/ui/search_bar_widget.cpp
     src/ui/open_with_dialog.cpp
     src/ui/configure_toolbar_dialog.cpp
     src/ui/flippable_toolbar.cpp
+    src/ui/engine_prompt_card.cpp
     src/core/app_launcher.cpp
     src/core/theme_manager.cpp
     src/core/build_config.cpp
@@ -194,14 +184,6 @@ set(APP_COMMON_SOURCES
     src/viewers/text/text_viewer.cpp
     src/viewers/text/line_number_area.cpp
     src/viewers/text/syntax_highlighter.cpp
-    src/viewers/pdf/pdf_viewer.cpp
-    src/viewers/pdf/pdf_page_widget.cpp
-    src/viewers/pdf/pdf_document_ops.cpp
-    src/viewers/pdf/pdf_canvas_tools.cpp
-    src/viewers/archive/archive_viewer.cpp
-    src/viewers/media/mpv_video_widget.cpp
-    src/viewers/media/media_viewer.cpp
-    src/viewers/media/stereo_oscilloscope_widget.cpp
     src/viewers/office/office_viewer.cpp
     src/viewers/folder/folder_viewer.cpp
     src/ui/filmstrip_widget.cpp
@@ -214,23 +196,9 @@ set(APP_COMMON_SOURCES
     src/ui/pdf_image_extract_dialog.cpp
     src/ui/pdf_merge_dialog.cpp
     src/ui/pdf_repair_dialog.cpp
-    src/ui/pdf_page_organizer_dialog.cpp
-    src/ui/pdf_typewriter_dialog.cpp
-    src/ui/pdf_signature_dialog.cpp
-    src/ui/pdf_image_dialog.cpp
-    src/ui/pdf_shape_dialog.cpp
-    src/ui/pdf_watermark_dialog.cpp
-    src/ui/pdf_tools_dialog.cpp
-    src/viewers/pdf/pdf_transform_box.cpp
     src/core/update_manager.cpp
     src/core/cpu_info.cpp
     src/core/ocr_manager.cpp
-    src/core/audio_processor.cpp
-    src/ui/audio_trim_dialog.cpp
-    src/ui/audio_tag_dialog.cpp
-    src/ui/cover_selection_dialog.cpp
-    src/core/equalizer_manager.cpp
-    src/ui/equalizer_widget.cpp
     src/ui/extension_feature_model.cpp
     src/ui/accordion_extension_card.cpp
     src/ui/extension_row_widget.cpp
@@ -242,14 +210,95 @@ set(APP_COMMON_SOURCES
     src/ui/settings/settings_extra_tab.cpp
 )
 
-set(SOURCES
-    src/main.cpp
-    ${APP_COMMON_SOURCES}
+set(PDF_VIEWER_SOURCES
+    src/viewers/pdf/pdf_viewer.cpp
+    src/viewers/pdf/pdf_page_widget.cpp
+    src/viewers/pdf/pdf_document_ops.cpp
+    src/viewers/pdf/pdf_canvas_tools.cpp
+    src/viewers/pdf/pdf_transform_box.cpp
+    src/ui/pdf_typewriter_dialog.cpp
+    src/ui/pdf_signature_dialog.cpp
+    src/ui/pdf_crypto_signature_dialog.cpp
+    src/ui/pdf_image_dialog.cpp
+    src/ui/pdf_shape_dialog.cpp
+    src/ui/pdf_watermark_dialog.cpp
+    src/ui/pdf_tools_dialog.cpp
+    src/ui/pdf_page_organizer_dialog.cpp
+)
+set(PDF_PLUGIN_SOURCES
+    src/plugins/pdf/pdf_plugin.cpp
+    ${PDF_VIEWER_SOURCES}
 )
 
-set(HEADERS
+set(ARCHIVE_VIEWER_SOURCES
+    src/viewers/archive/archive_viewer.cpp
+)
+set(ARCHIVE_PLUGIN_SOURCES
+    src/plugins/archive/archive_plugin.cpp
+    ${ARCHIVE_VIEWER_SOURCES}
+)
+
+set(MEDIA_VIEWER_SOURCES
+    src/viewers/media/mpv_video_widget.cpp
+    src/viewers/media/media_viewer.cpp
+    src/viewers/media/stereo_oscilloscope_widget.cpp
+    src/core/audio_processor.cpp
+    src/core/equalizer_manager.cpp
+    src/ui/audio_trim_dialog.cpp
+    src/ui/audio_tag_dialog.cpp
+    src/ui/cover_selection_dialog.cpp
+    src/ui/equalizer_widget.cpp
+)
+set(MEDIA_PLUGIN_SOURCES
+    src/plugins/media/media_plugin.cpp
+    ${MEDIA_VIEWER_SOURCES}
+)
+
+set(APP_COMMON_SOURCES
+    ${APP_CORE_SOURCES}
+)
+
+set(PDF_PLUGIN_HEADERS
+    src/ui/pdf_page_organizer_dialog.h
+    src/ui/pdf_typewriter_dialog.h
+    src/ui/pdf_signature_dialog.h
+    src/ui/pdf_crypto_signature_dialog.h
+    src/ui/pdf_image_dialog.h
+    src/ui/pdf_shape_dialog.h
+    src/ui/pdf_watermark_dialog.h
+    src/ui/pdf_tools_dialog.h
+    src/viewers/pdf/pdf_transform_box.h
+    src/viewers/pdf/pdf_viewer.h
+    src/viewers/pdf/pdf_page_widget.h
+    src/viewers/pdf/pdf_document_ops.h
+    src/viewers/pdf/pdf_canvas_tools.h
+)
+
+set(ARCHIVE_PLUGIN_HEADERS
+    src/viewers/archive/archive_viewer.h
+)
+
+set(MEDIA_PLUGIN_HEADERS
+    src/viewers/media/mpv_video_widget.h
+    src/viewers/media/media_viewer.h
+    src/viewers/media/stereo_oscilloscope_widget.h
+    src/core/audio_processor.h
+    src/ui/audio_trim_dialog.h
+    src/ui/audio_tag_dialog.h
+    src/ui/cover_selection_dialog.h
+    src/core/equalizer_manager.h
+    src/ui/equalizer_widget.h
+)
+
+set(APP_CORE_HEADERS
+    src/core/interfaces/i_viewer_widget.h
+    src/core/interfaces/i_pdf_viewer.h
+    src/core/interfaces/i_archive_viewer.h
+    src/core/interfaces/i_media_viewer.h
+    src/core/interfaces/viewer_plugin_interface.h
     src/ui/base_skin.h
     src/ui/action_registry.h
+    src/ui/engine_prompt_card.h
     src/ui/extension_feature_model.h
     src/ui/accordion_extension_card.h
     src/ui/extension_row_widget.h
@@ -275,14 +324,6 @@ set(HEADERS
     src/ui/pdf_image_extract_dialog.h
     src/ui/pdf_merge_dialog.h
     src/ui/pdf_repair_dialog.h
-    src/ui/pdf_page_organizer_dialog.h
-    src/ui/pdf_typewriter_dialog.h
-    src/ui/pdf_signature_dialog.h
-    src/ui/pdf_image_dialog.h
-    src/ui/pdf_shape_dialog.h
-    src/ui/pdf_watermark_dialog.h
-    src/ui/pdf_tools_dialog.h
-    src/viewers/pdf/pdf_transform_box.h
     src/ui/search_bar_widget.h
     src/ui/filmstrip_widget.h
     src/ui/open_with_dialog.h
@@ -302,22 +343,8 @@ set(HEADERS
     src/viewers/text/text_viewer.h
     src/viewers/text/line_number_area.h
     src/viewers/text/syntax_highlighter.h
-    src/viewers/pdf/pdf_viewer.h
-    src/viewers/pdf/pdf_page_widget.h
-    src/viewers/pdf/pdf_document_ops.h
-    src/viewers/pdf/pdf_canvas_tools.h
-    src/viewers/archive/archive_viewer.h
-    src/viewers/media/mpv_video_widget.h
-    src/viewers/media/media_viewer.h
-    src/viewers/media/stereo_oscilloscope_widget.h
     src/viewers/office/office_viewer.h
     src/viewers/folder/folder_viewer.h
-    src/core/audio_processor.h
-    src/ui/audio_trim_dialog.h
-    src/ui/audio_tag_dialog.h
-    src/ui/cover_selection_dialog.h
-    src/core/equalizer_manager.h
-    src/ui/equalizer_widget.h
 )
 
 
@@ -346,10 +373,107 @@ set(RESOURCES
     resources/icons.qrc
 )
 
-add_executable(bubezview ${SOURCES} ${HEADERS} ${RESOURCES})
+# -----------------------------------------------------------------------------
+# Modular Plugins
+# -----------------------------------------------------------------------------
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/plugins")
+
+# PDF Plugin
+if(POPPLER_QT6_FOUND OR STATIC_PDF)
+    add_library(bubez_pdf MODULE ${PDF_PLUGIN_SOURCES} ${PDF_PLUGIN_HEADERS} ${RESOURCES})
+    target_include_directories(bubez_pdf PRIVATE
+        src
+        src/ui
+        src/core
+        src/viewers/pdf
+        ${POPPLER_QT6_INCLUDE_DIRS}
+        ${QPDF_INCLUDE_DIRS}
+    )
+    target_link_libraries(bubez_pdf PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::PrintSupport
+        ${POPPLER_QT6_LIBRARIES}
+        ${QPDF_LIBRARIES}
+    )
+    set_target_properties(bubez_pdf PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins"
+        PREFIX ""
+    )
+    if(TARGET compile_translations)
+        add_dependencies(bubez_pdf compile_translations)
+    endif()
+endif()
+
+# Archive Plugin
+if(LIBARCHIVE_FOUND OR STATIC_ARCHIVE)
+    add_library(bubez_archive MODULE ${ARCHIVE_PLUGIN_SOURCES} ${ARCHIVE_PLUGIN_HEADERS} ${RESOURCES})
+    target_include_directories(bubez_archive PRIVATE
+        src
+        src/ui
+        src/core
+        src/viewers/archive
+        ${LIBARCHIVE_INCLUDE_DIRS}
+    )
+    target_link_libraries(bubez_archive PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        ${LIBARCHIVE_LIBRARIES}
+    )
+    set_target_properties(bubez_archive PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins"
+        PREFIX ""
+    )
+    if(TARGET compile_translations)
+        add_dependencies(bubez_archive compile_translations)
+    endif()
+endif()
+
+# Media Plugin
+if(MPV_FOUND)
+    add_library(bubez_media MODULE ${MEDIA_PLUGIN_SOURCES} ${MEDIA_PLUGIN_HEADERS} ${RESOURCES})
+    target_include_directories(bubez_media PRIVATE
+        src
+        src/ui
+        src/core
+        src/viewers/media
+        ${MPV_INCLUDE_DIRS}
+    )
+    target_link_libraries(bubez_media PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::OpenGLWidgets
+        Qt6::Network
+        Qt6::DBus
+        ${MPV_LIBRARIES}
+    )
+    set_target_properties(bubez_media PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins"
+        PREFIX ""
+    )
+    if(TARGET compile_translations)
+        add_dependencies(bubez_media compile_translations)
+    endif()
+endif()
+
+# -----------------------------------------------------------------------------
+# Main Application Executable (Lean Host)
+# -----------------------------------------------------------------------------
+add_executable(bubezview src/main.cpp ${APP_CORE_SOURCES} ${APP_CORE_HEADERS} ${RESOURCES})
 
 if(TARGET compile_translations)
     add_dependencies(bubezview compile_translations)
+endif()
+if(TARGET pdfimages)
+    add_dependencies(bubezview pdfimages)
+    add_custom_command(
+        TARGET bubezview POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:pdfimages> ${CMAKE_BINARY_DIR}/pdfimages
+        COMMENT "Copying compiled pdfimages to build root"
+    )
 endif()
 
 target_include_directories(bubezview PRIVATE
@@ -359,16 +483,11 @@ target_include_directories(bubezview PRIVATE
     src/core
     src/viewers/image
     src/viewers/text
-    src/viewers/pdf
-    src/viewers/archive
-    src/viewers/media
     src/viewers/office
     src/viewers/folder
-    ${POPPLER_QT6_INCLUDE_DIRS}
     ${LIBARCHIVE_INCLUDE_DIRS}
     ${LIBREVENGE_INCLUDE_DIRS}
     ${LIBQRENCODE_INCLUDE_DIRS}
-    ${MPV_INCLUDE_DIRS}
     ${QPDF_INCLUDE_DIRS}
 )
 
@@ -381,44 +500,37 @@ target_link_libraries(bubezview PRIVATE
     Qt6::OpenGLWidgets
     Qt6::PrintSupport
     Qt6::Network
-    ${POPPLER_QT6_LIBRARIES}
+    Qt6::Svg
+    Qt6::SvgWidgets
     ${LIBARCHIVE_LIBRARIES}
     ${LIBREVENGE_LIBRARIES}
     ${LIBQRENCODE_LIBRARIES}
-    ${MPV_LIBRARIES}
     ${QPDF_LIBRARIES}
 )
 
-target_compile_options(bubezview PRIVATE ${POPPLER_QT6_CFLAGS_OTHER} ${LIBARCHIVE_CFLAGS_OTHER} ${LIBREVENGE_CFLAGS_OTHER} ${LIBQRENCODE_CFLAGS_OTHER})
+set_target_properties(bubezview PROPERTIES ENABLE_EXPORTS ON)
 
-# Optimization level setting (defaults to O2 if unspecified, or O3 if requested)
-set(OPTIMIZATION_LEVEL "O2" CACHE STRING "Compiler optimization level: O2 (balanced/battery) or O3 (aggressive/compute)")
+target_compile_options(bubezview PRIVATE ${LIBARCHIVE_CFLAGS_OTHER} ${LIBREVENGE_CFLAGS_OTHER} ${LIBQRENCODE_CFLAGS_OTHER})
 
-# Compiler warnings and optimizations
+# Compiler warnings for main binary
 if(MSVC)
     target_compile_options(bubezview PRIVATE /W4)
 else()
     target_compile_options(bubezview PRIVATE -Wall -Wextra)
-    if(OPTIMIZATION_LEVEL STREQUAL "O3")
-        target_compile_options(bubezview PRIVATE -O3)
-        message(STATUS "Optimization Level: -O3 (Aggressive vectorization & loop unrolling)")
-    else()
-        target_compile_options(bubezview PRIVATE -O2)
-        message(STATUS "Optimization Level: -O2 (Balanced & battery friendly)")
-    endif()
-
-    if(OPTIMIZE_FOR_NATIVE_CPU)
-        target_compile_options(bubezview PRIVATE -march=native -pipe)
-        message(STATUS "CPU Instruction Tuning: Native microarchitecture (-march=native)")
-    endif()
 endif()
 
-# Automated Interactive GUI & Exploration Test Target
+# Automated Interactive GUI & Exploration Test Target (excluded from default build)
 enable_testing()
-add_executable(test_interactive
+add_executable(test_interactive EXCLUDE_FROM_ALL
     tests/test_interactive.cpp
-    ${APP_COMMON_SOURCES}
-    ${HEADERS}
+    ${APP_CORE_SOURCES}
+    ${PDF_VIEWER_SOURCES}
+    ${ARCHIVE_VIEWER_SOURCES}
+    ${MEDIA_VIEWER_SOURCES}
+    ${APP_CORE_HEADERS}
+    ${PDF_PLUGIN_HEADERS}
+    ${ARCHIVE_PLUGIN_HEADERS}
+    ${MEDIA_PLUGIN_HEADERS}
     ${RESOURCES}
 )
 target_compile_definitions(test_interactive PRIVATE PROJECT_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
@@ -439,6 +551,7 @@ target_include_directories(test_interactive PRIVATE
     ${LIBREVENGE_INCLUDE_DIRS}
     ${LIBQRENCODE_INCLUDE_DIRS}
     ${MPV_INCLUDE_DIRS}
+    ${QPDF_INCLUDE_DIRS}
 )
 target_link_libraries(test_interactive PRIVATE
     Qt6::Core
@@ -449,13 +562,18 @@ target_link_libraries(test_interactive PRIVATE
     Qt6::OpenGLWidgets
     Qt6::PrintSupport
     Qt6::Network
+    Qt6::Svg
+    Qt6::SvgWidgets
     Qt6::Test
     ${POPPLER_QT6_LIBRARIES}
     ${LIBARCHIVE_LIBRARIES}
     ${LIBREVENGE_LIBRARIES}
     ${LIBQRENCODE_LIBRARIES}
     ${MPV_LIBRARIES}
+    ${QPDF_LIBRARIES}
 )
+set_target_properties(test_interactive PROPERTIES ENABLE_EXPORTS ON)
+
 # Note: test_interactive contains modal dialogues and manual checks; excluded from automated ctest per Rule 2
 # add_test(NAME TestInteractive COMMAND test_interactive)
 
@@ -484,6 +602,15 @@ add_test(NAME TestShare COMMAND test_share)
 # Installation rules
 include(GNUInstallDirs)
 install(TARGETS bubezview DESTINATION ${CMAKE_INSTALL_BINDIR})
+if(TARGET bubez_pdf)
+    install(TARGETS bubez_pdf DESTINATION "${CMAKE_INSTALL_LIBDIR}/bubezview/plugins")
+endif()
+if(TARGET bubez_archive)
+    install(TARGETS bubez_archive DESTINATION "${CMAKE_INSTALL_LIBDIR}/bubezview/plugins")
+endif()
+if(TARGET bubez_media)
+    install(TARGETS bubez_media DESTINATION "${CMAKE_INSTALL_LIBDIR}/bubezview/plugins")
+endif()
 
 # Icons (PNG 256x256)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/bubezview.png"

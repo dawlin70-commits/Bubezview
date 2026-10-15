@@ -1,8 +1,20 @@
+/**
+ * @file plugin_manager.h
+ * @brief High-level file categorization and dynamic viewer plugin discovery and lifecycle manager.
+ */
+
 #pragma once
 
 #include <QString>
 #include <QStringList>
 #include <QFileInfo>
+#include <QList>
+#include <QMap>
+#include <QObject>
+
+class IViewerWidget;
+class ViewerPluginInterface;
+class QPluginLoader;
 
 /**
  * @brief High-level file categories supported by BubezView.
@@ -20,11 +32,31 @@ enum class FileCategory {
 };
 
 /**
- * @brief Manages file format categorization and viewer dispatching.
- * Fast MIME and file extension matching used to determine viewer routing without heavy disk reads.
+ * @struct PluginDescriptor
+ * @brief Holds metadata and runtime state for a viewer plugin.
  */
-class PluginManager {
+struct PluginDescriptor {
+    QString id;
+    QString filePath;
+    QString displayName;
+    QString description;
+    FileCategory category;
+    QStringList extensions;
+    bool isLoaded = false;
+    ViewerPluginInterface *interfaceInstance = nullptr;
+    QPluginLoader *loader = nullptr;
+};
+
+/**
+ * @class PluginManager
+ * @brief Manages file format categorization and viewer plugin discovery.
+ */
+class PluginManager : public QObject {
+    Q_OBJECT
+
 public:
+    static PluginManager &instance();
+
     /**
      * @brief Categorizes a file path into a FileCategory enum based on extension and MIME type.
      * @param filePath Absolute path or filename to categorize.
@@ -35,15 +67,75 @@ public:
     /**
      * @brief Checks if a file has native in-app viewing support in BubezView.
      * @param filePath Target file path.
-     * @return True if supported by an internal viewer; false otherwise.
+     * @return True if supported by an internal or active plugin viewer; false otherwise.
      */
     static bool isNativeSupported(const QString &filePath);
 
+    /**
+     * @brief Scans system and user plugin directories to locate and load valid viewer plugins (.so).
+     */
+    void discoverPlugins();
+
+    /**
+     * @brief Checks whether a viewer plugin is loaded and ready for a given category.
+     * @param category Target file category.
+     * @return True if engine is available.
+     */
+    bool isEngineAvailable(FileCategory category) const;
+
+    /**
+     * @brief Instantiates a viewer widget for the given category using the loaded plugin.
+     * @param category Target file category.
+     * @param parent Parent widget.
+     * @return Newly created IViewerWidget or nullptr if engine is unavailable.
+     */
+    IViewerWidget *createViewer(FileCategory category, QWidget *parent = nullptr);
+
+    /**
+     * @brief Manually registers a built-in or statically linked plugin instance.
+     * @param plugin Pointer to interface implementation.
+     */
+    void registerPlugin(ViewerPluginInterface *plugin);
+
+    /**
+     * @brief Returns descriptors for all discovered plugins.
+     * @return List of PluginDescriptor records.
+     */
+    QList<PluginDescriptor> discoveredPlugins() const;
+
+    /**
+     * @brief Queries distro package name for a plugin's core dependency.
+     * @param pluginId Engine identifier ("pdf", "archive", "media").
+     * @return Package name string.
+     */
+    QString pluginInstallPackage(const QString &pluginId) const;
+
+    /**
+     * @brief Renders a thumbnail of the first page of a PDF using FreeDesktop cache or pdftoppm.
+     * @param filePath Path to the PDF file.
+     * @param maxDimension Maximum dimension in pixels.
+     * @return Rendered thumbnail QImage, or null QImage if unavailable.
+     */
+    static QImage renderPdfThumbnail(const QString &filePath, int maxDimension);
+
+signals:
+    /**
+     * @brief Emitted whenever the set of loaded plugins changes.
+     */
+    void pluginsChanged();
+
 private:
+    explicit PluginManager(QObject *parent = nullptr);
+    ~PluginManager() override;
+
+    void loadPluginFromFile(const QString &filePath);
+
     static const QStringList s_imageExtensions;
     static const QStringList s_textExtensions;
     static const QStringList s_pdfExtensions;
     static const QStringList s_archiveExtensions;
     static const QStringList s_mediaExtensions;
     static const QStringList s_officeExtensions;
+
+    QMap<QString, PluginDescriptor> m_plugins;
 };

@@ -70,6 +70,11 @@ public:
      */
     QImage signatureImage() const { return m_finalSignature; }
 
+    /**
+     * @brief Returns true if the user requested to open the Cryptographic Digital Signature Hub.
+     */
+    bool isCryptoSignatureRequested() const { return m_cryptoSigRequested; }
+
 private slots:
     void onTabChanged(int index);
     void onColorChanged(const QColor &color);
@@ -84,6 +89,7 @@ private:
     void setupDrawTab();
     void setupImageTab();
     void setupSavedTab();
+    void setupDigitalTab();
     void loadSavedSignatures();
     void processImportedImage();
     QString signaturesDirPath() const;
@@ -116,4 +122,5 @@ private:
     QPushButton *m_btnCancel = nullptr;
 
     QImage m_finalSignature;
+    bool m_cryptoSigRequested = false;
 };

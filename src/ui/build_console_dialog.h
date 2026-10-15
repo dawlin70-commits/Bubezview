@@ -39,6 +39,27 @@ public:
     bool startBuild();
 
     /**
+     * @brief Launches compilation for a specific component or module.
+     * @param componentId Target component identifier (e.g. "tesseract").
+     * @return True if process started successfully, false otherwise.
+     */
+    bool startBuildForComponent(const QString &componentId = QString());
+
+    /**
+     * @brief Launches sequential compilation for multiple components.
+     * @param componentIds List of component IDs to compile one by one.
+     * @return True if process started successfully.
+     */
+    bool startBuildComponents(const QStringList &componentIds);
+
+    /**
+     * @brief Launches compilation for a specific CMake target (e.g. "bubezview").
+     * @param targetName Target to build exclusively, bypassing all other targets and plugins.
+     * @return True if process started successfully, false otherwise.
+     */
+    bool startBuildTarget(const QString &targetName);
+
+    /**
      * @brief Returns whether a build process is currently active.
      * @return True if compiling, false if idle or finished.
      */
@@ -102,4 +123,5 @@ private:
 
     QProcess *m_process;
     bool m_succeeded;
+    QStringList m_pendingComponents;
 };

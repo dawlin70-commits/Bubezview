@@ -41,7 +41,8 @@ enum class PdfToolAction {
     Redact,
     Watermark,
     InsertImage,
-    Signature
+    Signature,
+    CryptoSignature
 };
 
 /**

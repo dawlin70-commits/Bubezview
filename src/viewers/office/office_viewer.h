@@ -12,7 +12,7 @@
 #include <QThread>
 #include <QProcess>
 
-class PdfViewer;
+class IPdfViewer;
 
 class OfficeConvertWorker : public QThread
 {
@@ -79,7 +79,7 @@ public:
     int wordCount() const { return m_wordCount; }
     bool isPdfMode() const { return m_isPdfMode; }
     QString convertedPdfPath() const { return m_convertedPdfPath; }
-    PdfViewer *pdfViewer() const { return m_pdfViewer; }
+    IPdfViewer *pdfViewer() const { return m_pdfViewer; }
     QTextBrowser *textBrowser() const { return m_textBrowser; }
 
 private slots:
@@ -119,7 +119,7 @@ private:
     QStackedWidget *m_stack;
     QWidget *m_loadingWidget;
     QLabel *m_lblLoading;
-    PdfViewer *m_pdfViewer;
+    IPdfViewer *m_pdfViewer;
     QTextBrowser *m_textBrowser;
 
     OfficeConvertWorker *m_worker;

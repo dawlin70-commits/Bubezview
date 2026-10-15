@@ -86,6 +86,10 @@ private:
     QAction *m_actFolderRename;
     QAction *m_actFolderTrash;
     QAction *m_actFolderNew;
+    QAction *m_actCreateArchive;
+    QAction *m_actArchiveAddFiles;
+    QAction *m_actArchiveAddFolder;
+    QAction *m_actArchiveRemoveSelected;
     QAction *m_actToggleTextEdit;
     QAction *m_actLineNumbers;
     QAction *m_actSyntaxHighlight;
@@ -111,7 +115,6 @@ private:
     QAction *m_actZoomTool;
     QAction *m_actSlideshow;
     QAction *m_actFilmstrip;
-    QAction *m_actPdfToolsHub;
     QAction *m_actPdfHighlighter;
     QAction *m_actPdfTypewriter;
     QAction *m_actPdfSignature;
@@ -169,10 +172,12 @@ private:
 
     QFrame *m_updateBanner;
     QLabel *m_lblUpdateBannerText;
+    QFrame *m_debugBanner = nullptr;
 
     void setupUpdateChecker();
     void showUpdateDialog(const struct ReleaseInfo &info);
     void setupUpdateBanner();
+    void setupDebugBanner();
     void updateBlinkEffect();
 
     void populateOpenWithMenu();

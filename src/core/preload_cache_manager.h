@@ -13,7 +13,6 @@
 #include <QThreadPool>
 #include <QRunnable>
 #include <memory>
-#include <poppler/qt6/poppler-qt6.h>
 
 /**
  * @class PreloadCacheManager
@@ -75,13 +74,6 @@ public:
     void insert(const QString &filePath, const QImage &image);
 
     /**
-     * @brief Takes a pre-parsed Poppler document if available.
-     * @param filePath Absolute path of the PDF.
-     * @return Unique pointer to Poppler::Document or nullptr if not cached.
-     */
-    std::unique_ptr<Poppler::Document> takeDocument(const QString &filePath);
-
-    /**
      * @brief Checks if any PDF file is present in the sibling files list and warms up Poppler.
      * @param siblingFiles Ordered list of files in the current folder.
      */
@@ -114,7 +106,6 @@ private:
 
     mutable QMutex m_mutex;
     QCache<QString, QImage> m_cache;
-    QMap<QString, std::shared_ptr<Poppler::Document>> m_docMap;
     int m_budgetMb;
     int m_prefetchDistance;
     bool m_popplerWarmedUp;

@@ -155,3 +155,69 @@ QString CpuInfo::cacheSummary()
     }
     return parts.join(QStringLiteral(" | "));
 }
+
+CpuInfo::FormFactor CpuInfo::detectedFormFactor()
+{
+    // 1. Inspect battery presence (laptop/notebook indicator)
+    QDir powerSupplyDir(QStringLiteral("/sys/class/power_supply"));
+    if (powerSupplyDir.exists()) {
+        const QStringList entries = powerSupplyDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString &entry : entries) {
+            // Check for actual internal laptop battery, ignoring peripheral batteries (e.g. hidpp_battery_*)
+            if (entry.startsWith(QLatin1String("BAT"), Qt::CaseInsensitive) ||
+                entry.startsWith(QLatin1String("battery"), Qt::CaseInsensitive)) {
+                QFile typeFile(powerSupplyDir.filePath(entry) + QStringLiteral("/type"));
+                if (typeFile.open(QIODevice::ReadOnly)) {
+                    QString typeStr = QString::fromUtf8(typeFile.readAll()).trimmed();
+                    if (typeStr.compare(QLatin1String("Battery"), Qt::CaseInsensitive) == 0) {
+                        return FormFactor::Laptop;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Inspect SMBIOS DMI chassis type
+    QFile chassisFile(QStringLiteral("/sys/class/dmi/id/chassis_type"));
+    if (chassisFile.open(QIODevice::ReadOnly)) {
+        bool ok = false;
+        int chassisType = QString::fromUtf8(chassisFile.readAll()).trimmed().toInt(&ok);
+        if (ok) {
+            // SMBIOS standard chassis types:
+            // 8: Portable, 9: Laptop, 10: Notebook, 11: Hand Held, 12: Docking Station, 14: Sub Notebook, 30: Tablet, 31: Convertible, 32: Detachable
+            if (chassisType == 8 || chassisType == 9 || chassisType == 10 ||
+                chassisType == 11 || chassisType == 12 || chassisType == 14 ||
+                chassisType == 30 || chassisType == 31 || chassisType == 32) {
+                return FormFactor::Laptop;
+            }
+            // 3: Desktop, 4: Low Profile Desktop, 5: Pizza Box, 6: Mini Tower, 7: Tower, 13: All in One, 35: Mini PC
+            if (chassisType == 3 || chassisType == 4 || chassisType == 5 ||
+                chassisType == 6 || chassisType == 7 || chassisType == 13 || chassisType == 35) {
+                return FormFactor::Desktop;
+            }
+        }
+    }
+
+    // 3. Fallback based on thread count and CPU
+    if (logicalCores() >= 8) {
+        return FormFactor::Desktop;
+    }
+
+    return FormFactor::Balanced;
+}
+
+QString CpuInfo::recommendedProfile()
+{
+    FormFactor ff = detectedFormFactor();
+    if (ff == FormFactor::Laptop) {
+        return QStringLiteral("standard");
+    }
+    if (ff == FormFactor::Desktop) {
+        // High performance desktop if 6+ cores and modern instruction tier
+        if (logicalCores() >= 6 && isV3OrHigher()) {
+            return QStringLiteral("native");
+        }
+        return QStringLiteral("balanced");
+    }
+    return QStringLiteral("balanced");
+}

@@ -1,6 +1,6 @@
 /**
  * @file settings_extra_tab.h
- * @brief General application settings, language, diagnostics, and setup wizard page.
+ * @brief Diagnostics, multi-level debug modes, and system maintenance settings page.
  */
 
 #pragma once
@@ -8,19 +8,18 @@
 #include <QWidget>
 
 class QComboBox;
-class QCheckBox;
+class QLabel;
 
 /**
  * @class SettingsExtraTab
- * @brief Settings notebook tab managing interface language, LibreOffice engine integration,
- *        debug modes, system diagnostics, and guided onboarding.
+ * @brief Settings notebook tab managing system diagnostics, multi-level debug modes, and setup maintenance.
  */
 class SettingsExtraTab : public QWidget {
     Q_OBJECT
 
 public:
     /**
-     * @brief Constructs the general/extra settings tab.
+     * @brief Constructs the diagnostics and maintenance settings tab.
      * @param parent Optional parent widget.
      */
     explicit SettingsExtraTab(QWidget *parent = nullptr);
@@ -32,26 +31,51 @@ public:
 
 signals:
     /**
-     * @brief Emitted when the user completes the setup wizard and changes theme.
+     * @brief Emitted when theme or setup configuration is updated.
      */
     void themeChanged();
 
     /**
-     * @brief Emitted when the setup wizard completes, to allow updating integration statuses.
+     * @brief Emitted when the first-run wizard finishes.
      */
     void setupWizardCompleted();
 
+    /**
+     * @brief Emitted when a debug mode transition requires recompiling a specific target.
+     * @param target Specific target to compile (defaults to "bubezview").
+     */
+    void recompileRequested(const QString &target = QStringLiteral("bubezview"));
+
 private slots:
-    void onLanguageChanged(int index);
-    void onUseLibreOfficeToggled(bool checked);
-    void copyDiagnosticsToClipboard();
+    /**
+     * @brief Handles selection changes in the debug level combo box.
+     * @param index Chosen combo box index.
+     */
+    void onDebugLevelChanged(int index);
+
+    /**
+     * @brief Gathers system diagnostics, soft dependencies, plugins, and session debug logs, copying to clipboard.
+     */
+    void copyFullReportToClipboard();
+
+    /**
+     * @brief Launches the interactive initial setup and onboarding wizard.
+     */
     void launchSetupWizard();
 
 private:
+    /**
+     * @brief Initializes widgets, layouts, and data bindings.
+     */
     void setupUi();
 
-    QComboBox *m_comboLanguage = nullptr;
-    QCheckBox *m_chkUseLibreOffice = nullptr;
-    QCheckBox *m_chkFilmstrip = nullptr;
-    QCheckBox *m_chkDebugMode = nullptr;
+    /**
+     * @brief Updates status label text according to the currently active debug level.
+     */
+    void updateDebugStatusLabel();
+
+    QComboBox *m_comboDebugLevel = nullptr;
+    QLabel *m_lblDebugStatus = nullptr;
+    int m_previousDebugLevel = 0;
+    bool m_isUpdatingUi = false;
 };

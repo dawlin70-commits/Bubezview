@@ -41,6 +41,21 @@ protected:
 
     void mousePressEvent(QMouseEvent *event) override
     {
+        if (m_viewer && m_viewer->isZoomToolActive()) {
+            QPoint vpPos = (m_viewer->scrollArea() && m_viewer->scrollArea()->viewport())
+                               ? m_viewer->scrollArea()->viewport()->mapFromGlobal(event->globalPosition().toPoint())
+                               : event->pos();
+            if (event->button() == Qt::LeftButton) {
+                m_viewer->zoomAt(vpPos, 1.25);
+                event->accept();
+                return;
+            } else if (event->button() == Qt::RightButton) {
+                m_viewer->zoomAt(vpPos, 1.0 / 1.25);
+                event->accept();
+                return;
+            }
+        }
+
         if (event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton) {
             m_isDragging = true;
             m_lastGlobalPos = event->globalPosition().toPoint();
@@ -83,7 +98,12 @@ protected:
     {
         if (m_isDragging && (event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton)) {
             m_isDragging = false;
-            unsetCursor();
+            if (m_viewer && m_viewer->isZoomToolActive()) {
+                QPixmap zoomPix = QIcon::fromTheme("zoom-in").pixmap(24, 24);
+                setCursor(zoomPix.isNull() ? Qt::CrossCursor : QCursor(zoomPix, 8, 8));
+            } else {
+                unsetCursor();
+            }
             event->accept();
         } else {
             QWidget::mouseReleaseEvent(event);
@@ -92,12 +112,9 @@ protected:
 
     void wheelEvent(QWheelEvent *event) override
     {
-        if (event->modifiers() & Qt::ControlModifier) {
-            if (m_viewer) {
-                m_viewer->handleWheel(event);
-            }
+        if (m_viewer) {
+            m_viewer->handleWheel(event);
         } else {
-            // Forward unhandled wheel scroll to enclosing scroll area
             event->ignore();
         }
     }
@@ -127,6 +144,9 @@ ImageViewer::ImageViewer(QWidget *parent)
 
     m_canvas = new ImageCanvasWidget(this, m_scrollArea);
     m_scrollArea->setWidget(m_canvas);
+    if (m_scrollArea->viewport()) {
+        m_scrollArea->viewport()->installEventFilter(this);
+    }
 
     mainLayout->addWidget(m_scrollArea);
 
@@ -204,43 +224,81 @@ void ImageViewer::resetZoom()
     m_fitToWindow = false;
     m_zoomFactor = 1.0;
     updateScaledPixmap();
+    emit zoomChanged(m_zoomFactor);
 }
 
 void ImageViewer::fitToWindow()
 {
     m_fitToWindow = true;
     updateScaledPixmap();
+    emit zoomChanged(m_zoomFactor);
 }
 
 void ImageViewer::setZoomToolActive(bool active)
 {
     m_zoomToolActive = active;
+    if (m_canvas) {
+        if (m_zoomToolActive) {
+            QPixmap zoomPix = QIcon::fromTheme("zoom-in").pixmap(24, 24);
+            m_canvas->setCursor(zoomPix.isNull() ? Qt::CrossCursor : QCursor(zoomPix, 8, 8));
+        } else {
+            m_canvas->unsetCursor();
+        }
+    }
 }
 
 void ImageViewer::zoomIn()
 {
-    if (m_fitToWindow) {
-        m_fitToWindow = false;
-        if (!m_originalImage.isNull() && m_canvas && !m_canvas->pixmap().isNull() && m_originalImage.width() > 0) {
-            m_zoomFactor = static_cast<double>(m_canvas->pixmap().width()) / static_cast<double>(m_originalImage.width());
-        }
-    }
-    m_zoomFactor *= 1.25;
-    if (m_zoomFactor > 10.0) m_zoomFactor = 10.0;
-    updateScaledPixmap();
+    QPoint center = (m_scrollArea && m_scrollArea->viewport())
+                        ? QPoint(m_scrollArea->viewport()->width() / 2, m_scrollArea->viewport()->height() / 2)
+                        : QPoint(width() / 2, height() / 2);
+    zoomAt(center, 1.25);
 }
 
 void ImageViewer::zoomOut()
 {
+    QPoint center = (m_scrollArea && m_scrollArea->viewport())
+                        ? QPoint(m_scrollArea->viewport()->width() / 2, m_scrollArea->viewport()->height() / 2)
+                        : QPoint(width() / 2, height() / 2);
+    zoomAt(center, 1.0 / 1.25);
+}
+
+void ImageViewer::zoomAt(const QPoint &viewportPos, double factor)
+{
+    if (m_originalImage.isNull() || !m_canvas || !m_scrollArea) return;
+
+    // 1. Calculate relative coordinate within current canvas
+    QPoint widgetPos = m_canvas->mapFrom(m_scrollArea->viewport(), viewportPos);
+    double relX = 0.5;
+    double relY = 0.5;
+    if (m_canvas->width() > 0 && m_canvas->height() > 0) {
+        relX = qBound(0.0, static_cast<double>(widgetPos.x()) / m_canvas->width(), 1.0);
+        relY = qBound(0.0, static_cast<double>(widgetPos.y()) / m_canvas->height(), 1.0);
+    }
+
+    // 2. Adjust zoom factor
     if (m_fitToWindow) {
         m_fitToWindow = false;
-        if (!m_originalImage.isNull() && m_canvas && !m_canvas->pixmap().isNull() && m_originalImage.width() > 0) {
+        if (!m_canvas->pixmap().isNull() && m_originalImage.width() > 0) {
             m_zoomFactor = static_cast<double>(m_canvas->pixmap().width()) / static_cast<double>(m_originalImage.width());
         }
     }
-    m_zoomFactor /= 1.25;
-    if (m_zoomFactor < 0.1) m_zoomFactor = 0.1;
+
+    m_zoomFactor *= factor;
+    m_zoomFactor = qBound(0.05, m_zoomFactor, 25.0);
     updateScaledPixmap();
+
+    // 3. Keep target coordinate pinned under cursor
+    int newX = qRound(relX * m_canvas->width()) - viewportPos.x();
+    int newY = qRound(relY * m_canvas->height()) - viewportPos.y();
+    if (m_scrollArea->horizontalScrollBar()) {
+        m_scrollArea->horizontalScrollBar()->setValue(newX);
+    }
+    if (m_scrollArea->verticalScrollBar()) {
+        m_scrollArea->verticalScrollBar()->setValue(newY);
+    }
+
+    emit zoomChanged(m_zoomFactor);
 }
 
 void ImageViewer::rotateClockwise()
@@ -312,6 +370,12 @@ void ImageViewer::updateScaledPixmap()
     if (targetSize.width() < 1) targetSize.setWidth(1);
     if (targetSize.height() < 1) targetSize.setHeight(1);
 
+    // Guard against memory exhaustion / X11 BadAlloc crashes on extreme zoom
+    constexpr int MAX_SAFE_DIM = 16384;
+    if (targetSize.width() > MAX_SAFE_DIM || targetSize.height() > MAX_SAFE_DIM) {
+        targetSize.scale(MAX_SAFE_DIM, MAX_SAFE_DIM, Qt::KeepAspectRatio);
+    }
+
     m_scaledPixmap = QPixmap::fromImage(
         m_originalImage.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation)
     );
@@ -331,16 +395,101 @@ void ImageViewer::resizeEvent(QResizeEvent *event)
 
 void ImageViewer::handleWheel(QWheelEvent *event)
 {
+    // 1. Zoom with Mouse Wheel: when Zoom Tool is active or Ctrl key is pressed
     if (m_zoomToolActive || (event->modifiers() & Qt::ControlModifier)) {
-        if (event->angleDelta().y() > 0) {
-            zoomIn();
-        } else if (event->angleDelta().y() < 0) {
-            zoomOut();
+        int deltaY = event->angleDelta().y();
+        if (deltaY != 0) {
+            double factor = (deltaY > 0) ? 1.25 : (1.0 / 1.25);
+            QPoint vpPos = (m_scrollArea && m_scrollArea->viewport())
+                               ? m_scrollArea->viewport()->mapFromGlobal(event->globalPosition().toPoint())
+                               : QPoint(width() / 2, height() / 2);
+            zoomAt(vpPos, factor);
+            event->accept();
+            return;
         }
-        event->accept();
-    } else {
-        event->ignore();
+        return;
     }
+
+    // 2. Horizontal Scrolling: Shift + Wheel or horizontal trackpad/wheel tilt
+    if ((event->modifiers() & Qt::ShiftModifier) || event->angleDelta().x() != 0) {
+        int delta = (event->modifiers() & Qt::ShiftModifier) ? event->angleDelta().y() : event->angleDelta().x();
+        QScrollBar *hbar = m_scrollArea ? m_scrollArea->horizontalScrollBar() : nullptr;
+        if (hbar && hbar->maximum() > hbar->minimum()) {
+            int step = (event->pixelDelta().x() != 0) ? event->pixelDelta().x() : qRound(delta * 0.75);
+            if (step == 0 && delta != 0) step = (delta > 0 ? 1 : -1);
+            hbar->setValue(hbar->value() - step);
+            event->accept();
+            return;
+        }
+    }
+
+    // 3. Normal Vertical Scrolling & Edge/Fitted Sibling File Navigation
+    int deltaY = event->angleDelta().y();
+    if (deltaY != 0) {
+        QScrollBar *vbar = m_scrollArea ? m_scrollArea->verticalScrollBar() : nullptr;
+        bool canScrollV = (vbar && vbar->maximum() > vbar->minimum());
+        qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+        if (!canScrollV) {
+            // Whole image fits vertically: navigate sibling files on mouse wheel
+            if (now - m_lastNavTime < 250) {
+                event->accept();
+                return;
+            }
+            m_wheelNavAccumulator += deltaY;
+            if (m_wheelNavAccumulator <= -120) {
+                m_wheelNavAccumulator = 0;
+                m_lastNavTime = now;
+                emit nextFileRequested();
+            } else if (m_wheelNavAccumulator >= 120) {
+                m_wheelNavAccumulator = 0;
+                m_lastNavTime = now;
+                emit prevFileRequested();
+            }
+            event->accept();
+            return;
+        } else {
+            // Content is scrollable
+            if (deltaY < 0 && vbar->value() >= vbar->maximum()) {
+                // At bottom edge: deliberate overscroll navigates to next file
+                if (now - m_lastNavTime < 250) {
+                    event->accept();
+                    return;
+                }
+                m_wheelNavAccumulator += deltaY;
+                if (m_wheelNavAccumulator <= -180) {
+                    m_wheelNavAccumulator = 0;
+                    m_lastNavTime = now;
+                    emit nextFileRequested();
+                }
+                event->accept();
+                return;
+            } else if (deltaY > 0 && vbar->value() <= vbar->minimum()) {
+                // At top edge: deliberate overscroll navigates to previous file
+                if (now - m_lastNavTime < 250) {
+                    event->accept();
+                    return;
+                }
+                m_wheelNavAccumulator += deltaY;
+                if (m_wheelNavAccumulator >= 180) {
+                    m_wheelNavAccumulator = 0;
+                    m_lastNavTime = now;
+                    emit prevFileRequested();
+                }
+                event->accept();
+                return;
+            } else {
+                m_wheelNavAccumulator = 0;
+                int step = (event->pixelDelta().y() != 0) ? event->pixelDelta().y() : qRound(deltaY * 0.75);
+                if (step == 0 && deltaY != 0) step = (deltaY > 0 ? 1 : -1);
+                vbar->setValue(vbar->value() - step);
+                event->accept();
+                return;
+            }
+        }
+    }
+
+    event->ignore();
 }
 
 void ImageViewer::wheelEvent(QWheelEvent *event)
@@ -349,4 +498,14 @@ void ImageViewer::wheelEvent(QWheelEvent *event)
     if (!event->isAccepted()) {
         QWidget::wheelEvent(event);
     }
+}
+
+bool ImageViewer::eventFilter(QObject *watched, QEvent *event)
+{
+    if (m_scrollArea && watched == m_scrollArea->viewport() && event->type() == QEvent::Wheel) {
+        auto *we = static_cast<QWheelEvent*>(event);
+        handleWheel(we);
+        return we->isAccepted();
+    }
+    return QWidget::eventFilter(watched, event);
 }

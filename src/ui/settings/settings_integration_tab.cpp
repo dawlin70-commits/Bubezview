@@ -5,6 +5,7 @@
 
 #include "settings_integration_tab.h"
 #include "desktop_integrator.h"
+#include "theme_manager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -12,6 +13,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QMessageBox>
 #include <QScrollArea>
 #include <QFrame>
@@ -116,10 +118,28 @@ void SettingsIntegrationTab::setupUi()
     rowAppMenu->addWidget(m_btnAppMenuToggle);
     layout->addWidget(grpAppMenu);
 
+    // 5. Office Engine Integration Group
+    QGroupBox *grpOffice = new QGroupBox(tr("Office Documents Integration"), content);
+    QVBoxLayout *layOffice = new QVBoxLayout(grpOffice);
+    layOffice->setContentsMargins(12, 10, 12, 12);
+
+    m_chkUseLibreOffice = new QCheckBox(tr("Use LibreOffice for preview (high-fidelity PDF conversion)"), grpOffice);
+    m_chkUseLibreOffice->setCursor(Qt::PointingHandCursor);
+    m_chkUseLibreOffice->setChecked(ThemeManager::useLibreOffice());
+    connect(m_chkUseLibreOffice, &QCheckBox::toggled, this, &SettingsIntegrationTab::onUseLibreOfficeToggled);
+    layOffice->addWidget(m_chkUseLibreOffice);
+
+    layout->addWidget(grpOffice);
+
     layout->addStretch();
 
     scrollArea->setWidget(content);
     rootLayout->addWidget(scrollArea);
+}
+
+void SettingsIntegrationTab::onUseLibreOfficeToggled(bool checked)
+{
+    ThemeManager::setUseLibreOffice(checked);
 }
 
 void SettingsIntegrationTab::refreshStatuses()

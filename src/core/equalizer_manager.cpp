@@ -34,18 +34,18 @@ void EqualizerManager::initFactoryPresets()
 {
     m_factoryPresets.clear();
 
-    auto makeFactory = [](const QString &name, const QVector<double> &gains, double preAmp = 0.0, double width = 1.0) {
+    auto makeFactory = [](const QString &name, const QVector<double> &gains, double preAmp = 0.0, double width = 1.0, bool limiter = true) {
         EqualizerPreset p;
         p.name = name;
         p.isFactory = true;
         p.preAmpDb = preAmp;
         p.bandGainsDb = gains;
-        p.limiterEnabled = true;
+        p.limiterEnabled = limiter;
         p.stereoWidth = width;
         return p;
     };
 
-    m_factoryPresets.append(makeFactory(tr("Flat (Default)"), {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}));
+    m_factoryPresets.append(makeFactory(tr("Flat (Default)"), {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, 0.0, 1.0, false));
     m_factoryPresets.append(makeFactory(tr("Rock"), {4.5, 3.5, 2.0, -1.0, -1.5, 0.5, 2.0, 3.5, 4.5, 5.0}));
     m_factoryPresets.append(makeFactory(tr("Pop"), {1.5, 2.5, 3.0, 2.0, 1.0, 2.0, 3.0, 2.5, 2.0, 1.5}));
     m_factoryPresets.append(makeFactory(tr("Classical"), {3.0, 2.5, 2.0, 1.0, -0.5, -0.5, 0.5, 2.0, 2.5, 3.0}));
@@ -199,7 +199,7 @@ QString EqualizerManager::buildFfmpegFilterString(const EqualizerPreset &preset)
 
     // 4. True-Peak Limiter (prevents digital clipping from EQ boosts)
     if (preset.limiterEnabled) {
-        filters << "alimiter=limit=0.98:attack=5:release=50";
+        filters << "alimiter=limit=0.99:attack=7:release=100:asc=1";
     }
 
     return filters.join(",");

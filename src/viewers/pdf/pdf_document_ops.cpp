@@ -76,7 +76,7 @@ bool PdfDocumentOps::insertBlankPage(const QString &sourceFilePath,
     int ret = QProcess::execute("qpdf", args);
     QFile::remove(blankPath);
 
-    if (ret != 0) {
+    if (ret != 0 && ret != 3) {
         QFile::remove(outFilePath);
         outFilePath.clear();
         errorMessage = QObject::tr("Could not insert page. Please ensure qpdf is installed on your system.");
@@ -123,17 +123,24 @@ int PdfDocumentOps::extractEmbeddedImages(const QString &filePath, const QString
 
     QDir().mkpath(targetDir);
 
-    // Call standard system pdfimages utility
+    // Call pdfimages utility (prioritizes locally built binary if present)
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString localExe = appDir + "/pdfimages";
+    if (!QFile::exists(localExe)) {
+        localExe = appDir + "/_deps/poppler-build/utils/pdfimages";
+    }
+    QString exe = (QFile::exists(localExe) && QFileInfo(localExe).isExecutable()) ? localExe : "pdfimages";
+
     QString prefix = QDir(targetDir).filePath("extracted_img");
     QStringList args;
     args << "-png" << filePath << prefix;
 
-    int exitCode = QProcess::execute("pdfimages", args);
+    int exitCode = QProcess::execute(exe, args);
     if (exitCode != 0) {
         // Fallback: try without -png (native format)
         args.clear();
         args << filePath << prefix;
-        exitCode = QProcess::execute("pdfimages", args);
+        exitCode = QProcess::execute(exe, args);
     }
 
     if (exitCode == 0) {

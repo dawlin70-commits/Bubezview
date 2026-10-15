@@ -193,6 +193,7 @@ void PdfSignatureDialog::setupUi()
     setupDrawTab();
     setupImageTab();
     setupSavedTab();
+    setupDigitalTab();
 
     connect(m_tabs, &QTabWidget::currentChanged, this, &PdfSignatureDialog::onTabChanged);
 
@@ -334,11 +335,49 @@ void PdfSignatureDialog::setupSavedTab()
     m_tabs->addTab(tab, tr("📁 Saved Signatures"));
 }
 
+void PdfSignatureDialog::setupDigitalTab()
+{
+    QWidget *tab = new QWidget();
+    QVBoxLayout *layout = new QVBoxLayout(tab);
+    layout->setContentsMargins(14, 14, 14, 14);
+    layout->setSpacing(12);
+
+    QLabel *lblInfo = new QLabel(
+        tr("<b>🔐 Cryptographic Digital Signatures (PAdES & CAdES .p7m)</b><br><br>"
+           "Verify existing cryptographic signatures, inspect X.509 certificate chains, "
+           "generate a personal self-signed certificate (<code>.p12</code>), or digitally sign this PDF:<br><br>"
+           "• <b>PAdES (Embedded PDF Signature)</b> — Standard signed <code>.pdf</code> readable by any PDF viewer<br>"
+           "• <b>CAdES (PKCS#7 Envelope)</b> — Signed <code>.pdf.p7m</code> envelope standard"),
+        tab);
+    lblInfo->setWordWrap(true);
+    lblInfo->setStyleSheet(QStringLiteral(
+        "background: rgba(2, 132, 199, 0.10); border: 1px solid rgba(2, 132, 199, 0.35); "
+        "border-radius: 8px; padding: 14px; font-size: 12px;"));
+    layout->addWidget(lblInfo);
+
+    QPushButton *btnOpenHub = new QPushButton(tr("🔐 Open Cryptographic Signature Hub..."), tab);
+    btnOpenHub->setCursor(Qt::PointingHandCursor);
+    btnOpenHub->setStyleSheet(QStringLiteral(
+        "background-color: #2563EB; color: white; font-weight: bold; font-size: 13px; "
+        "padding: 10px 18px; border-radius: 6px;"));
+    connect(btnOpenHub, &QPushButton::clicked, this, [this]() {
+        m_cryptoSigRequested = true;
+        accept();
+    });
+    layout->addWidget(btnOpenHub);
+    layout->addStretch(1);
+
+    m_tabs->addTab(tab, tr("🔒 Digital Certificate"));
+}
+
 void PdfSignatureDialog::onTabChanged(int index)
 {
-    // Hide 'Save to library' checkbox on the Saved Signatures tab
+    // Hide 'Save to library' checkbox on Saved Signatures and Digital Certificate tabs
     if (m_chkSaveToLibrary) {
-        m_chkSaveToLibrary->setVisible(index != 2);
+        m_chkSaveToLibrary->setVisible(index == 0 || index == 1);
+    }
+    if (m_btnOk) {
+        m_btnOk->setText(index == 3 ? tr("Open Digital Signature Hub ➔") : tr("Apply Signature ➔"));
     }
 }
 
@@ -452,6 +491,12 @@ void PdfSignatureDialog::onDeleteSavedClicked()
 void PdfSignatureDialog::onAcceptClicked()
 {
     int currentTab = m_tabs->currentIndex();
+    if (currentTab == 3) {
+        m_cryptoSigRequested = true;
+        accept();
+        return;
+    }
+
     QImage result;
 
     if (currentTab == 0) {

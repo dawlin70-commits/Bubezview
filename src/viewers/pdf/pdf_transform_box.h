@@ -194,6 +194,7 @@ private:
     Handle handleAt(const QPoint &pos) const;
     void repositionToolbar();
     void updateCachedPixmap(bool fast = false);
+    void updateRedactionColorButtons();
 
     PdfTransformItemType m_itemType;
     QRect m_boxRect;

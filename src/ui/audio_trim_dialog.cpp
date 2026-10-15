@@ -783,10 +783,10 @@ void AudioTrimDialog::setupUi()
 
     // 2. Four-Tab Suite: Trimming, Acoustic Restoration, Channels & Pitch/Tempo, Equalizer
     m_tabWidget = new QTabWidget(this);
-    m_tabWidget->addTab(createTrimTab(), tr("✂️ Taglio Spezzone (Trimming)"));
-    m_tabWidget->addTab(createFiltersTab(), tr("🎛️ Filtri e Pulizia Rumore"));
-    m_tabWidget->addTab(createDspTab(), tr("🔊 Canali, Pitch & Tonalità"));
-    m_tabWidget->addTab(createEqualizerTab(), tr("🎚️ Equalizzatore Traccia"));
+    m_tabWidget->addTab(createTrimTab(), tr("✂️ Audio Trimming"));
+    m_tabWidget->addTab(createFiltersTab(), tr("🎛️ Filters & Noise Reduction"));
+    m_tabWidget->addTab(createDspTab(), tr("🔊 Channels, Pitch & Tempo"));
+    m_tabWidget->addTab(createEqualizerTab(), tr("🎚️ Track Equalizer"));
     mainLayout->addWidget(m_tabWidget, 1);
 
     // 3. Shared Footer: Format, Bitrate, Sample Rate, Tag Editor, Action Buttons
@@ -831,8 +831,8 @@ void AudioTrimDialog::setupUi()
     connect(m_comboSampleRate, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AudioTrimDialog::onFilterChanged);
     footerLayout->addWidget(m_comboSampleRate);
 
-    m_btnOpenTagEditor = new QPushButton(tr("🏷️ Editor Tag..."), this);
-    m_btnOpenTagEditor->setToolTip(tr("Modifica metadati, titoli e copertina per questo file"));
+    m_btnOpenTagEditor = new QPushButton(tr("🏷️ Tag Editor..."), this);
+    m_btnOpenTagEditor->setToolTip(tr("Edit metadata, titles, and album art for this file"));
     connect(m_btnOpenTagEditor, &QPushButton::clicked, this, &AudioTrimDialog::onOpenTagEditorClicked);
     footerLayout->addWidget(m_btnOpenTagEditor);
 
@@ -941,7 +941,7 @@ QWidget *AudioTrimDialog::createTrimTab()
     );
     connect(m_btnSetEnd, &QPushButton::clicked, this, &AudioTrimDialog::onSetEndCurrent);
 
-    m_btnAutoDetectSilence = new QPushButton(tr("⚡ Auto-Snap Silenzi"), tab);
+    m_btnAutoDetectSilence = new QPushButton(tr("⚡ Auto-Snap Silence"), tab);
     m_btnAutoDetectSilence->setStyleSheet(
         "QPushButton {"
         "   background-color: rgba(97, 175, 239, 0.15);"
@@ -953,10 +953,10 @@ QWidget *AudioTrimDialog::createTrimTab()
         "}"
         "QPushButton:hover { background-color: rgba(97, 175, 239, 0.25); }"
     );
-    m_btnAutoDetectSilence->setToolTip(tr("Rileva automaticamente l'inizio e la fine dell'audio rimuovendo i silenzi iniziali e finali."));
+    m_btnAutoDetectSilence->setToolTip(tr("Automatically detect start and end of audio, trimming leading and trailing silence."));
     connect(m_btnAutoDetectSilence, &QPushButton::clicked, this, &AudioTrimDialog::onAutoDetectSilenceClicked);
 
-    m_btnSplitCue = new QPushButton(tr("📑 Dividi da CUE..."), tab);
+    m_btnSplitCue = new QPushButton(tr("📑 Split by CUE..."), tab);
     m_btnSplitCue->setStyleSheet(
         "QPushButton {"
         "   background-color: rgba(168, 85, 247, 0.15);"
@@ -968,7 +968,7 @@ QWidget *AudioTrimDialog::createTrimTab()
         "}"
         "QPushButton:hover { background-color: rgba(168, 85, 247, 0.25); }"
     );
-    m_btnSplitCue->setToolTip(tr("Suddivide automaticamente l'audio nelle singole tracce usando un file CUE sheet."));
+    m_btnSplitCue->setToolTip(tr("Automatically split audio into individual tracks using a CUE sheet file."));
     connect(m_btnSplitCue, &QPushButton::clicked, this, &AudioTrimDialog::onSplitCueClicked);
 
     btnLayout->addWidget(m_btnPlayPreview);
@@ -1310,26 +1310,26 @@ QWidget *AudioTrimDialog::createDspTab()
     rowChannel->addWidget(lblChannelMode);
 
     m_comboChannels = new QComboBox(grpChannels);
-    m_comboChannels->addItem(tr("Originale (Stereo / Multicanale)"), static_cast<int>(ChannelMode::Original));
-    m_comboChannels->addItem(tr("Stereo ➔ Mono (Downmix bilanciato)"), static_cast<int>(ChannelMode::StereoToMono));
-    m_comboChannels->addItem(tr("Inverti Canali (L ⇄ R)"), static_cast<int>(ChannelMode::SwapChannels));
-    m_comboChannels->addItem(tr("Solo Canale Sinistro (L) su entrambi i lati"), static_cast<int>(ChannelMode::LeftOnly));
-    m_comboChannels->addItem(tr("Solo Canale Destro (R) su entrambi i lati"), static_cast<int>(ChannelMode::RightOnly));
-    m_comboChannels->addItem(tr("🎤 Rimozione Voce / Karaoke (Cancellazione Canale Centrale)"), static_cast<int>(ChannelMode::VocalRemover));
+    m_comboChannels->addItem(tr("Original (Stereo / Multichannel)"), static_cast<int>(ChannelMode::Original));
+    m_comboChannels->addItem(tr("Stereo ➔ Mono (Balanced Downmix)"), static_cast<int>(ChannelMode::StereoToMono));
+    m_comboChannels->addItem(tr("Swap Channels (L ⇄ R)"), static_cast<int>(ChannelMode::SwapChannels));
+    m_comboChannels->addItem(tr("Left Channel Only (L) on both sides"), static_cast<int>(ChannelMode::LeftOnly));
+    m_comboChannels->addItem(tr("Right Channel Only (R) on both sides"), static_cast<int>(ChannelMode::RightOnly));
+    m_comboChannels->addItem(tr("🎤 Vocal Remover / Karaoke (Center Channel Cancellation)"), static_cast<int>(ChannelMode::VocalRemover));
     connect(m_comboChannels, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AudioTrimDialog::onFilterChanged);
     rowChannel->addWidget(m_comboChannels, 1);
     channelsLayout->addLayout(rowChannel);
 
     tabLayout->addWidget(grpChannels);
 
-    // 2. Modifica Tonalità & Tempo (Pitch Shift & Time Stretch) Group
-    QGroupBox *grpPitchTempo = new QGroupBox(tr("Modifica Tonalità & Tempo (Pitch Shift & Time Stretch)"), tab);
+    // 2. Pitch Shift & Time Stretch Group
+    QGroupBox *grpPitchTempo = new QGroupBox(tr("Pitch Shift & Time Stretch"), tab);
     QGridLayout *pitchGrid = new QGridLayout(grpPitchTempo);
     pitchGrid->setHorizontalSpacing(14);
     pitchGrid->setVerticalSpacing(12);
 
     // Pitch Shift
-    QLabel *lblPitch = new QLabel(tr("Pitch Shift (Tonalità):"), grpPitchTempo);
+    QLabel *lblPitch = new QLabel(tr("Pitch Shift:"), grpPitchTempo);
     lblPitch->setStyleSheet("font-weight: bold;");
     pitchGrid->addWidget(lblPitch, 0, 0);
 
@@ -1340,7 +1340,7 @@ QWidget *AudioTrimDialog::createDspTab()
     m_sliderPitch->setTickPosition(QSlider::TicksBelow);
     pitchGrid->addWidget(m_sliderPitch, 0, 1);
 
-    m_lblPitchVal = new QLabel(tr("0 semitoni (Originale)"), grpPitchTempo);
+    m_lblPitchVal = new QLabel(tr("0 semitones (Original)"), grpPitchTempo);
     m_lblPitchVal->setFixedWidth(160);
     pitchGrid->addWidget(m_lblPitchVal, 0, 2);
 
@@ -1350,17 +1350,17 @@ QWidget *AudioTrimDialog::createDspTab()
 
     connect(m_sliderPitch, &QSlider::valueChanged, this, [this](int val) {
         if (val == 0) {
-            m_lblPitchVal->setText(tr("0 semitoni (Originale)"));
+            m_lblPitchVal->setText(tr("0 semitones (Original)"));
         } else if (val > 0) {
-            m_lblPitchVal->setText(QString("+%1 %2").arg(val).arg(val == 1 ? tr("semitono") : tr("semitoni")));
+            m_lblPitchVal->setText(QString("+%1 %2").arg(val).arg(val == 1 ? tr("semitone") : tr("semitones")));
         } else {
-            m_lblPitchVal->setText(QString("%1 %2").arg(val).arg(val == -1 ? tr("semitono") : tr("semitoni")));
+            m_lblPitchVal->setText(QString("%1 %2").arg(val).arg(val == -1 ? tr("semitone") : tr("semitones")));
         }
         onFilterChanged();
     });
 
     // Time Stretch / Speed
-    QLabel *lblSpeed = new QLabel(tr("Time Stretch (Velocità):"), grpPitchTempo);
+    QLabel *lblSpeed = new QLabel(tr("Time Stretch (Speed):"), grpPitchTempo);
     lblSpeed->setStyleSheet("font-weight: bold;");
     pitchGrid->addWidget(lblSpeed, 1, 0);
 
@@ -1371,7 +1371,7 @@ QWidget *AudioTrimDialog::createDspTab()
     m_sliderSpeed->setTickPosition(QSlider::TicksBelow);
     pitchGrid->addWidget(m_sliderSpeed, 1, 1);
 
-    m_lblSpeedVal = new QLabel(tr("1.00x (Originale)"), grpPitchTempo);
+    m_lblSpeedVal = new QLabel(tr("1.00x (Original)"), grpPitchTempo);
     m_lblSpeedVal->setFixedWidth(160);
     pitchGrid->addWidget(m_lblSpeedVal, 1, 2);
 
@@ -1381,17 +1381,17 @@ QWidget *AudioTrimDialog::createDspTab()
 
     connect(m_sliderSpeed, &QSlider::valueChanged, this, [this](int val) {
         double factor = val / 100.0;
-        m_lblSpeedVal->setText(QString("%1x %2").arg(QString::number(factor, 'f', 2), (val == 100 ? tr("(Originale)") : QString())));
+        m_lblSpeedVal->setText(QString("%1x %2").arg(QString::number(factor, 'f', 2), (val == 100 ? tr("(Original)") : QString())));
         onFilterChanged();
     });
 
     // Reverse checkbox
-    m_chkReverse = new QCheckBox(tr("🔄 Inversione Audio (Reverse / Al contrario)"), grpPitchTempo);
+    m_chkReverse = new QCheckBox(tr("🔄 Reverse Audio Playback"), grpPitchTempo);
     connect(m_chkReverse, &QCheckBox::toggled, this, &AudioTrimDialog::onFilterChanged);
     pitchGrid->addWidget(m_chkReverse, 2, 0, 1, 4);
 
     // Remove Silence checkbox
-    m_chkRemoveSilence = new QCheckBox(tr("✂️ Rimozione Silenzio automatico (Taglia pause prolungate tra suoni)"), grpPitchTempo);
+    m_chkRemoveSilence = new QCheckBox(tr("✂️ Auto Silence Removal (Trim long gaps between sounds)"), grpPitchTempo);
     connect(m_chkRemoveSilence, &QCheckBox::toggled, this, &AudioTrimDialog::onFilterChanged);
     pitchGrid->addWidget(m_chkRemoveSilence, 3, 0, 1, 4);
 
@@ -2464,11 +2464,11 @@ void AudioTrimDialog::onAutoDetectSilenceClicked()
         }
         updateTimeLabels();
         applyPreviewFilters();
-        QMessageBox::information(this, tr("Auto-Snap Silenzi"),
-                                tr("Silenzi rilevati con successo!\nInizio audio: %1\nFine audio: %2")
+        QMessageBox::information(this, tr("Auto-Snap Silence"),
+                                tr("Silence detected successfully!\nAudio start: %1\nAudio end: %2")
                                 .arg(formatTime(m_startMs), formatTime(m_endMs)));
     } else {
-        QMessageBox::warning(this, tr("Rilevamento Silenzi"), tr("Impossibile rilevare silenzi o nessun intervallo silenzioso trovato."));
+        QMessageBox::warning(this, tr("Silence Detection"), tr("Could not detect silence or no silent intervals found."));
     }
 }
 
@@ -2480,22 +2480,22 @@ void AudioTrimDialog::onSplitCueClicked()
     QString cuePath = autoCuePath;
 
     if (!QFileInfo::exists(cuePath)) {
-        cuePath = QFileDialog::getOpenFileName(this, tr("Seleziona File CUE Sheet"), fi.dir().path(), tr("CUE Sheet (*.cue)"));
+        cuePath = QFileDialog::getOpenFileName(this, tr("Select CUE Sheet File"), fi.dir().path(), tr("CUE Sheet (*.cue)"));
         if (cuePath.isEmpty()) return;
     }
 
     QList<CueTrack> tracks = AudioProcessor::parseCueSheet(cuePath, m_meta.durationMs);
     if (tracks.isEmpty()) {
-        QMessageBox::warning(this, tr("Errore CUE Sheet"), tr("Nessuna traccia valida trovata nel file CUE:\n%1").arg(cuePath));
+        QMessageBox::warning(this, tr("CUE Sheet Error"), tr("No valid tracks found in CUE file:\n%1").arg(cuePath));
         return;
     }
 
-    int ret = QMessageBox::question(this, tr("Dividi Tracce CUE"),
-                                    tr("Trovate %1 tracce nel file CUE.\nProcedere con la suddivisione nella cartella dell'audio?")
+    int ret = QMessageBox::question(this, tr("Split CUE Tracks"),
+                                    tr("Found %1 tracks in CUE file.\nProceed with splitting into audio folder?")
                                     .arg(tracks.size()));
     if (ret != QMessageBox::Yes) return;
 
-    QString outputDir = QFileDialog::getExistingDirectory(this, tr("Cartella di Destinazione"), fi.dir().path());
+    QString outputDir = QFileDialog::getExistingDirectory(this, tr("Destination Directory"), fi.dir().path());
     if (outputDir.isEmpty()) return;
 
     m_progressBar->setVisible(true);
@@ -2506,7 +2506,7 @@ void AudioTrimDialog::onSplitCueClicked()
         int pct = static_cast<int>((static_cast<double>(cur) / tot) * 100.0);
         m_progressBar->setValue(pct);
         if (m_lblStatusBadge) {
-            m_lblStatusBadge->setText(tr("Traccia %1/%2: %3").arg(cur).arg(tot).arg(title));
+            m_lblStatusBadge->setText(tr("Track %1/%2: %3").arg(cur).arg(tot).arg(title));
         }
         qApp->processEvents();
     });
@@ -2514,9 +2514,9 @@ void AudioTrimDialog::onSplitCueClicked()
     m_progressBar->setVisible(false);
 
     if (success) {
-        QMessageBox::information(this, tr("Successo"), tr("Suddivisione di %1 tracce completata con successo nella cartella:\n%2").arg(tracks.size()).arg(outputDir));
+        QMessageBox::information(this, tr("Success"), tr("Successfully split %1 tracks into destination folder:\n%2").arg(tracks.size()).arg(outputDir));
     } else {
-        QMessageBox::critical(this, tr("Errore"), tr("Si è verificato un errore durante la suddivisione delle tracce."));
+        QMessageBox::critical(this, tr("Error"), tr("An error occurred while splitting tracks."));
     }
 }
 

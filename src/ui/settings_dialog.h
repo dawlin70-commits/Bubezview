@@ -76,6 +76,12 @@ public slots:
     void startRecompilation();
 
     /**
+     * @brief Initiates in-place recompilation for a specific target.
+     * @param target Specific CMake target to build (e.g. "bubezview").
+     */
+    void startRecompilation(const QString &target);
+
+    /**
      * @brief Reverts pending build and module changes back to active configuration.
      */
     void onRevertPendingClicked();

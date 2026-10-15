@@ -191,7 +191,18 @@ bool DesktopIntegrator::enableDolphin(const QString &shortcut)
         home + "/.local/share/kservices5/ServiceMenus"
     };
 
-    QString triggerPath = home + "/.local/share/BubezView/trigger_bubez.sh";
+    QString triggerPath = home + "/.local/share/bubezview/trigger_bubez.sh";
+    if (!QFile::exists(triggerPath)) {
+        triggerPath = home + "/.local/share/BubezView/trigger_bubez.sh";
+    }
+    if (!QFile::exists(triggerPath)) {
+        QString appDir = QCoreApplication::applicationDirPath();
+        if (QFile::exists(appDir + "/../trigger_bubez.sh")) {
+            triggerPath = QFileInfo(appDir + "/../trigger_bubez.sh").canonicalFilePath();
+        } else if (QFile::exists(appDir + "/../../trigger_bubez.sh")) {
+            triggerPath = QFileInfo(appDir + "/../../trigger_bubez.sh").canonicalFilePath();
+        }
+    }
     QString execCmd = QFile::exists(triggerPath) ? (triggerPath + " %F") : (appPath + " %F");
 
     QString desktopContent = QString(

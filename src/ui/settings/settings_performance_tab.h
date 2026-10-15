@@ -13,13 +13,23 @@ class QLabel;
 
 /**
  * @class SettingsPerformanceTab
- * @brief Settings notebook tab managing compiler optimization level (-O2/-O3),
+ * @brief Settings notebook tab managing hardware profiles (Desktop, Balanced, Laptop, Custom),
  *        the Compiler Wizard, adjacent file pre-caching, and background standby duration.
  */
 class SettingsPerformanceTab : public QWidget {
     Q_OBJECT
 
 public:
+    /**
+     * @enum Profile
+     * @brief System hardware optimization profiles.
+     */
+    enum class Profile {
+        Desktop = 0,    ///< Potente / Desktop: Everything compiled from source with extreme flags
+        Balanced = 1,   ///< Bilanciato: Everything from system precompiled packages
+        Custom = 2      ///< Fine-grained custom compiler flags via Compiler Wizard
+    };
+
     /**
      * @brief Constructs the performance settings tab.
      * @param parent Optional parent widget.
@@ -52,6 +62,11 @@ public:
      */
     QString optimizationLevel() const { return m_optLevel; }
 
+    /**
+     * @brief Returns current active profile.
+     */
+    Profile activeProfile() const { return m_activeProfile; }
+
 signals:
     /**
      * @brief Emitted when compiler options change, requiring recompilation.
@@ -60,25 +75,45 @@ signals:
 
     /**
      * @brief Emitted when the Compiler Wizard triggers an immediate rebuild.
+     * @param target Specific CMake target to build (empty for full build).
      */
-    void recompileRequested();
+    void recompileRequested(const QString &target = QString());
+
+    /**
+     * @brief Emitted when the user requests manual plugin management in Extensions tab.
+     */
+    void openExtensionsTabRequested();
 
 private slots:
     /**
-     * @brief Opens the interactive Compiler Wizard dialog if CPU meets x86-64-v3 requirements.
+     * @brief Selects one of the hardware profiles.
+     * @param profile Target profile.
+     */
+    void selectProfile(Profile profile);
+
+    /**
+     * @brief Opens the interactive Compiler Wizard dialog.
      */
     void openCompilerWizard();
 
 private:
     void setupUi();
-    void applyOptSegmentedStyle(bool isO3);
+    void updateProfileButtons(Profile active);
+    Profile detectActiveProfile() const;
+
+    Profile m_activeProfile = Profile::Balanced;
+    Profile m_initialProfile = Profile::Balanced;
 
     QString m_optLevel;
     QString m_initialOptLevel;
+    QString m_initialCpuProfile;
     QString m_initialCustomFlags;
 
-    QPushButton *m_btnOptO2 = nullptr;
-    QPushButton *m_btnOptO3 = nullptr;
+    QPushButton *m_btnProfileDesktop = nullptr;
+    QPushButton *m_btnProfileBalanced = nullptr;
+    QPushButton *m_btnProfileCustom = nullptr;
+
+    QLabel *m_lblProfileDesc = nullptr;
 
     QCheckBox *m_chkEnablePreload = nullptr;
 

@@ -1,11 +1,11 @@
 #include "action_registry.h"
 #include "base_skin.h"
 #include "image_viewer.h"
-#include "pdf_viewer.h"
-#include "media_viewer.h"
+#include "core/interfaces/i_pdf_viewer.h"
+#include "core/interfaces/i_media_viewer.h"
 #include "office_viewer.h"
 #include "text_viewer.h"
-#include "archive_viewer.h"
+#include "core/interfaces/i_archive_viewer.h"
 #include "build_config.h"
 
 QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category, BaseSkin *skin)
@@ -63,9 +63,9 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         zoomTool.iconName = "zoom-fit-best";
         zoomTool.category = "view";
         zoomTool.isCheckable = true;
-        zoomTool.isChecked = [skin]() { return skin->pdfViewer()->isZoomToolActive(); };
+        zoomTool.isChecked = [skin]() { return skin->isZoomToolActive(); };
         zoomTool.trigger = [skin]() {
-            skin->pdfViewer()->toggleZoomTool(!skin->pdfViewer()->isZoomToolActive());
+            skin->toggleZoomTool(!skin->isZoomToolActive());
         };
         actions.append(zoomTool);
 
@@ -74,7 +74,7 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         zoomReset.label = QObject::tr("↺ 100%");
         zoomReset.iconName = "zoom-original";
         zoomReset.category = "view";
-        zoomReset.trigger = [skin]() { skin->pdfViewer()->resetZoom(); };
+        zoomReset.trigger = [skin]() { skin->resetZoomCurrent(); };
         actions.append(zoomReset);
 
         UIActionItem fitWidth;
@@ -82,7 +82,7 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         fitWidth.label = QObject::tr("↔ Fit Width");
         fitWidth.iconName = "zoom-fit-width";
         fitWidth.category = "view";
-        fitWidth.trigger = [skin]() { skin->pdfViewer()->fitToWidth(); };
+        fitWidth.trigger = [skin]() { skin->fitCurrent(); };
         actions.append(fitWidth);
 
         UIActionItem rotLeft;
@@ -183,6 +183,14 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         signature.trigger = [skin]() { skin->pdfViewer()->openSignatureDialog(); };
         actions.append(signature);
 
+        UIActionItem cryptoSig;
+        cryptoSig.id = "pdf_crypto_signature";
+        cryptoSig.label = QObject::tr("🔐 Digital Signature");
+        cryptoSig.iconName = "security-high";
+        cryptoSig.category = "tools";
+        cryptoSig.trigger = [skin]() { skin->pdfViewer()->openCryptoSignatureDialog(0); };
+        actions.append(cryptoSig);
+
         UIActionItem insertImage;
         insertImage.id = "pdf_insert_image";
         insertImage.label = QObject::tr("🖼️ Insert Image");
@@ -234,12 +242,24 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
     }
 
     case FileCategory::Image: {
+        UIActionItem zoomTool;
+        zoomTool.id = "zoom_tool";
+        zoomTool.label = QObject::tr("🔍 Zoom");
+        zoomTool.iconName = "zoom-fit-best";
+        zoomTool.category = "view";
+        zoomTool.isCheckable = true;
+        zoomTool.isChecked = [skin]() { return skin->isZoomToolActive(); };
+        zoomTool.trigger = [skin]() {
+            skin->toggleZoomTool(!skin->isZoomToolActive());
+        };
+        actions.append(zoomTool);
+
         UIActionItem zoomIn;
         zoomIn.id = "zoom_in";
         zoomIn.label = QObject::tr("🔍 +");
         zoomIn.iconName = "zoom-in";
         zoomIn.category = "view";
-        zoomIn.trigger = [skin]() { skin->imageViewer()->zoomIn(); };
+        zoomIn.trigger = [skin]() { skin->zoomInCurrent(); };
         actions.append(zoomIn);
 
         UIActionItem zoomOut;
@@ -247,7 +267,7 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         zoomOut.label = QObject::tr("🔍 -");
         zoomOut.iconName = "zoom-out";
         zoomOut.category = "view";
-        zoomOut.trigger = [skin]() { skin->imageViewer()->zoomOut(); };
+        zoomOut.trigger = [skin]() { skin->zoomOutCurrent(); };
         actions.append(zoomOut);
 
         UIActionItem zoomReset;
@@ -255,8 +275,16 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         zoomReset.label = QObject::tr("↺ 100%");
         zoomReset.iconName = "zoom-original";
         zoomReset.category = "view";
-        zoomReset.trigger = [skin]() { skin->imageViewer()->resetZoom(); };
+        zoomReset.trigger = [skin]() { skin->resetZoomCurrent(); };
         actions.append(zoomReset);
+
+        UIActionItem fitWidth;
+        fitWidth.id = "fit_width";
+        fitWidth.label = QObject::tr("↔ Fit to Window");
+        fitWidth.iconName = "zoom-fit-width";
+        fitWidth.category = "view";
+        fitWidth.trigger = [skin]() { skin->fitCurrent(); };
+        actions.append(fitWidth);
 
         UIActionItem rotLeft;
         rotLeft.id = "rotate_left";
@@ -446,6 +474,30 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
     }
 
     case FileCategory::Archive: {
+        UIActionItem addFilesAct;
+        addFilesAct.id = "archive_add_files";
+        addFilesAct.label = QObject::tr("➕ Add Files...");
+        addFilesAct.iconName = "list-add";
+        addFilesAct.category = "edit";
+        addFilesAct.trigger = [skin]() { skin->addFilesToCurrentArchive(); };
+        actions.append(addFilesAct);
+
+        UIActionItem addFolderAct;
+        addFolderAct.id = "archive_add_folder";
+        addFolderAct.label = QObject::tr("📁 Add Folder...");
+        addFolderAct.iconName = "folder-new";
+        addFolderAct.category = "edit";
+        addFolderAct.trigger = [skin]() { skin->addFolderToCurrentArchive(); };
+        actions.append(addFolderAct);
+
+        UIActionItem removeSelAct;
+        removeSelAct.id = "archive_remove_selected";
+        removeSelAct.label = QObject::tr("🗑️ Remove Selected");
+        removeSelAct.iconName = "edit-delete";
+        removeSelAct.category = "edit";
+        removeSelAct.trigger = [skin]() { skin->removeSelectedFromCurrentArchive(); };
+        actions.append(removeSelAct);
+
         UIActionItem extractAct;
         extractAct.id = "archive_extract_all";
         extractAct.label = QObject::tr("📦 Extract All");

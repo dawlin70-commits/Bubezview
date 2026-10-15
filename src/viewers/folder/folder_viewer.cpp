@@ -3,7 +3,6 @@
 #include "vector_icons.h"
 #include "plugin_manager.h"
 
-#include <poppler/qt6/poppler-qt6.h>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPainter>
@@ -25,6 +24,8 @@
 #include <QFontDatabase>
 #include <QDateTime>
 #include <QLocale>
+#include <QCollator>
+#include <algorithm>
 #include <QStandardPaths>
 #include <QDebug>
 #include <QSettings>
@@ -187,15 +188,9 @@ void ThumbnailWorker::run()
                 }
             }
         } else if (ext == "pdf") {
-            std::unique_ptr<Poppler::Document> doc(Poppler::Document::load(path));
-            if (doc && !doc->isLocked() && doc->numPages() > 0) {
-                std::unique_ptr<Poppler::Page> page(doc->page(0));
-                if (page) {
-                    QImage img = page->renderToImage(100.0, 100.0);
-                    if (!img.isNull()) {
-                        emit thumbnailReady(path, img.scaled(220, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                    }
-                }
+            QImage img = PluginManager::renderPdfThumbnail(path, 220);
+            if (!img.isNull()) {
+                emit thumbnailReady(path, img.scaled(220, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             }
         } else if (textExts.contains(ext)) {
             QImage img = renderTextThumbnail(path);
@@ -583,7 +578,7 @@ bool FolderViewer::loadFolder(const QString &folderPath)
 
     QFileInfoList entries = dir.entryInfoList(
         QDir::AllEntries | QDir::NoDotAndDotDot,
-        QDir::DirsFirst | QDir::Name | QDir::IgnoreCase
+        QDir::NoSort
     );
 
     QFileInfoList subdirs;
@@ -616,6 +611,18 @@ bool FolderViewer::loadFolder(const QString &folderPath)
             }
         }
     }
+
+    // Natural numeric sorting identical to Dolphin / KDE Plasma
+    QCollator collator;
+    collator.setNumericMode(true);
+    collator.setCaseSensitivity(Qt::CaseInsensitive);
+
+    auto compareFileInfos = [&collator](const QFileInfo &a, const QFileInfo &b) {
+        return collator.compare(a.fileName(), b.fileName()) < 0;
+    };
+
+    std::sort(subdirs.begin(), subdirs.end(), compareFileInfos);
+    std::sort(files.begin(), files.end(), compareFileInfos);
 
     m_itemCount = subdirs.size() + files.size();
 

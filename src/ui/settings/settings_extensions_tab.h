@@ -26,6 +26,11 @@ public:
     explicit SettingsExtensionsTab(QWidget *parent = nullptr);
 
     /**
+     * @brief Refreshes all extension row widgets across category tabs.
+     */
+    void refreshAllRows();
+
+    /**
      * @brief Destructor.
      */
     ~SettingsExtensionsTab() override = default;

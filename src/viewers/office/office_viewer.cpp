@@ -1,5 +1,6 @@
 #include "office_viewer.h"
-#include "pdf_viewer.h"
+#include "core/interfaces/i_pdf_viewer.h"
+#include "core/plugin_manager.h"
 #include "theme_manager.h"
 #include <archive.h>
 #include <archive_entry.h>
@@ -202,9 +203,14 @@ void OfficeViewer::setupUi()
     loadLayout->addWidget(m_lblLoading);
     m_stack->addWidget(m_loadingWidget);
 
-    // View 1: High-Definition PDF Viewer (Poppler)
-    m_pdfViewer = new PdfViewer(m_stack);
-    m_stack->addWidget(m_pdfViewer);
+    // View 1: High-Definition PDF Viewer (Poppler via plugin)
+    auto *viewer = PluginManager::instance().createViewer(FileCategory::Pdf, m_stack);
+    m_pdfViewer = dynamic_cast<IPdfViewer*>(viewer);
+    if (m_pdfViewer) {
+        m_stack->addWidget(m_pdfViewer->widget());
+    } else {
+        m_stack->addWidget(new QWidget(m_stack));
+    }
 
     // View 2: Internal Fallback QTextBrowser
     m_textBrowser = new QTextBrowser(m_stack);
@@ -326,10 +332,20 @@ bool OfficeViewer::loadFile(const QString &filePath)
 #endif
 
     if (tryLibreOffice && QFile::exists(expectedPdf) && QFileInfo(expectedPdf).lastModified() >= fi.lastModified()) {
-        if (m_pdfViewer->loadFile(expectedPdf)) {
+        if (!m_pdfViewer) {
+            auto *v = PluginManager::instance().createViewer(FileCategory::Pdf, m_stack);
+            m_pdfViewer = dynamic_cast<IPdfViewer*>(v);
+            if (m_pdfViewer) {
+                QWidget *oldW = m_stack->widget(1);
+                m_stack->removeWidget(oldW);
+                delete oldW;
+                m_stack->insertWidget(1, m_pdfViewer->widget());
+            }
+        }
+        if (m_pdfViewer && m_pdfViewer->loadFile(expectedPdf)) {
             m_convertedPdfPath = expectedPdf;
             m_isPdfMode = true;
-            m_stack->setCurrentWidget(m_pdfViewer);
+            m_stack->setCurrentWidget(m_pdfViewer->widget());
             return true;
         }
     }
@@ -434,9 +450,19 @@ void OfficeViewer::onConversionFinished(const QString &sourcePath, const QString
     if (sourcePath != m_currentFilePath) return;
 
     m_convertedPdfPath = pdfPath;
-    if (m_pdfViewer->loadFile(pdfPath)) {
+    if (!m_pdfViewer) {
+        auto *v = PluginManager::instance().createViewer(FileCategory::Pdf, m_stack);
+        m_pdfViewer = dynamic_cast<IPdfViewer*>(v);
+        if (m_pdfViewer) {
+            QWidget *oldW = m_stack->widget(1);
+            m_stack->removeWidget(oldW);
+            delete oldW;
+            m_stack->insertWidget(1, m_pdfViewer->widget());
+        }
+    }
+    if (m_pdfViewer && m_pdfViewer->loadFile(pdfPath)) {
         m_isPdfMode = true;
-        m_stack->setCurrentWidget(m_pdfViewer);
+        m_stack->setCurrentWidget(m_pdfViewer->widget());
     }
 }
 
@@ -545,7 +571,7 @@ void OfficeViewer::clear()
         m_worker = nullptr;
     }
 
-    m_pdfViewer->clear();
+    if (m_pdfViewer) m_pdfViewer->clear();
     m_textBrowser->clear();
     m_currentFilePath.clear();
     m_convertedPdfPath.clear();

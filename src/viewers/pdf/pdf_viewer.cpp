@@ -3,10 +3,12 @@
 #include "../../core/theme_manager.h"
 #include "../../ui/pdf_typewriter_dialog.h"
 #include "../../ui/pdf_signature_dialog.h"
+#include "../../ui/pdf_crypto_signature_dialog.h"
 #include "../../ui/pdf_image_dialog.h"
 #include "../../ui/pdf_shape_dialog.h"
 #include "../../ui/pdf_watermark_dialog.h"
 #include "../../ui/pdf_tools_dialog.h"
+#include "../../ui/pdf_page_organizer_dialog.h"
 #include <poppler/qt6/poppler-qt6.h>
 #include <poppler/qt6/poppler-annotation.h>
 #include <poppler/qt6/poppler-form.h>
@@ -65,6 +67,39 @@ PdfViewer::PdfViewer(QWidget *parent)
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
+
+    // 0. Top Cryptographic Signature Verification Banner (auto-shown when document is digitally signed)
+    m_sigBanner = new QWidget(this);
+    QHBoxLayout *sigBannerLayout = new QHBoxLayout(m_sigBanner);
+    sigBannerLayout->setContentsMargins(12, 6, 12, 6);
+    sigBannerLayout->setSpacing(10);
+
+    m_lblSigBannerText = new QLabel(m_sigBanner);
+    m_lblSigBannerText->setWordWrap(true);
+    sigBannerLayout->addWidget(m_lblSigBannerText, 1);
+
+    m_btnSigBannerDetails = new QPushButton(tr("🔍 Certificate Details"), m_sigBanner);
+    m_btnSigBannerDetails->setCursor(Qt::PointingHandCursor);
+    connect(m_btnSigBannerDetails, &QPushButton::clicked, this, [this]() {
+        openCryptoSignatureDialog(0);
+    });
+    sigBannerLayout->addWidget(m_btnSigBannerDetails);
+
+    m_btnSigBannerSign = new QPushButton(tr("✍️ Add Signature"), m_sigBanner);
+    m_btnSigBannerSign->setCursor(Qt::PointingHandCursor);
+    connect(m_btnSigBannerSign, &QPushButton::clicked, this, [this]() {
+        openCryptoSignatureDialog(1);
+    });
+    sigBannerLayout->addWidget(m_btnSigBannerSign);
+
+    m_btnSigBannerClose = new QPushButton(QStringLiteral("✕"), m_sigBanner);
+    m_btnSigBannerClose->setFixedSize(22, 22);
+    m_btnSigBannerClose->setCursor(Qt::PointingHandCursor);
+    connect(m_btnSigBannerClose, &QPushButton::clicked, m_sigBanner, &QWidget::hide);
+    sigBannerLayout->addWidget(m_btnSigBannerClose);
+
+    m_sigBanner->hide();
+    mainLayout->addWidget(m_sigBanner);
 
     m_splitter = new QSplitter(Qt::Horizontal, this);
     m_splitter->setHandleWidth(2);
@@ -217,6 +252,15 @@ PdfViewer::PdfViewer(QWidget *parent)
 
     mainLayout->addWidget(m_navBar);
 
+    // Connect signals to interface callbacks
+    connect(this, &PdfViewer::documentModified, this, [this](bool m) { if (m_docModifiedCallback) m_docModifiedCallback(m); });
+    connect(this, &PdfViewer::pageChanged, this, [this](int cur, int tot) { if (m_pageChangedCallback) m_pageChangedCallback(cur - 1, tot); });
+    connect(this, &PdfViewer::selectionChanged, this, [this]() { if (m_selectionChangedCallback) m_selectionChangedCallback(); });
+    connect(this, &PdfViewer::historyChanged, this, [this]() { if (m_historyChangedCallback) m_historyChangedCallback(); });
+    if (m_pageWidget) {
+        connect(m_pageWidget, &PdfPageWidget::continuousModeExited, this, [this]() { if (m_continuousModeExitedCallback) m_continuousModeExitedCallback(); });
+    }
+
     // Apply active theme styling
     updateTheme();
 }
@@ -238,6 +282,10 @@ void PdfViewer::resetDocument()
         m_pageWidget->setFilePath(QString());
     }
     m_doc.reset();
+    if (!m_extractedP7mTempPath.isEmpty() && QFile::exists(m_extractedP7mTempPath)) {
+        QFile::remove(m_extractedP7mTempPath);
+    }
+    m_extractedP7mTempPath.clear();
 }
 
 void PdfViewer::updateTheme()
@@ -443,8 +491,28 @@ bool PdfViewer::loadFile(const QString &filePath, bool preserveHistory)
     }
 
     m_filePath = targetPath;
+    QString popplerLoadPath = targetPath;
 
-    m_doc = Poppler::Document::load(targetPath);
+    // If this is a CAdES .pdf.p7m / .p7m envelope, extract the inner PDF to a temporary file
+    if (targetPath.endsWith(QStringLiteral(".p7m"), Qt::CaseInsensitive)) {
+        QTemporaryFile tmpPdf(QDir::tempPath() + QStringLiteral("/bubez_p7m_XXXXXX.pdf"));
+        tmpPdf.setAutoRemove(false);
+        if (!tmpPdf.open()) {
+            resetDocument();
+            return false;
+        }
+        m_extractedP7mTempPath = tmpPdf.fileName();
+        tmpPdf.close();
+
+        QString errMsg;
+        if (!PdfCryptoSignatureDialog::extractPdfFromP7m(targetPath, m_extractedP7mTempPath, &errMsg)) {
+            resetDocument();
+            return false;
+        }
+        popplerLoadPath = m_extractedP7mTempPath;
+    }
+
+    m_doc = Poppler::Document::load(popplerLoadPath);
     if (!m_doc || m_doc->isLocked()) {
         resetDocument();
         return false;
@@ -464,6 +532,7 @@ bool PdfViewer::loadFile(const QString &filePath, bool preserveHistory)
     populateOutline();
     renderCurrentPage();
     updateNavButtons();
+    verifyAndRefreshSignatureBanner();
     emit pageChanged(m_currentPage + 1, m_pageCount);
     m_isModified = false;
     emit documentModified(false);
@@ -496,6 +565,7 @@ bool PdfViewer::loadDocument(std::unique_ptr<Poppler::Document> doc, const QStri
     populateOutline();
     renderCurrentPage();
     updateNavButtons();
+    verifyAndRefreshSignatureBanner();
 
     m_isModified = false;
     emit documentModified(false);
@@ -506,6 +576,9 @@ bool PdfViewer::loadDocument(std::unique_ptr<Poppler::Document> doc, const QStri
 void PdfViewer::clear()
 {
     resetDocument();
+    if (m_sigBanner) {
+        m_sigBanner->hide();
+    }
     m_filePath.clear();
     m_currentPage = 0;
     m_pageCount = 0;
@@ -744,23 +817,40 @@ void PdfViewer::zoomAt(const QPoint &viewportPos, double factor)
     m_fitToWidthMode = false;
 
     QPoint widgetPos = m_pageWidget->mapFrom(m_scrollArea->viewport(), viewportPos);
-    double relX = 0.5;
-    double relY = 0.5;
-    if (m_pageWidget->width() > 0 && m_pageWidget->height() > 0) {
-        relX = qBound(0.0, static_cast<double>(widgetPos.x()) / m_pageWidget->width(), 1.0);
-        relY = qBound(0.0, static_cast<double>(widgetPos.y()) / m_pageWidget->height(), 1.0);
+    int pageIdx = m_pageWidget->pageIndexAtPos(widgetPos);
+    QRect pageR = (pageIdx >= 0) ? m_pageWidget->pageRect(pageIdx) : QRect();
+
+    double pageRelX = 0.5;
+    double pageRelY = 0.5;
+    if (pageR.isValid() && pageR.width() > 0 && pageR.height() > 0) {
+        pageRelX = qBound(0.0, static_cast<double>(widgetPos.x() - pageR.x()) / pageR.width(), 1.0);
+        pageRelY = qBound(0.0, static_cast<double>(widgetPos.y() - pageR.y()) / pageR.height(), 1.0);
+    } else if (m_pageWidget->width() > 0 && m_pageWidget->height() > 0) {
+        pageRelX = qBound(0.0, static_cast<double>(widgetPos.x()) / m_pageWidget->width(), 1.0);
+        pageRelY = qBound(0.0, static_cast<double>(widgetPos.y()) / m_pageWidget->height(), 1.0);
     }
 
     m_zoomFactor = std::max(0.2, std::min(6.0, m_zoomFactor * factor));
     renderCurrentPage();
 
-    int newX = qRound(relX * m_pageWidget->width()) - viewportPos.x();
-    int newY = qRound(relY * m_pageWidget->height()) - viewportPos.y();
+    QRect newPageR = (pageIdx >= 0) ? m_pageWidget->pageRect(pageIdx) : QRect();
+    int targetX = (newPageR.isValid() && newPageR.width() > 0)
+                      ? newPageR.x() + qRound(pageRelX * newPageR.width())
+                      : qRound(pageRelX * m_pageWidget->width());
+    int targetY = (newPageR.isValid() && newPageR.height() > 0)
+                      ? newPageR.y() + qRound(pageRelY * newPageR.height())
+                      : qRound(pageRelY * m_pageWidget->height());
+
+    int newX = targetX - viewportPos.x();
+    int newY = targetY - viewportPos.y();
 
     m_scrollArea->horizontalScrollBar()->setValue(newX);
     m_scrollArea->verticalScrollBar()->setValue(newY);
 
     emit zoomChanged(m_zoomFactor);
+    if (m_zoomChangedCallback) {
+        m_zoomChangedCallback(m_zoomFactor);
+    }
 }
 
 void PdfViewer::toggleZoomTool(bool active)
@@ -865,6 +955,7 @@ void PdfViewer::zoomIn()
     m_zoomFactor = std::min(5.0, m_zoomFactor * 1.25);
     renderCurrentPage();
     emit zoomChanged(m_zoomFactor);
+    if (m_zoomChangedCallback) m_zoomChangedCallback(m_zoomFactor);
 }
 
 void PdfViewer::zoomOut()
@@ -874,6 +965,7 @@ void PdfViewer::zoomOut()
     m_zoomFactor = std::max(0.2, m_zoomFactor / 1.25);
     renderCurrentPage();
     emit zoomChanged(m_zoomFactor);
+    if (m_zoomChangedCallback) m_zoomChangedCallback(m_zoomFactor);
 }
 
 void PdfViewer::resetZoom()
@@ -882,6 +974,7 @@ void PdfViewer::resetZoom()
     m_zoomFactor = 1.0;
     renderCurrentPage();
     emit zoomChanged(m_zoomFactor);
+    if (m_zoomChangedCallback) m_zoomChangedCallback(m_zoomFactor);
 }
 
 void PdfViewer::fitToWidth()
@@ -890,6 +983,7 @@ void PdfViewer::fitToWidth()
     m_zoomFactor = 1.0;
     renderCurrentPage();
     emit zoomChanged(m_zoomFactor);
+    if (m_zoomChangedCallback) m_zoomChangedCallback(m_zoomFactor);
 }
 
 void PdfViewer::resizeEvent(QResizeEvent *event)
@@ -920,32 +1014,122 @@ bool PdfViewer::handleViewportWheel(QWheelEvent *event, QObject *source)
         return false;
     }
 
-    // Ctrl + Wheel or Zoom Tool: Zooming
+    // 1. Zoom with Mouse Wheel: Ctrl + Wheel or Zoom Tool active
     if (m_zoomToolActive || (event->modifiers() & Qt::ControlModifier)) {
-        double factor = (event->angleDelta().y() > 0) ? 1.25 : (1.0 / 1.25);
-        QPoint viewportPos = (source == m_pageWidget)
-            ? m_scrollArea->viewport()->mapFromGlobal(m_pageWidget->mapToGlobal(event->position().toPoint()))
-            : event->position().toPoint();
-        zoomAt(viewportPos, factor);
-        event->accept();
-        return true;
+        int deltaY = event->angleDelta().y();
+        if (deltaY != 0) {
+            double factor = (deltaY > 0) ? 1.25 : (1.0 / 1.25);
+            QWidget *sourceWidget = qobject_cast<QWidget*>(source);
+            QPoint viewportPos = (sourceWidget && m_scrollArea && sourceWidget != m_scrollArea->viewport())
+                ? m_scrollArea->viewport()->mapFromGlobal(sourceWidget->mapToGlobal(event->position().toPoint()))
+                : event->position().toPoint();
+            zoomAt(viewportPos, factor);
+            event->accept();
+            return true;
+        }
+        return false;
     }
 
-    // Normal mouse wheel: smooth continuous vertical scroll without sudden snaps
+    // 2. Horizontal Scrolling: Shift + Wheel or horizontal trackpad/wheel tilt
+    if ((event->modifiers() & Qt::ShiftModifier) || event->angleDelta().x() != 0) {
+        int delta = (event->modifiers() & Qt::ShiftModifier) ? event->angleDelta().y() : event->angleDelta().x();
+        QScrollBar *hbar = m_scrollArea ? m_scrollArea->horizontalScrollBar() : nullptr;
+        if (hbar && hbar->maximum() > hbar->minimum()) {
+            int step = (event->pixelDelta().x() != 0) ? event->pixelDelta().x() : qRound(delta * 0.75);
+            if (step == 0 && delta != 0) step = (delta > 0 ? 1 : -1);
+            hbar->setValue(hbar->value() - step);
+            event->accept();
+            return true;
+        }
+    }
+
+    // 3. Normal Vertical Scrolling & Continuous/Edge Page Navigation
     int deltaY = event->angleDelta().y();
     if (deltaY == 0) {
         return false;
     }
 
-    QScrollBar *vbar = m_scrollArea->verticalScrollBar();
-    if (vbar && vbar->maximum() > vbar->minimum()) {
-        int step = deltaY / 2;
-        vbar->setValue(vbar->value() - step);
+    int currentDir = (deltaY > 0) ? 1 : -1;
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+    // If direction changed, reset accumulator and cooldown immediately
+    if (m_lastWheelPageDir != 0 && m_lastWheelPageDir != currentDir) {
+        m_wheelAccumulator = 0;
+        m_lastWheelPageTime = 0;
+    }
+
+    QScrollBar *vbar = m_scrollArea ? m_scrollArea->verticalScrollBar() : nullptr;
+    bool canScrollContent = (vbar && vbar->maximum() > vbar->minimum());
+
+    if (!canScrollContent) {
+        // Content fits entirely vertically in the viewport: flip pages on wheel
+        if (m_lastWheelPageDir == currentDir && (now - m_lastWheelPageTime < 250)) {
+            event->accept();
+            return true;
+        }
+        m_wheelAccumulator += deltaY;
+        if (m_wheelAccumulator <= -120) {
+            m_wheelAccumulator = 0;
+            m_lastWheelPageTime = now;
+            m_lastWheelPageDir = -1;
+            if (m_currentPage < m_pageCount - 1) {
+                nextPage();
+            }
+        } else if (m_wheelAccumulator >= 120) {
+            m_wheelAccumulator = 0;
+            m_lastWheelPageTime = now;
+            m_lastWheelPageDir = 1;
+            if (m_currentPage > 0) {
+                prevPage();
+            }
+        }
         event->accept();
         return true;
     }
 
-    return false;
+    // Zoomed document with scrollable vertical content
+    if (deltaY < 0 && vbar->value() >= vbar->maximum()) {
+        // Reached bottom of document
+        if (m_lastWheelPageDir == currentDir && (now - m_lastWheelPageTime < 250)) {
+            event->accept();
+            return true;
+        }
+        m_wheelAccumulator += deltaY;
+        if (m_wheelAccumulator <= -180) {
+            m_wheelAccumulator = 0;
+            m_lastWheelPageTime = now;
+            m_lastWheelPageDir = -1;
+            if (m_currentPage < m_pageCount - 1) {
+                nextPage();
+            }
+        }
+        event->accept();
+        return true;
+    } else if (deltaY > 0 && vbar->value() <= vbar->minimum()) {
+        // Reached top of document
+        if (m_lastWheelPageDir == currentDir && (now - m_lastWheelPageTime < 250)) {
+            event->accept();
+            return true;
+        }
+        m_wheelAccumulator += deltaY;
+        if (m_wheelAccumulator >= 180) {
+            m_wheelAccumulator = 0;
+            m_lastWheelPageTime = now;
+            m_lastWheelPageDir = 1;
+            if (m_currentPage > 0) {
+                prevPage();
+            }
+        }
+        event->accept();
+        return true;
+    } else {
+        m_wheelAccumulator = 0;
+        int step = (event->pixelDelta().y() != 0) ? event->pixelDelta().y() : qRound(deltaY * 0.75);
+        if (step == 0 && deltaY != 0) step = (deltaY > 0 ? 1 : -1);
+        vbar->setValue(vbar->value() - step);
+        event->accept();
+        return true;
+    }
 }
 
 void PdfViewer::wheelEvent(QWheelEvent *event)
@@ -1128,6 +1312,9 @@ void PdfViewer::openToolsDialog(int defaultTab)
             }
             break;
         }
+        case PdfToolAction::CryptoSignature:
+            openCryptoSignatureDialog(1);
+            break;
         default:
             break;
         }
@@ -1161,11 +1348,96 @@ void PdfViewer::openSignatureDialog()
     if (!m_doc) return;
     PdfSignatureDialog dlg(this);
     if (dlg.exec() == QDialog::Accepted) {
+        if (dlg.isCryptoSignatureRequested()) {
+            openCryptoSignatureDialog(1);
+            return;
+        }
         QImage sigImg = dlg.signatureImage();
         if (!sigImg.isNull()) {
             m_pageWidget->startSignature(sigImg);
         }
     }
+}
+
+void PdfViewer::openCryptoSignatureDialog(int defaultTab)
+{
+    if (m_filePath.isEmpty()) return;
+
+    QList<PdfDigitalSignatureInfo> preverified = PdfCryptoSignatureDialog::verifyDocumentSignatures(m_filePath);
+    PdfCryptoSignatureDialog dlg(m_filePath, preverified, defaultTab, window());
+    dlg.exec();
+
+    QString signedPath = dlg.signedOutputPath();
+    if (!signedPath.isEmpty() && QFile::exists(signedPath)) {
+        if (m_fileOrganizedCallback) {
+            m_fileOrganizedCallback(signedPath);
+        } else {
+            loadFile(signedPath);
+        }
+    } else {
+        verifyAndRefreshSignatureBanner();
+    }
+}
+
+void PdfViewer::verifyAndRefreshSignatureBanner()
+{
+    if (!m_sigBanner || m_filePath.isEmpty() || !QFile::exists(m_filePath)) {
+        if (m_sigBanner) m_sigBanner->hide();
+        return;
+    }
+
+    QList<PdfDigitalSignatureInfo> sigs = PdfCryptoSignatureDialog::verifyDocumentSignatures(m_filePath);
+    if (sigs.isEmpty()) {
+        m_sigBanner->hide();
+        return;
+    }
+
+    bool allIntegrityValid = true;
+    bool allCertValid = true;
+    QStringList signers;
+    for (const auto &s : sigs) {
+        if (!s.isSignatureValid) allIntegrityValid = false;
+        if (!s.isCertTrusted) allCertValid = false;
+        if (!s.signerName.isEmpty() && !signers.contains(s.signerName)) {
+            signers.append(s.signerName);
+        }
+    }
+
+    QString signerText = signers.isEmpty() ? tr("Unknown Signer") : signers.join(QStringLiteral(", "));
+    QString formatBadge = sigs.first().signatureType.contains(QStringLiteral("CAdES"), Qt::CaseInsensitive)
+                          ? QStringLiteral("CAdES (.p7m)")
+                          : QStringLiteral("PAdES (PDF)");
+
+    if (!allIntegrityValid) {
+        m_sigBanner->setStyleSheet(QStringLiteral(
+            "QWidget { background-color: #7F1D1D; border-bottom: 1px solid #EF4444; }"
+            "QLabel { color: #FEF2F2; font-size: 12px; border: none; background: transparent; }"
+            "QPushButton { background-color: rgba(255,255,255,0.15); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; padding: 3px 10px; font-weight: 600; font-size: 11px; }"
+            "QPushButton:hover { background-color: rgba(255,255,255,0.25); }"));
+        m_lblSigBannerText->setText(
+            tr("⚠️ <b>INVALID DIGITAL SIGNATURE (%1)</b> — Document integrity check failed! Signed by: <b>%2</b>")
+                .arg(formatBadge, signerText.toHtmlEscaped()));
+    } else if (allCertValid) {
+        m_sigBanner->setStyleSheet(QStringLiteral(
+            "QWidget { background-color: #064E3B; border-bottom: 1px solid #10B981; }"
+            "QLabel { color: #ECFDF5; font-size: 12px; border: none; background: transparent; }"
+            "QPushButton { background-color: rgba(255,255,255,0.15); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; padding: 3px 10px; font-weight: 600; font-size: 11px; }"
+            "QPushButton:hover { background-color: rgba(255,255,255,0.25); }"));
+        m_lblSigBannerText->setText(
+            tr("🛡️ <b>Digitally Signed & Verified (%1)</b> — Signed by: <b>%2</b> (%n signature(s))", "", sigs.size())
+                .arg(formatBadge, signerText.toHtmlEscaped()));
+    } else {
+        m_sigBanner->setStyleSheet(QStringLiteral(
+            "QWidget { background-color: #1E3A8A; border-bottom: 1px solid #3B82F6; }"
+            "QLabel { color: #EFF6FF; font-size: 12px; border: none; background: transparent; }"
+            "QPushButton { background-color: rgba(255,255,255,0.15); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; padding: 3px 10px; font-weight: 600; font-size: 11px; }"
+            "QPushButton:hover { background-color: rgba(255,255,255,0.25); }"));
+        m_lblSigBannerText->setText(
+            tr("🔐 <b>Digitally Signed (%1 — Integrity Valid)</b> — Signed by: <b>%2</b> (Self-Signed / Unverified CA)")
+                .arg(formatBadge, signerText.toHtmlEscaped()));
+    }
+
+    m_sigBanner->show();
 }
 
 void PdfViewer::openWatermarkDialog()
@@ -1678,6 +1950,19 @@ void PdfViewer::redo()
 
     setModified(true);
     emit historyChanged();
+}
+
+void PdfViewer::openPageOrganizer(const QString &target, QWidget *parentWidget)
+{
+    PdfPageOrganizerDialog dlg(target, parentWidget ? parentWidget : this);
+    connect(&dlg, &PdfPageOrganizerDialog::fileOrganized, this, [this](const QString &organizedPath) {
+        if (m_fileOrganizedCallback) {
+            m_fileOrganizedCallback(organizedPath);
+        } else {
+            loadFile(organizedPath);
+        }
+    });
+    dlg.exec();
 }
 
 

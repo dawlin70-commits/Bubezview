@@ -45,6 +45,28 @@ public:
     static QString cacheSummary();
 
     /**
+     * @enum FormFactor
+     * @brief Physical chassis classification of the host machine.
+     */
+    enum class FormFactor {
+        Desktop,
+        Laptop,
+        Balanced
+    };
+
+    /**
+     * @brief Detects whether host is a Desktop, Laptop, or Balanced PC by inspecting SMBIOS chassis type and batteries.
+     * @return Detected FormFactor.
+     */
+    static FormFactor detectedFormFactor();
+
+    /**
+     * @brief Suggests the optimal build profile based on detected hardware ("native", "balanced", or "standard").
+     * @return Profile identifier string.
+     */
+    static QString recommendedProfile();
+
+    /**
      * @brief Checks whether the host CPU supports a specific hardware instruction flag.
      * @param flag Name of flag in /proc/cpuinfo (e.g. "avx2", "avx512f", "clzero").
      * @return True if instruction is supported in hardware.

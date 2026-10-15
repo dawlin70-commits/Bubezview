@@ -39,6 +39,7 @@
 #include "flippable_toolbar.h"
 #include "pdf_canvas_tools.h"
 #include "ocr_snipper_overlay.h"
+#include "plugin_manager.h"
 #include <QTemporaryDir>
 #include <QMenuBar>
 #include <QButtonGroup>
@@ -90,6 +91,9 @@ private:
 
 void TestInteractive::initTestCase()
 {
+    // Discover dynamic plugins (archive, pdf, media)
+    PluginManager::instance().discoverPlugins();
+
     // Point to the dedicated /test directory in the repository
     QDir repoTestDir(QString(PROJECT_ROOT_DIR) + "/test");
     QVERIFY2(repoTestDir.exists(), "La directory test/ del repository deve esistere");
@@ -603,7 +607,7 @@ void TestInteractive::testFilmstripAndPdfDarkMode()
     QString samplePdf = m_testDirPath + "/documento_firmato_test.pdf";
     win.openFile(samplePdf);
     QTest::qWait(150);
-    PdfViewer *pv = win.pdfViewer();
+    PdfViewer *pv = dynamic_cast<PdfViewer*>(win.pdfViewer());
     QVERIFY(pv != nullptr);
     QVERIFY(!pv->isZoomToolActive());
 
@@ -638,16 +642,12 @@ void TestInteractive::testFirstRunWizard()
     wizard.show();
     QVERIFY(QTest::qWaitForWindowExposed(&wizard));
 
-    // Verify all 7 pages exist
-    QCOMPARE(wizard.pageIds().count(), 7);
+    // Verify all 6 pages exist
+    QCOMPARE(wizard.pageIds().count(), 6);
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Welcome));
     QTest::qWait(100);
 
     // Advance sequentially through each page
-    wizard.next();
-    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_DesktopIntegration));
-    QTest::qWait(100);
-
     wizard.next();
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_CpuOptimization));
     QTest::qWait(100);
@@ -900,7 +900,7 @@ void TestInteractive::testAudioPlaybackAndControls()
     QCOMPARE(res, MainWindow::OpenResult::Success);
     QCOMPARE(window.currentViewerIndex(), 4); // Index 4 is MediaViewer
 
-    MediaViewer *mv = window.mediaViewer();
+    MediaViewer *mv = dynamic_cast<MediaViewer*>(window.mediaViewer());
     QVERIFY(mv != nullptr);
 
     // 2. Wait a moment for libmpv async property notifications
@@ -1202,6 +1202,23 @@ void TestInteractive::testHighContrastScrollbarsAndZoomPan()
 
     // Reset zoom restores fit-to-window
     imgViewer.resetZoom();
+
+    // Verify zoomAt anchored zoom
+    double preZoomAt = imgViewer.zoomFactor();
+    imgViewer.zoomAt(QPoint(300, 200), 1.25);
+    QVERIFY(imgViewer.zoomFactor() > preZoomAt);
+
+    // Verify Zoom Tool enables wheel zooming without Ctrl modifier
+    imgViewer.setZoomToolActive(true);
+    QVERIFY(imgViewer.isZoomToolActive());
+    QWheelEvent we(QPointF(300, 200), QPointF(300, 200), QPoint(0, 0), QPoint(0, 120),
+                   Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    double preWheelZoom = imgViewer.zoomFactor();
+    imgViewer.handleWheel(&we);
+    QVERIFY(imgViewer.zoomFactor() > preWheelZoom);
+
+    imgViewer.setZoomToolActive(false);
+    QVERIFY(!imgViewer.isZoomToolActive());
 
     // Theme update applies without issues
     imgViewer.updateTheme();
@@ -1706,11 +1723,10 @@ void TestInteractive::testArchiveNavigationAndFolderGalleryReturn()
     QVERIFY(QTest::qWaitForWindowExposed(&window));
 
     // 1. Open test archive
-    ArchiveViewer *av = window.archiveViewer();
-    QVERIFY(av);
-    QSignalSpy loadedSpy(av, &ArchiveViewer::archiveLoaded);
     window.openFile(zipPath);
-    QVERIFY(loadedSpy.wait(3000));
+    QTest::qWait(300);
+    IArchiveViewer *av = window.archiveViewer();
+    QVERIFY(av != nullptr);
 
     QStringList entries = av->previewableEntries();
     QVERIFY2(!entries.isEmpty(), "Archive must contain previewable entries");
@@ -1720,7 +1736,7 @@ void TestInteractive::testArchiveNavigationAndFolderGalleryReturn()
     QString extracted = av->extractSingleFile(zipPath, firstEntry);
     QVERIFY(QFile::exists(extracted));
 
-    emit av->filePreviewRequested(extracted, zipPath, firstEntry);
+    av->requestFilePreview(extracted, zipPath, firstEntry);
     QTest::qWait(100);
 
     QVERIFY(window.isArchivePreview());
@@ -1746,7 +1762,7 @@ void TestInteractive::testArchiveNavigationAndFolderGalleryReturn()
     QVERIFY(window.windowTitle().contains(QFileInfo(zipPath).fileName()));
 
     // 5. Preview again and verify folder gallery return goes to archive's parent folder on disk
-    emit av->filePreviewRequested(extracted, zipPath, firstEntry);
+    av->requestFilePreview(extracted, zipPath, firstEntry);
     QTest::qWait(100);
     QVERIFY(window.isArchivePreview());
 
@@ -1758,6 +1774,16 @@ void TestInteractive::testArchiveNavigationAndFolderGalleryReturn()
     QString expectedParentDir = QFileInfo(zipPath).absolutePath();
     QVERIFY(!window.currentFilePath().contains("/tmp/bubezview_archive_preview"));
     QCOMPARE(QDir(window.currentFilePath()).canonicalPath(), QDir(expectedParentDir).canonicalPath());
+
+    // 6. Security verification: Path traversal rejection in extractSingleFile
+    QString malicious1 = av->extractSingleFile(zipPath, "../../etc/passwd");
+    QVERIFY2(malicious1.isEmpty(), "Path traversal with relative parent dirs must be rejected");
+
+    QString malicious2 = av->extractSingleFile(zipPath, "../../../home/davide/.bashrc");
+    QVERIFY2(malicious2.isEmpty(), "Path traversal escaping cache must be rejected");
+
+    // 7. Editability validation: ZIP archive must report editable
+    QVERIFY(av->isArchiveEditable());
 }
 
 void TestInteractive::testModuleCompilationAndFallbackPlan()
@@ -1770,10 +1796,10 @@ void TestInteractive::testModuleCompilationAndFallbackPlan()
     QVERIFY(PackageManagerHelper::isCompilableEngine("archive"));
     QVERIFY(PackageManagerHelper::isCompilableEngine("libarchive"));
 
-    // System-level utility tools are not compilable engines
-    QVERIFY(!PackageManagerHelper::isCompilableEngine("qpdf"));
+    // Verify compilable engines vs utility tools
+    QVERIFY(PackageManagerHelper::isCompilableEngine("qpdf"));
+    QVERIFY(PackageManagerHelper::isCompilableEngine("tesseract"));
     QVERIFY(!PackageManagerHelper::isCompilableEngine("pdfimages"));
-    QVERIFY(!PackageManagerHelper::isCompilableEngine("tesseract"));
 
     // Verify package name resolution
     QString officePkg = PackageManagerHelper::packageNameForComponent("office");

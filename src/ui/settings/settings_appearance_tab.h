@@ -35,21 +35,14 @@ signals:
     void themeChanged();
 
 private slots:
-    /**
-     * @brief Handles theme combo box selection changes.
-     * @param index Chosen combo index.
-     */
     void onThemeChanged(int index);
-
-    /**
-     * @brief Handles transition combo box selection changes.
-     * @param index Chosen combo index.
-     */
     void onTransitionChanged(int index);
+    void onLanguageChanged(int index);
 
 private:
     void setupUi();
 
     QComboBox *m_comboTheme = nullptr;
     QComboBox *m_comboTransition = nullptr;
+    QComboBox *m_comboLanguage = nullptr;
 };

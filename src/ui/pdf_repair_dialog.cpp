@@ -5,6 +5,8 @@
 
 #include "pdf_repair_dialog.h"
 #include "package_manager_helper.h"
+#include "build_config.h"
+#include "fallback_notice_dialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -176,7 +178,7 @@ void PdfRepairDialog::onStartRepair()
         return;
     }
 
-    QString qpdfExe = QStandardPaths::findExecutable("qpdf");
+    QString qpdfExe = BuildConfig::qpdfExecutable();
     if (qpdfExe.isEmpty()) {
         QMessageBox::StandardButton ask = QMessageBox::question(
             this,
@@ -186,10 +188,13 @@ void PdfRepairDialog::onStartRepair()
         );
         if (ask == QMessageBox::Yes) {
             if (PackageManagerHelper::installComponentInteractive("qpdf", this)) {
-                qpdfExe = QStandardPaths::findExecutable("qpdf");
+                qpdfExe = BuildConfig::qpdfExecutable();
             }
         }
         if (qpdfExe.isEmpty()) return;
+    } else {
+        FallbackNoticeDialog::checkAndPrompt("qpdf", tr("QPDF Engine"), qpdfExe, this);
+        qpdfExe = BuildConfig::qpdfExecutable();
     }
 
     m_btnRepair->setEnabled(false);
@@ -213,7 +218,7 @@ void PdfRepairDialog::onStartRepair()
     int exitCode = proc.exitCode();
     QString stdErr = QString::fromUtf8(proc.readAllStandardError()).trimmed();
 
-    if (exitCode == 0 && QFile::exists(outPath) && QFileInfo(outPath).size() > 0) {
+    if ((exitCode == 0 || exitCode == 3) && QFile::exists(outPath) && QFileInfo(outPath).size() > 0) {
         m_repairedPath = outPath;
         m_lblStatus->setStyleSheet("font-size: 11px; color: #16a34a; font-weight: bold; padding: 4px;");
         m_lblStatus->setText(tr("🟢 PDF repaired successfully!"));

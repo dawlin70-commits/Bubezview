@@ -107,100 +107,141 @@
     </message>
 </context>
 <context>
+    <name>ArchivePlugin</name>
+    <message>
+        <location filename="../src/plugins/archive/archive_plugin.h" line="25"/>
+        <source>LibArchive Compressed Archive Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/archive/archive_plugin.h" line="27"/>
+        <source>Browsing, integrity testing, and previewing ZIP, TAR, 7Z, and ISO archives.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ArchiveViewer</name>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="272"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="341"/>
         <source>Search in archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="280"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="349"/>
+        <source>+ Add / Edit...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="353"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1124"/>
+        <source>Add Files to Archive...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="354"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1128"/>
+        <source>Add Folder to Archive...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="356"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1133"/>
+        <source>Remove Selected from Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="364"/>
         <source>Extract...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="284"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="368"/>
         <source>Extract All...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="285"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="998"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="369"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1108"/>
         <source>Extract Selected...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="292"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="376"/>
         <source>Test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="294"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="378"/>
         <source>Test archive integrity</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="305"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="389"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="305"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="389"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="305"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="389"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="305"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="389"/>
         <source>Modified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="737"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="831"/>
         <source>⏳ Reading archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="763"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="857"/>
         <source>Encrypted Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="764"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="858"/>
         <source>Enter password to unlock %1:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="773"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="867"/>
         <source>🔒 Password required</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="827"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="922"/>
         <source>Encrypted entry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="856"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="954"/>
         <source>%1 items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="859"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="957"/>
         <source>0 items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="896"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="998"/>
         <source>%1 Items (%2 Total)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="902"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1000"/>
+        <source>%1 • %2 Items (%3 Total)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1004"/>
         <source>Archive: %1
 Format: %2
 Compression: %3
@@ -209,105 +250,481 @@ Total Size: %5</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="936"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1016"/>
+        <source>Add or remove files in this archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1017"/>
+        <source>This archive format is read-only and cannot be modified in-place</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1046"/>
         <source>Encrypted File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="937"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1047"/>
         <source>Enter password to view this file:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="992"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1102"/>
         <source>Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1004"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1115"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1042"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1489"/>
         <source>Select Destination Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1059"/>
-        <source>Extraction Failed</source>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1500"/>
+        <source>7-Zip Engine Recommended</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1059"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1156"/>
-        <source>Could not open archive: %1</source>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1507"/>
+        <source>this</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1069"/>
-        <source>Extracting files...</source>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1509"/>
+        <source>&lt;h3&gt;7-Zip Engine Recommended&lt;/h3&gt;&lt;p&gt;For maximum speed, multi-core extraction, and full compatibility with &lt;b&gt;%1&lt;/b&gt; archives, &lt;b&gt;7-Zip&lt;/b&gt; (&lt;code&gt;7zz&lt;/code&gt;) is recommended.&lt;/p&gt;&lt;p&gt;Detected distribution: &lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Manual installation command:&lt;br&gt;&lt;code&gt;%3&lt;/code&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1069"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1161"/>
-        <source>Cancel</source>
-        <translation>Annuler</translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1108"/>
-        <source>Extracting: %1</source>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1515"/>
+        <source>Install 7-Zip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1133"/>
-        <source>Extraction Complete</source>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1516"/>
+        <source>Continue with libarchive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1134"/>
-        <source>Successfully extracted %1 items to:
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1562"/>
+        <source>7-Zip Multi-Core Extraction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1570"/>
+        <source>⚡ 7-Zip Multi-Core Extracting: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1573"/>
+        <source>Initializing multi-core 7-Zip engine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1605"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2589"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2844"/>
+        <source>Cancelling...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1647"/>
+        <source>Successfully extracted %1 items using the 7-Zip engine to:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1156"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1669"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1776"/>
+        <source>Extraction Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1669"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1807"/>
+        <source>Could not open archive: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1679"/>
+        <source>Extracting files...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1777"/>
+        <source>Could not extract files:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1780"/>
+        <source>Extraction Completed with Warnings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1781"/>
+        <source>Extracted %1 items, but encountered errors:
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1784"/>
+        <source>Successfully extracted %1 items using libarchive engine to:
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2424"/>
+        <source>Add Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2424"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2450"/>
+        <source>No archive is currently open.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2429"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2455"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2479"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2522"/>
+        <source>Read-Only Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2430"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2456"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2480"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2523"/>
+        <source>Modifying &apos;%1&apos; archives in-place is not supported to protect data integrity.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2438"/>
+        <source>Select Files to Add to Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2440"/>
+        <source>All Files (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2450"/>
+        <source>Add Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2464"/>
+        <source>Select Folder to Add to Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2487"/>
+        <source>Remove from Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2488"/>
+        <source>Please select one or more items in the archive tree to remove.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2505"/>
+        <source>Remove Selected Items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2506"/>
+        <source>Remove %1 selected item(s) from archive &apos;%2&apos;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2554"/>
+        <source>Updating Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2561"/>
+        <source>⏳ Preparing archive update...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2746"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2757"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2764"/>
+        <source>Archive Modification Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2747"/>
+        <source>An error occurred while updating the archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2758"/>
+        <source>Unable to overwrite archive file (check write permissions).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2765"/>
+        <source>Failed to finalize updated archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2789"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3223"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3231"/>
+        <source>Create Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2790"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3232"/>
+        <source>No valid files or folders found to compress.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2801"/>
+        <source>📦 Compressing Archive...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2812"/>
+        <source>⏳ Starting compression...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2915"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2926"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3332"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3347"/>
+        <source>Create Archive Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2916"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3333"/>
+        <source>Could not create output archive:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2927"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3348"/>
+        <source>Could not write final archive to:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2945"/>
+        <source>📦 Compress / Create Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2968"/>
+        <source>ZIP (.zip) — Universal &amp; Compatible (Multi-Core)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2969"/>
+        <source>TAR.GZ (.tar.gz) — Standard Linux Gzip (Multi-Core)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2970"/>
+        <source>TAR.XZ (.tar.xz) — High Compression XZ (Multi-Core)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2971"/>
+        <source>TAR.ZST (.tar.zst) — Ultra-Fast Zstandard (Multi-Core)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2972"/>
+        <source>7-Zip (.7z) — Maximum Compression (Multi-Core)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3012"/>
+        <source>Quick Source Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3018"/>
+        <source>Current File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3033"/>
+        <source>Entire Current Folder (%1/)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3048"/>
+        <source>Files &amp; Folders to Compress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3053"/>
+        <source>+ Add Files...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3054"/>
+        <source>+ Add Folder...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3055"/>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3065"/>
+        <source>Add Files to Compress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3082"/>
+        <source>Add Folder to Compress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3103"/>
+        <source>Output Archive Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3108"/>
+        <source>Browse...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3114"/>
+        <source>Optional AES-256 password (supported on .zip and .7z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3116"/>
+        <source>Open created archive in BubezView when done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3119"/>
+        <source>Format:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3120"/>
+        <source>Destination:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3121"/>
+        <source>Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3165"/>
+        <source>Save Compressed Archive As</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3167"/>
+        <source>Archives (*.%1);;All Files (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3185"/>
+        <source>🚀 Compress &amp; Send (LocalSend)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3186"/>
+        <source>📦 Create Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3224"/>
+        <source>Please specify at least one source item and a destination path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3251"/>
+        <source>⏳ Compressing...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3360"/>
+        <source>Cancelling compression...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1517"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1588"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1679"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1812"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2573"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2827"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3184"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1741"/>
+        <source>Extracting: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1646"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1783"/>
+        <source>Extraction Complete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1807"/>
         <source>Integrity Test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1161"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1812"/>
         <source>Testing archive integrity...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1178"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1830"/>
         <source>Verifying: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1202"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1862"/>
         <source>Integrity Test Passed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1203"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1863"/>
         <source>Archive is healthy! Verified %1 entries without errors.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1205"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1865"/>
         <source>Integrity Test Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1206"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1866"/>
         <source>Corruption detected: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1206"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1866"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -315,7 +732,7 @@ Total Size: %5</source>
 <context>
     <name>ArchiveWorker</name>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="103"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="163"/>
         <source>Unable to open archive</source>
         <translation type="unfinished"></translation>
     </message>
@@ -724,24 +1141,20 @@ Errors encountered:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="786"/>
         <source>✂️ Taglio Spezzone (Trimming)</source>
-        <translation>✂️ Taglio Spezzone (Trimming)</translation>
+        <translation type="vanished">✂️ Taglio Spezzone (Trimming)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="787"/>
         <source>🎛️ Filtri e Pulizia Rumore</source>
-        <translation>🎛️ Filtri e Pulizia Rumore</translation>
+        <translation type="vanished">🎛️ Filtri e Pulizia Rumore</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="788"/>
         <source>🔊 Canali, Pitch &amp; Tonalità</source>
-        <translation>🔊 Canali, Pitch &amp; Tonalità</translation>
+        <translation type="vanished">🔊 Canali, Pitch &amp; Tonalità</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="789"/>
         <source>🎚️ Equalizzatore Traccia</source>
-        <translation>🎚️ Equalizzatore Traccia</translation>
+        <translation type="vanished">🎚️ Equalizzatore Traccia</translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="796"/>
@@ -774,14 +1187,8 @@ Errors encountered:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="834"/>
         <source>🏷️ Editor Tag...</source>
-        <translation>🏷️ Editor Tag...</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="835"/>
-        <source>Modifica metadati, titoli e copertina per questo file</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">🏷️ Editor Tag...</translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="843"/>
@@ -810,23 +1217,61 @@ Errors encountered:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="944"/>
         <source>⚡ Auto-Snap Silenzi</source>
-        <translation>⚡ Auto-Snap Silenzi</translation>
+        <translation type="vanished">⚡ Auto-Snap Silenzi</translation>
+    </message>
+    <message>
+        <source>📑 Dividi da CUE...</source>
+        <translation type="vanished">📑 Dividi da CUE...</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="786"/>
+        <source>✂️ Audio Trimming</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="787"/>
+        <source>🎛️ Filters &amp; Noise Reduction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="788"/>
+        <source>🔊 Channels, Pitch &amp; Tempo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="789"/>
+        <source>🎚️ Track Equalizer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="834"/>
+        <source>🏷️ Tag Editor...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="835"/>
+        <source>Edit metadata, titles, and album art for this file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="944"/>
+        <source>⚡ Auto-Snap Silence</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="956"/>
-        <source>Rileva automaticamente l&apos;inizio e la fine dell&apos;audio rimuovendo i silenzi iniziali e finali.</source>
+        <source>Automatically detect start and end of audio, trimming leading and trailing silence.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="959"/>
-        <source>📑 Dividi da CUE...</source>
-        <translation>📑 Dividi da CUE...</translation>
+        <source>📑 Split by CUE...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="971"/>
-        <source>Suddivide automaticamente l&apos;audio nelle singole tracce usando un file CUE sheet.</source>
+        <source>Automatically split audio into individual tracks using a CUE sheet file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1021,49 +1466,160 @@ Errors encountered:
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1313"/>
-        <source>Originale (Stereo / Multicanale)</source>
+        <source>Original (Stereo / Multichannel)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1314"/>
-        <source>Stereo ➔ Mono (Downmix bilanciato)</source>
+        <source>Stereo ➔ Mono (Balanced Downmix)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1315"/>
-        <source>Inverti Canali (L ⇄ R)</source>
+        <source>Swap Channels (L ⇄ R)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1316"/>
-        <source>Solo Canale Sinistro (L) su entrambi i lati</source>
+        <source>Left Channel Only (L) on both sides</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1317"/>
-        <source>Solo Canale Destro (R) su entrambi i lati</source>
+        <source>Right Channel Only (R) on both sides</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1318"/>
-        <source>🎤 Rimozione Voce / Karaoke (Cancellazione Canale Centrale)</source>
-        <translation>🎤 Rimozione Voce / Karaoke (Cancellazione Canale Centrale)</translation>
+        <source>🎤 Vocal Remover / Karaoke (Center Channel Cancellation)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1326"/>
-        <source>Modifica Tonalità &amp; Tempo (Pitch Shift &amp; Time Stretch)</source>
+        <source>Pitch Shift &amp; Time Stretch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1332"/>
-        <source>Pitch Shift (Tonalità):</source>
+        <source>Pitch Shift:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1343"/>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1353"/>
-        <source>0 semitoni (Originale)</source>
+        <source>0 semitones (Original)</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1355"/>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1357"/>
+        <source>semitone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1355"/>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1357"/>
+        <source>semitones</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1363"/>
+        <source>Time Stretch (Speed):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1374"/>
+        <source>1.00x (Original)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1384"/>
+        <source>(Original)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1389"/>
+        <source>🔄 Reverse Audio Playback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="1394"/>
+        <source>✂️ Auto Silence Removal (Trim long gaps between sounds)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2467"/>
+        <source>Auto-Snap Silence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2468"/>
+        <source>Silence detected successfully!
+Audio start: %1
+Audio end: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2471"/>
+        <source>Silence Detection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2471"/>
+        <source>Could not detect silence or no silent intervals found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2483"/>
+        <source>Select CUE Sheet File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2489"/>
+        <source>CUE Sheet Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2489"/>
+        <source>No valid tracks found in CUE file:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2493"/>
+        <source>Split CUE Tracks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2494"/>
+        <source>Found %1 tracks in CUE file.
+Proceed with splitting into audio folder?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2498"/>
+        <source>Destination Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2509"/>
+        <source>Track %1/%2: %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2517"/>
+        <source>Successfully split %1 tracks into destination folder:
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2519"/>
+        <source>An error occurred while splitting tracks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>🎤 Rimozione Voce / Karaoke (Cancellazione Canale Centrale)</source>
+        <translation type="vanished">🎤 Rimozione Voce / Karaoke (Cancellazione Canale Centrale)</translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1347"/>
@@ -1072,41 +1628,12 @@ Errors encountered:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1355"/>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1357"/>
-        <source>semitono</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1355"/>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1357"/>
-        <source>semitoni</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1363"/>
-        <source>Time Stretch (Velocità):</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1374"/>
-        <source>1.00x (Originale)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1384"/>
-        <source>(Originale)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1389"/>
         <source>🔄 Inversione Audio (Reverse / Al contrario)</source>
-        <translation>🔄 Inversione Audio (Reverse / Al contrario)</translation>
+        <translation type="vanished">🔄 Inversione Audio (Reverse / Al contrario)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="1394"/>
         <source>✂️ Rimozione Silenzio automatico (Taglia pause prolungate tra suoni)</source>
-        <translation>✂️ Rimozione Silenzio automatico (Taglia pause prolungate tra suoni)</translation>
+        <translation type="vanished">✂️ Rimozione Silenzio automatico (Taglia pause prolungate tra suoni)</translation>
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="1511"/>
@@ -1170,6 +1697,7 @@ Errors encountered:
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="2447"/>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2517"/>
         <source>Success</source>
         <translation>Succès</translation>
     </message>
@@ -1181,6 +1709,7 @@ Errors encountered:
     </message>
     <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="2450"/>
+        <location filename="../src/ui/audio_trim_dialog.cpp" line="2519"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
@@ -1190,338 +1719,273 @@ Errors encountered:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2467"/>
-        <source>Auto-Snap Silenzi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2468"/>
-        <source>Silenzi rilevati con successo!
-Inizio audio: %1
-Fine audio: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2471"/>
-        <source>Rilevamento Silenzi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2471"/>
-        <source>Impossibile rilevare silenzi o nessun intervallo silenzioso trovato.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2483"/>
-        <source>Seleziona File CUE Sheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/ui/audio_trim_dialog.cpp" line="2483"/>
         <source>CUE Sheet (*.cue)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2489"/>
-        <source>Errore CUE Sheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2489"/>
-        <source>Nessuna traccia valida trovata nel file CUE:
-%1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2493"/>
-        <source>Dividi Tracce CUE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2494"/>
-        <source>Trovate %1 tracce nel file CUE.
-Procedere con la suddivisione nella cartella dell&apos;audio?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2498"/>
-        <source>Cartella di Destinazione</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2509"/>
-        <source>Traccia %1/%2: %3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2517"/>
-        <source>Successo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2517"/>
-        <source>Suddivisione di %1 tracce completata con successo nella cartella:
-%2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2519"/>
-        <source>Errore</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio_trim_dialog.cpp" line="2519"/>
-        <source>Si è verificato un errore durante la suddivisione delle tracce.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>BaseSkin</name>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="710"/>
+        <location filename="../src/ui/base_skin.cpp" line="820"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="711"/>
+        <location filename="../src/ui/base_skin.cpp" line="821"/>
         <source>Path:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="712"/>
+        <location filename="../src/ui/base_skin.cpp" line="822"/>
         <source>Size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="713"/>
+        <location filename="../src/ui/base_skin.cpp" line="823"/>
         <source>Last modified:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="714"/>
+        <location filename="../src/ui/base_skin.cpp" line="824"/>
         <source>Permissions:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="721"/>
+        <location filename="../src/ui/base_skin.cpp" line="831"/>
         <source>Resolution:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="721"/>
+        <location filename="../src/ui/base_skin.cpp" line="831"/>
         <source>Color depth:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="724"/>
+        <location filename="../src/ui/base_skin.cpp" line="834"/>
         <source>Total pages:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="726"/>
+        <location filename="../src/ui/base_skin.cpp" line="836"/>
         <source>Text lines:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="726"/>
+        <location filename="../src/ui/base_skin.cpp" line="836"/>
         <source>Characters:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="730"/>
-        <location filename="../src/ui/base_skin.cpp" line="1921"/>
+        <location filename="../src/ui/base_skin.cpp" line="840"/>
+        <location filename="../src/ui/base_skin.cpp" line="2125"/>
         <source>File Metadata &amp; Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="742"/>
-        <location filename="../src/ui/base_skin.cpp" line="1949"/>
+        <location filename="../src/ui/base_skin.cpp" line="852"/>
+        <location filename="../src/ui/base_skin.cpp" line="2153"/>
         <source>Find in Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="742"/>
+        <location filename="../src/ui/base_skin.cpp" line="852"/>
         <source>In-document text search is available for Text and PDF documents.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="778"/>
+        <location filename="../src/ui/base_skin.cpp" line="888"/>
         <source>PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;BMP Image (*.bmp);;TIFF Image (*.tiff);;PDF Document (*.pdf);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="781"/>
+        <location filename="../src/ui/base_skin.cpp" line="891"/>
         <source>Plain Text (*.txt);;Markdown Document (*.md);;HTML Document (*.html);;PDF Document (*.pdf);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="787"/>
+        <location filename="../src/ui/base_skin.cpp" line="897"/>
         <source>PDF Document (*.pdf);;Plain Text (*.txt);;HTML Document (*.html);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="790"/>
+        <location filename="../src/ui/base_skin.cpp" line="900"/>
         <source>All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="791"/>
-        <location filename="../src/ui/base_skin.cpp" line="1169"/>
+        <location filename="../src/ui/base_skin.cpp" line="901"/>
+        <location filename="../src/ui/base_skin.cpp" line="1266"/>
         <source>copy_</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="794"/>
-        <location filename="../src/ui/base_skin.cpp" line="942"/>
+        <location filename="../src/ui/base_skin.cpp" line="904"/>
+        <location filename="../src/ui/base_skin.cpp" line="1052"/>
         <source>Export As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="942"/>
+        <location filename="../src/ui/base_skin.cpp" line="1052"/>
         <source>File exported successfully to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="944"/>
+        <location filename="../src/ui/base_skin.cpp" line="1054"/>
         <source>Export Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="944"/>
+        <location filename="../src/ui/base_skin.cpp" line="1054"/>
         <source>Could not export file to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="959"/>
+        <location filename="../src/ui/base_skin.cpp" line="1069"/>
         <source>Delete File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="960"/>
+        <location filename="../src/ui/base_skin.cpp" line="1070"/>
         <source>Are you sure you want to move &apos;%1&apos; to trash?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="974"/>
-        <location filename="../src/ui/base_skin.cpp" line="2324"/>
+        <location filename="../src/ui/base_skin.cpp" line="1084"/>
+        <location filename="../src/ui/base_skin.cpp" line="2534"/>
         <source>BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="989"/>
-        <location filename="../src/ui/base_skin.cpp" line="1820"/>
-        <location filename="../src/ui/base_skin.cpp" line="1838"/>
-        <location filename="../src/ui/base_skin.cpp" line="1856"/>
+        <location filename="../src/ui/base_skin.cpp" line="1099"/>
+        <location filename="../src/ui/base_skin.cpp" line="1941"/>
+        <location filename="../src/ui/base_skin.cpp" line="1959"/>
+        <location filename="../src/ui/base_skin.cpp" line="1977"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="989"/>
+        <location filename="../src/ui/base_skin.cpp" line="1099"/>
         <source>Unable to move file to trash.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1121"/>
+        <location filename="../src/ui/base_skin.cpp" line="1116"/>
+        <source>Tesseract OCR</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1218"/>
         <source>OCR Tesseract</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1146"/>
-        <location filename="../src/ui/base_skin.cpp" line="1150"/>
-        <location filename="../src/ui/base_skin.cpp" line="1156"/>
+        <location filename="../src/ui/base_skin.cpp" line="1243"/>
+        <location filename="../src/ui/base_skin.cpp" line="1247"/>
+        <location filename="../src/ui/base_skin.cpp" line="1253"/>
         <source>Save</source>
         <translation>Enregistrer</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1146"/>
+        <location filename="../src/ui/base_skin.cpp" line="1243"/>
         <source>Image modifications saved successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1156"/>
+        <location filename="../src/ui/base_skin.cpp" line="1253"/>
         <source>PDF modifications saved successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1152"/>
-        <location filename="../src/ui/base_skin.cpp" line="1158"/>
-        <location filename="../src/ui/base_skin.cpp" line="1270"/>
-        <location filename="../src/ui/base_skin.cpp" line="1277"/>
-        <location filename="../src/ui/base_skin.cpp" line="1284"/>
+        <location filename="../src/ui/base_skin.cpp" line="1249"/>
+        <location filename="../src/ui/base_skin.cpp" line="1255"/>
+        <location filename="../src/ui/base_skin.cpp" line="1367"/>
+        <location filename="../src/ui/base_skin.cpp" line="1374"/>
+        <location filename="../src/ui/base_skin.cpp" line="1381"/>
         <source>Save Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1158"/>
+        <location filename="../src/ui/base_skin.cpp" line="1255"/>
         <source>Failed to save modifications to PDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1169"/>
-        <location filename="../src/ui/base_skin.cpp" line="1175"/>
-        <location filename="../src/ui/base_skin.cpp" line="1181"/>
+        <location filename="../src/ui/base_skin.cpp" line="1266"/>
+        <location filename="../src/ui/base_skin.cpp" line="1272"/>
+        <location filename="../src/ui/base_skin.cpp" line="1278"/>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1181"/>
+        <location filename="../src/ui/base_skin.cpp" line="1278"/>
         <source>PDF saved successfully to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1177"/>
-        <location filename="../src/ui/base_skin.cpp" line="1183"/>
+        <location filename="../src/ui/base_skin.cpp" line="1274"/>
+        <location filename="../src/ui/base_skin.cpp" line="1280"/>
         <source>Save As Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1183"/>
+        <location filename="../src/ui/base_skin.cpp" line="175"/>
+        <source>Open with another application...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="181"/>
+        <source>View Hex Dump</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1280"/>
         <source>Failed to save PDF to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1196"/>
-        <location filename="../src/ui/base_skin.cpp" line="1932"/>
+        <location filename="../src/ui/base_skin.cpp" line="1293"/>
+        <location filename="../src/ui/base_skin.cpp" line="2136"/>
         <source>Print Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1210"/>
+        <location filename="../src/ui/base_skin.cpp" line="1307"/>
         <source>All Supported Files (*.png *.jpg *.jpeg *.webp *.svg *.bmp *.gif *.ico *.tiff *.tif *.avif *.pdf *.epub *.docx *.odt *.ods *.xlsx *.xltx *.xlsm *.doc *.xls *.rtf *.txt *.md *.csv *.json *.xml *.py *.cpp *.h *.c *.js *.ts *.html *.css *.sh *.zip *.tar *.gz *.bz2 *.xz *.7z *.rar *.iso *.mp4 *.mkv *.avi *.webm *.mov *.mp3 *.ogg *.flac *.wav *.m4a);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1216"/>
+        <location filename="../src/ui/base_skin.cpp" line="1313"/>
         <source>Open File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1227"/>
+        <location filename="../src/ui/base_skin.cpp" line="1324"/>
         <source>Open Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1258"/>
+        <location filename="../src/ui/base_skin.cpp" line="1355"/>
         <source>Unsaved Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1259"/>
+        <location filename="../src/ui/base_skin.cpp" line="1356"/>
         <source>The document &quot;%1&quot; has unsaved changes.
 Do you want to save them before proceeding?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1270"/>
+        <location filename="../src/ui/base_skin.cpp" line="1367"/>
         <source>Failed to save image changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1284"/>
+        <location filename="../src/ui/base_skin.cpp" line="1381"/>
         <source>Failed to save PDF changes.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1530,228 +1994,216 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">%1 lines • %2 characters • %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1445"/>
+        <location filename="../src/ui/base_skin.cpp" line="1545"/>
         <source>Page %1 of %2 • %3</source>
         <translation>Page %1 of %2 • %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1449"/>
+        <location filename="../src/ui/base_skin.cpp" line="1549"/>
         <source>📦 %1 items • Uncompressed: %2 • Archive size: %3</source>
         <translation>📦 %1 items • Uncompressed: %2 • Archive size: %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1454"/>
+        <location filename="../src/ui/base_skin.cpp" line="1554"/>
         <source>Media • %1</source>
         <translation>Media • %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1459"/>
+        <location filename="../src/ui/base_skin.cpp" line="1559"/>
         <source>Page %1 of %2 • %3 (LibreOffice HD)</source>
         <translation>Page %1 of %2 • %3 (LibreOffice HD)</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1463"/>
+        <location filename="../src/ui/base_skin.cpp" line="1563"/>
         <source>%1 estimated words • %2 (Fast C++ Viewer)</source>
         <translation>%1 estimated words • %2 (Fast C++ Viewer)</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1468"/>
+        <location filename="../src/ui/base_skin.cpp" line="1568"/>
         <source>📁 %1 items • %2</source>
         <translation>📁 %1 items • %2</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1814"/>
+        <location filename="../src/ui/base_skin.cpp" line="1935"/>
         <source>Rename Item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1814"/>
+        <location filename="../src/ui/base_skin.cpp" line="1935"/>
         <source>New name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1820"/>
+        <location filename="../src/ui/base_skin.cpp" line="1941"/>
         <source>Unable to rename item.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1832"/>
+        <location filename="../src/ui/base_skin.cpp" line="1953"/>
         <source>Delete Item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1832"/>
+        <location filename="../src/ui/base_skin.cpp" line="1953"/>
         <source>Move &apos;%1&apos; to trash?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1838"/>
+        <location filename="../src/ui/base_skin.cpp" line="1959"/>
         <source>Unable to move item to trash.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1850"/>
+        <location filename="../src/ui/base_skin.cpp" line="1971"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1850"/>
+        <location filename="../src/ui/base_skin.cpp" line="1971"/>
         <source>Folder name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1856"/>
+        <location filename="../src/ui/base_skin.cpp" line="1977"/>
         <source>Unable to create folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1864"/>
+        <location filename="../src/ui/base_skin.cpp" line="2068"/>
         <source>About BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1869"/>
+        <location filename="../src/ui/base_skin.cpp" line="2073"/>
         <source>Native C++ / Qt6 Universal Viewer for Linux</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1870"/>
+        <location filename="../src/ui/base_skin.cpp" line="2074"/>
         <source>Developed by &lt;b&gt;Davide (Bubez)&lt;/b&gt;.&lt;br&gt;Designed to be ultra-fast, responsive, and well integrated into the Linux desktop ecosystem.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1872"/>
+        <location filename="../src/ui/base_skin.cpp" line="2076"/>
         <source>Active engines and libraries:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1873"/>
+        <location filename="../src/ui/base_skin.cpp" line="2077"/>
         <source>Core, Widgets, Network, PrintSupport</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1874"/>
+        <location filename="../src/ui/base_skin.cpp" line="2078"/>
         <source>Ultra-HD PDF vector rendering</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1875"/>
+        <location filename="../src/ui/base_skin.cpp" line="2079"/>
         <source>ZIP, 7Z, TAR, RAR, ISO archive manager</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1876"/>
+        <location filename="../src/ui/base_skin.cpp" line="2080"/>
         <source>Office document processing and conversion</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1878"/>
+        <location filename="../src/ui/base_skin.cpp" line="2082"/>
         <source>Instant Wi-Fi / local network sharing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1879"/>
+        <location filename="../src/ui/base_skin.cpp" line="2083"/>
         <source>© 2026 Davide / Bubez — Released under Open Source license.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1888"/>
+        <location filename="../src/ui/base_skin.cpp" line="2092"/>
         <source>Keyboard Shortcuts — BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1972"/>
+        <location filename="../src/ui/base_skin.cpp" line="2176"/>
         <source>Action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1972"/>
+        <location filename="../src/ui/base_skin.cpp" line="2176"/>
         <source>Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2008"/>
+        <location filename="../src/ui/base_skin.cpp" line="2212"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2036"/>
+        <location filename="../src/ui/base_skin.cpp" line="2240"/>
         <source>Installed version: &lt;b&gt;v%1 (Native C++)&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2045"/>
+        <location filename="../src/ui/base_skin.cpp" line="2249"/>
         <source>Could not check for updates: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2125"/>
+        <location filename="../src/ui/base_skin.cpp" line="2329"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2189"/>
+        <location filename="../src/ui/base_skin.cpp" line="2395"/>
         <source>Organize PDF Pages...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2192"/>
+        <location filename="../src/ui/base_skin.cpp" line="2398"/>
         <source>Repair PDF...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2197"/>
+        <location filename="../src/ui/base_skin.cpp" line="2403"/>
         <source>Extract Images from PDF...</source>
         <translation type="unfinished">Extraire les images du PDF...</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2252"/>
         <source>Tipo MIME</source>
-        <translation>Type MIME</translation>
+        <translation type="vanished">Type MIME</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2252"/>
         <source>Sconosciuto</source>
-        <translation>Inconnu</translation>
+        <translation type="vanished">Inconnu</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2253"/>
         <source>Dimensione</source>
-        <translation>Taille</translation>
+        <translation type="vanished">Taille</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2254"/>
         <source>Ultima modifica</source>
-        <translation>Dernière modification</translation>
+        <translation type="vanished">Dernière modification</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2255"/>
         <source>Permessi</source>
-        <translation>Autorisations</translation>
+        <translation type="vanished">Autorisations</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2259"/>
         <source>Percorso</source>
-        <translation>Chemin</translation>
+        <translation type="vanished">Chemin</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2034"/>
-        <location filename="../src/ui/base_skin.cpp" line="2044"/>
+        <location filename="../src/ui/base_skin.cpp" line="2238"/>
+        <location filename="../src/ui/base_skin.cpp" line="2248"/>
         <source>Check for Updates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="151"/>
-        <source>Apri con altra applicazione...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="157"/>
         <source>Visualizza Hex Dump</source>
-        <translation>Afficher le dump hexadécimal</translation>
+        <translation type="vanished">Afficher le dump hexadécimal</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/ui/base_skin.cpp" line="237"/>
+        <location filename="../src/ui/base_skin.cpp" line="270"/>
         <source>Replaced %n occurrence(s)</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -1759,628 +2211,653 @@ Do you want to save them before proceeding?</source>
         </translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="372"/>
+        <location filename="../src/ui/base_skin.cpp" line="427"/>
         <source>Corrupted PDF Detected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="373"/>
+        <location filename="../src/ui/base_skin.cpp" line="428"/>
         <source>&lt;p&gt;Failed to open &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The document structure appears damaged or incomplete.&lt;/p&gt;&lt;p&gt;Would you like to repair it using QPDF?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="784"/>
+        <location filename="../src/ui/base_skin.cpp" line="894"/>
         <source>PDF Document (*.pdf);;PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;TIFF Image (*.tiff);;BMP Image (*.bmp);;Plain Text (*.txt);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="850"/>
+        <location filename="../src/ui/base_skin.cpp" line="960"/>
         <source>Export PDF as Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="852"/>
+        <location filename="../src/ui/base_skin.cpp" line="962"/>
         <source>This PDF contains %1 pages.&lt;br&gt;Which pages would you like to export as &lt;b&gt;%2&lt;/b&gt;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="855"/>
+        <location filename="../src/ui/base_skin.cpp" line="965"/>
         <source>Current Page (Page %1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="856"/>
+        <location filename="../src/ui/base_skin.cpp" line="966"/>
         <source>All Pages (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1004"/>
-        <source>Tesseract OCR Missing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1005"/>
-        <source>The &lt;b&gt;Tesseract OCR&lt;/b&gt; engine is not installed on your system.&lt;br&gt;&lt;br&gt;Would you like BubezView to install it automatically using your system package manager (&lt;code&gt;%1&lt;/code&gt;)?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1013"/>
-        <source>Installation Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1014"/>
-        <source>Could not install Tesseract automatically:&lt;br&gt;&lt;code&gt;%1&lt;/code&gt;&lt;br&gt;&lt;br&gt;Please install it manually.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1027"/>
+        <location filename="../src/ui/base_skin.cpp" line="1124"/>
         <source>Downloading OCR language model for &apos;%1&apos; from repository...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1028"/>
-        <location filename="../src/ui/base_skin.cpp" line="1040"/>
+        <location filename="../src/ui/base_skin.cpp" line="1125"/>
+        <location filename="../src/ui/base_skin.cpp" line="1137"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1040"/>
+        <location filename="../src/ui/base_skin.cpp" line="1137"/>
         <source>Downloading English OCR model (eng)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1083"/>
-        <location filename="../src/ui/base_skin.cpp" line="1110"/>
+        <location filename="../src/ui/base_skin.cpp" line="1180"/>
+        <location filename="../src/ui/base_skin.cpp" line="1207"/>
         <source>OCR</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1083"/>
+        <location filename="../src/ui/base_skin.cpp" line="1180"/>
         <source>Unable to render PDF page for OCR.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1110"/>
+        <location filename="../src/ui/base_skin.cpp" line="1207"/>
         <source>Unable to prepare input image for OCR.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1122"/>
+        <location filename="../src/ui/base_skin.cpp" line="1219"/>
         <source>Tesseract encountered an error:&lt;br&gt;&lt;code&gt;%1&lt;/code&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1150"/>
+        <location filename="../src/ui/base_skin.cpp" line="1247"/>
         <source>Text file saved successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1152"/>
+        <location filename="../src/ui/base_skin.cpp" line="1249"/>
         <source>Failed to save changes to text file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1175"/>
+        <location filename="../src/ui/base_skin.cpp" line="1272"/>
         <source>Text file saved successfully to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1177"/>
+        <location filename="../src/ui/base_skin.cpp" line="1274"/>
         <source>Failed to save text file to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1277"/>
+        <location filename="../src/ui/base_skin.cpp" line="1374"/>
         <source>Failed to save text file changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1432"/>
+        <location filename="../src/ui/base_skin.cpp" line="1532"/>
         <source> • ✏️ Edit Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1432"/>
+        <location filename="../src/ui/base_skin.cpp" line="1532"/>
         <source> • 🔒 Read-Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1434"/>
+        <location filename="../src/ui/base_skin.cpp" line="1534"/>
         <source> (Modified*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1436"/>
+        <location filename="../src/ui/base_skin.cpp" line="1536"/>
         <source>%1 lines • %2 words • %3 characters • %4%5</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1628"/>
+        <location filename="../src/ui/base_skin.cpp" line="1728"/>
         <source>No Images Found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1629"/>
+        <location filename="../src/ui/base_skin.cpp" line="1729"/>
         <source>No embedded raster images were found in this PDF document.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1639"/>
+        <location filename="../src/ui/base_skin.cpp" line="1739"/>
         <source>Extraction Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1640"/>
+        <location filename="../src/ui/base_skin.cpp" line="1740"/>
         <source>Failed to extract images from PDF.&lt;br&gt;Make sure the &apos;poppler-utils&apos; package is installed and the document is accessible.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1877"/>
+        <location filename="../src/ui/base_skin.cpp" line="1995"/>
+        <source>Create Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1996"/>
+        <source>The Archive Engine plugin (libarchive) is not currently active.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2081"/>
         <source>Studio audio and hardware GPU video playback</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1894"/>
-        <location filename="../src/ui/base_skin.cpp" line="1968"/>
+        <location filename="../src/ui/base_skin.cpp" line="2098"/>
+        <location filename="../src/ui/base_skin.cpp" line="2172"/>
         <source>Keyboard Shortcuts Guide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1899"/>
+        <location filename="../src/ui/base_skin.cpp" line="2103"/>
         <source>Search shortcut or action...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1906"/>
-        <location filename="../src/ui/base_skin.cpp" line="1907"/>
-        <location filename="../src/ui/base_skin.cpp" line="1908"/>
-        <location filename="../src/ui/base_skin.cpp" line="1909"/>
-        <location filename="../src/ui/base_skin.cpp" line="1910"/>
+        <location filename="../src/ui/base_skin.cpp" line="2110"/>
+        <location filename="../src/ui/base_skin.cpp" line="2111"/>
+        <location filename="../src/ui/base_skin.cpp" line="2112"/>
+        <location filename="../src/ui/base_skin.cpp" line="2113"/>
+        <location filename="../src/ui/base_skin.cpp" line="2114"/>
         <source>Navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1906"/>
+        <location filename="../src/ui/base_skin.cpp" line="2110"/>
         <source>Previous File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1906"/>
+        <location filename="../src/ui/base_skin.cpp" line="2110"/>
         <source>Left / Backspace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1907"/>
+        <location filename="../src/ui/base_skin.cpp" line="2111"/>
         <source>Next File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1907"/>
+        <location filename="../src/ui/base_skin.cpp" line="2111"/>
         <source>Right / Space</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1908"/>
+        <location filename="../src/ui/base_skin.cpp" line="2112"/>
         <source>Previous Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1908"/>
+        <location filename="../src/ui/base_skin.cpp" line="2112"/>
         <source>Page Up (or Wheel Up at top)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1909"/>
+        <location filename="../src/ui/base_skin.cpp" line="2113"/>
         <source>Next Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1909"/>
+        <location filename="../src/ui/base_skin.cpp" line="2113"/>
         <source>Page Down (or Wheel Down at bottom)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1910"/>
+        <location filename="../src/ui/base_skin.cpp" line="2114"/>
         <source>Folder Gallery View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1913"/>
-        <location filename="../src/ui/base_skin.cpp" line="1914"/>
-        <location filename="../src/ui/base_skin.cpp" line="1915"/>
-        <location filename="../src/ui/base_skin.cpp" line="1916"/>
-        <location filename="../src/ui/base_skin.cpp" line="1917"/>
-        <location filename="../src/ui/base_skin.cpp" line="1918"/>
-        <location filename="../src/ui/base_skin.cpp" line="1919"/>
-        <location filename="../src/ui/base_skin.cpp" line="1920"/>
-        <location filename="../src/ui/base_skin.cpp" line="1921"/>
-        <location filename="../src/ui/base_skin.cpp" line="1922"/>
-        <location filename="../src/ui/base_skin.cpp" line="1923"/>
+        <location filename="../src/ui/base_skin.cpp" line="2117"/>
+        <location filename="../src/ui/base_skin.cpp" line="2118"/>
+        <location filename="../src/ui/base_skin.cpp" line="2119"/>
+        <location filename="../src/ui/base_skin.cpp" line="2120"/>
+        <location filename="../src/ui/base_skin.cpp" line="2121"/>
+        <location filename="../src/ui/base_skin.cpp" line="2122"/>
+        <location filename="../src/ui/base_skin.cpp" line="2123"/>
+        <location filename="../src/ui/base_skin.cpp" line="2124"/>
+        <location filename="../src/ui/base_skin.cpp" line="2125"/>
+        <location filename="../src/ui/base_skin.cpp" line="2126"/>
+        <location filename="../src/ui/base_skin.cpp" line="2127"/>
         <source>View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1913"/>
+        <location filename="../src/ui/base_skin.cpp" line="2117"/>
         <source>Toggle Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1914"/>
+        <location filename="../src/ui/base_skin.cpp" line="2118"/>
         <source>Photo Slideshow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1915"/>
+        <location filename="../src/ui/base_skin.cpp" line="2119"/>
         <source>Zoom In</source>
         <translation type="unfinished">Zoom avant</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1915"/>
+        <location filename="../src/ui/base_skin.cpp" line="2119"/>
         <source>Ctrl++ (or Ctrl+Wheel Up)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1916"/>
+        <location filename="../src/ui/base_skin.cpp" line="2120"/>
         <source>Zoom Out</source>
         <translation type="unfinished">Zoom arrière</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1916"/>
+        <location filename="../src/ui/base_skin.cpp" line="2120"/>
         <source>Ctrl+- (or Ctrl+Wheel Down)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1917"/>
+        <location filename="../src/ui/base_skin.cpp" line="2121"/>
         <source>Zoom 100% (Original Size)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1919"/>
+        <location filename="../src/ui/base_skin.cpp" line="2123"/>
         <source>Thumbnail Strip (Filmstrip)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1920"/>
+        <location filename="../src/ui/base_skin.cpp" line="2124"/>
         <source>Document Outline (TOC)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1922"/>
+        <location filename="../src/ui/base_skin.cpp" line="2126"/>
         <source>Show / Hide Menu Bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1923"/>
+        <location filename="../src/ui/base_skin.cpp" line="2127"/>
         <source>Show / Hide Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1926"/>
-        <location filename="../src/ui/base_skin.cpp" line="1927"/>
-        <location filename="../src/ui/base_skin.cpp" line="1928"/>
-        <location filename="../src/ui/base_skin.cpp" line="1929"/>
-        <location filename="../src/ui/base_skin.cpp" line="1930"/>
-        <location filename="../src/ui/base_skin.cpp" line="1931"/>
-        <location filename="../src/ui/base_skin.cpp" line="1932"/>
-        <location filename="../src/ui/base_skin.cpp" line="1933"/>
-        <location filename="../src/ui/base_skin.cpp" line="1934"/>
-        <location filename="../src/ui/base_skin.cpp" line="1935"/>
-        <location filename="../src/ui/base_skin.cpp" line="1936"/>
-        <location filename="../src/ui/base_skin.cpp" line="1937"/>
-        <location filename="../src/ui/base_skin.cpp" line="1938"/>
-        <location filename="../src/ui/base_skin.cpp" line="1939"/>
-        <location filename="../src/ui/base_skin.cpp" line="1940"/>
+        <location filename="../src/ui/base_skin.cpp" line="2130"/>
+        <location filename="../src/ui/base_skin.cpp" line="2131"/>
+        <location filename="../src/ui/base_skin.cpp" line="2132"/>
+        <location filename="../src/ui/base_skin.cpp" line="2133"/>
+        <location filename="../src/ui/base_skin.cpp" line="2134"/>
+        <location filename="../src/ui/base_skin.cpp" line="2135"/>
+        <location filename="../src/ui/base_skin.cpp" line="2136"/>
+        <location filename="../src/ui/base_skin.cpp" line="2137"/>
+        <location filename="../src/ui/base_skin.cpp" line="2138"/>
+        <location filename="../src/ui/base_skin.cpp" line="2139"/>
+        <location filename="../src/ui/base_skin.cpp" line="2140"/>
+        <location filename="../src/ui/base_skin.cpp" line="2141"/>
+        <location filename="../src/ui/base_skin.cpp" line="2142"/>
+        <location filename="../src/ui/base_skin.cpp" line="2143"/>
+        <location filename="../src/ui/base_skin.cpp" line="2144"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1926"/>
+        <location filename="../src/ui/base_skin.cpp" line="2130"/>
         <source>Open File...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1927"/>
+        <location filename="../src/ui/base_skin.cpp" line="2131"/>
         <source>Open Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1928"/>
+        <location filename="../src/ui/base_skin.cpp" line="2132"/>
         <source>Open with Default Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1929"/>
+        <location filename="../src/ui/base_skin.cpp" line="2133"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1930"/>
+        <location filename="../src/ui/base_skin.cpp" line="2134"/>
         <source>Save Copy As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1931"/>
+        <location filename="../src/ui/base_skin.cpp" line="2135"/>
         <source>Export As...</source>
         <translation type="unfinished">Exporter sous...</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1933"/>
+        <location filename="../src/ui/base_skin.cpp" line="2137"/>
         <source>Copy Content / Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1934"/>
+        <location filename="../src/ui/base_skin.cpp" line="2138"/>
         <source>Copy File Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1935"/>
+        <location filename="../src/ui/base_skin.cpp" line="2139"/>
         <source>Cut Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1936"/>
+        <location filename="../src/ui/base_skin.cpp" line="2140"/>
         <source>Paste Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1938"/>
+        <location filename="../src/ui/base_skin.cpp" line="2142"/>
         <source>Rename Item (Folder)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1939"/>
+        <location filename="../src/ui/base_skin.cpp" line="2143"/>
         <source>Create New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1940"/>
+        <location filename="../src/ui/base_skin.cpp" line="2144"/>
         <source>Exit Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1943"/>
-        <location filename="../src/ui/base_skin.cpp" line="1944"/>
-        <location filename="../src/ui/base_skin.cpp" line="1945"/>
-        <location filename="../src/ui/base_skin.cpp" line="1946"/>
+        <location filename="../src/ui/base_skin.cpp" line="2147"/>
+        <location filename="../src/ui/base_skin.cpp" line="2148"/>
+        <location filename="../src/ui/base_skin.cpp" line="2149"/>
+        <location filename="../src/ui/base_skin.cpp" line="2150"/>
         <source>Transform</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1943"/>
+        <location filename="../src/ui/base_skin.cpp" line="2147"/>
         <source>Rotate 90° Clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1944"/>
+        <location filename="../src/ui/base_skin.cpp" line="2148"/>
         <source>Rotate 90° Counterclockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1946"/>
+        <location filename="../src/ui/base_skin.cpp" line="2150"/>
         <source>Flip Vertically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1949"/>
-        <location filename="../src/ui/base_skin.cpp" line="1950"/>
-        <location filename="../src/ui/base_skin.cpp" line="1951"/>
-        <location filename="../src/ui/base_skin.cpp" line="1952"/>
-        <location filename="../src/ui/base_skin.cpp" line="1953"/>
+        <location filename="../src/ui/base_skin.cpp" line="2153"/>
+        <location filename="../src/ui/base_skin.cpp" line="2154"/>
+        <location filename="../src/ui/base_skin.cpp" line="2155"/>
+        <location filename="../src/ui/base_skin.cpp" line="2156"/>
+        <location filename="../src/ui/base_skin.cpp" line="2157"/>
         <source>Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1950"/>
+        <location filename="../src/ui/base_skin.cpp" line="2154"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1951"/>
+        <location filename="../src/ui/base_skin.cpp" line="2155"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1952"/>
+        <location filename="../src/ui/base_skin.cpp" line="2156"/>
         <source>Trim Audio Clip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1953"/>
+        <location filename="../src/ui/base_skin.cpp" line="2157"/>
         <source>Play / Pause Media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1953"/>
+        <location filename="../src/ui/base_skin.cpp" line="2157"/>
         <source>Space</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1956"/>
-        <location filename="../src/ui/base_skin.cpp" line="1957"/>
-        <location filename="../src/ui/base_skin.cpp" line="1958"/>
-        <location filename="../src/ui/base_skin.cpp" line="1959"/>
-        <location filename="../src/ui/base_skin.cpp" line="1960"/>
+        <location filename="../src/ui/base_skin.cpp" line="2160"/>
+        <location filename="../src/ui/base_skin.cpp" line="2161"/>
+        <location filename="../src/ui/base_skin.cpp" line="2162"/>
+        <location filename="../src/ui/base_skin.cpp" line="2163"/>
+        <location filename="../src/ui/base_skin.cpp" line="2164"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1956"/>
+        <location filename="../src/ui/base_skin.cpp" line="2160"/>
         <source>Toggle Text Editing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1957"/>
+        <location filename="../src/ui/base_skin.cpp" line="2161"/>
         <source>Find and Replace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1958"/>
+        <location filename="../src/ui/base_skin.cpp" line="2162"/>
         <source>Toggle Word Wrap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1959"/>
+        <location filename="../src/ui/base_skin.cpp" line="2163"/>
         <source>Toggle Line Numbers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1960"/>
+        <location filename="../src/ui/base_skin.cpp" line="2164"/>
         <source>Toggle Syntax Highlighting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1963"/>
-        <location filename="../src/ui/base_skin.cpp" line="1964"/>
-        <location filename="../src/ui/base_skin.cpp" line="1965"/>
-        <location filename="../src/ui/base_skin.cpp" line="1966"/>
+        <location filename="../src/ui/base_skin.cpp" line="2167"/>
+        <location filename="../src/ui/base_skin.cpp" line="2168"/>
+        <location filename="../src/ui/base_skin.cpp" line="2169"/>
+        <location filename="../src/ui/base_skin.cpp" line="2170"/>
         <source>PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1963"/>
+        <location filename="../src/ui/base_skin.cpp" line="2167"/>
         <source>PDF Tools Hub</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1964"/>
+        <location filename="../src/ui/base_skin.cpp" line="2168"/>
         <source>Text Highlighter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1965"/>
+        <location filename="../src/ui/base_skin.cpp" line="2169"/>
         <source>Insert Blank Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1966"/>
+        <location filename="../src/ui/base_skin.cpp" line="2170"/>
         <source>Snapshot / Area Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1968"/>
+        <location filename="../src/ui/base_skin.cpp" line="2172"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1972"/>
+        <location filename="../src/ui/base_skin.cpp" line="2176"/>
         <source>Category</source>
         <translation type="unfinished">Catégorie</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2035"/>
+        <location filename="../src/ui/base_skin.cpp" line="2239"/>
         <source>✅ BubezView is up to date!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2037"/>
+        <location filename="../src/ui/base_skin.cpp" line="2241"/>
         <source>There are no updates available at this time.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2130"/>
+        <location filename="../src/ui/base_skin.cpp" line="2334"/>
         <source>Add to Bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2139"/>
+        <location filename="../src/ui/base_skin.cpp" line="2343"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2142"/>
+        <location filename="../src/ui/base_skin.cpp" line="2346"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2150"/>
+        <location filename="../src/ui/base_skin.cpp" line="2354"/>
         <source>Open With...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2161"/>
+        <location filename="../src/ui/base_skin.cpp" line="2365"/>
         <source>Other Application...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2163"/>
+        <location filename="../src/ui/base_skin.cpp" line="2367"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2172"/>
+        <location filename="../src/ui/base_skin.cpp" line="2371"/>
+        <source>Compress / Create Archive...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2378"/>
         <source>Rotate 90° Right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2173"/>
+        <location filename="../src/ui/base_skin.cpp" line="2379"/>
         <source>Rotate 90° Left</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1945"/>
-        <location filename="../src/ui/base_skin.cpp" line="2174"/>
+        <location filename="../src/ui/base_skin.cpp" line="2462"/>
+        <source>MIME Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2462"/>
+        <source>Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2463"/>
+        <source>Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2464"/>
+        <source>Last modified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2465"/>
+        <source>Permissions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2469"/>
+        <source>Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2149"/>
+        <location filename="../src/ui/base_skin.cpp" line="2380"/>
         <source>Flip Horizontally</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1918"/>
-        <location filename="../src/ui/base_skin.cpp" line="2175"/>
+        <location filename="../src/ui/base_skin.cpp" line="2122"/>
+        <location filename="../src/ui/base_skin.cpp" line="2381"/>
         <source>Fit to Window</source>
         <translation>Ajuster à la fenêtre</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2176"/>
-        <location filename="../src/ui/base_skin.cpp" line="2184"/>
+        <location filename="../src/ui/base_skin.cpp" line="2382"/>
+        <location filename="../src/ui/base_skin.cpp" line="2390"/>
         <source>Original Size (100%)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2181"/>
+        <location filename="../src/ui/base_skin.cpp" line="2387"/>
         <source>Rotate Clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2182"/>
+        <location filename="../src/ui/base_skin.cpp" line="2388"/>
         <source>Rotate Counterclockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2183"/>
+        <location filename="../src/ui/base_skin.cpp" line="2389"/>
         <source>Fit to Width</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2204"/>
+        <location filename="../src/ui/base_skin.cpp" line="2410"/>
         <source>Find in Document...</source>
         <translation>Rechercher dans le document...</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2209"/>
+        <location filename="../src/ui/base_skin.cpp" line="2415"/>
         <source>Play / Pause</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2210"/>
+        <location filename="../src/ui/base_skin.cpp" line="2418"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2217"/>
+        <location filename="../src/ui/base_skin.cpp" line="2427"/>
         <source>Thumbnail Strip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1937"/>
-        <location filename="../src/ui/base_skin.cpp" line="2224"/>
+        <location filename="../src/ui/base_skin.cpp" line="2141"/>
+        <location filename="../src/ui/base_skin.cpp" line="2434"/>
         <source>Move to Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2225"/>
+        <location filename="../src/ui/base_skin.cpp" line="2435"/>
         <source>File Properties &amp; Metadata...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2388,116 +2865,127 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>BuildConsoleDialog</name>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="47"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="48"/>
         <source>Compilation Console — BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="56"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="57"/>
         <source>&lt;b&gt;⚙️ Recompiling BubezView&lt;/b&gt;</source>
         <translation>&lt;b&gt;⚙️ Recompiling BubezView&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="60"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="61"/>
         <source>Initializing build environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="92"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="93"/>
         <source>Cancel Build</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="98"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="99"/>
         <source>🚀 Restart BubezView Now</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="105"/>
-        <location filename="../src/ui/build_console_dialog.cpp" line="189"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="106"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="269"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="119"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="125"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="166"/>
         <source>❌ Installer script not found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="122"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="128"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="169"/>
         <source>[Error] Could not locate &apos;Installa&apos; recompilation script in system or source repository.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="130"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="136"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="177"/>
         <source>&gt;&gt;&gt; Starting compilation: %1 --cli --update
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="133"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="139"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="180"/>
         <source>⚙️ Configuring CMake build environment...</source>
         <translation>⚙️ Configuring CMake build environment...</translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="166"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="228"/>
         <source>⚙️ Compiling updated modules in parallel...</source>
         <translation>⚙️ Compiling updated modules in parallel...</translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="168"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="230"/>
         <source>🔧 Generating CMake build environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="170"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="232"/>
         <source>🔗 Linking executable binary...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="182"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="255"/>
+        <source>
+&gt;&gt;&gt; Component build completed. Starting next component: %1...
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/build_console_dialog.cpp" line="262"/>
         <source>✅ Compilation completed successfully! Changes will take effect the next time you start BubezView.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="184"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="264"/>
         <source>
 [Success] Recompilation finished successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="194"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="275"/>
         <source>❌ Compilation failed (exit code %1).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="196"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="277"/>
         <source>
 [Failed] Build script terminated with exit code %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="214"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="295"/>
         <source>Cancel Compilation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="215"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="296"/>
         <source>Are you sure you want to cancel the active build process?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="224"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="305"/>
         <source>⚠️ Compilation cancelled by user.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="265"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="346"/>
         <source>Build in Progress</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_console_dialog.cpp" line="266"/>
+        <location filename="../src/ui/build_console_dialog.cpp" line="347"/>
         <source>Compilation is currently running. Do you want to cancel it and close?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2652,33 +3140,58 @@ Do you want to save them before proceeding?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_options_dialog.cpp" line="274"/>
+        <location filename="../src/ui/build_options_dialog.cpp" line="270"/>
+        <source>Long Compilation Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/build_options_dialog.cpp" line="271"/>
+        <source>&lt;p&gt;&lt;b&gt;Notice: Compiling engine modules from source may take several minutes.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Modules like Poppler PDF or OCR engines involve extensive C++ templates and large source trees.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed with compilation?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/build_options_dialog.cpp" line="288"/>
         <source>⚙️ Configuring and compiling BubezView with updated options...</source>
         <translation>⚙️ Configuring and compiling BubezView with updated options...</translation>
     </message>
     <message>
-        <location filename="../src/ui/build_options_dialog.cpp" line="298"/>
+        <location filename="../src/ui/build_options_dialog.cpp" line="312"/>
         <source>⚙️ Compiling updated modules in parallel...</source>
         <translation>⚙️ Compiling updated modules in parallel...</translation>
     </message>
     <message>
-        <location filename="../src/ui/build_options_dialog.cpp" line="300"/>
+        <location filename="../src/ui/build_options_dialog.cpp" line="314"/>
         <source>🔧 Generating CMake build environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_options_dialog.cpp" line="310"/>
+        <location filename="../src/ui/build_options_dialog.cpp" line="324"/>
         <source>✅ Compilation completed successfully! Changes will take effect the next time you start BubezView.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_options_dialog.cpp" line="315"/>
+        <location filename="../src/ui/build_options_dialog.cpp" line="330"/>
+        <source>Clean Up Temporary Build Files?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/build_options_dialog.cpp" line="331"/>
+        <source>&lt;p&gt;&lt;b&gt;Compilation completed successfully!&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Would you like to clean up temporary intermediate object files and source build caches to save disk space?&lt;/p&gt;&lt;p&gt;&lt;i&gt;(CMake, compilers, and installed binaries will remain intact.)&lt;/i&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/build_options_dialog.cpp" line="339"/>
+        <source>✅ Compilation completed and temporary files cleaned up!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/build_options_dialog.cpp" line="343"/>
         <source>❌ Compilation failed. Check compiler log details.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/build_options_dialog.cpp" line="312"/>
-        <location filename="../src/ui/build_options_dialog.cpp" line="317"/>
+        <location filename="../src/ui/build_options_dialog.cpp" line="326"/>
+        <location filename="../src/ui/build_options_dialog.cpp" line="345"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
@@ -2686,383 +3199,624 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>CompilerWizardDialog</name>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="39"/>
         <source>🧙 Compiler Wizard - Advanced CPU &amp; Instruction Tuning</source>
-        <translation>🧙 Assistant de Compilation - Optimisation Avancée du CPU et des Instructions</translation>
+        <translation type="vanished">🧙 Assistant de Compilation - Optimisation Avancée du CPU et des Instructions</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="73"/>
         <source>Native Host Microarchitecture</source>
-        <translation>Microarchitecture Hôte Native</translation>
+        <translation type="vanished">Microarchitecture Hôte Native</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="74"/>
         <source>Architecture &amp; CPU Tuning</source>
-        <translation>Architecture et Optimisation CPU</translation>
+        <translation type="vanished">Architecture et Optimisation CPU</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="76"/>
         <source>🟢 &lt;b&gt;Highly Recommended.&lt;/b&gt; Optimizes BubezView specifically for your CPU model. Makes zooming, scrolling, and image loading noticeably faster and smoother.</source>
-        <translation>🟢 &lt;b&gt;Fortement Recommandé.&lt;/b&gt; Optimise BubezView spécifiquement pour votre processeur. Rend le zoom, le défilement et le chargement des images nettement plus rapides et fluides.</translation>
+        <translation type="vanished">🟢 &lt;b&gt;Fortement Recommandé.&lt;/b&gt; Optimise BubezView spécifiquement pour votre processeur. Rend le zoom, le défilement et le chargement des images nettement plus rapides et fluides.</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="84"/>
         <source>Standard Balanced Optimization</source>
-        <translation>Optimisation Standard Équilibrée</translation>
+        <translation type="vanished">Optimisation Standard Équilibrée</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="85"/>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="96"/>
         <source>Optimization Levels</source>
-        <translation>Niveaux d&apos;Optimisation</translation>
+        <translation type="vanished">Niveaux d&apos;Optimisation</translation>
+    </message>
+    <message>
+        <source>🟢 &lt;b&gt;Balanced &amp; Safe.&lt;/b&gt; Standard compiler optimization recommended for all systems. Keeps the application fast, responsive, and resource-efficient.</source>
+        <translation type="vanished">🟢 &lt;b&gt;Équilibré et Sûr.&lt;/b&gt; Optimisation standard du compilateur recommandée pour tous les systèmes. Maintient l&apos;application rapide, réactive et économe en ressources.</translation>
+    </message>
+    <message>
+        <source>Aggressive Optimization for Heavy Files</source>
+        <translation type="vanished">Optimisation Agressive pour Fichiers Lourds</translation>
+    </message>
+    <message>
+        <source>🟢 &lt;b&gt;Recommended for Heavy Files.&lt;/b&gt; Maximizes processing speed. Highly recommended if you frequently open high-resolution photos, large RAW/TIFF files, or complex PDF documents.</source>
+        <translation type="vanished">🟢 &lt;b&gt;Recommandé pour Gros Fichiers.&lt;/b&gt; Maximise la vitesse de traitement. Très recommandé si vous ouvrez fréquemment des photos très haute résolution, de gros fichiers RAW/TIFF ou des documents PDF complexes.</translation>
+    </message>
+    <message>
+        <source>Link-Time Optimization (LTO)</source>
+        <translation type="vanished">Optimisation à la Liaison (LTO)</translation>
+    </message>
+    <message>
+        <source>Linker &amp; Whole-Program</source>
+        <translation type="vanished">Éditeur de Liens et Programme Entier</translation>
+    </message>
+    <message>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Optimizes the entire application during the final linking step. Produces a smaller binary and makes the user interface faster and more responsive to clicks.</source>
+        <translation type="vanished">🟢 &lt;b&gt;Recommandé.&lt;/b&gt; Optimise l&apos;ensemble de l&apos;application lors de la phase finale d&apos;édition de liens. Réduit la taille du binaire et rend l&apos;interface plus vive et réactive aux clics.</translation>
+    </message>
+    <message>
+        <source>Direct Function Calling (Bypass PLT)</source>
+        <translation type="vanished">Appels Directs de Fonctions (Bypass PLT)</translation>
+    </message>
+    <message>
+        <source>C++ &amp; Compiler Internals</source>
+        <translation type="vanished">Internes C++ et Compilateur</translation>
+    </message>
+    <message>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Speeds up internal function calls between UI elements and viewer components, ensuring instant window and menu response.</source>
+        <translation type="vanished">🟢 &lt;b&gt;Recommandé.&lt;/b&gt; Accélère les appels internes de fonctions entre l&apos;interface et les visualiseurs, garantissant une réactivité instantanée des fenêtres et menus.</translation>
+    </message>
+    <message>
+        <source>In-Memory Compilation Pipes</source>
+        <translation type="vanished">Pipes de Compilation en Mémoire RAM</translation>
+    </message>
+    <message>
+        <source>Build Speed</source>
+        <translation type="vanished">Vitesse de Compilation</translation>
+    </message>
+    <message>
+        <source>🟢 &lt;b&gt;Safe &amp; Fast.&lt;/b&gt; Speeds up compilation and reduces disk wear by keeping temporary build data in RAM instead of writing temporary files to disk.</source>
+        <translation type="vanished">🟢 &lt;b&gt;Sûr et Rapide.&lt;/b&gt; Accélère la compilation et réduit l&apos;usure du disque en conservant les données temporaires de compilation dans la RAM au lieu d&apos;écrire des fichiers temporaires sur le disque.</translation>
+    </message>
+    <message>
+        <source>Omit Stack Frame Pointer</source>
+        <translation type="vanished">Omission du Pointeur de Trame de Pile</translation>
+    </message>
+    <message>
+        <source>Register Allocation</source>
+        <translation type="vanished">Allocation des Registres</translation>
+    </message>
+    <message>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Frees up internal processor resources to dedicate more computing power to image processing and pixel rendering.</source>
+        <translation type="vanished">🟢 &lt;b&gt;Recommandé.&lt;/b&gt; Libère des ressources internes du processeur pour consacrer plus de puissance au traitement d&apos;image et au rendu des pixels.</translation>
+    </message>
+    <message>
+        <source>Aggressive Loop Unrolling</source>
+        <translation type="vanished">Déroulage Agressif de Boucles</translation>
+    </message>
+    <message>
+        <source>Vectorization &amp; Loops</source>
+        <translation type="vanished">Vectorisation et Boucles</translation>
+    </message>
+    <message>
+        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Speeds up repetitive pixel operations (like filters and blur) by unrolling loops, but slightly increases executable size. Recommended if you frequently process very large images.</source>
+        <translation type="vanished">🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Accélère les opérations répétitives sur les pixels (comme les filtres et le flou) en déroulant les boucles, mais augmente légèrement la taille de l&apos;exécutable. Recommandé si vous traitez souvent de très grandes images.</translation>
+    </message>
+    <message>
+        <source>Fast Math Without Error Checking</source>
+        <translation type="vanished">Calcul Mathématique Rapide Sans Vérification d&apos;Erreur</translation>
+    </message>
+    <message>
+        <source>Floating-Point Math</source>
+        <translation type="vanished">Calcul en Virgule Flottante</translation>
+    </message>
+    <message>
+        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Accelerates geometry calculations during zoom and rotation by skipping redundant system error checks. Safe for BubezView because image boundaries and data are already validated.</source>
+        <translation type="vanished">🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Accélère les calculs géométriques lors du zoom et des rotations en ignorant les vérifications système redondantes. Sûr pour BubezView car les limites des images sont déjà validées en amont.</translation>
+    </message>
+    <message>
+        <source>Aggressive LTO Devirtualization</source>
+        <translation type="vanished">Dévirtualisation Agressive LTO</translation>
+    </message>
+    <message>
+        <source>Linker &amp; C++ Polymorphism</source>
+        <translation type="vanished">Éditeur de Liens et Polymorphisme C++</translation>
+    </message>
+    <message>
+        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Can slightly improve switching speed between different viewers, but requires more RAM during compilation.</source>
+        <translation type="vanished">🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Peut légèrement améliorer la vitesse de basculement entre les visualiseurs, mais nécessite plus de RAM pendant la compilation.</translation>
+    </message>
+    <message>
+        <source>Generic x86-64-v3 Microarchitecture Baseline</source>
+        <translation type="vanished">Base Générique de Microarchitecture x86-64-v3</translation>
+    </message>
+    <message>
+        <source>Portability</source>
+        <translation type="vanished">Portabilité</translation>
+    </message>
+    <message>
+        <source>🟡 &lt;b&gt;Portable Alternative.&lt;/b&gt; Use this only if you plan to copy the compiled binary to another modern PC. If compiling solely for your own computer, -march=native is strictly superior.</source>
+        <translation type="vanished">🟡 &lt;b&gt;Alternative Portable.&lt;/b&gt; À utiliser uniquement si vous prévoyez de copier le binaire sur un autre PC moderne. Si vous compilez uniquement pour votre machine, -march=native est nettement supérieur.</translation>
+    </message>
+    <message>
+        <source>Generic x86-64-v4 Microarchitecture Baseline (AVX-512)</source>
+        <translation type="vanished">Base Générique de Microarchitecture x86-64-v4 (AVX-512)</translation>
+    </message>
+    <message>
+        <source>🟡 &lt;b&gt;AVX-512 Portable.&lt;/b&gt; Appropriate for Zen 4/5 or modern Intel systems if you plan to distribute the binary to other computers equipped with AVX-512 instructions.</source>
+        <translation type="vanished">🟡 &lt;b&gt;Portable AVX-512.&lt;/b&gt; Adapté aux processeurs Zen 4/5 ou Intel modernes si vous prévoyez de distribuer le binaire à d&apos;autres ordinateurs équipés d&apos;instructions AVX-512.</translation>
+    </message>
+    <message>
+        <source>Dynamic Vectorization Heuristics</source>
+        <translation type="vanished">Heuristiques Dynamiques de Vectorisation</translation>
+    </message>
+    <message>
+        <source>Vectorization Models</source>
+        <translation type="vanished">Modèles de Vectorisation</translation>
+    </message>
+    <message>
+        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Optimizes CPU workload dynamically when processing images of varying or unpredictable dimensions.</source>
+        <translation type="vanished">🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Optimise dynamiquement la charge du processeur lors du traitement d&apos;images aux dimensions variées ou imprévisibles.</translation>
+    </message>
+    <message>
+        <source>Non-Standard Fast Math (Precision Trade-off)</source>
+        <translation type="vanished">Mathématiques Rapides Non-Standard (Compromis de Précision)</translation>
+    </message>
+    <message>
+        <source>Math &amp; Precision (Hazardous)</source>
+        <translation type="vanished">Mathématiques et Précision (Risqué)</translation>
+    </message>
+    <message>
+        <source>🔴 &lt;b&gt;Caution (Precision Trade-off).&lt;/b&gt; Delivers high calculation speed but bypasses standard math rules: may cause slight pixel color variations, line misalignment in vector PDFs, or glitches with damaged files.</source>
+        <translation type="vanished">🔴 &lt;b&gt;Attention (Compromis de Précision).&lt;/b&gt; Offre une vitesse de calcul élevée mais contourne les règles mathématiques standard : peut causer de légères variations de couleur, des décalages de lignes dans les PDF vectoriels ou des bugs avec des fichiers endommagés.</translation>
+    </message>
+    <message>
+        <source>Extreme Optimization (-O3 + Fast Math)</source>
+        <translation type="vanished">Optimisation Extrême (-O3 + Fast Math)</translation>
+    </message>
+    <message>
+        <source>Aggressive Profiles</source>
+        <translation type="vanished">Profils Agressifs</translation>
+    </message>
+    <message>
+        <source>🔴 &lt;b&gt;Caution.&lt;/b&gt; Combines -O3 with non-standard fast math. Not recommended if you need pixel-perfect rendering and exact color accuracy.</source>
+        <translation type="vanished">🔴 &lt;b&gt;Attention.&lt;/b&gt; Combine -O3 avec des calculs rapides non conformes. Déconseillé si vous avez besoin d&apos;une fidélité absolue des couleurs et d&apos;une précision au pixel près.</translation>
+    </message>
+    <message>
+        <source>Assume Unchecked Finite Numbers</source>
+        <translation type="vanished">Présumer des Nombres Finis Sans Vérification</translation>
+    </message>
+    <message>
+        <source>🔴 &lt;b&gt;Hazardous.&lt;/b&gt; Can cause unexpected freezes or crashes if damaged image files or invalid PDF streams encounter division by zero.</source>
+        <translation type="vanished">🔴 &lt;b&gt;Risqué.&lt;/b&gt; Peut provoquer des blocages inattendus ou des plantages si des fichiers corrompus ou des flux PDF invalides entraînent une division par zéro.</translation>
+    </message>
+    <message>
+        <source>🖥️ &lt;b&gt;Host CPU Architecture &amp; Microarchitecture Introspection&lt;/b&gt;</source>
+        <translation type="vanished">🖥️ &lt;b&gt;Introspection de l&apos;Architecture et Microarchitecture du CPU Hôte&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="28"/>
+        <source>🧙 Compiler Wizard — Advanced CPU &amp; Instruction Tuning</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/compiler_wizard_dialog.cpp" line="87"/>
-        <source>🟢 &lt;b&gt;Balanced &amp; Safe.&lt;/b&gt; Standard compiler optimization recommended for all systems. Keeps the application fast, responsive, and resource-efficient.</source>
-        <translation>🟢 &lt;b&gt;Équilibré et Sûr.&lt;/b&gt; Optimisation standard du compilateur recommandée pour tous les systèmes. Maintient l&apos;application rapide, réactive et économe en ressources.</translation>
+        <source>Tailored CPU Performance Tuning</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="95"/>
-        <source>Aggressive Optimization for Heavy Files</source>
-        <translation>Optimisation Agressive pour Fichiers Lourds</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="88"/>
+        <source>1. Processor &amp; Microarchitecture</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="98"/>
-        <source>🟢 &lt;b&gt;Recommended for Heavy Files.&lt;/b&gt; Maximizes processing speed. Highly recommended if you frequently open high-resolution photos, large RAW/TIFF files, or complex PDF documents.</source>
-        <translation>🟢 &lt;b&gt;Recommandé pour Gros Fichiers.&lt;/b&gt; Maximise la vitesse de traitement. Très recommandé si vous ouvrez fréquemment des photos très haute résolution, de gros fichiers RAW/TIFF ou des documents PDF complexes.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="90"/>
+        <source>🟢 &lt;b&gt;Highly Recommended.&lt;/b&gt; Emits instructions tailored specifically to your CPU model, maximizing execution speed across the user interface and file processing.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="106"/>
-        <source>Link-Time Optimization (LTO)</source>
-        <translation>Optimisation à la Liaison (LTO)</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="101"/>
+        <source>Whole-Program Optimization (Lower RAM)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="107"/>
-        <source>Linker &amp; Whole-Program</source>
-        <translation>Éditeur de Liens et Programme Entier</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="102"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="113"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="124"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="135"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="146"/>
+        <source>2. Program Core &amp; Interface (BubezView Only)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="109"/>
-        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Optimizes the entire application during the final linking step. Produces a smaller binary and makes the user interface faster and more responsive to clicks.</source>
-        <translation>🟢 &lt;b&gt;Recommandé.&lt;/b&gt; Optimise l&apos;ensemble de l&apos;application lors de la phase finale d&apos;édition de liens. Réduit la taille du binaire et rend l&apos;interface plus vive et réactive aux clics.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="104"/>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Performs whole-program optimization across all units at link time. Eliminates dead code, reduces RAM footprint, and ensures fast cold launch.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="117"/>
-        <source>Direct Function Calling (Bypass PLT)</source>
-        <translation>Appels Directs de Fonctions (Bypass PLT)</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="112"/>
+        <source>Instant Switching between Viewers</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="118"/>
-        <source>C++ &amp; Compiler Internals</source>
-        <translation>Internes C++ et Compilateur</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="115"/>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Eliminates intermediate dispatch overhead when switching tabs between Images, PDF, Text, and Archives.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="120"/>
-        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Speeds up internal function calls between UI elements and viewer components, ensuring instant window and menu response.</source>
-        <translation>🟢 &lt;b&gt;Recommandé.&lt;/b&gt; Accélère les appels internes de fonctions entre l&apos;interface et les visualiseurs, garantissant une réactivité instantanée des fenêtres et menus.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="123"/>
+        <source>Instant Responsiveness for Menus &amp; Buttons</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="128"/>
-        <source>In-Memory Compilation Pipes</source>
-        <translation>Pipes de Compilation en Mémoire RAM</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="126"/>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Removes delays when clicking toolbars, menus, and shortcuts by linking internal functions directly.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="129"/>
-        <source>Build Speed</source>
-        <translation>Vitesse de Compilation</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="134"/>
+        <source>Extra CPU Registers for UI &amp; Rendering</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="131"/>
-        <source>🟢 &lt;b&gt;Safe &amp; Fast.&lt;/b&gt; Speeds up compilation and reduces disk wear by keeping temporary build data in RAM instead of writing temporary files to disk.</source>
-        <translation>🟢 &lt;b&gt;Sûr et Rapide.&lt;/b&gt; Accélère la compilation et réduit l&apos;usure du disque en conservant les données temporaires de compilation dans la RAM au lieu d&apos;écrire des fichiers temporaires sur le disque.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="137"/>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Frees up an extra CPU register normally at rest and dedicates it to accelerating interface animation and window drawing.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="139"/>
-        <source>Omit Stack Frame Pointer</source>
-        <translation>Omission du Pointeur de Trame de Pile</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="145"/>
+        <source>In-RAM Fast Compilation (Less SSD Wear)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="140"/>
-        <source>Register Allocation</source>
-        <translation>Allocation des Registres</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="148"/>
+        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Uses system RAM pipes during compilation instead of temporary disk files, speeding up builds and protecting SSD lifespan.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="142"/>
-        <source>🟢 &lt;b&gt;Recommended.&lt;/b&gt; Frees up internal processor resources to dedicate more computing power to image processing and pixel rendering.</source>
-        <translation>🟢 &lt;b&gt;Recommandé.&lt;/b&gt; Libère des ressources internes du processeur pour consacrer plus de puissance au traitement d&apos;image et au rendu des pixels.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="159"/>
+        <source>Parallel Pixel Processing (SIMD)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="153"/>
-        <source>Aggressive Loop Unrolling</source>
-        <translation>Déroulage Agressif de Boucles</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="160"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="171"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="182"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="193"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="204"/>
+        <source>3. Image Viewer &amp; Graphics Canvas (BubezView Only)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="154"/>
-        <source>Vectorization &amp; Loops</source>
-        <translation>Vectorisation et Boucles</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="162"/>
+        <source>🟢 &lt;b&gt;Recommended for Images.&lt;/b&gt; Processes multiple pixels simultaneously in a single clock cycle, dramatically speeding up zooming and rendering.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="156"/>
-        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Speeds up repetitive pixel operations (like filters and blur) by unrolling loops, but slightly increases executable size. Recommended if you frequently process very large images.</source>
-        <translation>🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Accélère les opérations répétitives sur les pixels (comme les filtres et le flou) en déroulant les boucles, mais augmente légèrement la taille de l&apos;exécutable. Recommandé si vous traitez souvent de très grandes images.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="170"/>
+        <source>Fast Photo Filters &amp; Blur</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="164"/>
-        <source>Fast Math Without Error Checking</source>
-        <translation>Calcul Mathématique Rapide Sans Vérification d&apos;Erreur</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="173"/>
+        <source>🟡 &lt;b&gt;Fast Image Filters.&lt;/b&gt; Unrolls repetitive pixel loops, accelerating image convolution filters, blur, sharpening, and color adjustments.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="165"/>
-        <source>Floating-Point Math</source>
-        <translation>Calcul en Virgule Flottante</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="181"/>
+        <source>Adaptive Resolution Scaling (Icons to 8K)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="167"/>
-        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Accelerates geometry calculations during zoom and rotation by skipping redundant system error checks. Safe for BubezView because image boundaries and data are already validated.</source>
-        <translation>🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Accélère les calculs géométriques lors du zoom et des rotations en ignorant les vérifications système redondantes. Sûr pour BubezView car les limites des images sont déjà validées en amont.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="184"/>
+        <source>🟡 &lt;b&gt;Adaptive Processing.&lt;/b&gt; Evaluates vectorization dynamically based on real image dimensions, ensuring peak performance on both small icons and huge 8K photos.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="175"/>
-        <source>Aggressive LTO Devirtualization</source>
-        <translation>Dévirtualisation Agressive LTO</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="192"/>
+        <source>Direct Hardware Math (Zoom &amp; Rotation)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="176"/>
-        <source>Linker &amp; C++ Polymorphism</source>
-        <translation>Éditeur de Liens et Polymorphisme C++</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="195"/>
+        <source>🟡 &lt;b&gt;Hardware Math Acceleration.&lt;/b&gt; Skips setting legacy errno variables to compute smooth zoom, proportions, and rotations directly on the CPU.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="178"/>
-        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Can slightly improve switching speed between different viewers, but requires more RAM during compilation.</source>
-        <translation>🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Peut légèrement améliorer la vitesse de basculement entre les visualiseurs, mais nécessite plus de RAM pendant la compilation.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="203"/>
+        <source>Smooth Pixel Traversal in CPU Cache</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="186"/>
-        <source>Generic x86-64-v3 Microarchitecture Baseline</source>
-        <translation>Base Générique de Microarchitecture x86-64-v3</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="206"/>
+        <source>🟡 &lt;b&gt;Cache Optimization.&lt;/b&gt; Aligns loop entry points to 32-byte CPU cache boundaries, eliminating stutter during horizontal pixel traversal.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="187"/>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="198"/>
-        <source>Portability</source>
-        <translation>Portabilité</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="217"/>
+        <source>Fast Archive Decompression (ZIP, 7Z, TAR)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="189"/>
-        <source>🟡 &lt;b&gt;Portable Alternative.&lt;/b&gt; Use this only if you plan to copy the compiled binary to another modern PC. If compiling solely for your own computer, -march=native is strictly superior.</source>
-        <translation>🟡 &lt;b&gt;Alternative Portable.&lt;/b&gt; À utiliser uniquement si vous prévoyez de copier le binaire sur un autre PC moderne. Si vous compilez uniquement pour votre machine, -march=native est nettement supérieur.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="218"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="229"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="240"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="251"/>
+        <source>4. Engine Plugins &amp; Heavy Formats (Requires Plugin Build)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="197"/>
-        <source>Generic x86-64-v4 Microarchitecture Baseline (AVX-512)</source>
-        <translation>Base Générique de Microarchitecture x86-64-v4 (AVX-512)</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="220"/>
+        <source>🧩 &lt;b&gt;Requires Plugin Build.&lt;/b&gt; Emits hardware CRC32 CPU instructions to dramatically speed up archive extraction and integrity verification in LibArchive.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="200"/>
-        <source>🟡 &lt;b&gt;AVX-512 Portable.&lt;/b&gt; Appropriate for Zen 4/5 or modern Intel systems if you plan to distribute the binary to other computers equipped with AVX-512 instructions.</source>
-        <translation>🟡 &lt;b&gt;Portable AVX-512.&lt;/b&gt; Adapté aux processeurs Zen 4/5 ou Intel modernes si vous prévoyez de distribuer le binaire à d&apos;autres ordinateurs équipés d&apos;instructions AVX-512.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="228"/>
+        <source>Smooth PDF Page &amp; Vector Curve Rendering</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="208"/>
-        <source>Dynamic Vectorization Heuristics</source>
-        <translation>Heuristiques Dynamiques de Vectorisation</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="231"/>
+        <source>🧩 &lt;b&gt;Requires Plugin Build.&lt;/b&gt; Fuses floating-point multiplication and addition via hardware FMA, accelerating complex PDF pages and diagrams in Poppler.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="209"/>
-        <source>Vectorization Models</source>
-        <translation>Modèles de Vectorisation</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="239"/>
+        <source>Fast PDF Text &amp; Annotation Rasterization</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="211"/>
-        <source>🟡 &lt;b&gt;Optional.&lt;/b&gt; Optimizes CPU workload dynamically when processing images of varying or unpredictable dimensions.</source>
-        <translation>🟡 &lt;b&gt;Optionnel.&lt;/b&gt; Optimise dynamiquement la charge du processeur lors du traitement d&apos;images aux dimensions variées ou imprévisibles.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="242"/>
+        <source>🧩 &lt;b&gt;Requires Plugin Build.&lt;/b&gt; Accelerates glyph rasterization, highlighter blending, and markup rendering in high-resolution PDF pages.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="222"/>
-        <source>Non-Standard Fast Math (Precision Trade-off)</source>
-        <translation>Mathématiques Rapides Non-Standard (Compromis de Précision)</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="250"/>
+        <source>Direct Byte Stream for Decompression Buffers</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="223"/>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="245"/>
-        <source>Math &amp; Precision (Hazardous)</source>
-        <translation>Mathématiques et Précision (Risqué)</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="253"/>
+        <source>🧩 &lt;b&gt;Requires Plugin Build.&lt;/b&gt; Enables extraction and media demuxing engines to read packed byte streams at maximum bus bandwidth without conversion overhead.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="225"/>
-        <source>🔴 &lt;b&gt;Caution (Precision Trade-off).&lt;/b&gt; Delivers high calculation speed but bypasses standard math rules: may cause slight pixel color variations, line misalignment in vector PDFs, or glitches with damaged files.</source>
-        <translation>🔴 &lt;b&gt;Attention (Compromis de Précision).&lt;/b&gt; Offre une vitesse de calcul élevée mais contourne les règles mathématiques standard : peut causer de légères variations de couleur, des décalages de lignes dans les PDF vectoriels ou des bugs avec des fichiers endommagés.</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="274"/>
+        <source>🖥️ &lt;b&gt;Host CPU Architecture &amp; Active Build State&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="233"/>
-        <source>Extreme Optimization (-O3 + Fast Math)</source>
-        <translation>Optimisation Extrême (-O3 + Fast Math)</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="234"/>
-        <source>Aggressive Profiles</source>
-        <translation>Profils Agressifs</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="236"/>
-        <source>🔴 &lt;b&gt;Caution.&lt;/b&gt; Combines -O3 with non-standard fast math. Not recommended if you need pixel-perfect rendering and exact color accuracy.</source>
-        <translation>🔴 &lt;b&gt;Attention.&lt;/b&gt; Combine -O3 avec des calculs rapides non conformes. Déconseillé si vous avez besoin d&apos;une fidélité absolue des couleurs et d&apos;une précision au pixel près.</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="244"/>
-        <source>Assume Unchecked Finite Numbers</source>
-        <translation>Présumer des Nombres Finis Sans Vérification</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="247"/>
-        <source>🔴 &lt;b&gt;Hazardous.&lt;/b&gt; Can cause unexpected freezes or crashes if damaged image files or invalid PDF streams encounter division by zero.</source>
-        <translation>🔴 &lt;b&gt;Risqué.&lt;/b&gt; Peut provoquer des blocages inattendus ou des plantages si des fichiers corrompus ou des flux PDF invalides entraînent une division par zéro.</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="270"/>
-        <source>🖥️ &lt;b&gt;Host CPU Architecture &amp; Microarchitecture Introspection&lt;/b&gt;</source>
-        <translation>🖥️ &lt;b&gt;Introspection de l&apos;Architecture et Microarchitecture du CPU Hôte&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="285"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="289"/>
         <source>Model:</source>
         <translation>Modèle :</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="290"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="294"/>
         <source>Logical Cores:</source>
         <translation>Cœurs Logiques :</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="295"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="296"/>
+        <source>%1 threads</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="299"/>
         <source>Cache Hierarchy:</source>
         <translation>Hiérarchie du Cache :</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="317"/>
-        <source>&lt;b&gt;Legend:&lt;/b&gt;</source>
-        <translation>&lt;b&gt;Légende :&lt;/b&gt;</translation>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="316"/>
+        <source>&lt;b&gt;Quick Preset:&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="322"/>
+        <source>🔄 Active Configuration in Use</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/compiler_wizard_dialog.cpp" line="323"/>
+        <source>🟢 Recommended for Host CPU (Zero Risk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="324"/>
+        <source>🎨 Optimized for Images &amp; Graphics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="325"/>
+        <source>⚡ Maximum Performance (UI + Images + Plugins)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="326"/>
+        <source>⚙️ Custom Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="327"/>
+        <source>🧹 Clear All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="379"/>
+        <source>⚠️ Unsupported by your processor (%1). Enabling this tier would cause crashes (SIGILL / Illegal Instruction).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="381"/>
+        <source>Unsupported by CPU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="395"/>
+        <source>Detailed information about %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="410"/>
+        <source>&lt;b&gt;Generated Compiler Flags:&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="437"/>
+        <source>📋 Copy Flags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="451"/>
+        <source>💾 Save Configuration</source>
+        <translation type="unfinished">💾 Save Configuration</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="457"/>
+        <source>⚙️ Save &amp;&amp; Recompile Now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="488"/>
+        <source>🧩 &lt;b&gt;Plugin Recompilation Required:&lt;/b&gt; This configuration extends deep optimizations to the underlying media and document engines. Recompiling will prompt you to update plugins (&lt;code&gt;bubez_pdf.so&lt;/code&gt;, &lt;code&gt;bubez_archive.so&lt;/code&gt;) or manage them manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="491"/>
+        <source>⚡ &lt;b&gt;Fast UI &amp; Image Build:&lt;/b&gt; Only BubezView main executable will be recompiled (~2s). Modular plugins will not be touched.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="654"/>
+        <source>&lt;span style=&apos;color: #facc15; font-weight: bold;&apos;&gt;🟡 Situational / Specialized&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="673"/>
+        <source>Copied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="673"/>
+        <source>Compiler flags copied to clipboard.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="695"/>
+        <source>Advanced Plugin Optimization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="696"/>
+        <source>&lt;h3&gt;Advanced Optimization Options Selected&lt;/h3&gt;&lt;p&gt;These advanced computation options will deliver their full performance potential once modular engine plugins are also recompiled.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Components affected by recompilation:&lt;/b&gt;&lt;br&gt;• Main application (&lt;code&gt;bubezview&lt;/code&gt;)&lt;br&gt;• PDF viewer plugin (&lt;code&gt;bubez_pdf.so&lt;/code&gt;)&lt;br&gt;• Archive manager plugin (&lt;code&gt;bubez_archive.so&lt;/code&gt;)&lt;/p&gt;&lt;p&gt;How would you like to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="704"/>
+        <source>⚙️ Recompile All (BubezView + Plugins)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="705"/>
+        <source>🧩 Manual Management...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Legend:&lt;/b&gt;</source>
+        <translation type="vanished">&lt;b&gt;Légende :&lt;/b&gt;</translation>
+    </message>
+    <message>
         <source>Safe &amp; Recommended</source>
-        <translation>Sûr et Recommandé</translation>
+        <translation type="vanished">Sûr et Recommandé</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="330"/>
         <source>Conditional</source>
-        <translation>Conditionnel</translation>
+        <translation type="vanished">Conditionnel</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="337"/>
         <source>Hazardous</source>
-        <translation>Risqué</translation>
+        <translation type="vanished">Risqué</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="345"/>
         <source>Quick Profile:</source>
-        <translation>Profil Rapide :</translation>
+        <translation type="vanished">Profil Rapide :</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="351"/>
         <source>🛡️ Standard Baseline (-O2)</source>
-        <translation>🛡️ Ligne de Base Standard (-O2)</translation>
+        <translation type="vanished">🛡️ Ligne de Base Standard (-O2)</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="352"/>
         <source>⚡ Performance Recommended (Green Only)</source>
-        <translation>⚡ Performance Recommandée (Vert Uniquement)</translation>
+        <translation type="vanished">⚡ Performance Recommandée (Vert Uniquement)</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="353"/>
         <source>🚀 Extreme Enthusiast (Green + Yellow)</source>
-        <translation>🚀 Enthousiaste Extrême (Vert + Jaune)</translation>
+        <translation type="vanished">🚀 Enthousiaste Extrême (Vert + Jaune)</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="354"/>
         <source>🧹 Custom / Clear All</source>
-        <translation>🧹 Personnalisé / Tout Effacer</translation>
+        <translation type="vanished">🧹 Personnalisé / Tout Effacer</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="398"/>
         <source>Recommended &amp; Safe: Highly pertinent to BubezView</source>
-        <translation>Recommandé et Sûr : Très pertinent pour BubezView</translation>
+        <translation type="vanished">Recommandé et Sûr : Très pertinent pour BubezView</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="401"/>
         <source>Conditional: Situational trade-offs</source>
-        <translation>Conditionnel : Compromis spécifiques</translation>
+        <translation type="vanished">Conditionnel : Compromis spécifiques</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="404"/>
         <source>Hazardous: Potential instability or non-standard math</source>
-        <translation>Risqué : Instabilité potentielle ou calculs non standard</translation>
+        <translation type="vanished">Risqué : Instabilité potentielle ou calculs non standard</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="435"/>
         <source>Detailed technical information about %1</source>
-        <translation>Informations techniques détaillées sur %1</translation>
+        <translation type="vanished">Informations techniques détaillées sur %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="459"/>
         <source>&lt;b&gt;Generated Compiler Command (CMAKE_CXX_FLAGS):&lt;/b&gt;</source>
-        <translation>&lt;b&gt;Commande de Compilateur Générée (CMAKE_CXX_FLAGS) :&lt;/b&gt;</translation>
+        <translation type="vanished">&lt;b&gt;Commande de Compilateur Générée (CMAKE_CXX_FLAGS) :&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="464"/>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="624"/>
         <source>📋 Copy</source>
-        <translation>📋 Copier</translation>
+        <translation type="vanished">📋 Copier</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="485"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="443"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="706"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="493"/>
         <source>💾 Save to Build Config</source>
-        <translation>💾 Enregistrer dans la Configuration de Build</translation>
+        <translation type="vanished">💾 Enregistrer dans la Configuration de Build</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="499"/>
         <source>🚀 Save &amp;&amp; Recompile Now</source>
-        <translation>🚀 Enregistrer et Recompiler Maintenant</translation>
+        <translation type="vanished">🚀 Enregistrer et Recompiler Maintenant</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="600"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="653"/>
         <source>&lt;span style=&apos;color: #4ade80; font-weight: bold;&apos;&gt;🟢 Recommended for BubezView&lt;/span&gt;</source>
         <translation>&lt;span style=&apos;color: #4ade80; font-weight: bold;&apos;&gt;🟢 Recommandé pour BubezView&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="602"/>
         <source>&lt;span style=&apos;color: #facc15; font-weight: bold;&apos;&gt;🟡 Optional / Situational&lt;/span&gt;</source>
-        <translation>&lt;span style=&apos;color: #facc15; font-weight: bold;&apos;&gt;🟡 Optionnel / Situationnel&lt;/span&gt;</translation>
+        <translation type="vanished">&lt;span style=&apos;color: #facc15; font-weight: bold;&apos;&gt;🟡 Optionnel / Situationnel&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="604"/>
         <source>&lt;span style=&apos;color: #f87171; font-weight: bold;&apos;&gt;🔴 Hazardous / Potential Instability&lt;/span&gt;</source>
-        <translation>&lt;span style=&apos;color: #f87171; font-weight: bold;&apos;&gt;🔴 Risqué / Instabilité Potentielle&lt;/span&gt;</translation>
+        <translation type="vanished">&lt;span style=&apos;color: #f87171; font-weight: bold;&apos;&gt;🔴 Risqué / Instabilité Potentielle&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="613"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="662"/>
         <source>Category</source>
         <translation>Catégorie</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="613"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="662"/>
         <source>Status</source>
         <translation>État</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="615"/>
+        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="664"/>
         <source>Compiler Flag Details: %1</source>
         <translation>Détails du Flag de Compilation : %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/compiler_wizard_dialog.cpp" line="622"/>
         <source>✅ Copied!</source>
-        <translation>✅ Copié !</translation>
+        <translation type="vanished">✅ Copié !</translation>
     </message>
 </context>
 <context>
@@ -3265,100 +4019,279 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>CustomSourceDialog</name>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="23"/>
-        <source>Configure Source Repository &amp; Build Flags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="37"/>
-        <source>Source Build Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="38"/>
-        <source>Select an official repository preset or specify a custom Git repository and branch/tag.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/ui/custom_source_dialog.cpp" line="50"/>
+        <source>%1 — Configuration &amp; Diagnostics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="53"/>
+        <source>%1 — Diagnostics &amp; Package Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="67"/>
+        <source>System Package Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="74"/>
+        <source>&lt;p&gt;&lt;b&gt;Component:&lt;/b&gt; &lt;code&gt;%1&lt;/code&gt;&lt;br&gt;&lt;b&gt;Distribution Package:&lt;/b&gt; &lt;code&gt;%2&lt;/code&gt;&lt;/p&gt;&lt;p style=&apos;color: #64748b; font-size: 11px;&apos;&gt;This component is managed directly as a native system package by your Linux distribution package manager. It does not require custom Git repository cloning or source compilation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="86"/>
+        <source>Diagnostic &amp; Runtime Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="106"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="252"/>
+        <source>▶ Run Verification Check</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="119"/>
+        <source>Close</source>
+        <translation type="unfinished">Fermer</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="146"/>
         <source>Official Stable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="51"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="147"/>
         <source>Development Git (main/master)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="52"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="148"/>
         <source>Custom Git URL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="59"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="155"/>
         <source>Preset:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="65"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="161"/>
         <source>Git Repository:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="71"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="167"/>
         <source>Branch / Tag:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="78"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="174"/>
         <source>Build Flags:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="89"/>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="155"/>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="166"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="185"/>
+        <source>Effective Compilation Parameters Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="207"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="351"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="362"/>
         <source>Test Connection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="96"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="212"/>
+        <source>↺ Reset Defaults</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="219"/>
+        <source>🔧 Source &amp; Git Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="230"/>
+        <source>Executes the official verification command to inspect binary version, system libraries, and runtime status.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="260"/>
+        <source>🔍 Diagnostics &amp; Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="268"/>
         <source>Cancel</source>
         <translation type="unfinished">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="101"/>
-        <source>Apply Source</source>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="273"/>
+        <source>Save Configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="155"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="391"/>
+        <source>Executing diagnostic test: %1 ...
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="399"/>
+        <source>Command: %1
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="400"/>
+        <source>Exit Status: %1 (code %2)
+
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="400"/>
+        <source>Normal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="400"/>
+        <source>Crash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="403"/>
+        <source>=== Standard Output ===
+%1
+
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="406"/>
+        <source>=== Standard Error / Warnings ===
+%1
+
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="409"/>
+        <source>Command finished with no output. Component executable appears functional.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="424"/>
+        <source>No diagnostic command available for %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="351"/>
         <source>Please specify a valid Git repository URL.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="160"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="356"/>
         <source>Testing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="169"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="365"/>
         <source>Connection Successful</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="170"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="366"/>
         <source>Successfully contacted the Git remote repository!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="172"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="368"/>
         <source>Connection Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/custom_source_dialog.cpp" line="173"/>
+        <location filename="../src/ui/custom_source_dialog.cpp" line="369"/>
         <source>Failed to contact Git remote repository.&lt;br&gt;Please check the network connection and repository URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>EnginePromptCard</name>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="74"/>
+        <source>🟢 Activate (System Binary)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="86"/>
+        <source>⚙️ Compile from Source...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="122"/>
+        <source>PDF Document Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="125"/>
+        <source>High-resolution vector PDF rendering, annotations, and bookmarks require the Poppler engine.&lt;br&gt;&lt;br&gt;You can activate it instantly using your distro&apos;s system packages, or compile the plugin from source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="129"/>
+        <source>Compressed Archive Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="132"/>
+        <source>Browsing and extracting ZIP, TAR, 7Z, and ISO archives requires the LibArchive engine.&lt;br&gt;&lt;br&gt;You can activate it instantly using your distro&apos;s system packages, or compile the plugin from source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="136"/>
+        <source>Media &amp; Playback Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="139"/>
+        <source>Audio and video playback with hardware acceleration requires the MPV engine.&lt;br&gt;&lt;br&gt;You can activate it instantly using your distro&apos;s system packages.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="143"/>
+        <source>Plugin Engine Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="145"/>
+        <source>This file requires an optional engine module that is currently inactive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="149"/>
+        <source>%1 Inactive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="150"/>
+        <source>File: &lt;b&gt;%1&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="165"/>
+        <source>Checking and installing packages...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="172"/>
+        <source>🟢 Engine activated successfully!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/engine_prompt_card.cpp" line="178"/>
+        <source>🟡 Engine is not yet active. Check system packages or compile from source.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3552,11 +4485,6 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>ExtensionFeatureRegistry</name>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="20"/>
-        <source>Poppler Qt6 Document Engine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="24"/>
         <source>Core vector and bitmap PDF rendering pipeline, text selection, and document navigation.</source>
         <translation type="unfinished"></translation>
@@ -3589,11 +4517,6 @@ Do you want to save them before proceeding?</source>
     <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="40"/>
         <source>Document Index / Bookmarks Panel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="52"/>
-        <source>Embedded Image Extraction (pdfimages)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3632,11 +4555,6 @@ Do you want to save them before proceeding?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="83"/>
-        <source>International &amp; Asian Font Support (poppler-data)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="86"/>
         <source>CMAP character encoding tables for rendering Chinese, Japanese, Korean, and non-Western glyphs.</source>
         <translation type="unfinished"></translation>
@@ -3669,11 +4587,6 @@ Do you want to save them before proceeding?</source>
     <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="102"/>
         <source>Search Bar (Ctrl+F)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="114"/>
-        <source>Advanced PDF Tools &amp; Optimization (QPDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3727,8 +4640,28 @@ Do you want to save them before proceeding?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="20"/>
+        <source>PDF Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="52"/>
+        <source>Image Extraction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="83"/>
+        <source>Asian &amp; International Font Support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="114"/>
+        <source>PDF Repair &amp; Advanced Tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="152"/>
-        <source>Optical Text Recognition (Tesseract OCR)</source>
+        <source>Optical Character Recognition (OCR)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3818,12 +4751,102 @@ Do you want to save them before proceeding?</source>
     </message>
     <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="226"/>
-        <source>LibArchive Universal Compression Engine</source>
+        <source>Archive Manager (LibArchive)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="230"/>
-        <source>Universal container streaming parser for ZIP, 7-Zip, TAR, CPIO, ISO, and multi-part archives.</source>
+        <source>Core archive plugin: universal container streaming parser for ZIP, 7-Zip, TAR, CPIO, ISO, and multi-part archives.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="258"/>
+        <source>7-Zip Multi-Core Engine (7zz)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="261"/>
+        <source>High-performance multi-threaded CLI compression engine driving BubezView Smart Store &amp; Fast Deflate.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="267"/>
+        <source>Multi-Threaded Parallel Compression</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="268"/>
+        <source>Saturates all CPU cores (-mmt=on) for blazing fast ZIP and 7Z archive packing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="270"/>
+        <source>Create Archive Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="274"/>
+        <source>Smart Store Video/Media Optimization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="275"/>
+        <source>Bypasses re-compression on multimedia files (.mkv, .mp4, .flac, .jpg) preserving maximum I/O throughput.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="277"/>
+        <source>Create Archive Dialog (ZIP/7Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="289"/>
+        <source>Zstandard Codec (zstd)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="292"/>
+        <source>Next-generation real-time compression algorithm developed by Meta for multi-gigabyte throughput.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="305"/>
+        <source>Multi-threaded Zstandard Compression</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="306"/>
+        <source>Parallelized zstd compression utilizing all available CPU cores without throttling system responsiveness.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="320"/>
+        <source>LZMA Codec (xz)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="344"/>
+        <source>Native Office Parser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="369"/>
+        <source>Office Document Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="416"/>
+        <source>Media Player</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="448"/>
+        <source>Audio Equalizer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_feature_model.cpp" line="479"/>
+        <source>Metadata &amp; Cover Art</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3838,8 +4861,8 @@ Do you want to save them before proceeding?</source>
     </message>
     <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="239"/>
-        <location filename="../src/ui/extension_feature_model.cpp" line="270"/>
         <location filename="../src/ui/extension_feature_model.cpp" line="301"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="332"/>
         <source>Archive Explorer Tab</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3855,259 +4878,209 @@ Do you want to save them before proceeding?</source>
     </message>
     <message>
         <location filename="../src/ui/extension_feature_model.cpp" line="246"/>
-        <location filename="../src/ui/extension_feature_model.cpp" line="277"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="308"/>
         <source>Menu: File → Compress to Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="258"/>
-        <source>Zstandard High-Speed Codec (zstd)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="261"/>
-        <source>Next-generation real-time compression algorithm developed by Meta for high throughput.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="267"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="298"/>
         <source>TAR.ZST &amp; ZST Archive Browsing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="268"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="299"/>
         <source>Open, inspect, and extract modern .tar.zst archives at multi-gigabyte per second speeds.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="274"/>
-        <source>Multi-threaded Compression</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="275"/>
-        <source>Parallelized compression utilizing all available CPU cores without throttling system responsiveness.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="289"/>
-        <source>LZMA Maximum Compression Codec (xz)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="292"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="323"/>
         <source>High-ratio compression format widely adopted across Linux package distributions and source tarballs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="298"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="329"/>
         <source>TAR.XZ &amp; XZ Archive Decompression</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="299"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="330"/>
         <source>Full read and write support for .tar.xz, .txz, and standalone .xz compressed streams.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="313"/>
-        <source>Internal Office Document Parser Engine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="317"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="348"/>
         <source>Embedded structured parser for Microsoft Office and OpenDocument files without external LibreOffice.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="323"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="354"/>
         <source>Native DOCX / ODT Parsing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="324"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="355"/>
         <source>Fast standalone formatting parsing directly into Qt rich-text documents without background daemons.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="326"/>
-        <location filename="../src/ui/extension_feature_model.cpp" line="359"/>
-        <location filename="../src/ui/extension_feature_model.cpp" line="366"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="357"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="390"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="397"/>
         <source>Office Viewer Tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="338"/>
-        <source>Office Document Reader &amp; Converter (LibreOffice)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="341"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="372"/>
         <source>Headless rendering and conversion of Microsoft Office (.docx, .xlsx, .pptx) and OpenDocument files.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="348"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="379"/>
         <source>LibreOffice Suite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="351"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="382"/>
         <source>Provides full-fidelity rendering for complex spreadsheets, charts, and presentations.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="356"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="387"/>
         <source>Word Document (.docx, .doc) Reading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="357"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="388"/>
         <source>Instant visual preview and text extraction for Microsoft Word and Writer files.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="363"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="394"/>
         <source>Excel Spreadsheet (.xlsx, .xls) Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="364"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="395"/>
         <source>Inspect sheets, multi-column tables, and formula results without opening external heavy office suites.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="370"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="401"/>
         <source>Headless PDF Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="371"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="402"/>
         <source>Batch converts office formats to PDF on-the-fly using background daemon worker.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="373"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="404"/>
         <source>Menu: File → Export Office Document as PDF...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="385"/>
-        <source>MPV Video &amp; Audio Playback Engine (libmpv)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="389"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="420"/>
         <source>Hardware-accelerated media engine driving GPU zero-copy video decode and PipeWire/ALSA audio.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="395"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="426"/>
         <source>Hardware GPU Video Decoding</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="396"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="427"/>
         <source>Zero-copy hardware surface rendering via VA-API, NVDEC, and VDPAU at 4K/60+ FPS.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="398"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="429"/>
         <source>Media Viewer Tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="402"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="433"/>
         <source>High-Fidelity Audio Streaming</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="403"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="434"/>
         <source>Bit-perfect low-latency PCM playback through PipeWire, PulseAudio, and native ALSA.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="405"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="436"/>
         <source>Audio Player Controls</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="417"/>
-        <source>Vectorized FFT &amp; Audio Spectrum Engine (FFTW3)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="420"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="451"/>
         <source>High-performance mathematical DSP engine computing 60 FPS real-time stereo oscilloscope and spectrum bars.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="426"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="457"/>
         <source>Real-time Stereo Vector Oscilloscope</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="427"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="458"/>
         <source>Computes high-frequency sound wave trajectories across left/right channels at near-zero CPU load.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="429"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="460"/>
         <source>Media Player → Visualizer Tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="433"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="464"/>
         <source>Spectrum Equalizer Bar Analysis</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="434"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="465"/>
         <source>Transforms raw PCM audio stream into 32-band frequency analysis with AVX2 vectorization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="436"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="467"/>
         <source>Media Player → Spectrum Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="448"/>
-        <source>Audio Tag &amp; Embedded Cover Art Engine (TagLib)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="451"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="482"/>
         <source>Ultra-fast parser for ID3v2, Vorbis Comment, FLAC, and APE audio metadata and album art extraction.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="457"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="488"/>
         <source>Embedded Album Art Extraction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="458"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="489"/>
         <source>Reads embedded front-cover JPEG/PNG bytes without decoding the full audio track.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="460"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="491"/>
         <source>Audio File Thumbnails &amp; Info Panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="464"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="495"/>
         <source>Batch Audio Tag Editing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="465"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="496"/>
         <source>Directly modifies song titles, artist, album, and release year in MP3/FLAC/M4A files.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_feature_model.cpp" line="467"/>
+        <location filename="../src/ui/extension_feature_model.cpp" line="498"/>
         <source>Menu: Tools → Edit Audio Tags (Ctrl+T)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4115,506 +5088,657 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>ExtensionRowWidget</name>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="76"/>
-        <source>CORE ENGINE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="79"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="78"/>
         <source>EXTENSION</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="87"/>
-        <source>Show enabled C++ classes and user interface integrations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="124"/>
-        <source>Binary</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="128"/>
-        <source>Source</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="132"/>
-        <source>✎</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="135"/>
-        <source>Configure custom Git repository and build flags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="192"/>
-        <location filename="../src/ui/extension_row_widget.cpp" line="358"/>
-        <source>Verify</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="201"/>
-        <source>Run integrity check (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="249"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="285"/>
         <source>Update ↑ %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="256"/>
-        <source>A newer version (%1) is available in your operating system repository.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="258"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="294"/>
         <source>Uninstall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="265"/>
-        <source>Remove this component from the system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="268"/>
-        <source>Build</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="275"/>
-        <source>Compile and embed this component from source</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="277"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="303"/>
         <source>Install</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="284"/>
-        <source>Install official package &apos;%1&apos; via package manager</source>
+        <location filename="../src/ui/extension_row_widget.cpp" line="75"/>
+        <source>PLUGIN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="329"/>
-        <source>Verifying...</source>
+        <location filename="../src/ui/extension_row_widget.cpp" line="86"/>
+        <source>Show details, descriptions and technical capabilities</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="338"/>
-        <source>✓ Verified</source>
+        <location filename="../src/ui/extension_row_widget.cpp" line="135"/>
+        <source>Source options, git repository &amp; diagnostics</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="345"/>
-        <source>❌ Failed</source>
+        <location filename="../src/ui/extension_row_widget.cpp" line="136"/>
+        <source>System package information &amp; diagnostic verification</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="369"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="163"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="191"/>
+        <source>⚡ Source (Pending Build)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="173"/>
+        <source>Source build mode active (pending compilation).
+Click to switch to system package mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="176"/>
+        <source>Not installed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="186"/>
+        <source>Not installed.
+Click to switch to source compilation mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="187"/>
+        <source>This component is neither installed nor compilable on this system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="191"/>
+        <source>⚡ Compiled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="201"/>
+        <source>In use: built from source with native CPU optimization (-O3).
+Click to switch to system package.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="202"/>
+        <source>Source build mode active (pending compilation).
+Click to switch to system package.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="205"/>
+        <source>📦 System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="215"/>
+        <source>In use: official distribution package.
+Click to switch to source compilation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="216"/>
+        <source>In use: official distribution package.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="264"/>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="271"/>
+        <source>Removes locally compiled binaries from ~/.local/bin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="273"/>
+        <source>Compile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="280"/>
+        <source>Compile this component from official source code with high-performance flags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="292"/>
+        <source>An update (%1) is available in system repositories.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="301"/>
+        <source>Removes the package from the operating system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="310"/>
+        <source>Installs the official package via the system package manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="325"/>
+        <source>Delete Compiled Binaries</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="326"/>
+        <source>Do you want to remove the compiled binaries of &apos;%1&apos; from ~/.local/bin?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="371"/>
+        <source>Diagnostic command executed successfully with no errors.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="371"/>
+        <source>Diagnostic command exited with error code %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="374"/>
+        <source>Diagnostic Passed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="375"/>
+        <source>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; is working properly.&lt;/p&gt;&lt;pre&gt;%2&lt;/pre&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="377"/>
+        <source>Diagnostic Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="378"/>
+        <source>&lt;p&gt;Could not verify &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Command: &lt;code&gt;%2&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;%3&lt;/pre&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/extension_row_widget.cpp" line="396"/>
         <source>%1 - Details &amp; C++ Hooks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="383"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="410"/>
         <source>Integrated C++ Methods &amp; Capabilities:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="391"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="418"/>
         <source>Optional Sub-Dependencies:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="394"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="421"/>
         <source>Installed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extension_row_widget.cpp" line="394"/>
+        <location filename="../src/ui/extension_row_widget.cpp" line="421"/>
         <source>Missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FallbackNoticeDialog</name>
+    <message>
+        <location filename="../src/ui/fallback_notice_dialog.cpp" line="30"/>
+        <source>Performance Optimization Notice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/fallback_notice_dialog.cpp" line="52"/>
+        <source>&lt;h3 style=&apos;margin:0;&apos;&gt;Performance Notice: %1&lt;/h3&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/fallback_notice_dialog.cpp" line="57"/>
+        <source>&lt;p&gt;The &lt;b&gt;High-Performance&lt;/b&gt; profile is enabled, but a custom source build for &lt;b&gt;%1&lt;/b&gt; is not yet installed.&lt;/p&gt;&lt;p&gt;BubezView will proceed using the standard system package:&lt;br&gt;&lt;code&gt;%2&lt;/code&gt;&lt;/p&gt;&lt;p style=&apos;color: #666; font-size: 11px;&apos;&gt;To achieve maximum speed with hardware optimizations (-O3, native CPU instructions), you can compile this component from source at any time.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/fallback_notice_dialog.cpp" line="72"/>
+        <source>Do not show this notice again for %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/fallback_notice_dialog.cpp" line="80"/>
+        <source>Compile from Source Now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/fallback_notice_dialog.cpp" line="85"/>
+        <source>Use System Version</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>FirstRunWizard</name>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="29"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="96"/>
         <source>BubezView Setup Wizard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="45"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="111"/>
         <source>Next &gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="46"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="112"/>
         <source>&lt; Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="47"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="113"/>
         <source>Finish &amp; Launch BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="48"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="114"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="60"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="126"/>
         <source>Welcome to BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="61"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="127"/>
         <source>High-performance native file viewer and instant preview tool for Linux.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="72"/>
-        <source>This wizard will help you configure your preferred keyboard shortcuts, file manager integrations, Office rendering engine, and visual appearance.&lt;br&gt;&lt;br&gt;You can complete this setup in under a minute, and change any preference later from the Settings dialog.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="83"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="149"/>
         <source>Detected Environment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="88"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="154"/>
         <source>&lt;b&gt;Desktop Environment:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Platform:&lt;/b&gt; Native C++ / Qt6 engine (lightweight, hardware-accelerated)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="105"/>
-        <source>Desktop &amp; File Manager Integration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="106"/>
-        <source>Configure how BubezView integrates with your file manager and keyboard shortcuts.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="112"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="359"/>
         <source>Primary Preview Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="116"/>
-        <source>Space (macOS Quick Look style - Recommended for single-key preview)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="120"/>
-        <source>Ctrl + Space (Preserves the Space key for file selection in Dolphin)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="132"/>
-        <source>File Manager Actions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="136"/>
-        <source>Add &apos;Quick Preview with BubezView&apos; to file manager context menus (Dolphin, Nemo, Nautilus)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="142"/>
-        <source>Register system-wide global shortcut to preview selected desktop items</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="158"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="171"/>
         <source>Processor &amp; Hardware Optimization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="159"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="172"/>
         <source>Select the performance profile tailored for your computer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="165"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="178"/>
         <source>Detected Host Processor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="169"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="182"/>
         <source>Generic x86-64 Processor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="173"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="186"/>
         <source>&lt;b&gt;Model:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Architecture tier:&lt;/b&gt; x86-64-%2 (%3 logical cores)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="182"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="195"/>
         <source>Performance Profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="187"/>
-        <source>🖥️ PC Desktop / Workstation (High Performance)
-   Maximizes compute speed. Ideal for complex PDFs, massive RAW photos, and heavy media.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="193"/>
-        <source>💻 PC Laptop / Efficiency (Low Power Consumption)
-   Balanced profile with low battery impact and minimal temperatures. Ready immediately.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="199"/>
-        <source>⚖️ Balanced (Recommended for Modern Everyday Computing)
-   Combines smooth response times with moderate power usage.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="213"/>
-        <source>⚙️ Customize / Advanced...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="231"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="247"/>
         <source>Engines &amp; Functional Modules</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="232"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="248"/>
         <source>Select which document readers and preview engines you want to enable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="237"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="253"/>
         <source>Module Setup Preset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="242"/>
-        <source>🔹 Minimal (Ultra-Lightweight Core)
-   High-speed image viewer and plain text reader only. Zero extra overhead.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="248"/>
-        <source>⭐ Recommended (Standard Universal Viewer)
-   Core viewers + PDF documents (Poppler), compressed archives, and media playback.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="254"/>
-        <source>📦 Reader Engines Only
-   Enables dedicated parsing engines for PDF, Archives, and Audio/Video.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="260"/>
-        <source>🚀 Complete (All Engines &amp; Extensions)
-   Full suite including Office documents (LibreOffice / native parser), QPDF tools, and QR codes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="266"/>
-        <source>⚙️ Customize
-   Full granular control over each individual engine, library, and compilation option.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="281"/>
-        <source>⚙️ Open Advanced Module Manager...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="405"/>
-        <source>Laptop / Efficiency (Low Power)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="407"/>
-        <source>Desktop / Workstation (High Performance)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="409"/>
-        <source>Balanced (Modern Everyday Computing)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="412"/>
-        <source>Recommended (PDF, Archives, Media)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="414"/>
-        <source>Minimal Core (Images &amp; Text)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="416"/>
-        <source>Engines Only (PDF, Archives, Media)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="418"/>
-        <source>Complete Suite (All Modules &amp; Office)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="420"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="519"/>
         <source>Custom Configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="439"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="539"/>
         <source>Hardware Performance Profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="440"/>
-        <source>Functional Modules Preset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="305"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="317"/>
         <source>Appearance &amp; Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="306"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="318"/>
         <source>Customize the visual style and UI components of BubezView.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="311"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="323"/>
         <source>Application Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="315"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="327"/>
         <source>Native System Theme (Matches desktop light/dark mode)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="316"/>
-        <source>Dark Modern (Deep dark theme for contrast)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="317"/>
-        <source>Light Clean (Bright minimalist theme)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="322"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="334"/>
         <source>Viewer Components</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="326"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="338"/>
         <source>Show bottom thumbnail filmstrip when viewing folders, galleries, or multi-page documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="340"/>
-        <source>Window &amp; Navigation Behavior</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="341"/>
-        <source>Configure shortcuts and window memory for seamless daily use.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="346"/>
-        <source>Quick Navigation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="350"/>
-        <source>Instant dismissal: Press Space or Escape to instantly close the viewer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="357"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="445"/>
         <source>Remember window size and position across preview sessions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="365"/>
-        <source>Shortcuts &amp; Launchers</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="46"/>
+        <source>Test Spacebar Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="369"/>
-        <source>Place a quick launcher on the Desktop (~/Desktop or ~/Scrivania)</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="51"/>
+        <source>&lt;h3&gt;🧪 Testing Spacebar Key&lt;/h3&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="383"/>
-        <source>Setup Complete!</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="56"/>
+        <source>Please press the &lt;b&gt;Spacebar&lt;/b&gt; on your keyboard now to verify key capture.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="384"/>
-        <source>Review your configuration before launching BubezView.</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="64"/>
+        <source>Cancel / Having Issues</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="423"/>
-        <source>Native</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="79"/>
+        <source>&lt;b style=&apos;color:#4ade80;&apos;&gt;✅ Spacebar detected successfully!&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="437"/>
-        <source>Summary of Your Choices:</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="138"/>
+        <source>This wizard will help you configure your preferred processor optimizations, document modules, visual appearance, and navigation behavior.&lt;br&gt;&lt;br&gt;You can complete this setup in under a minute, and change any preference later from the Settings dialog or directly from application menus.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="200"/>
+        <source>🚀 High Performance (Everything Compiled from Source)
+   Maximum speed. All engines compiled with aggressive host optimizations (-O3, -march=native, LTO).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="206"/>
+        <source>📦 Balanced (System Packaged Dependencies)
+   Daily use. Uses precompiled system libraries from your distribution with zero compile wait times.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="231"/>
+        <source>&lt;i&gt;Optimal profile detected automatically. Changing it will trigger a recompile (also editable later in Settings).&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="260"/>
+        <source>⭐ Keep Existing Setup (No Installation or Compilation)
+   Does not install or compile anything. Launches BubezView immediately in its current state.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="265"/>
+        <source>⚙️ Customize Individually
+   Choose each component and engine manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="282"/>
+        <source>⚙️ Configure Extensions &amp; Engines...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="288"/>
+        <source>ℹ️ You can also configure or recompile individual extensions at any time from Settings → Extensions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="328"/>
+        <source>Dark Slate (Deep modern slate theme)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="329"/>
+        <source>Breeze Dark (KDE Breeze-inspired dark styling)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="352"/>
+        <source>Navigation, Shortcuts &amp; Behavior</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="353"/>
+        <source>Configure shortcuts, dismissal keys, and navigation caching for daily use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="363"/>
+        <source>&lt;b&gt;Primary Shortcut:&lt;/b&gt; Press &lt;b&gt;Space&lt;/b&gt; on any file in your file manager for instant preview.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="370"/>
+        <source>🧪 Test Shortcut...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="382"/>
+        <source>Use Ctrl + Space fallback (connects to trigger_bubez.sh if Space is reserved by Dolphin)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="400"/>
+        <source>&lt;b&gt;Important note for trigger fallback:&lt;/b&gt; In your desktop system settings (KDE Plasma / GNOME Shortcuts), you will need to bind &lt;b&gt;Ctrl + Space&lt;/b&gt; to the trigger script located at:&lt;br&gt;&lt;code style=&apos;color:#38bdf8;&apos;&gt;%1&lt;/code&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="421"/>
+        <source>&lt;b style=&apos;color:#4ade80;&apos;&gt;✅ Spacebar verified and functioning properly!&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="425"/>
+        <source>&lt;b style=&apos;color:#facc15;&apos;&gt;⚠️ Space key not detected or conflict reported. Fallback available:&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="434"/>
+        <source>Navigation &amp; Window Memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/first_run_wizard.cpp" line="438"/>
+        <source>Instant dismissal: Press Escape (Esc) to close the viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="452"/>
+        <source>Preload adjacent files: Cache next and previous items in background for instant browsing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="459"/>
+        <source>Memory standby: Release preview memory cache when idle to save RAM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="468"/>
+        <source>Desktop Integration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="472"/>
+        <source>Place a quick launcher on the Desktop (~/Desktop or ~/Scrivania)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="487"/>
+        <source>Setup Complete!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="488"/>
+        <source>Review your configuration before launching BubezView.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="510"/>
+        <source>🚀 High Performance (Compiled from Source)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="511"/>
+        <source>📦 Balanced (System Packages)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="513"/>
+        <source>Default (Keep Current Setup)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="515"/>
+        <source>Core Plugins Only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="517"/>
+        <source>Complete Suite</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="522"/>
+        <source>Native</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="537"/>
+        <source>Summary of Your Choices:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="538"/>
         <source>Primary Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="441"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="540"/>
+        <source>Modules Preset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="541"/>
         <source>Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="442"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="542"/>
         <source>Thumbnail Filmstrip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="442"/>
-        <location filename="../src/ui/first_run_wizard.cpp" line="443"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="542"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="544"/>
         <source>Enabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="442"/>
-        <location filename="../src/ui/first_run_wizard.cpp" line="443"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="542"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="544"/>
         <source>Disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="443"/>
-        <source>Quick Dismissal (Space/Esc)</source>
+        <location filename="../src/ui/first_run_wizard.cpp" line="543"/>
+        <source>Quick Dismissal Key</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="444"/>
+        <location filename="../src/ui/first_run_wizard.cpp" line="543"/>
+        <source>Escape (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="544"/>
+        <source>Preload Cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="559"/>
+        <source>🚀 Complete Suite (BubezView + Core Plugins &amp; Extensions)
+   Builds BubezView and all core plugins from source with aggressive host optimizations,
+   and verifies optional tools (QPDF, Tesseract OCR).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="564"/>
+        <source>📦 Core Plugins Only (Fast Build)
+   Builds BubezView and core viewer plugins from source with high-performance flags.
+   Skips optional extensions (OCR, QPDF).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="570"/>
+        <source>🚀 Complete Suite (System Packages)
+   Uses prebuilt binaries and installs system packages for all extensions (QPDF, Tesseract OCR)
+   with zero compilation time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="575"/>
+        <source>📦 Core Plugins Only (System Packages)
+   Uses prebuilt binaries for core viewers and skips optional extensions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="605"/>
+        <source>Compiling BubezView — High Performance Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="545"/>
         <source>Click &apos;Finish &amp; Launch BubezView&apos; to apply these settings and begin!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4681,190 +5805,190 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>FolderViewer</name>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="372"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="367"/>
         <source>⬆ Up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="374"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="369"/>
         <source>Go to parent folder (Backspace)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="402"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="397"/>
         <source>Inspector</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="406"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="401"/>
         <source>Show or hide inspector panel (key I)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="427"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="472"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="422"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="467"/>
         <source>Select Folder to Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="465"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="460"/>
         <source>Remove from Bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="471"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="466"/>
         <source>Add Folder to Bookmarks...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="518"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="513"/>
         <source>📋 INSPECTOR</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="539"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="534"/>
         <source>Select an item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="649"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="656"/>
         <source>%1 • %2 Items (%3)</source>
         <translation>%1 • %2 Items (%3)</translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1177"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1184"/>
         <source>Home</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1178"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1185"/>
         <source>Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1179"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1186"/>
         <source>Downloads</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1180"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1187"/>
         <source>Pictures</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1181"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1188"/>
         <source>Music</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1182"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1189"/>
         <source>Videos</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1183"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1190"/>
         <source>Desktop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1184"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1191"/>
         <source>File System</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1210"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1217"/>
         <source>Add Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1214"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1221"/>
         <source>Click to bookmark a custom folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1252"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1259"/>
         <source>No item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1257"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1264"/>
         <source>Select a file or folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1293"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1381"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1300"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1388"/>
         <source>Type:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1293"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1300"/>
         <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1299"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1301"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1386"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1388"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1306"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1308"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1393"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1395"/>
         <source>Created:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1310"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1397"/>
+        <source>Permissions:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1319"/>
+        <source>File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1350"/>
+        <source>(Unable to read text file)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1385"/>
+        <source>bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1301"/>
+        <source>Items:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1301"/>
+        <source>%1 items (%2 files, %3 folders)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1302"/>
+        <source>Total Size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/folder/folder_viewer.cpp" line="1303"/>
         <location filename="../src/viewers/folder/folder_viewer.cpp" line="1390"/>
-        <source>Permissions:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1312"/>
-        <source>File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1343"/>
-        <source>(Unable to read text file)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1378"/>
-        <source>bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1294"/>
-        <source>Items:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1294"/>
-        <source>%1 items (%2 files, %3 folders)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1295"/>
-        <source>Total Size:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1296"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1383"/>
         <source>Location:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1297"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1384"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1304"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1391"/>
         <source>Modified:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1382"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1389"/>
         <source>Size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1398"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1405"/>
         <source>Resolution:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4960,166 +6084,191 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="196"/>
+        <location filename="../src/ui/mainwindow.cpp" line="227"/>
         <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="198"/>
-        <location filename="../src/ui/mainwindow.cpp" line="810"/>
+        <location filename="../src/ui/mainwindow.cpp" line="229"/>
+        <location filename="../src/ui/mainwindow.cpp" line="847"/>
         <source>Open File...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="201"/>
-        <location filename="../src/ui/mainwindow.cpp" line="811"/>
+        <location filename="../src/ui/mainwindow.cpp" line="232"/>
+        <location filename="../src/ui/mainwindow.cpp" line="848"/>
         <source>Open Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="206"/>
-        <location filename="../src/ui/mainwindow.cpp" line="812"/>
+        <location filename="../src/ui/mainwindow.cpp" line="237"/>
+        <location filename="../src/ui/mainwindow.cpp" line="849"/>
         <source>Open with Default Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="209"/>
+        <location filename="../src/ui/mainwindow.cpp" line="240"/>
         <source>Open With...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="212"/>
-        <location filename="../src/ui/mainwindow.cpp" line="813"/>
+        <location filename="../src/ui/mainwindow.cpp" line="243"/>
+        <location filename="../src/ui/mainwindow.cpp" line="850"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="216"/>
-        <location filename="../src/ui/mainwindow.cpp" line="632"/>
-        <location filename="../src/ui/mainwindow.cpp" line="815"/>
+        <location filename="../src/ui/mainwindow.cpp" line="247"/>
+        <location filename="../src/ui/mainwindow.cpp" line="669"/>
+        <location filename="../src/ui/mainwindow.cpp" line="852"/>
         <source>Export As...</source>
         <translation>Exporter sous...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="219"/>
-        <location filename="../src/ui/mainwindow.cpp" line="814"/>
+        <location filename="../src/ui/mainwindow.cpp" line="250"/>
+        <location filename="../src/ui/mainwindow.cpp" line="851"/>
         <source>Save Copy As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="222"/>
-        <location filename="../src/ui/mainwindow.cpp" line="306"/>
-        <location filename="../src/ui/mainwindow.cpp" line="818"/>
+        <location filename="../src/ui/mainwindow.cpp" line="253"/>
+        <source>Compress / Create Archive...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="256"/>
+        <location filename="../src/ui/mainwindow.cpp" line="340"/>
+        <location filename="../src/ui/mainwindow.cpp" line="855"/>
         <source>Move to Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="227"/>
-        <location filename="../src/ui/mainwindow.cpp" line="816"/>
+        <location filename="../src/ui/mainwindow.cpp" line="261"/>
+        <location filename="../src/ui/mainwindow.cpp" line="853"/>
         <source>Print...</source>
         <translation>Imprimer...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="231"/>
+        <location filename="../src/ui/mainwindow.cpp" line="265"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="238"/>
+        <location filename="../src/ui/mainwindow.cpp" line="272"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="245"/>
+        <location filename="../src/ui/mainwindow.cpp" line="279"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="252"/>
+        <location filename="../src/ui/mainwindow.cpp" line="286"/>
         <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="254"/>
-        <location filename="../src/ui/mainwindow.cpp" line="821"/>
+        <location filename="../src/ui/mainwindow.cpp" line="288"/>
+        <location filename="../src/ui/mainwindow.cpp" line="858"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="265"/>
-        <location filename="../src/ui/mainwindow.cpp" line="822"/>
+        <location filename="../src/ui/mainwindow.cpp" line="299"/>
+        <location filename="../src/ui/mainwindow.cpp" line="859"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="278"/>
-        <location filename="../src/ui/mainwindow.cpp" line="823"/>
+        <location filename="../src/ui/mainwindow.cpp" line="312"/>
+        <location filename="../src/ui/mainwindow.cpp" line="860"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="281"/>
-        <location filename="../src/ui/mainwindow.cpp" line="824"/>
+        <location filename="../src/ui/mainwindow.cpp" line="315"/>
+        <location filename="../src/ui/mainwindow.cpp" line="861"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="284"/>
-        <location filename="../src/ui/mainwindow.cpp" line="825"/>
+        <location filename="../src/ui/mainwindow.cpp" line="318"/>
+        <location filename="../src/ui/mainwindow.cpp" line="862"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="289"/>
-        <location filename="../src/ui/mainwindow.cpp" line="826"/>
+        <location filename="../src/ui/mainwindow.cpp" line="323"/>
+        <location filename="../src/ui/mainwindow.cpp" line="863"/>
         <source>Rotate 90° Clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="292"/>
-        <location filename="../src/ui/mainwindow.cpp" line="827"/>
+        <location filename="../src/ui/mainwindow.cpp" line="326"/>
+        <location filename="../src/ui/mainwindow.cpp" line="864"/>
         <source>Rotate 90° Counterclockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="295"/>
-        <location filename="../src/ui/mainwindow.cpp" line="828"/>
+        <location filename="../src/ui/mainwindow.cpp" line="329"/>
+        <location filename="../src/ui/mainwindow.cpp" line="865"/>
         <source>Flip Horizontally</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="298"/>
-        <location filename="../src/ui/mainwindow.cpp" line="829"/>
+        <location filename="../src/ui/mainwindow.cpp" line="332"/>
+        <location filename="../src/ui/mainwindow.cpp" line="866"/>
         <source>Flip Vertically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="673"/>
+        <location filename="../src/ui/mainwindow.cpp" line="347"/>
+        <source>Add Files to Archive...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="348"/>
+        <source>Add Folder to Archive...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="349"/>
+        <source>Remove Selected from Archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="430"/>
+        <source>Cryptographic Digital Signature (PAdES / .p7m)...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="710"/>
         <source>Main Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="687"/>
+        <location filename="../src/ui/mainwindow.cpp" line="724"/>
         <source>Button Style</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="699"/>
+        <location filename="../src/ui/mainwindow.cpp" line="736"/>
         <source>Icons Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="700"/>
+        <location filename="../src/ui/mainwindow.cpp" line="737"/>
         <source>Text Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="701"/>
+        <location filename="../src/ui/mainwindow.cpp" line="738"/>
         <source>Text Beside Icons</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="702"/>
+        <location filename="../src/ui/mainwindow.cpp" line="739"/>
         <source>Text Under Icons</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5128,245 +6277,240 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">Inverser les couleurs</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="303"/>
+        <location filename="../src/ui/mainwindow.cpp" line="337"/>
         <source>Rename Item...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="309"/>
+        <location filename="../src/ui/mainwindow.cpp" line="343"/>
         <source>New Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="353"/>
+        <location filename="../src/ui/mainwindow.cpp" line="398"/>
         <source>Typewriter / Text Insert...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="377"/>
+        <location filename="../src/ui/mainwindow.cpp" line="422"/>
         <source>Watermark / Stamp...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="367"/>
+        <location filename="../src/ui/mainwindow.cpp" line="412"/>
         <source>Shapes &amp; Arrows...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="373"/>
+        <location filename="../src/ui/mainwindow.cpp" line="418"/>
         <source>Redact / Blackout...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="401"/>
+        <location filename="../src/ui/mainwindow.cpp" line="446"/>
         <source>Merge PDF Documents...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="397"/>
+        <location filename="../src/ui/mainwindow.cpp" line="442"/>
         <source>Organize PDF Pages...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="315"/>
-        <location filename="../src/ui/mainwindow.cpp" line="837"/>
+        <location filename="../src/ui/mainwindow.cpp" line="354"/>
+        <location filename="../src/ui/mainwindow.cpp" line="874"/>
         <source>Edit Text Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="323"/>
+        <location filename="../src/ui/mainwindow.cpp" line="362"/>
         <source>Find &amp; Replace...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="326"/>
+        <location filename="../src/ui/mainwindow.cpp" line="365"/>
         <source>Go to Line...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="329"/>
-        <location filename="../src/ui/mainwindow.cpp" line="844"/>
+        <location filename="../src/ui/mainwindow.cpp" line="368"/>
+        <location filename="../src/ui/mainwindow.cpp" line="881"/>
         <source>Duplicate Current Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="334"/>
-        <location filename="../src/ui/mainwindow.cpp" line="845"/>
+        <location filename="../src/ui/mainwindow.cpp" line="373"/>
+        <location filename="../src/ui/mainwindow.cpp" line="882"/>
         <source>Delete Current Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="339"/>
-        <location filename="../src/ui/mainwindow.cpp" line="846"/>
+        <location filename="../src/ui/mainwindow.cpp" line="378"/>
+        <location filename="../src/ui/mainwindow.cpp" line="883"/>
         <source>Toggle Comment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="347"/>
-        <source>PDF Markup &amp; Tools Hub...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/mainwindow.cpp" line="358"/>
+        <location filename="../src/ui/mainwindow.cpp" line="403"/>
         <source>Annotations &amp; Markup Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="360"/>
+        <location filename="../src/ui/mainwindow.cpp" line="405"/>
         <source>Highlighter...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="381"/>
+        <location filename="../src/ui/mainwindow.cpp" line="393"/>
         <source>Insert Image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="385"/>
+        <location filename="../src/ui/mainwindow.cpp" line="426"/>
         <source>Signature (Visual &amp; Digital)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="390"/>
+        <location filename="../src/ui/mainwindow.cpp" line="435"/>
         <source>PDF Page &amp; Document Operations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="392"/>
+        <location filename="../src/ui/mainwindow.cpp" line="437"/>
         <source>Insert Blank A4 Page...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="403"/>
+        <location filename="../src/ui/mainwindow.cpp" line="448"/>
         <source>Repair PDF Document...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="408"/>
+        <location filename="../src/ui/mainwindow.cpp" line="386"/>
         <source>Select Area...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="420"/>
+        <location filename="../src/ui/mainwindow.cpp" line="457"/>
         <source>&amp;View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="422"/>
-        <location filename="../src/ui/mainwindow.cpp" line="791"/>
+        <location filename="../src/ui/mainwindow.cpp" line="459"/>
+        <location filename="../src/ui/mainwindow.cpp" line="828"/>
         <source>Folder Gallery View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="437"/>
-        <location filename="../src/ui/mainwindow.cpp" line="803"/>
+        <location filename="../src/ui/mainwindow.cpp" line="474"/>
+        <location filename="../src/ui/mainwindow.cpp" line="840"/>
         <source>Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="440"/>
-        <location filename="../src/ui/mainwindow.cpp" line="804"/>
+        <location filename="../src/ui/mainwindow.cpp" line="477"/>
+        <location filename="../src/ui/mainwindow.cpp" line="841"/>
         <source>Photo Slideshow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="443"/>
+        <location filename="../src/ui/mainwindow.cpp" line="480"/>
         <source>Inspector / Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="447"/>
+        <location filename="../src/ui/mainwindow.cpp" line="484"/>
         <source>▲ Prev Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="455"/>
+        <location filename="../src/ui/mainwindow.cpp" line="492"/>
         <source>▼ Next Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="465"/>
-        <location filename="../src/ui/mainwindow.cpp" line="798"/>
+        <location filename="../src/ui/mainwindow.cpp" line="502"/>
+        <location filename="../src/ui/mainwindow.cpp" line="835"/>
         <source>Zoom Tool (Mouse Wheel)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="468"/>
+        <location filename="../src/ui/mainwindow.cpp" line="505"/>
         <source>Toggle mouse wheel functionality between scrolling and zooming</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="470"/>
-        <location filename="../src/ui/mainwindow.cpp" line="799"/>
+        <location filename="../src/ui/mainwindow.cpp" line="507"/>
+        <location filename="../src/ui/mainwindow.cpp" line="836"/>
         <source>Zoom In</source>
         <translation>Zoom avant</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="473"/>
-        <location filename="../src/ui/mainwindow.cpp" line="800"/>
+        <location filename="../src/ui/mainwindow.cpp" line="510"/>
+        <location filename="../src/ui/mainwindow.cpp" line="837"/>
         <source>Zoom Out</source>
         <translation>Zoom arrière</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="476"/>
-        <location filename="../src/ui/mainwindow.cpp" line="801"/>
+        <location filename="../src/ui/mainwindow.cpp" line="513"/>
+        <location filename="../src/ui/mainwindow.cpp" line="838"/>
         <source>Zoom 100%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="479"/>
-        <location filename="../src/ui/mainwindow.cpp" line="802"/>
+        <location filename="../src/ui/mainwindow.cpp" line="516"/>
+        <location filename="../src/ui/mainwindow.cpp" line="839"/>
         <source>Fit to Window</source>
         <translation>Ajuster à la fenêtre</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="484"/>
-        <location filename="../src/ui/mainwindow.cpp" line="805"/>
+        <location filename="../src/ui/mainwindow.cpp" line="521"/>
+        <location filename="../src/ui/mainwindow.cpp" line="842"/>
         <source>Thumbnail Strip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="489"/>
-        <location filename="../src/ui/mainwindow.cpp" line="806"/>
+        <location filename="../src/ui/mainwindow.cpp" line="526"/>
+        <location filename="../src/ui/mainwindow.cpp" line="843"/>
         <source>Document Outline (TOC)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="493"/>
-        <location filename="../src/ui/mainwindow.cpp" line="838"/>
+        <location filename="../src/ui/mainwindow.cpp" line="530"/>
+        <location filename="../src/ui/mainwindow.cpp" line="875"/>
         <source>Line Numbers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="499"/>
-        <location filename="../src/ui/mainwindow.cpp" line="839"/>
+        <location filename="../src/ui/mainwindow.cpp" line="536"/>
+        <location filename="../src/ui/mainwindow.cpp" line="876"/>
         <source>Syntax Highlighting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="505"/>
-        <location filename="../src/ui/mainwindow.cpp" line="840"/>
+        <location filename="../src/ui/mainwindow.cpp" line="542"/>
+        <location filename="../src/ui/mainwindow.cpp" line="877"/>
         <source>Word Wrap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="511"/>
-        <location filename="../src/ui/mainwindow.cpp" line="841"/>
+        <location filename="../src/ui/mainwindow.cpp" line="548"/>
+        <location filename="../src/ui/mainwindow.cpp" line="878"/>
         <source>Show Whitespace Characters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="562"/>
+        <location filename="../src/ui/mainwindow.cpp" line="599"/>
         <source>Show Uninstalled Features</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="569"/>
+        <location filename="../src/ui/mainwindow.cpp" line="606"/>
         <source>Show Unsupported Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="609"/>
+        <location filename="../src/ui/mainwindow.cpp" line="646"/>
         <source>⚙️ Internal Office Viewer [Inactive]...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5375,42 +6519,42 @@ Do you want to save them before proceeding?</source>
         <translation type="obsolete">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="615"/>
+        <location filename="../src/ui/mainwindow.cpp" line="652"/>
         <source>⚙️ Advanced PDF Tools (QPDF) [Not installed]...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="621"/>
+        <location filename="../src/ui/mainwindow.cpp" line="658"/>
         <source>⚙️ Extract Images from PDF [pdfimages missing]...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="533"/>
-        <location filename="../src/ui/mainwindow.cpp" line="705"/>
+        <location filename="../src/ui/mainwindow.cpp" line="570"/>
+        <location filename="../src/ui/mainwindow.cpp" line="742"/>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="428"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1282"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1293"/>
+        <location filename="../src/ui/mainwindow.cpp" line="465"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1333"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1344"/>
         <source>Previous File (Left Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="432"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1287"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1298"/>
+        <location filename="../src/ui/mainwindow.cpp" line="469"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1338"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1349"/>
         <source>Next File (Right Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="540"/>
+        <location filename="../src/ui/mainwindow.cpp" line="577"/>
         <source>Show Status Bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="549"/>
+        <location filename="../src/ui/mainwindow.cpp" line="586"/>
         <source>Show Menu Bar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5423,22 +6567,22 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">Afficher les fichiers non pris en charge</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="583"/>
+        <location filename="../src/ui/mainwindow.cpp" line="620"/>
         <source>&amp;Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="585"/>
+        <location filename="../src/ui/mainwindow.cpp" line="622"/>
         <source>Find in Document...</source>
         <translation>Rechercher dans le document...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="588"/>
+        <location filename="../src/ui/mainwindow.cpp" line="625"/>
         <source>Extract Text (OCR Tesseract)...</source>
         <translation>Extraire le texte (OCR Tesseract)...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="589"/>
+        <location filename="../src/ui/mainwindow.cpp" line="626"/>
         <source>Extract Images from PDF...</source>
         <translation>Extraire les images du PDF...</translation>
     </message>
@@ -5447,17 +6591,17 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">Fusionner des documents PDF...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="593"/>
+        <location filename="../src/ui/mainwindow.cpp" line="630"/>
         <source>Trim / Cut Audio Clip...</source>
         <translation>Découper l&apos;audio...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="598"/>
+        <location filename="../src/ui/mainwindow.cpp" line="635"/>
         <source>Edit Audio Tags &amp; Cover...</source>
         <translation>Modifier les tags audio et la pochette...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="602"/>
+        <location filename="../src/ui/mainwindow.cpp" line="639"/>
         <source>Extract Audio Track from Video...</source>
         <translation>Extraire la piste audio de la vidéo...</translation>
     </message>
@@ -5474,477 +6618,496 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">⚙️ Estrazione Immagini da PDF [pdfimages mancante]...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="631"/>
+        <location filename="../src/ui/mainwindow.cpp" line="668"/>
         <source>File Metadata &amp; Properties...</source>
         <translation>Métadonnées et propriétés du fichier...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="633"/>
+        <location filename="../src/ui/mainwindow.cpp" line="670"/>
         <source>Open with Other Application...</source>
         <translation>Ouvrir avec une autre application...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="640"/>
+        <location filename="../src/ui/mainwindow.cpp" line="677"/>
         <source>&amp;Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="641"/>
-        <location filename="../src/ui/mainwindow.cpp" line="684"/>
+        <location filename="../src/ui/mainwindow.cpp" line="678"/>
+        <location filename="../src/ui/mainwindow.cpp" line="721"/>
         <source>Configure Toolbars...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="643"/>
+        <location filename="../src/ui/mainwindow.cpp" line="680"/>
         <source>🎨 Appearance...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="644"/>
+        <location filename="../src/ui/mainwindow.cpp" line="681"/>
         <source>🐧 Desktop Integration...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="646"/>
+        <location filename="../src/ui/mainwindow.cpp" line="683"/>
         <source>⚙️ Configure BubezView...</source>
         <translation>⚙️ Configure BubezView...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="651"/>
+        <location filename="../src/ui/mainwindow.cpp" line="688"/>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="652"/>
+        <location filename="../src/ui/mainwindow.cpp" line="689"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="655"/>
+        <location filename="../src/ui/mainwindow.cpp" line="692"/>
         <source>Keyboard Shortcuts Guide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="658"/>
+        <location filename="../src/ui/mainwindow.cpp" line="695"/>
         <source>Report an Issue / Bug Tracker...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="663"/>
+        <location filename="../src/ui/mainwindow.cpp" line="700"/>
         <source>About BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="730"/>
+        <location filename="../src/ui/mainwindow.cpp" line="767"/>
         <source>⚡ Native C++ Engine</source>
         <translation>⚡ Native C++ Engine</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="789"/>
+        <location filename="../src/ui/mainwindow.cpp" line="826"/>
         <source>Previous (◀)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="790"/>
+        <location filename="../src/ui/mainwindow.cpp" line="827"/>
         <source>Next (▶)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="794"/>
+        <location filename="../src/ui/mainwindow.cpp" line="831"/>
         <source>Previous Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="795"/>
+        <location filename="../src/ui/mainwindow.cpp" line="832"/>
         <source>Next Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="807"/>
+        <location filename="../src/ui/mainwindow.cpp" line="844"/>
         <source>File Properties / Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="817"/>
+        <location filename="../src/ui/mainwindow.cpp" line="854"/>
         <source>Copy File Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="832"/>
+        <location filename="../src/ui/mainwindow.cpp" line="869"/>
         <source>Rename Folder Item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="833"/>
+        <location filename="../src/ui/mainwindow.cpp" line="870"/>
         <source>Move Item to Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="834"/>
+        <location filename="../src/ui/mainwindow.cpp" line="871"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="842"/>
+        <location filename="../src/ui/mainwindow.cpp" line="879"/>
         <source>Go to Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="843"/>
+        <location filename="../src/ui/mainwindow.cpp" line="880"/>
         <source>Find &amp; Replace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="849"/>
+        <location filename="../src/ui/mainwindow.cpp" line="886"/>
         <source>Find in Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="850"/>
+        <location filename="../src/ui/mainwindow.cpp" line="887"/>
         <source>Extract Text (OCR)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="851"/>
+        <location filename="../src/ui/mainwindow.cpp" line="888"/>
         <source>Extract Images from PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="852"/>
+        <location filename="../src/ui/mainwindow.cpp" line="889"/>
         <source>Cut (Text / Area)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="853"/>
-        <source>PDF Markup &amp; Tools Hub</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/mainwindow.cpp" line="854"/>
+        <location filename="../src/ui/mainwindow.cpp" line="890"/>
         <source>Highlighter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="855"/>
+        <location filename="../src/ui/mainwindow.cpp" line="891"/>
         <source>Select Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="856"/>
+        <location filename="../src/ui/mainwindow.cpp" line="892"/>
         <source>Typewriter / Text Insert</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="857"/>
+        <location filename="../src/ui/mainwindow.cpp" line="893"/>
         <source>Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="858"/>
+        <location filename="../src/ui/mainwindow.cpp" line="894"/>
         <source>Watermark / Stamp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="859"/>
+        <location filename="../src/ui/mainwindow.cpp" line="895"/>
         <source>Shapes &amp; Arrows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="860"/>
+        <location filename="../src/ui/mainwindow.cpp" line="896"/>
         <source>Insert Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="861"/>
+        <location filename="../src/ui/mainwindow.cpp" line="897"/>
         <source>Snapshot (300 DPI)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="862"/>
+        <location filename="../src/ui/mainwindow.cpp" line="898"/>
         <source>Redact / Blackout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="863"/>
+        <location filename="../src/ui/mainwindow.cpp" line="899"/>
         <source>Merge PDF Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="864"/>
+        <location filename="../src/ui/mainwindow.cpp" line="900"/>
         <source>Organize PDF Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="865"/>
+        <location filename="../src/ui/mainwindow.cpp" line="901"/>
         <source>Repair PDF Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="868"/>
+        <location filename="../src/ui/mainwindow.cpp" line="904"/>
         <source>Trim Audio Clip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="869"/>
+        <location filename="../src/ui/mainwindow.cpp" line="905"/>
         <source>Edit Audio Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="870"/>
+        <location filename="../src/ui/mainwindow.cpp" line="906"/>
         <source>Extract Audio Track</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1010"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1046"/>
         <source>No file currently open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1030"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1066"/>
         <source>Other Application...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1281"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1332"/>
         <source>Return to Archive (Left Arrow / Backspace)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1426"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1477"/>
         <source>Update Now</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1454"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1505"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1592"/>
         <source>Dismiss</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1494"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1513"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1564"/>
+        <source>&lt;b&gt;Debug Mode Active:&lt;/b&gt; Remember to deactivate debug mode in Settings to restore standard fast user mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="1570"/>
+        <source>Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="1629"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1648"/>
         <source>Update: v%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1542"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1677"/>
         <source>A new version of BubezView (v%1) is available!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1550"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1685"/>
         <source>New version v%1 available! Click here to inspect and update.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1572"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1707"/>
         <source>BubezView Update Available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1573"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1708"/>
         <source>Version %1 is now available for download and installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MediaPlugin</name>
+    <message>
+        <location filename="../src/plugins/media/media_plugin.h" line="25"/>
+        <source>MPV Audio &amp; Video Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/media/media_plugin.h" line="27"/>
+        <source>Hardware-accelerated video rendering and high-fidelity audio playback.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>MediaViewer</name>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="429"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="437"/>
         <source>Play / Pause</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="490"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="498"/>
         <source>Playback speed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="443"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="451"/>
         <source>Loop playback</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="486"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="494"/>
         <source>Volume</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="285"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="293"/>
         <source>Track Title</source>
         <translation>Titre de la piste</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="319"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="327"/>
         <source>Artist</source>
         <translation>Artiste</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="320"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="328"/>
         <source>Album</source>
         <translation>Album</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="321"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="329"/>
         <source>Release Year</source>
         <translation>Année de sortie</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="322"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="330"/>
         <source>Format Details</source>
         <translation>Détails du format</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="323"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="331"/>
         <source>File Size</source>
         <translation>Taille du fichier</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="415"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="423"/>
         <source>Shuffle</source>
         <translation>Aléatoire</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="422"/>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="618"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="430"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="629"/>
         <source>Previous track</source>
         <translation>Piste précédente</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="436"/>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="617"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="444"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="628"/>
         <source>Next track</source>
         <translation>Piste suivante</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="475"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="483"/>
         <source>Volume / Mute</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="507"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="515"/>
         <source>Edit audio tags &amp; cover art</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="513"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="521"/>
         <source>Trim audio clip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="519"/>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1382"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="527"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1398"/>
         <source>Equalizzatore &amp; DSP Audio</source>
         <translation>Égaliseur et DSP audio</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="613"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="624"/>
         <source>Next: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="614"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="625"/>
         <source>Previous: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="675"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="686"/>
         <source>Unknown Artist</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="680"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="691"/>
         <source>Unknown Album</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="717"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="728"/>
         <source>🎯 BIT-PERFECT LV2 • DIRECT ALSA HI-RES</source>
         <translation>🎯 BIT-PERFECT LV2 • DIRECT ALSA HI-RES</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="729"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="740"/>
         <source>🎯 BIT-PERFECT LV2 • DIRECT ALSA CD</source>
         <translation>🎯 BIT-PERFECT LV2 • DIRECT ALSA CD</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="741"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="752"/>
         <source>🎯 BIT-PERFECT LV2 • DIRECT ALSA</source>
         <translation>🎯 BIT-PERFECT LV2 • DIRECT ALSA</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="756"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="767"/>
         <source>🎯 BIT-PERFECT LV1 • HI-RES LOSSLESS</source>
         <translation>🎯 BIT-PERFECT LV1 • HI-RES LOSSLESS</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="768"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="779"/>
         <source>🎯 BIT-PERFECT LV1 • LOSSLESS CD</source>
         <translation>🎯 BIT-PERFECT LV1 • LOSSLESS CD</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="780"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="791"/>
         <source>🎯 BIT-PERFECT LV1 • DIRECT STREAM</source>
         <translation>🎯 BIT-PERFECT LV1 • DIRECT STREAM</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="797"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="808"/>
         <source>HI-RES LOSSLESS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="811"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="822"/>
         <source>LOSSLESS AUDIO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="912"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="928"/>
         <source>🎯 Bit-Perfect Direct ALSA</source>
         <translation>🎯 Bit-Perfect Direct ALSA</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1031"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1047"/>
         <source>Shuffle: ON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1031"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1047"/>
         <source>Shuffle: OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1054"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1070"/>
         <source>Continuous Playback (Auto-Advance): ON
 Automatically plays the next track when the current one ends.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1055"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1071"/>
         <source>Continuous Playback (Auto-Advance): OFF
 Playback stops at the end of the current track. Click to enable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1268"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1284"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1268"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1284"/>
         <source>Play</source>
         <translation>Lecture</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1376"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1392"/>
         <source>Equalizer is disabled in Bit-Perfect audiophile mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1387"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1403"/>
         <source>🎯 Bit-Perfect</source>
         <translation>🎯 Bit-Perfect</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1388"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1404"/>
         <source>Bit-Perfect Audiophile Mode: ACTIVE
 • Resampling: Bypassed (Native sample rate)
 • DSP / Pitch Correction: Disabled
@@ -5957,38 +7120,38 @@ Click to disable.</source>
 Click to disable.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1410"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1426"/>
         <source>🎯 BP</source>
         <translation>🎯 BP</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1411"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1427"/>
         <source>Bit-Perfect Audiophile Mode: OFF
 Click to bypass all software resampling and DSP for bit-exact DAC output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1483"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1499"/>
         <source>🔊 ALSA Direct ▾</source>
         <translation>🔊 ALSA Direct ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1485"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1501"/>
         <source>🔊 S/PDIF ▾</source>
         <translation>🔊 S/PDIF ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1487"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1503"/>
         <source>🔊 ALSA Analog ▾</source>
         <translation>🔊 ALSA Analog ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1489"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1505"/>
         <source>🔊 ALSA HDMI ▾</source>
         <translation>🔊 ALSA HDMI ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1493"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1509"/>
         <source>Audio Output: Direct ALSA Hardware (Bit-Perfect Livello 2)
 Device: %1
 Bypasses PipeWire/PulseAudio completely.
@@ -5996,114 +7159,130 @@ Click to change output device.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1514"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1530"/>
         <source>🔊 Auto ▾</source>
         <translation>🔊 Auto ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1515"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1531"/>
         <source>Audio Output: System Sound Server (PipeWire / PulseAudio)
 Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1624"/>
-        <source>--- Server Audio di Sistema ---</source>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1640"/>
+        <source>--- System Audio Server ---</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1627"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1643"/>
+        <source>🌐 Auto / Default (PipeWire / PulseAudio)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1653"/>
+        <source>--- Direct ALSA Hardware (Bit-Perfect Level 2) ---</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1749"/>
+        <source>🔊 Digital Output S/PDIF (Optical / Coaxial)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1752"/>
+        <source>🔊 Analog Output / Headphones (3.5mm Jack)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1763"/>
+        <source>🔊 HDMI Output: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>🌐 Auto / Predefinito (PipeWire / PulseAudio)</source>
-        <translation>🌐 Auto / Predefinito (PipeWire / PulseAudio)</translation>
+        <translation type="vanished">🌐 Auto / Predefinito (PipeWire / PulseAudio)</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1637"/>
-        <source>--- Hardware ALSA Diretto (Bit-Perfect Livello 2) ---</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1726"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1742"/>
         <source>HD-Audio ALC1220 Analog (front:CARD=Generic,DEV=0)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1727"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1743"/>
         <source>HD-Audio S/PDIF Digital (iec958:CARD=Generic,DEV=0)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1733"/>
         <source>🔊 Uscita Digitale S/PDIF (Ottico / Coassiale)</source>
-        <translation>🔊 Uscita Digitale S/PDIF (Ottico / Coassiale)</translation>
+        <translation type="vanished">🔊 Uscita Digitale S/PDIF (Ottico / Coassiale)</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1736"/>
         <source>🔊 Uscita Analogica / Cuffie (Jack 3.5mm)</source>
-        <translation>🔊 Uscita Analogica / Cuffie (Jack 3.5mm)</translation>
+        <translation type="vanished">🔊 Uscita Analogica / Cuffie (Jack 3.5mm)</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1747"/>
         <source>🔊 Uscita HDMI: %1</source>
-        <translation>🔊 Uscita HDMI: %1</translation>
+        <translation type="vanished">🔊 Uscita HDMI: %1</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2010"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2026"/>
         <source>Audio Track %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2083"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2099"/>
         <source>Subtitle %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2091"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2107"/>
         <source>Off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2129"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2145"/>
         <source>Bit-Perfect Mode Active</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2130"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2146"/>
         <source>Equalizer and DSP processing are disabled while Bit-Perfect audiophile mode is active. Turn off Bit-Perfect to enable equalizer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2136"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2152"/>
         <source>BubezView - Audio Equalizer &amp; DSP</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2184"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2200"/>
         <source>Extract Audio Track</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2184"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2200"/>
         <source>MP3 Audio (*.mp3);;FLAC Lossless (*.flac);;WAV (*.wav);;AAC (*.aac)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2190"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2206"/>
         <source>Success</source>
         <translation>Succès</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2190"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2206"/>
         <source>Audio track extracted successfully!
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2192"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2208"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2192"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2208"/>
         <source>Failed to extract audio track.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6394,52 +7573,52 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
 <context>
     <name>OcrManager</name>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="227"/>
+        <location filename="../src/core/ocr_manager.cpp" line="239"/>
         <source>Received invalid data from server.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="234"/>
+        <location filename="../src/core/ocr_manager.cpp" line="246"/>
         <source>Failed to write to file: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="280"/>
+        <location filename="../src/core/ocr_manager.cpp" line="292"/>
         <source>File received from repository is invalid or not found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="287"/>
+        <location filename="../src/core/ocr_manager.cpp" line="299"/>
         <source>Unable to save model file: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="310"/>
+        <location filename="../src/core/ocr_manager.cpp" line="322"/>
         <source>No supported package manager found (apt, pacman, dnf, zypper).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="324"/>
+        <location filename="../src/core/ocr_manager.cpp" line="336"/>
         <source>Root privileges required but pkexec is not available.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="328"/>
+        <location filename="../src/core/ocr_manager.cpp" line="340"/>
         <source>Installing Tesseract OCR engine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="362"/>
+        <location filename="../src/core/ocr_manager.cpp" line="374"/>
         <source>Tesseract OCR executable not found on system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="367"/>
+        <location filename="../src/core/ocr_manager.cpp" line="379"/>
         <source>Input image file not found: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/ocr_manager.cpp" line="387"/>
+        <location filename="../src/core/ocr_manager.cpp" line="399"/>
         <source>Tesseract OCR process timed out (exceeded 20s).</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6447,17 +7626,17 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
 <context>
     <name>OfficeConvertWorker</name>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="75"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="76"/>
         <source>LibreOffice not found or cannot be launched.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="87"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="88"/>
         <source>Unable to launch LibreOffice.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="109"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="110"/>
         <source>Conversion failed.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6465,140 +7644,140 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
 <context>
     <name>OfficeViewer</name>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="171"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="172"/>
         <source>✏️ Edit in LibreOffice</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="172"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="173"/>
         <source>Open file directly in LibreOffice desktop suite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="175"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="176"/>
         <source>💾 Save as PDF</source>
         <translation>💾 Save as PDF</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="176"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="177"/>
         <source>Save and export a copy of the document in PDF format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="179"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="180"/>
         <source>🖼️ Extract Images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="180"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="181"/>
         <source>Extract all images embedded in document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="199"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="200"/>
         <source>⚡ Rendering document layout...</source>
         <translation>⚡ Rendering document layout...</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="344"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="360"/>
         <source>⏳ Loading presentation with LibreOffice...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="395"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="411"/>
         <source>⚠️ Unable to display the document.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="368"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="384"/>
         <source>⚠️ LibreOffice is required to preview presentation files (.pptx, .odp).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="322"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="328"/>
         <source>⚠️ LibreOffice preview is disabled in Settings and the Internal Office module is not compiled.&lt;br&gt;Enable LibreOffice in Preferences or compile the internal module in Settings → Extensions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="346"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="362"/>
         <source>⏳ Converting office document with LibreOffice...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="363"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="379"/>
         <source>⚠️ LibreOffice is not installed and the Internal Office module is disabled.&lt;br&gt;Please install LibreOffice or enable the internal module in Settings → Extensions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="463"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="489"/>
         <source>LibreOffice</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="463"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="489"/>
         <source>LibreOffice is not installed on your system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="475"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="501"/>
         <source>Save as PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="475"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="501"/>
         <source>PDF Documents (*.pdf)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="481"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="507"/>
         <source>Save Complete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="481"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="507"/>
         <source>File saved successfully to:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="486"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="512"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="486"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="512"/>
         <source>Unable to save document as PDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="494"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="520"/>
         <source>Select directory for extracted images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="503"/>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="535"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="529"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="561"/>
         <source>No Images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="503"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="529"/>
         <source>Unable to extract images from this format.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="533"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="559"/>
         <source>Images Extracted</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="533"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="559"/>
         <source>Successfully extracted %1 images to:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="535"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="561"/>
         <source>No images found inside this document.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6643,6 +7822,319 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
     <message>
         <location filename="../src/ui/open_with_dialog.cpp" line="160"/>
         <source>Select Custom Executable</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PdfCryptoSignatureDialog</name>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="44"/>
+        <source>Cryptographic Digital Signatures (PAdES / CAdES)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="85"/>
+        <source>🔍 Verify Signatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="96"/>
+        <source>Apply a cryptographic digital signature (PAdES SHA-256 or CAdES &lt;code&gt;.pdf.p7m&lt;/code&gt;) using a personal X.509 certificate (&lt;code&gt;.p12&lt;/code&gt; / &lt;code&gt;.pfx&lt;/code&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="104"/>
+        <source>Digital Certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="110"/>
+        <source>Select .p12 or .pfx certificate file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="113"/>
+        <source>Browse...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="118"/>
+        <source>✨ Create Personal Certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="120"/>
+        <source>Generate a new self-signed personal cryptographic certificate (.p12) using OpenSSL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="124"/>
+        <source>Certificate (.p12/.pfx):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="128"/>
+        <source>Certificate password / PIN</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="129"/>
+        <source>Password / PIN:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="132"/>
+        <source>Document approval and authenticity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="133"/>
+        <source>Digitally approved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="134"/>
+        <source>Signing Reason:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="153"/>
+        <source>✒️ Sign &amp; Save Document...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="163"/>
+        <source>✒️ Sign Document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="170"/>
+        <source>Close</source>
+        <translation type="unfinished">Fermer</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="187"/>
+        <source>No Digital Signatures Detected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="188"/>
+        <source>This PDF document does not contain any PAdES or CAdES cryptographic signatures.&lt;br&gt;You can digitally sign it using the &lt;b&gt;&apos;Sign Document&apos;&lt;/b&gt; tab.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="196"/>
+        <source>Detected Digital Signatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="202"/>
+        <source>✓ VALID CRYPTOGRAPHIC SIGNATURE (Document Integrity Verified)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="203"/>
+        <source>⚠ INVALID SIGNATURE OR MODIFIED DOCUMENT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="219"/>
+        <source>Signer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="219"/>
+        <source>Not specified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="220"/>
+        <source>Certificate Authority / DN</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="221"/>
+        <source>Signing Time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="221"/>
+        <source>Not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="222"/>
+        <source>Algorithm / Format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="229"/>
+        <source>Show full technical verification output (pdfsig / OpenSSL)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="274"/>
+        <source>CAdES Signed Document (.p7m)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="376"/>
+        <source>Select Digital Certificate (.p12 / .pfx)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="378"/>
+        <source>PKCS#12 Certificates (*.p12 *.pfx);;All Files (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="390"/>
+        <source>Create Personal Certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="391"/>
+        <source>Enter your Full Name (or Organization) for the certificate:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="400"/>
+        <source>Certificate Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="401"/>
+        <source>Choose a password to protect your .p12 certificate:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="429"/>
+        <source>OpenSSL Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="430"/>
+        <source>Failed to generate X.509 private key:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="450"/>
+        <source>PKCS#12 Export Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="451"/>
+        <source>Failed to create .p12 certificate file:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="457"/>
+        <source>✓ Personal certificate created and selected: &lt;code&gt;%1&lt;/code&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="458"/>
+        <source>Certificate Created</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="459"/>
+        <source>Your personal digital certificate (&lt;b&gt;%1&lt;/b&gt;) has been generated and is ready for signing!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="466"/>
+        <source>Missing Certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="467"/>
+        <source>Please select a valid certificate file (&lt;code&gt;.p12&lt;/code&gt; / &lt;code&gt;.pfx&lt;/code&gt;) or click &lt;b&gt;&apos;Create Personal Certificate&apos;&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="480"/>
+        <source>Save Signed Document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="482"/>
+        <source>Signed PDF Document (*.pdf);;CAdES Cryptographic Envelope (*.pdf.p7m)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="506"/>
+        <source>Invalid Password or Certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="507"/>
+        <source>Failed to unlock the .p12 certificate. Please verify that the password is correct.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="525"/>
+        <source>Signature Completed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="526"/>
+        <source>Document digitally signed in CAdES (&lt;code&gt;.p7m&lt;/code&gt;) format successfully!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="530"/>
+        <source>CAdES Signing Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="531"/>
+        <source>Error during OpenSSL signing:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="598"/>
+        <source>PDF Document Signed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="599"/>
+        <source>The PAdES digital signature (ETSI.CAdES.detached SHA-256) was applied successfully to:
+&lt;b&gt;%1&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="621"/>
+        <source>Invalid Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="622"/>
+        <source>Unable to open the .p12 certificate. Please check your password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="640"/>
+        <source>Digital Signature Completed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="641"/>
+        <source>Document cryptographically signed with OpenSSL at:
+&lt;b&gt;%1&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="644"/>
+        <source>Signing Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_crypto_signature_dialog.cpp" line="645"/>
+        <source>Could not complete the digital signature operation.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6727,69 +8219,74 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
 <context>
     <name>PdfImageExtractDialog</name>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="34"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="36"/>
         <source>Extract Images from PDF — BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="54"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="56"/>
         <source>Embedded Images in PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="84"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="86"/>
         <source>✓ Select All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="88"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="90"/>
         <source>✗ Deselect All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="104"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="106"/>
         <source>📋 Copy to Clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="105"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="107"/>
         <source>Copy the currently selected image directly to the system clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="110"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="112"/>
         <source>💾 Save Image As...</source>
         <translation>💾 Save Image As...</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="111"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="113"/>
         <source>Export only the currently selected image with a custom name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="118"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="120"/>
         <source>📤 Save Selected...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="119"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="121"/>
         <source>Export all checked images to a destination directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="124"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="126"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="200"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="148"/>
+        <source>Poppler Image Extractor (pdfimages)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="205"/>
         <source>Image #%1
 %2×%3
 %4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="205"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="210"/>
         <source>Image #%1
 File: %2
 Resolution: %3 × %4 px
@@ -6798,90 +8295,90 @@ Size: %6</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="220"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="225"/>
         <source>Embedded Images Found (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="278"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="283"/>
         <source>Selected: %1 of %2 (%3)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="284"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="289"/>
         <source>📤 Save Selected (%1)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="300"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="305"/>
         <source>✓ Copied!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="325"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="330"/>
         <source>PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="326"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="331"/>
         <source>Save Image As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="340"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="345"/>
         <source>Image Saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="340"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="345"/>
         <source>Image successfully saved to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="342"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="347"/>
         <source>Save Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="342"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="347"/>
         <source>Failed to save image to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="359"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="364"/>
         <source>No Selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="359"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="364"/>
         <source>Please select at least one image to export.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="367"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="372"/>
         <source>Select Destination Directory for Extracted Images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="397"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="402"/>
         <source>Export Complete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="398"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="403"/>
         <source>Successfully exported %1 image(s) to:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="404"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="409"/>
         <source>Export Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="405"/>
+        <location filename="../src/ui/pdf_image_extract_dialog.cpp" line="410"/>
         <source>Could not write images to the selected directory.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6889,366 +8386,375 @@ Size: %6</source>
 <context>
     <name>PdfMergeDialog</name>
     <message>
+        <source>🟢 &lt;b&gt;Motore QPDF attivo:&lt;/b&gt; Unione ottimizzata con deduplicazione automatica dei font, linearizzazione e preservazione intatta di segnalibri e capitoli.</source>
+        <translation type="vanished">🟢 &lt;b&gt;Motore QPDF attivo:&lt;/b&gt; Unione ottimizzata con deduplicazione automatica dei font, linearizzazione e preservazione intatta di segnalibri e capitoli.</translation>
+    </message>
+    <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="23"/>
-        <source>Unisci Documenti PDF</source>
+        <source>Merge PDF Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="77"/>
-        <source>Aggiungi PDF...</source>
+        <source>Add PDF...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="78"/>
-        <source>Rimuovi</source>
+        <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="79"/>
-        <source>Sposta Su</source>
+        <source>Move Up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="80"/>
-        <source>Sposta Giù</source>
+        <source>Move Down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="81"/>
-        <source>Svuota</source>
+        <source>Clear All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="95"/>
-        <source>Salva come:</source>
+        <source>Save as:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="97"/>
-        <source>Percorso del file PDF di destinazione...</source>
+        <source>Destination PDF file path...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="98"/>
-        <source>Sfoglia...</source>
+        <source>Browse...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="119"/>
-        <source>Annulla</source>
-        <translation type="unfinished"></translation>
+        <source>Cancel</source>
+        <translation type="unfinished">Annuler</translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="120"/>
-        <source>Unisci Documenti</source>
+        <source>Merge Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="145"/>
-        <source>🟢 &lt;b&gt;Motore QPDF attivo:&lt;/b&gt; Unione ottimizzata con deduplicazione automatica dei font, linearizzazione e preservazione intatta di segnalibri e capitoli.</source>
-        <translation>🟢 &lt;b&gt;Motore QPDF attivo:&lt;/b&gt; Unione ottimizzata con deduplicazione automatica dei font, linearizzazione e preservazione intatta di segnalibri e capitoli.</translation>
+        <source>🟢 &lt;b&gt;QPDF Engine Active:&lt;/b&gt; Optimized merge with automatic font deduplication, linearization, and preserved bookmarks/outlines.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="148"/>
-        <source>🟡 &lt;b&gt;Motore Base Poppler attivo (pdfunite):&lt;/b&gt; Unione sequenziale delle pagine.&lt;br&gt;&lt;span style=&apos;font-size: 11px;&apos;&gt;💡 Suggerimento: installa il pacchetto &lt;code&gt;qpdf&lt;/code&gt; per preservare segnalibri/capitoli e dimezzare il peso dei font duplicati.&lt;/span&gt;</source>
+        <source>🟡 &lt;b&gt;Poppler Base Engine Active (pdfunite):&lt;/b&gt; Sequential page merging.&lt;br&gt;&lt;span style=&apos;font-size: 11px;&apos;&gt;💡 Tip: Install the &lt;code&gt;qpdf&lt;/code&gt; package to preserve bookmarks/outlines and eliminate duplicate font overhead.&lt;/span&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="154"/>
-        <source>Seleziona File PDF da Unire</source>
+        <source>Select PDF Files to Merge</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="154"/>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="200"/>
-        <source>Documenti PDF (*.pdf)</source>
+        <source>PDF Documents (*.pdf)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="200"/>
-        <source>Salva PDF Unito</source>
+        <source>Save Merged PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="212"/>
-        <source>File Insufficienti</source>
+        <source>Insufficient Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="212"/>
-        <source>Seleziona almeno 2 file PDF per poter effettuare l&apos;unione.</source>
+        <source>Please select at least 2 PDF files to perform a merge.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="232"/>
-        <source>Unione dei documenti PDF in corso...</source>
+        <source>Merging PDF documents...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="258"/>
-        <source>Errore Avvio</source>
+        <source>Launch Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="259"/>
-        <source>Impossibile avviare il tool di unione &apos;%1&apos;. Assicurati che sia installato nel sistema.</source>
+        <source>Unable to launch merge tool &apos;%1&apos;. Make sure it is installed on your system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="272"/>
-        <source>Unione completata con successo!</source>
+        <source>Merge completed successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="279"/>
-        <source>Unione Riuscita</source>
+        <source>Merge Succeeded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="280"/>
-        <source>Il file PDF è stato unito e generato con successo in:&lt;br&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;Vuoi aprire subito il documento in BubezView?</source>
+        <source>The merged PDF has been successfully generated at:&lt;br&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;br&gt;Would you like to open it in BubezView now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="289"/>
-        <source>Errore durante l&apos;unione.</source>
+        <source>Error during merge.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="290"/>
-        <source>Errore Unione PDF</source>
+        <source>PDF Merge Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="291"/>
-        <source>Si è verificato un errore durante l&apos;unione del PDF:&lt;br&gt;&lt;pre&gt;%1&lt;/pre&gt;</source>
+        <source>An error occurred while merging the PDF:&lt;br&gt;&lt;pre&gt;%1&lt;/pre&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="299"/>
-        <source>Suggerimento Ottimizzazione PDF</source>
+        <source>PDF Optimization Tip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="300"/>
-        <source>&lt;h3&gt;💡 Hai unito %1 documenti PDF con il motore base!&lt;/h3&gt;&lt;p&gt;BubezView ha notato che utilizzi frequentemente l&apos;unione PDF.&lt;br&gt;Ti consigliamo di installare il motore &lt;b&gt;QPDF&lt;/b&gt; per:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Deduplicare i font:&lt;/b&gt; i file generati occupano molto meno spazio.&lt;/li&gt;&lt;li&gt;&lt;b&gt;Preservare i segnalibri:&lt;/b&gt; i capitoli e gli indici originali rimangono intatti e navigabili.&lt;/li&gt;&lt;li&gt;&lt;b&gt;Linearizzazione rapida:&lt;/b&gt; apertura istantanea via web e visualizzatori.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Puoi installarlo subito digitando nel terminale:&lt;br&gt;&lt;code&gt;sudo pacman -S qpdf&lt;/code&gt; (su Arch/Garuda)&lt;br&gt;&lt;code&gt;sudo apt install qpdf&lt;/code&gt; (su Debian/Ubuntu)&lt;/p&gt;</source>
+        <source>&lt;h3&gt;💡 You have merged %1 PDF documents using the base engine!&lt;/h3&gt;&lt;p&gt;BubezView noticed you frequently merge PDF files.&lt;br&gt;We recommend installing the &lt;b&gt;QPDF&lt;/b&gt; engine to enjoy:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Font deduplication:&lt;/b&gt; merged files take up significantly less disk space.&lt;/li&gt;&lt;li&gt;&lt;b&gt;Preserved bookmarks:&lt;/b&gt; chapter outlines and bookmarks remain intact and clickable.&lt;/li&gt;&lt;li&gt;&lt;b&gt;Fast linearization:&lt;/b&gt; instant opening across web viewers and mobile devices.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;You can install it quickly via your package manager:&lt;br&gt;&lt;code&gt;sudo pacman -S qpdf&lt;/code&gt; (on Arch/Garuda)&lt;br&gt;&lt;code&gt;sudo apt install qpdf&lt;/code&gt; (on Debian/Ubuntu)&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="312"/>
-        <source>Non mostrare più</source>
+        <source>Don&apos;t show again</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_merge_dialog.cpp" line="313"/>
-        <source>Ho capito</source>
+        <source>Got it</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PdfPageOrganizerDialog</name>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="50"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="52"/>
         <source>PDF Page Organizer &amp; Reorderer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="69"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="71"/>
         <source>&lt;b&gt;PDF Page Manager&lt;/b&gt; — Drag and drop thumbnails to reorder pages. Use the toolbar to rotate, remove, or reverse pages losslessly via QPDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="81"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="83"/>
         <source>↶ Rotate Left</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="82"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="84"/>
         <source>Rotate selected pages 90 degrees counter-clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="86"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="88"/>
         <source>↷ Rotate Right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="87"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="89"/>
         <source>Rotate selected pages 90 degrees clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="91"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="93"/>
         <source>🗑️ Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="92"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="94"/>
         <source>Remove selected pages from the document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="96"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="98"/>
         <source>⇄ Reverse Order</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="97"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="99"/>
         <source>Invert the overall page sequence</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="101"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="103"/>
         <source>↺ Reset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="102"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="104"/>
         <source>Reset all pages and rotations to their original state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="173"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="175"/>
         <source>Cancel</source>
         <translation type="unfinished">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="177"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="179"/>
         <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="181"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="183"/>
         <source>Save (Overwrite)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="208"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="210"/>
         <source>Load Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="208"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="210"/>
         <source>Failed to open PDF document or file is encrypted.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="265"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="267"/>
         <source>Page %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="267"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="269"/>
         <source>Page %1 (%2°)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="277"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="279"/>
         <source>Total pages: %1 | Selected: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="326"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="328"/>
         <source>Action Denied</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="327"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="329"/>
         <source>A PDF document must contain at least one page. You cannot delete all pages.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="361"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="363"/>
         <source>Reset Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="362"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="364"/>
         <source>Are you sure you want to revert all changes, reordering, and rotations?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="377"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="379"/>
         <source>Save Organized PDF As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="379"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="381"/>
         <source>PDF Files (*.pdf)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="394"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="396"/>
         <source>Save Succeeded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="395"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="397"/>
         <source>Organized PDF document saved successfully to:&lt;br&gt;&lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="405"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="407"/>
         <source>Confirm Overwrite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="406"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="408"/>
         <source>&lt;p&gt;Are you sure you want to overwrite the original file?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This action will replace the original page order permanently.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="430"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="432"/>
         <source>Changes Saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="431"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="433"/>
         <source>The original PDF has been overwritten with the new page configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="437"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="439"/>
         <source>File Replacement Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="438"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="440"/>
         <source>Failed to replace original file. New document is saved as:&lt;br&gt;&lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="448"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="450"/>
         <source>Empty Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="448"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="450"/>
         <source>Cannot save a PDF with no pages.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="456"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="458"/>
         <source>QPDF Not Installed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="457"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="459"/>
         <source>Page reorganization requires the system utility &lt;b&gt;qpdf&lt;/b&gt;.&lt;br&gt;Would you like to install it now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="512"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="469"/>
+        <source>QPDF Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="517"/>
         <source>QPDF Processing Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="513"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="518"/>
         <source>&lt;p&gt;Failed to generate the organized PDF.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Details:&lt;/i&gt;&lt;br&gt;&lt;code&gt;%1&lt;/code&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="514"/>
+        <location filename="../src/ui/pdf_page_organizer_dialog.cpp" line="519"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7271,7 +8777,7 @@ Size: %6</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2277"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2279"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1302"/>
         <source>Copy Text</source>
         <translation type="unfinished"></translation>
@@ -7311,215 +8817,233 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
         <translation>🖼️ Copier la zone</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2268"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2270"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1293"/>
         <source>Cut Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2271"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2273"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1296"/>
         <source>Copy Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2274"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2276"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1299"/>
         <source>Clear Area Selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2280"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2282"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1305"/>
         <source>Cut Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2283"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2285"/>
         <source>Highlight Selected Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2294"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2296"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2302"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2304"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1323"/>
         <source>Select Area...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2303"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2305"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1324"/>
         <source>Insert Image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2305"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2307"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1326"/>
         <source>Copy Page Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2308"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2310"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1329"/>
         <source>Copy Entire Document Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2312"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2314"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_page_widget.cpp" line="1333"/>
         <source>Select All</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
+    <name>PdfPlugin</name>
+    <message>
+        <location filename="../src/plugins/pdf/pdf_plugin.h" line="25"/>
+        <source>Poppler Qt6 PDF Document Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/pdf/pdf_plugin.h" line="27"/>
+        <source>High-resolution vector rendering, annotations, and text extraction for PDF documents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PdfRepairDialog</name>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="33"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="35"/>
         <source>Repair Corrupted PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="53"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="55"/>
         <source>&lt;b&gt;Restore &amp; Repair PDF Document&lt;/b&gt;&lt;br&gt;&lt;span style=&apos;color: #64748b; font-size: 11px;&apos;&gt;Reconstructs damaged cross-reference tables (xref), page dictionaries, and streams using the QPDF engine.&lt;/span&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="64"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="66"/>
         <source>Corrupted file:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="67"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="69"/>
         <source>Select the damaged PDF file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="68"/>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="82"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="70"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="84"/>
         <source>Browse...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="78"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="80"/>
         <source>Save repaired to:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="81"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="83"/>
         <source>Target path for the recovered PDF file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="107"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="109"/>
         <source>Close</source>
         <translation type="unfinished">Fermer</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="111"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="113"/>
         <source>🛠️ Start Repair</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="128"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="130"/>
         <source>Select PDF to Repair</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="130"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="132"/>
         <source>PDF Files (*.pdf);;All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="143"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="145"/>
         <source>Save Repaired PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="145"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="147"/>
         <source>PDF Files (*.pdf)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="161"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="163"/>
         <source>Missing Input File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="161"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="163"/>
         <source>Please select an existing PDF file to repair.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="166"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="168"/>
         <source>Missing Destination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="166"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="168"/>
         <source>Please specify a target destination path for the repaired PDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="173"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="175"/>
         <source>Invalid Target Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="174"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="176"/>
         <source>The target file must be different from the source file to prevent data loss in case of corruption.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="183"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="185"/>
         <source>QPDF Not Installed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="184"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="186"/>
         <source>The PDF recovery module requires the system utility &lt;b&gt;qpdf&lt;/b&gt;.&lt;br&gt;Would you like to install it now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="199"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="196"/>
+        <source>QPDF Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="204"/>
         <source>Reconstructing xref tables and repairing streams...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="219"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="224"/>
         <source>🟢 PDF repaired successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="224"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="229"/>
         <source>Repair Succeeded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="225"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="230"/>
         <source>&lt;p&gt;The PDF file has been successfully repaired and saved to:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Would you like to open it now in BubezView?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="236"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="241"/>
         <source>❌ Repair failed or document unrecoverable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="239"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="244"/>
         <source>Repair Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="240"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="245"/>
         <source>&lt;p&gt;QPDF was unable to reconstruct the structure of this document.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Diagnostic detail:&lt;/i&gt;&lt;br&gt;&lt;code&gt;%1&lt;/code&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_repair_dialog.cpp" line="241"/>
+        <location filename="../src/ui/pdf_repair_dialog.cpp" line="246"/>
         <source>File severely truncated or unreadable.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7615,117 +9139,138 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="206"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="207"/>
         <source>Cancel</source>
         <translation type="unfinished">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="210"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="211"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="380"/>
         <source>Apply Signature ➔</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="231"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="232"/>
         <source>Ink:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="246"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="247"/>
         <source>Stroke:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="258"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="259"/>
         <source>🗑️ Clear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="263"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="264"/>
         <source>✍️ Draw Freehand</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="276"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="277"/>
         <source>No image loaded.&lt;br&gt;Click &apos;Browse Photo / Scan&apos; below to import.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="280"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="281"/>
         <source>📂 Browse Photo / Scan...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="288"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="289"/>
         <source>✨ Automatic paper background removal (White -&gt; Transparent)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="294"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="295"/>
         <source>Background Filter Sensitivity:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="304"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="305"/>
         <source>📷 Photo / Scan Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="327"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="328"/>
         <source>🗑️ Delete Selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="334"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="335"/>
         <source>📁 Saved Signatures</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="356"/>
-        <source>Select Signature Image / Scan</source>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="346"/>
+        <source>&lt;b&gt;🔐 Cryptographic Digital Signatures (PAdES &amp; CAdES .p7m)&lt;/b&gt;&lt;br&gt;&lt;br&gt;Verify existing cryptographic signatures, inspect X.509 certificate chains, generate a personal self-signed certificate (&lt;code&gt;.p12&lt;/code&gt;), or digitally sign this PDF:&lt;br&gt;&lt;br&gt;• &lt;b&gt;PAdES (Embedded PDF Signature)&lt;/b&gt; — Standard signed &lt;code&gt;.pdf&lt;/code&gt; readable by any PDF viewer&lt;br&gt;• &lt;b&gt;CAdES (PKCS#7 Envelope)&lt;/b&gt; — Signed &lt;code&gt;.pdf.p7m&lt;/code&gt; envelope standard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_signature_dialog.cpp" line="358"/>
+        <source>🔐 Open Cryptographic Signature Hub...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="370"/>
+        <source>🔒 Digital Certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="380"/>
+        <source>Open Digital Signature Hub ➔</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="395"/>
+        <source>Select Signature Image / Scan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="397"/>
         <source>Images (*.png *.jpg *.jpeg *.bmp *.webp *.tiff);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="460"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="505"/>
         <source>No Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="460"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="505"/>
         <source>Please draw your signature on the canvas first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="467"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="512"/>
         <source>No Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="467"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="512"/>
         <source>Please select an image file first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="475"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="520"/>
         <source>Select Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="475"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="520"/>
         <source>Please select a saved signature from the list.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="483"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="528"/>
         <source>Error</source>
         <translation type="unfinished">Erreur</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_signature_dialog.cpp" line="483"/>
+        <location filename="../src/ui/pdf_signature_dialog.cpp" line="528"/>
         <source>Failed to generate signature image.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8120,76 +9665,76 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
     </message>
     <message>
         <location filename="../src/ui/pdf_tools_dialog.cpp" line="895"/>
-        <source>&lt;b&gt;Electronic &amp; Digital Signature Hub (PAdES / X.509)&lt;/b&gt;&lt;br&gt;&lt;br&gt;Support for legal digital signatures using:&lt;br&gt;• Smart Card / Hardware Token (CIE, CNS, USB crypto tokens)&lt;br&gt;• PKCS#12 Certificate files (.p12, .pfx)&lt;br&gt;• Timestamp Authority (TSA) synchronization&lt;br&gt;&lt;br&gt;All signature operations will be centralized in this panel.</source>
+        <source>&lt;b&gt;🔐 Electronic &amp; Digital Signature Hub (PAdES / CAdES .p7m)&lt;/b&gt;&lt;br&gt;&lt;br&gt;Verify cryptographic signatures, inspect X.509 certificate chains, generate a personal self-signed certificate (&lt;code&gt;.p12&lt;/code&gt;), or digitally sign this document:&lt;br&gt;• &lt;b&gt;PAdES (Embedded PDF Signature)&lt;/b&gt; — Standard signed &lt;code&gt;.pdf&lt;/code&gt;&lt;br&gt;• &lt;b&gt;CAdES (PKCS#7 Envelope)&lt;/b&gt; — Signed &lt;code&gt;.pdf.p7m&lt;/code&gt; envelope&lt;br&gt;• &lt;b&gt;PKCS#12 Certificates&lt;/b&gt; — Import &lt;code&gt;.p12&lt;/code&gt; / &lt;code&gt;.pfx&lt;/code&gt; or generate 1-click keypair</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf_tools_dialog.cpp" line="905"/>
-        <source>Digital Certificate Manager (Under Development)</source>
+        <source>🔐 Open Cryptographic Signature Hub...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="910"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="915"/>
         <source>🔒 Digital / Electronic Certificate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="914"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="919"/>
         <source>💾 Save signature to library for 1-click future reuse</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="918"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="923"/>
         <source>✍️ Place Signature on Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="938"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="943"/>
         <source>Select Signature Image / Scan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="940"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="945"/>
         <source>Images (*.png *.jpg *.jpeg *.bmp *.webp *.tiff);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1049"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1059"/>
         <source>No Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1049"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1059"/>
         <source>Please draw your signature on the canvas first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1056"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1066"/>
         <source>No Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1056"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1066"/>
         <source>Please select a signature image file first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1063"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1073"/>
         <source>Select Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1063"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1073"/>
         <source>Please select a saved signature from the list.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1071"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1081"/>
         <source>Error</source>
         <translation type="unfinished">Erreur</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1071"/>
+        <location filename="../src/ui/pdf_tools_dialog.cpp" line="1081"/>
         <source>Failed to generate signature image.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8197,90 +9742,105 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
 <context>
     <name>PdfTransformBox</name>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="61"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="62"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="60"/>
         <source>✏️ Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="68"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="71"/>
         <source>Black Redaction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="74"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="79"/>
         <source>White Redaction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="80"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="87"/>
         <source>Gray Redaction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="86"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="95"/>
         <source>Custom Color Redaction...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="89"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="98"/>
         <source>Select Redaction Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="95"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="104"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="74"/>
         <source>✓ Apply</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="100"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="109"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="195"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="258"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="294"/>
         <source>🔄 Stamp Again</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="103"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="112"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="196"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="259"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="295"/>
         <source>Apply current item and place another copy ready on canvas</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="107"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="116"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="79"/>
         <source>✂️ Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="110"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="119"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="82"/>
         <source>Cut selected area and copy to clipboard (Ctrl+X)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="114"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="123"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="86"/>
         <source>📋 Copy</source>
         <translation type="unfinished">📋 Copier</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="117"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="126"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="89"/>
         <source>Copy selected area to clipboard at 300 DPI (Ctrl+C)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="121"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="130"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="93"/>
         <source>✕ Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="544"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="406"/>
+        <source>🔄 Apply &amp; Continue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="407"/>
+        <source>Apply current redaction and keep tool active for another area</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="607"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="347"/>
         <source>[REDACTED]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="562"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_transform_box.cpp" line="365"/>
         <source>⠿ Move</source>
         <translation type="unfinished"></translation>
@@ -8357,54 +9917,87 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
 <context>
     <name>PdfViewer</name>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="79"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="81"/>
+        <source>🔍 Certificate Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="88"/>
+        <source>✍️ Add Signature</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="114"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="68"/>
         <source>📑 Document Outline</source>
         <translation>📑 Document Outline</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="177"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="212"/>
         <source>Previous Page (Page Up / Left Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="183"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="218"/>
         <source>Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="198"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="233"/>
         <source>of 0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="202"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="237"/>
         <source>Next Page (Page Down / Right Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="857"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="947"/>
         <source>of %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1304"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1406"/>
+        <source>Unknown Signer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1418"/>
+        <source>⚠️ &lt;b&gt;INVALID DIGITAL SIGNATURE (%1)&lt;/b&gt; — Document integrity check failed! Signed by: &lt;b&gt;%2&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1427"/>
+        <source>🛡️ &lt;b&gt;Digitally Signed &amp; Verified (%1)&lt;/b&gt; — Signed by: &lt;b&gt;%2&lt;/b&gt; (%n signature(s))</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1436"/>
+        <source>🔐 &lt;b&gt;Digitally Signed (%1 — Integrity Valid)&lt;/b&gt; — Signed by: &lt;b&gt;%2&lt;/b&gt; (Self-Signed / Unverified CA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1576"/>
         <source>📸 Snapshot copied to clipboard at 200 DPI (%1 × %2 px)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1332"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1604"/>
         <source>📋 Area copied to clipboard at 200 DPI (%1 × %2 px)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1358"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1630"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1209"/>
         <source>✂️ Area cut. Press Ctrl+Z to undo anytime.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1388"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1660"/>
         <location filename="../src/viewers/pdf_backup_pre_refactor/pdf_viewer.cpp" line="1292"/>
         <source>QPDF Required</source>
         <translation type="unfinished"></translation>
@@ -8571,7 +10164,7 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/main.cpp" line="176"/>
+        <location filename="../src/main.cpp" line="254"/>
         <source>Select a file to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8587,36 +10180,37 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="43"/>
-        <location filename="../src/ui/action_registry.cpp" line="395"/>
+        <location filename="../src/ui/action_registry.cpp" line="423"/>
         <source>▲ Prev Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="52"/>
-        <location filename="../src/ui/action_registry.cpp" line="404"/>
+        <location filename="../src/ui/action_registry.cpp" line="432"/>
         <source>▼ Next Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="239"/>
-        <location filename="../src/ui/action_registry.cpp" line="413"/>
+        <location filename="../src/ui/action_registry.cpp" line="259"/>
+        <location filename="../src/ui/action_registry.cpp" line="441"/>
         <source>🔍 +</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="247"/>
-        <location filename="../src/ui/action_registry.cpp" line="421"/>
+        <location filename="../src/ui/action_registry.cpp" line="267"/>
+        <location filename="../src/ui/action_registry.cpp" line="449"/>
         <source>🔍 -</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="74"/>
-        <location filename="../src/ui/action_registry.cpp" line="255"/>
+        <location filename="../src/ui/action_registry.cpp" line="275"/>
         <source>↺ 100%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="62"/>
+        <location filename="../src/ui/action_registry.cpp" line="247"/>
         <source>🔍 Zoom</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8627,21 +10221,21 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="90"/>
-        <location filename="../src/ui/action_registry.cpp" line="263"/>
-        <location filename="../src/ui/action_registry.cpp" line="429"/>
+        <location filename="../src/ui/action_registry.cpp" line="291"/>
+        <location filename="../src/ui/action_registry.cpp" line="457"/>
         <source>↺ Rotate Left</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="99"/>
-        <location filename="../src/ui/action_registry.cpp" line="272"/>
-        <location filename="../src/ui/action_registry.cpp" line="438"/>
+        <location filename="../src/ui/action_registry.cpp" line="300"/>
+        <location filename="../src/ui/action_registry.cpp" line="466"/>
         <source>↻ Rotate Right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="108"/>
-        <location filename="../src/ui/action_registry.cpp" line="284"/>
+        <location filename="../src/ui/action_registry.cpp" line="312"/>
         <source>🔍 Find</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8687,431 +10281,448 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="188"/>
-        <source>🖼️ Insert Image</source>
+        <source>🔐 Digital Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="196"/>
-        <source>➕ Insert Blank Page</source>
+        <source>🖼️ Insert Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="204"/>
-        <source>💧 Watermark</source>
+        <source>➕ Insert Blank Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="212"/>
-        <source>📐 Shape</source>
+        <source>💧 Watermark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="220"/>
-        <source>📸 Snapshot</source>
+        <source>📐 Shape</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="228"/>
+        <source>📸 Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/action_registry.cpp" line="236"/>
         <source>⬛ Redact</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="293"/>
+        <location filename="../src/ui/action_registry.cpp" line="283"/>
+        <source>↔ Fit to Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/action_registry.cpp" line="321"/>
         <source>⇄ Replace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="302"/>
+        <location filename="../src/ui/action_registry.cpp" line="330"/>
         <source>✏️ Edit Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="319"/>
+        <location filename="../src/ui/action_registry.cpp" line="347"/>
         <source># Lines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="336"/>
+        <location filename="../src/ui/action_registry.cpp" line="364"/>
         <source>{ } Syntax</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="353"/>
+        <location filename="../src/ui/action_registry.cpp" line="381"/>
         <source>↩ Wrap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="370"/>
+        <location filename="../src/ui/action_registry.cpp" line="398"/>
         <source>↷ Go to Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="382"/>
+        <location filename="../src/ui/action_registry.cpp" line="410"/>
         <source>⏯ Play / Pause</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="451"/>
-        <source>📦 Extract All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/action_registry.cpp" line="459"/>
-        <source>🛡️ Test</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/action_registry.cpp" line="475"/>
-        <source>💾 Save</source>
+        <location filename="../src/ui/action_registry.cpp" line="479"/>
+        <source>➕ Add Files...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/action_registry.cpp" line="487"/>
+        <source>📁 Add Folder...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/action_registry.cpp" line="495"/>
+        <source>🗑️ Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/action_registry.cpp" line="503"/>
+        <source>📦 Extract All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/action_registry.cpp" line="511"/>
+        <source>🛡️ Test</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/action_registry.cpp" line="527"/>
+        <source>💾 Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/action_registry.cpp" line="539"/>
         <source>📤 Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="497"/>
+        <location filename="../src/ui/action_registry.cpp" line="549"/>
         <source>🗑️ Trash</source>
         <translation>🗑️ Trash</translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="507"/>
+        <location filename="../src/ui/action_registry.cpp" line="559"/>
         <source>📁 Open Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="516"/>
+        <location filename="../src/ui/action_registry.cpp" line="568"/>
         <source>⛶ Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/action_registry.cpp" line="525"/>
+        <location filename="../src/ui/action_registry.cpp" line="577"/>
         <source>⚙️ Settings</source>
         <translation>⚙️ Settings</translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="235"/>
+        <location filename="../src/core/build_config.cpp" line="692"/>
         <source>PDF Document Viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="236"/>
+        <location filename="../src/core/build_config.cpp" line="693"/>
         <source>High-fidelity vector PDF reader, text selection, page search, and zoom.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="245"/>
+        <location filename="../src/core/build_config.cpp" line="702"/>
         <source>Embedded Image Extraction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="246"/>
+        <location filename="../src/core/build_config.cpp" line="703"/>
         <source>Extracts lossless PNG/JPG photos embedded inside PDFs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="253"/>
+        <location filename="../src/core/build_config.cpp" line="710"/>
         <source>International &amp; CJK Font Encodings (poppler-data)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="254"/>
+        <location filename="../src/core/build_config.cpp" line="711"/>
         <source>Provides CMAP tables for Asian (Chinese, Japanese, Korean) and complex international character sets.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="261"/>
+        <location filename="../src/core/build_config.cpp" line="718"/>
         <source>Advanced PDF Merge &amp; Optimizer (QPDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="262"/>
+        <location filename="../src/core/build_config.cpp" line="719"/>
         <source>Font deduplication, bookmark preservation, and stream linearization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="269"/>
+        <location filename="../src/core/build_config.cpp" line="726"/>
         <source>Optical Character Recognition (OCR)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="270"/>
+        <location filename="../src/core/build_config.cpp" line="727"/>
         <source>Scans documents into searchable text using Tesseract neural models.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="277"/>
+        <location filename="../src/core/build_config.cpp" line="734"/>
         <source>Cryptographic Digital Signatures (PAdES)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="278"/>
+        <location filename="../src/core/build_config.cpp" line="735"/>
         <source>Applies compliant X.509 PKCS#12 digital signatures with visual seals.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="288"/>
+        <location filename="../src/core/build_config.cpp" line="745"/>
         <source>Archive Explorer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="289"/>
+        <location filename="../src/core/build_config.cpp" line="746"/>
         <source>Inspect and extract contents of ZIP, TAR, 7Z, RAR, GZ, and ISO archives.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="298"/>
+        <location filename="../src/core/build_config.cpp" line="755"/>
         <source>Zstandard Codec (zstd)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="299"/>
+        <location filename="../src/core/build_config.cpp" line="756"/>
         <source>High-speed real-time compression format.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="306"/>
+        <location filename="../src/core/build_config.cpp" line="763"/>
         <source>LZMA / XZ Codec</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="307"/>
+        <location filename="../src/core/build_config.cpp" line="764"/>
         <source>Maximum density archive compression.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="317"/>
+        <location filename="../src/core/build_config.cpp" line="774"/>
         <source>Audio &amp; Video Player</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="318"/>
+        <location filename="../src/core/build_config.cpp" line="775"/>
         <source>Hardware-accelerated playback for MP4, MKV, MP3, FLAC, and WAV.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="329"/>
+        <location filename="../src/core/build_config.cpp" line="786"/>
         <source>Internal Office Document Viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="330"/>
+        <location filename="../src/core/build_config.cpp" line="787"/>
         <source>Instant native preview for Word, Excel, and ODT files without relying on external LibreOffice.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="341"/>
+        <location filename="../src/core/build_config.cpp" line="798"/>
         <source>QR Code Generator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/build_config.cpp" line="342"/>
+        <location filename="../src/core/build_config.cpp" line="799"/>
         <source>Generates scannable QR codes for WiFi sharing, URLs, and quick mobile transfer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="368"/>
-        <source>Gestore pacchetti non supportato</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="369"/>
-        <source>Installa manualmente i pacchetti:
-%1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="374"/>
-        <source>Installazione di %1 in corso...
-Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="375"/>
-        <location filename="../src/core/package_manager_helper.cpp" line="621"/>
-        <source>Annulla</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="379"/>
-        <source>Installazione Pacchetti</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="237"/>
-        <location filename="../src/core/package_manager_helper.cpp" line="253"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="278"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="294"/>
         <source>Immutable System Detected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="238"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="279"/>
         <source>&lt;h3&gt;Immutable System Detected&lt;/h3&gt;&lt;p&gt;Your operating system has a read-only root filesystem.&lt;/p&gt;&lt;p&gt;Would you like to compile the &lt;b&gt;%1&lt;/b&gt; engine from source in your user directory?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="241"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="282"/>
         <source>Compile from Source (Recommended)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="242"/>
-        <location filename="../src/core/package_manager_helper.cpp" line="285"/>
-        <location filename="../src/core/package_manager_helper.cpp" line="333"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="283"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="326"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="374"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="416"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="655"/>
         <source>Cancel</source>
         <translation type="unfinished">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="254"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="295"/>
         <source>&lt;p&gt;Your operating system has a read-only root filesystem.&lt;/p&gt;&lt;p&gt;Installing runtime packages into &lt;code&gt;/usr&lt;/code&gt; is not recommended.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Recommended solution:&lt;/b&gt; In BubezView Settings, select &lt;b&gt;&apos;Compiled (Source)&apos;&lt;/b&gt; to build the module locally in your user folder.&lt;/p&gt;&lt;p&gt;Alternatively, apply an overlay via terminal:&lt;br&gt;&lt;code&gt;rpm-ostree install %1&lt;/code&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="267"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="308"/>
         <source>Gentoo Distribution</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="268"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="309"/>
         <source>&lt;p&gt;Detected Gentoo Linux environment.&lt;/p&gt;&lt;p&gt;Run from terminal:&lt;/p&gt;&lt;p&gt;&lt;code&gt;sudo emerge --ask %1&lt;/code&gt;&lt;/p&gt;&lt;p&gt;Verify that required USE flags are enabled in &lt;code&gt;/etc/portage/package.use&lt;/code&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="278"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="319"/>
         <source>Component Activation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="279"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="320"/>
         <source>&lt;h3&gt;Activate Engine: %1&lt;/h3&gt;&lt;p&gt;This engine requires the system package: &lt;code&gt;%2&lt;/code&gt;&lt;/p&gt;&lt;p&gt;Detected distribution: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;&lt;p&gt;How would you like to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="283"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="324"/>
         <source>Install from System (Recommended)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="284"/>
-        <location filename="../src/core/package_manager_helper.cpp" line="332"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="325"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="373"/>
         <source>Compile from Source</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="297"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="338"/>
         <source>System Package Installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="298"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="339"/>
         <source>&lt;p&gt;The component &lt;b&gt;%1&lt;/b&gt; requires the system package: &lt;code&gt;%2&lt;/code&gt;&lt;/p&gt;&lt;p&gt;Detected distribution: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Would you like to proceed with automated installation using administrator privileges?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="326"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="367"/>
         <source>Installation Failed — Backup Plan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="327"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="368"/>
         <source>&lt;h3&gt;System installation failed&lt;/h3&gt;&lt;p&gt;Could not install package &lt;code&gt;%1&lt;/code&gt; via the system package manager.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Error details:&lt;/b&gt; %2&lt;/p&gt;&lt;p&gt;&lt;b&gt;Backup plan:&lt;/b&gt; Would you like to compile the engine from source?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="331"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="372"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="431"/>
-        <source>Installation Completed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="432"/>
-        <source>The packages (%1) were installed successfully!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="445"/>
-        <source>Installation Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="446"/>
-        <source>&lt;p&gt;Could not complete automatic installation.&lt;/p&gt;&lt;p&gt;Manual terminal command:&lt;/p&gt;&lt;p&gt;&lt;code&gt;%1&lt;/code&gt;&lt;/p&gt;&lt;p&gt;Error detail: %2&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="516"/>
-        <source>system-core-dependencies</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="533"/>
-        <source>query-timeout</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="614"/>
-        <source>Unsupported package manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="615"/>
-        <source>Please uninstall packages manually:
+        <location filename="../src/core/package_manager_helper.cpp" line="410"/>
+        <source>Please install packages manually:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="620"/>
-        <source>Disinstallazione di %1 in corso...
-Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
+        <location filename="../src/core/package_manager_helper.cpp" line="415"/>
+        <source>Installing %1...
+Please authorize the operation in the system prompt if requested.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="625"/>
-        <source>Disinstallazione Pacchetti</source>
+        <location filename="../src/core/package_manager_helper.cpp" line="420"/>
+        <source>Package Installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="674"/>
-        <source>Disinstallazione Completata</source>
+        <location filename="../src/core/package_manager_helper.cpp" line="473"/>
+        <source>Installation Completed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="675"/>
-        <source>I pacchetti (%1) sono stati rimossi con successo!</source>
+        <location filename="../src/core/package_manager_helper.cpp" line="474"/>
+        <source>The packages (%1) were installed successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="685"/>
-        <source>Disinstallazione Fallita</source>
+        <location filename="../src/core/package_manager_helper.cpp" line="487"/>
+        <source>Installation Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="686"/>
-        <source>&lt;p&gt;Impossibile completare la rimozione automatica.&lt;/p&gt;&lt;p&gt;Comando manuale da terminale:&lt;/p&gt;&lt;p&gt;&lt;code&gt;%1&lt;/code&gt;&lt;/p&gt;&lt;p&gt;Dettaglio errore: %2&lt;/p&gt;</source>
+        <location filename="../src/core/package_manager_helper.cpp" line="488"/>
+        <source>&lt;p&gt;Could not complete automatic installation.&lt;/p&gt;&lt;p&gt;Manual terminal command:&lt;/p&gt;&lt;p&gt;&lt;code&gt;%1&lt;/code&gt;&lt;/p&gt;&lt;p&gt;Error detail: %2&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/package_manager_helper.cpp" line="708"/>
-        <source>Disinstallazione Bloccata per Sicurezza</source>
+        <location filename="../src/core/package_manager_helper.cpp" line="550"/>
+        <source>system-core-dependencies</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="567"/>
+        <source>query-timeout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="654"/>
+        <source>Uninstalling %1...
+Please authorize the operation in the system prompt if requested.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="659"/>
+        <source>Package Uninstallation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/core/package_manager_helper.cpp" line="709"/>
-        <source>&lt;p&gt;Non è possibile disinstallare in modo sicuro il pacchetto &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;I seguenti programmi o componenti di sistema dipendono da esso:&lt;/p&gt;&lt;p style=&apos;color: #dc2626;&apos;&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;La rimozione è stata bloccata per evitare instabilità o la cancellazione accidentale di altre applicazioni di sistema.&lt;/p&gt;</source>
+        <source>Uninstallation Completed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="710"/>
+        <source>The packages (%1) were removed successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/core/package_manager_helper.cpp" line="720"/>
-        <source>Conferma Disinstallazione</source>
+        <source>Uninstallation Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/core/package_manager_helper.cpp" line="721"/>
-        <source>&lt;p&gt;Sei sicuro di voler disinstallare il pacchetto &lt;b&gt;%1&lt;/b&gt; dal sistema?&lt;/p&gt;&lt;p&gt;&lt;i&gt;Controllo di sicurezza completato: nessun altro programma dipende da questo componente.&lt;/i&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not complete automatic removal.&lt;/p&gt;&lt;p&gt;Manual terminal command:&lt;/p&gt;&lt;p&gt;&lt;code&gt;%1&lt;/code&gt;&lt;/p&gt;&lt;p&gt;Error details: %2&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="743"/>
+        <source>Uninstallation Blocked for Safety</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="744"/>
+        <source>&lt;p&gt;Cannot safely uninstall package &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The following system packages or applications depend on it:&lt;/p&gt;&lt;p style=&apos;color: #dc2626;&apos;&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Removal was blocked to prevent breaking system stability or removing other installed applications.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="755"/>
+        <source>Confirm Uninstallation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="756"/>
+        <source>&lt;p&gt;Are you sure you want to uninstall package &lt;b&gt;%1&lt;/b&gt; from your system?&lt;/p&gt;&lt;p&gt;&lt;i&gt;Safety check passed: no other packages depend on this component.&lt;/i&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="409"/>
+        <location filename="../src/core/package_manager_helper.cpp" line="648"/>
+        <source>Unsupported package manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/core/package_manager_helper.cpp" line="649"/>
+        <source>Please uninstall packages manually:
+%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9146,6 +10757,26 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
     <message>
         <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="82"/>
         <source>Could not insert page. Please ensure qpdf is installed on your system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1284"/>
+        <source>Failed to start multi-core 7z engine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1346"/>
+        <source>7-Zip operation exited with code %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2121"/>
+        <source>No files or directories found to compress.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2186"/>
+        <source>Failed to create temporary list file for compression.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9225,48 +10856,83 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
 <context>
     <name>SettingsAppearanceTab</name>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="40"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="42"/>
         <source>Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="44"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="46"/>
         <source>Interface theme:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="47"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="49"/>
         <source>System Native</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="66"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="50"/>
+        <source>Dark Slate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="51"/>
+        <source>Breeze Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="68"/>
         <source>File Transitions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="70"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="72"/>
         <source>Transition effect:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="73"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="75"/>
         <source>Zoom &amp; Fade</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="74"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="76"/>
         <source>Parallax Slide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="75"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="77"/>
         <source>Cross Fade</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="76"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="78"/>
         <source>None (instant)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="95"/>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="99"/>
+        <source>Interface language:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="102"/>
+        <source>System Default (Automatic)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="154"/>
+        <source>Language Changed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="155"/>
+        <source>Language preference saved.&lt;br&gt;&lt;br&gt;Please restart BubezView for the changes to take full effect across all components.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9288,37 +10954,37 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="72"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="73"/>
         <source>Performance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="76"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="77"/>
         <source>Extensions &amp;&amp; Modules</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="81"/>
-        <source>General</source>
+        <location filename="../src/ui/settings_dialog.cpp" line="83"/>
+        <source>Diagnostics &amp;&amp; Maintenance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="98"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="100"/>
         <source>⚠️ &lt;b&gt;Pending Changes:&lt;/b&gt; Build options were modified. Recompilation is required to apply.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="103"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="105"/>
         <source>Revert</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="109"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="111"/>
         <source>⚙️ Recompile &amp;&amp; Apply Now</source>
         <translation>⚙️ Recompile &amp;&amp; Apply Now</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="130"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="132"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
@@ -9327,12 +10993,12 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
         <translation type="vanished">🟢 &lt;b&gt;Enabled&lt;/b&gt; (%1 opens BubezView in Dolphin)</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="184"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="191"/>
         <source>Missing Dependency</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings_dialog.cpp" line="185"/>
+        <location filename="../src/ui/settings_dialog.cpp" line="192"/>
         <source>The Internal Office Viewer requires &apos;librevenge&apos;, which is not currently detected on your system.&lt;br&gt;&lt;br&gt;Would you like the installer to attempt installing it via your system package manager?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9441,291 +11107,338 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
     <name>SettingsExtensionsTab</name>
     <message>
         <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="30"/>
-        <source>&lt;b&gt;Modular Functional Engines &amp; Extensions&lt;/b&gt;&lt;br&gt;&lt;span style=&apos;color: #64748b; font-size: 11px;&apos;&gt;Instant one-click installation, package updates, integrity verification, and custom source builds.&lt;/span&gt;</source>
+        <source>&lt;b&gt;Plugins &amp; Extensions&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="71"/>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="70"/>
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="72"/>
-        <source>Document Engines</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="73"/>
-        <source>Audio &amp;&amp; Media</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="74"/>
-        <source>Archiving</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="75"/>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="137"/>
+        <source>PDF</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="79"/>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="138"/>
+        <source>Archives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="83"/>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="140"/>
+        <source>Audio &amp; Video</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="139"/>
+        <source>Office Documents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="87"/>
         <source>Office</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="110"/>
-        <source>Document &amp; PDF Engines</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="111"/>
-        <source>Archiving &amp; Compression Codecs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="112"/>
-        <source>Office &amp; Document Parsers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extensions_tab.cpp" line="113"/>
-        <source>Audio &amp; Multimedia Framework</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>SettingsExtraTab</name>
     <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="50"/>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="161"/>
-        <source>Language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="54"/>
-        <source>Interface language:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="57"/>
-        <source>System Default (Automatic)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="78"/>
-        <source>Office Documents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="82"/>
-        <source>Use LibreOffice for preview (high-fidelity PDF)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="91"/>
-        <source>Interface &amp; Viewer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="95"/>
-        <source>Show bottom thumbnail filmstrip by default</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="107"/>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="56"/>
         <source>Debugging &amp; Diagnostics</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="112"/>
-        <source>Enable Debug Mode (verbose console and diagnostic output)</source>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="62"/>
+        <source>Manage diagnostic tracing, session logs, and developer compilation levels. In case of issues, you can inspect real-time logs or copy a complete diagnostic report.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="122"/>
-        <source>Generate and copy system configuration for bug reports:</source>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="70"/>
+        <source>&lt;b&gt;Diagnostic Mode:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="123"/>
-        <source>Copy System Diagnostics</source>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="73"/>
+        <source>Disabled — Standard User Mode (Optimal performance)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="74"/>
+        <source>Level 1: Lightweight Log (No recompile, session log &amp; CLI output)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="75"/>
+        <source>Level 2: Medium Debug (-O1 with symbols, fast incremental build)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="76"/>
+        <source>Level 3: Deep Debug (-O0 full symbols &amp; frame pointers)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="106"/>
+        <source>💡 &lt;b&gt;Live Terminal Debugging:&lt;/b&gt; To trace crashes, console errors, or real-time events live without modifying compiler flags, run in terminal: &lt;code&gt;bubezview --debug&lt;/code&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="114"/>
+        <source>Copy full system specifications, active compiler flags, soft dependencies, and session debug logs:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="118"/>
+        <source>📋 Copy Full Diagnostics Report</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="131"/>
+        <source>Setup &amp; Maintenance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/settings/settings_extra_tab.cpp" line="135"/>
-        <source>Setup Wizard</source>
+        <source>Re-run the initial onboarding assistant to reconfigure desktop integrations, shortcut triggers, and default settings:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="164"/>
+        <source>🟢 &lt;b&gt;Current Status: Standard User Mode&lt;/b&gt;&lt;br&gt;• Configured Optimization: &lt;b&gt;-%1&lt;/b&gt; (Compiled binary: &lt;b&gt;-%2&lt;/b&gt;)&lt;br&gt;• Verbose Logging: &lt;b&gt;Disabled&lt;/b&gt;&lt;br&gt;• Peak runtime performance and battery efficiency enabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="170"/>
+        <source>🟡 &lt;b&gt;Current Status: Level 1 — Lightweight Log&lt;/b&gt;&lt;br&gt;• Configured Optimization: &lt;b&gt;-%1&lt;/b&gt; (No recompilation required)&lt;br&gt;• Verbose Logging: &lt;b&gt;Active&lt;/b&gt;&lt;br&gt;• Session logs streamed live to terminal and &lt;code&gt;~/.cache/Bubez/BubezView/bubezview.log&lt;/code&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="176"/>
+        <source>🟠 &lt;b&gt;Current Status: Level 2 — Medium Debug (-O1)&lt;/b&gt;&lt;br&gt;• Optimization: &lt;b&gt;-O1&lt;/b&gt; with debug symbols (&lt;code&gt;-g&lt;/code&gt;)&lt;br&gt;• Fast incremental recompile; suitable for general bug tracking.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="181"/>
+        <source>🔴 &lt;b&gt;Current Status: Level 3 — Deep Debug (-O0)&lt;/b&gt;&lt;br&gt;• Optimization: &lt;b&gt;-O0&lt;/b&gt; (Unoptimized with full debug symbols and frame pointers)&lt;br&gt;• Maximum debuggability for GDB, Valgrind, and backtraces.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="207"/>
+        <source>Restore User Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="208"/>
+        <source>Restoring User Mode will recompile BubezView with standard optimization (&lt;b&gt;-%1&lt;/b&gt;).&lt;br&gt;&lt;br&gt;&lt;b&gt;Target:&lt;/b&gt; Main executable only (&lt;code&gt;bubezview&lt;/code&gt;). Modular plugins will not be touched.&lt;br&gt;&lt;br&gt;Start recompilation now?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="245"/>
+        <source>Switch to Level 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="246"/>
+        <source>Level 1 uses standard optimization with verbose logging enabled.&lt;br&gt;&lt;br&gt;Would you like to restore standard optimization (&lt;b&gt;-%1&lt;/b&gt;) for &apos;bubezview&apos;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="277"/>
+        <source>Switch to Level 2 (Medium Debug)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="278"/>
+        <source>Level 2 requires recompiling BubezView with &lt;b&gt;-O1 -g&lt;/b&gt;.&lt;br&gt;&lt;br&gt;&lt;b&gt;Target:&lt;/b&gt; Main executable only (&lt;code&gt;bubezview&lt;/code&gt;). Modular plugins will not be touched.&lt;br&gt;&lt;br&gt;Start recompilation now?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="306"/>
+        <source>Switch to Level 3 (Deep Debug)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="307"/>
+        <source>Level 3 requires recompiling BubezView with &lt;b&gt;-O0 -g -fno-omit-frame-pointer&lt;/b&gt;.&lt;br&gt;&lt;br&gt;&lt;b&gt;Target:&lt;/b&gt; Main executable only (&lt;code&gt;bubezview&lt;/code&gt;). Modular plugins will not be touched.&lt;br&gt;&lt;br&gt;Start recompilation now?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="425"/>
+        <source>Diagnostics Report Copied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="426"/>
+        <source>A complete diagnostics report containing system specifications, compiler settings, plugin statuses, and session logs has been copied to your clipboard.&lt;br&gt;&lt;br&gt;You can now paste it directly into your bug report or forum discussion.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/settings/settings_extra_tab.cpp" line="139"/>
-        <source>Re-run the initial onboarding and integration assistant:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="140"/>
         <source>Run Setup Wizard...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="162"/>
-        <source>Language preference saved. Please restart BubezView to apply the new language.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="213"/>
-        <source>Diagnostics Copied</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_extra_tab.cpp" line="214"/>
-        <source>System diagnostics have been copied to the clipboard.&lt;br&gt;&lt;br&gt;You can now paste them directly into your bug report.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>SettingsIntegrationTab</name>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="42"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="44"/>
         <source>Detected desktop environment: &lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="47"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="49"/>
         <source>Dolphin (KDE Plasma)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="63"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="65"/>
         <source>Trigger shortcut in Dolphin:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="66"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="68"/>
         <source>Space (Mac-style Quick Look)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="67"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="69"/>
         <source>Ctrl + Space (Safe non-conflicting)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="81"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="83"/>
         <source>GNOME Nautilus / Nemo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="94"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="96"/>
         <source>Context Menu (Right Click)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="107"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="109"/>
         <source>System Application Menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="131"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="122"/>
+        <source>Office Documents Integration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="126"/>
+        <source>Use LibreOffice for preview (high-fidelity PDF conversion)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="151"/>
         <source>🟢 &lt;b&gt;Enabled&lt;/b&gt; (%1 opens BubezView in Dolphin)</source>
         <translation type="unfinished">🟢 &lt;b&gt;Enabled&lt;/b&gt; (%1 opens BubezView in Dolphin)</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="132"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="152"/>
         <source>Disable Dolphin Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="134"/>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="147"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="154"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="167"/>
         <source>⚪ &lt;b&gt;Disabled&lt;/b&gt;</source>
         <translation type="unfinished">⚪ &lt;b&gt;Disabled&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="135"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="155"/>
         <source>✅ Enable Dolphin Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="147"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="167"/>
         <source>🟢 &lt;b&gt;Enabled&lt;/b&gt; (DBus and Sushi forward ready)</source>
         <translation type="unfinished">🟢 &lt;b&gt;Enabled&lt;/b&gt; (DBus and Sushi forward ready)</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="148"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="168"/>
         <source>Disable for GNOME</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="148"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="168"/>
         <source>✅ Enable for GNOME/Mint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="152"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="172"/>
         <source>🟢 &lt;b&gt;Present&lt;/b&gt; in file manager right-click menu</source>
         <translation type="unfinished">🟢 &lt;b&gt;Present&lt;/b&gt; in file manager right-click menu</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="152"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="172"/>
         <source>⚪ &lt;b&gt;Not configured&lt;/b&gt;</source>
         <translation type="unfinished">⚪ &lt;b&gt;Not configured&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="153"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="173"/>
         <source>Remove from Right Click</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="153"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="173"/>
         <source>✅ Add to Right Click</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="157"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="177"/>
         <source>🟢 &lt;b&gt;Installed&lt;/b&gt; in system menu and &apos;Open With...&apos;</source>
         <translation type="unfinished">🟢 &lt;b&gt;Installed&lt;/b&gt; in system menu and &apos;Open With...&apos;</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="157"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="177"/>
         <source>⚪ &lt;b&gt;Not present&lt;/b&gt;</source>
         <translation type="unfinished">⚪ &lt;b&gt;Not present&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="158"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="178"/>
         <source>Remove from Menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="158"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="178"/>
         <source>✅ Add to App Menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="165"/>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="172"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="185"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="192"/>
         <source>Dolphin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="165"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="185"/>
         <source>Dolphin shortcut for BubezView removed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="172"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="192"/>
         <source>Dolphin shortcut &apos;%1&apos; enabled successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="181"/>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="186"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="201"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="206"/>
         <source>GNOME / Nemo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="181"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="201"/>
         <source>GNOME/Nemo integration removed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="187"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="207"/>
         <source>Integration for GNOME (Nautilus) and Linux Mint (Nemo) enabled successfully!
 
 ✓ DBus services registered for BubezView.
@@ -9733,34 +11446,34 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="199"/>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="202"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="219"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="222"/>
         <source>Right Click</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="199"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="219"/>
         <source>Context menu items removed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="202"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="222"/>
         <source>&apos;Preview with BubezView&apos; items added to right-click menu successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="211"/>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="214"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="231"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="234"/>
         <source>Application Menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="211"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="231"/>
         <source>Icon removed from application menu.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="214"/>
+        <location filename="../src/ui/settings/settings_integration_tab.cpp" line="234"/>
         <source>BubezView successfully added to application menu and &apos;Open With...&apos; menu!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9768,113 +11481,137 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
 <context>
     <name>SettingsPerformanceTab</name>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="69"/>
-        <source>Compiler Optimization &amp;&amp; CPU Tuning</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="81"/>
-        <source>Optimization Profile:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="84"/>
-        <source>🛡️ -O2 (Balanced)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="86"/>
-        <source>🚀 -O3 (Aggressive)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="105"/>
-        <source>Detailed information about -O2 vs -O3 optimization</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="108"/>
-        <source>Compiler Optimization: -O2 vs -O3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="109"/>
         <source>&lt;h3&gt;Compiler Optimization Comparison&lt;/h3&gt;&lt;p&gt;&lt;b&gt;🛡️ -O2 (Balanced &amp; Recommended for Laptops):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Best for:&lt;/b&gt; Laptops, low-power CPUs, battery operation, and daily use.&lt;br&gt;• &lt;b&gt;Energy efficiency:&lt;/b&gt; Minimizes power draw and lets the CPU quickly return to low-power sleep states.&lt;br&gt;• &lt;b&gt;Prevents Overheating:&lt;/b&gt; Avoids thermal throttling and eliminates loud laptop cooling fan noise.&lt;br&gt;• &lt;b&gt;Snappy UI &amp; Fast Startup:&lt;/b&gt; Generates compact code that easily fits in the CPU&apos;s ultra-fast L1 instruction cache, resulting in instant cold launch and lightning-fast navigation for light files.&lt;/p&gt;&lt;p&gt;&lt;b&gt;🚀 -O3 (Aggressive / High-Performance Desktop &amp; Large Files):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Best for:&lt;/b&gt; Powerful desktop workstations, gaming PCs with robust cooling, and heavy data workflows.&lt;br&gt;• &lt;b&gt;Heavy Compute &amp; Vectorization:&lt;/b&gt; Aggressively vectorizes loops and uses wide SIMD/AVX2 instruction sets.&lt;br&gt;• &lt;b&gt;Ideal for Large Files:&lt;/b&gt; Drastically speeds up rendering of complex multi-page vector PDFs (CAD/architectural drawings), huge RAW/TIFF photos, and heavy spreadsheets.&lt;br&gt;• &lt;i&gt;Note:&lt;/i&gt; On thin laptops, -O3 can trigger thermal throttling, which paradoxically slows down the processor.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;h3&gt;Compiler Optimization Comparison&lt;/h3&gt;&lt;p&gt;&lt;b&gt;🛡️ -O2 (Balanced &amp; Recommended for Laptops):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Best for:&lt;/b&gt; Laptops, low-power CPUs, battery operation, and daily use.&lt;br&gt;• &lt;b&gt;Energy efficiency:&lt;/b&gt; Minimizes power draw and lets the CPU quickly return to low-power sleep states.&lt;br&gt;• &lt;b&gt;Prevents Overheating:&lt;/b&gt; Avoids thermal throttling and eliminates loud laptop cooling fan noise.&lt;br&gt;• &lt;b&gt;Snappy UI &amp; Fast Startup:&lt;/b&gt; Generates compact code that easily fits in the CPU&apos;s ultra-fast L1 instruction cache, resulting in instant cold launch and lightning-fast navigation for light files.&lt;/p&gt;&lt;p&gt;&lt;b&gt;🚀 -O3 (Aggressive / High-Performance Desktop &amp; Large Files):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Best for:&lt;/b&gt; Powerful desktop workstations, gaming PCs with robust cooling, and heavy data workflows.&lt;br&gt;• &lt;b&gt;Heavy Compute &amp; Vectorization:&lt;/b&gt; Aggressively vectorizes loops and uses wide SIMD/AVX2 instruction sets.&lt;br&gt;• &lt;b&gt;Ideal for Large Files:&lt;/b&gt; Drastically speeds up rendering of complex multi-page vector PDFs (CAD/architectural drawings), huge RAW/TIFF photos, and heavy spreadsheets.&lt;br&gt;• &lt;i&gt;Note:&lt;/i&gt; On thin laptops, -O3 can trigger thermal throttling, which paradoxically slows down the processor.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;h3&gt;Compiler Optimization Comparison&lt;/h3&gt;&lt;p&gt;&lt;b&gt;🛡️ -O2 (Balanced &amp; Recommended for Laptops):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Best for:&lt;/b&gt; Laptops, low-power CPUs, battery operation, and daily use.&lt;br&gt;• &lt;b&gt;Energy efficiency:&lt;/b&gt; Minimizes power draw and lets the CPU quickly return to low-power sleep states.&lt;br&gt;• &lt;b&gt;Prevents Overheating:&lt;/b&gt; Avoids thermal throttling and eliminates loud laptop cooling fan noise.&lt;br&gt;• &lt;b&gt;Snappy UI &amp; Fast Startup:&lt;/b&gt; Generates compact code that easily fits in the CPU&apos;s ultra-fast L1 instruction cache, resulting in instant cold launch and lightning-fast navigation for light files.&lt;/p&gt;&lt;p&gt;&lt;b&gt;🚀 -O3 (Aggressive / High-Performance Desktop &amp; Large Files):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Best for:&lt;/b&gt; Powerful desktop workstations, gaming PCs with robust cooling, and heavy data workflows.&lt;br&gt;• &lt;b&gt;Heavy Compute &amp; Vectorization:&lt;/b&gt; Aggressively vectorizes loops and uses wide SIMD/AVX2 instruction sets.&lt;br&gt;• &lt;b&gt;Ideal for Large Files:&lt;/b&gt; Drastically speeds up rendering of complex multi-page vector PDFs (CAD/architectural drawings), huge RAW/TIFF photos, and heavy spreadsheets.&lt;br&gt;• &lt;i&gt;Note:&lt;/i&gt; On thin laptops, -O3 can trigger thermal throttling, which paradoxically slows down the processor.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="133"/>
-        <source>&lt;b&gt;Fine-Grained CPU Instructions &amp; Flags:&lt;/b&gt;</source>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="97"/>
+        <source>🚀 &lt;b&gt;High Performance (Fully Compiled from Source):&lt;/b&gt; All engines and components (PDF, Archives, QPDF, OCR) compiled from source with extreme optimizations (-O3, -march=native, LTO, CRC32). Expanded 512 MB RAM cache for maximum responsiveness.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="134"/>
-        <source>Customize vector instruction sets (v3/v4), LTO, and hardware tuning.</source>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="104"/>
+        <source>📦 &lt;b&gt;Balanced (System Packages):&lt;/b&gt; Uses precompiled distribution packages and shared libraries provided by your Linux distro. Zero compilation time, low CPU usage, and balanced memory footprint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="140"/>
-        <source>🧙 Compiler Wizard...</source>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="110"/>
+        <source>🧙 &lt;b&gt;Custom Configuration:&lt;/b&gt; Microarchitecture CPU flags, instruction sets, and component build modes manually tuned via the Compiler Wizard.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="143"/>
-        <source>Open interactive wizard to configure fine-grained CPU instructions, v3/v4 tiers, and vectorization flags</source>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="166"/>
+        <source>Hardware Performance Profile &amp;&amp; CPU Tuning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="150"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="180"/>
+        <source>🚀 High Performance (Compiled)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="182"/>
+        <source>All engines compiled from source with extreme optimization and 512 MB expanded RAM cache.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="187"/>
+        <source>📦 Balanced (Packages)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="189"/>
+        <source>All components based on precompiled system packages with zero build waiting time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="194"/>
+        <source>🧙 Custom...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="196"/>
+        <source>Custom configuration: opens the Compiler Wizard to choose fine-grained options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="213"/>
         <source>Changes to compiler optimization will take effect upon recompile.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="157"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="222"/>
         <source>Adjacent File Pre-caching (Instant Next/Prev)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="162"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="227"/>
         <source>Enable instant adjacent file pre-caching (256 MB RAM cache)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="172"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="237"/>
         <source>Silently preloads the previous and next file in memory in the background so switching between files is instantaneous (0ms latency). Disabling saves RAM on low-memory devices.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="193"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="258"/>
         <source>Background Standby on Close (0ms Reopening)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="199"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="264"/>
         <source>Standby Duration:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="229"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="294"/>
         <source>0 min (Disabled / Quits immediately)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="231"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="296"/>
         <source>%1 min (Instant reopen)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="263"/>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="328"/>
         <source>When set above 0 min, closing BubezView keeps the process silently in RAM for instant reopening when pressing Space in your file manager.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="280"/>
-        <source>Compiler Wizard - CPU Not Supported</source>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="338"/>
+        <source>Optimization Alerts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="281"/>
-        <source>&lt;h3&gt;Feature Not Supported for this CPU&lt;/h3&gt;&lt;p&gt;The &lt;b&gt;Compiler Wizard&lt;/b&gt; requires a modern 64-bit processor supporting at least the &lt;b&gt;x86-64-v3&lt;/b&gt; microarchitecture tier (AVX2, FMA, BMI2) or higher.&lt;/p&gt;&lt;p&gt;Your current CPU tier: &lt;b&gt;x86-64-%1&lt;/b&gt;&lt;br&gt;Hardware Model: &lt;i&gt;%2&lt;/i&gt;&lt;/p&gt;&lt;p&gt;On older processors, fine-grained vector tuning can cause illegal instruction faults or performance regressions. Universal standard compilation (-O2) is used instead.&lt;/p&gt;</source>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="344"/>
+        <source>When using the High-Performance profile, BubezView alerts you if an individual tool (like OCR or PDF repair) is running via an unoptimized system package rather than a custom-compiled source binary.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="351"/>
+        <source>Reset All Optimization Alerts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="358"/>
+        <source>Alerts Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="358"/>
+        <source>All performance optimization alerts have been re-enabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="372"/>
+        <source>Compiler Wizard — CPU Architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="373"/>
+        <source>&lt;h3&gt;Feature Not Supported for this CPU&lt;/h3&gt;&lt;p&gt;The &lt;b&gt;Compiler Wizard&lt;/b&gt; requires a 64-bit processor supporting at least the &lt;b&gt;x86-64-v3&lt;/b&gt; microarchitecture tier (AVX2, FMA, BMI2) or higher.&lt;/p&gt;&lt;p&gt;Your current CPU tier: &lt;b&gt;x86-64-%1&lt;/b&gt;&lt;br&gt;Hardware Model: &lt;i&gt;%2&lt;/i&gt;&lt;/p&gt;&lt;p&gt;On older processors, fine-grained vector tuning can cause illegal instruction faults. Universal standard compilation (-O2) is used instead.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9919,115 +11656,120 @@ Autorizza l&apos;operazione nella finestra di sistema se richiesta.</source>
 <context>
     <name>ShareManager</name>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="111"/>
+        <location filename="../src/ui/share_manager.cpp" line="183"/>
         <source>Send to device (KDE Connect)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="121"/>
+        <location filename="../src/ui/share_manager.cpp" line="192"/>
         <source>Send with LocalSend...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="131"/>
+        <location filename="../src/ui/share_manager.cpp" line="201"/>
         <source>Send via Bluetooth...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="141"/>
+        <location filename="../src/ui/share_manager.cpp" line="210"/>
         <source>Send with Telegram Desktop...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="151"/>
+        <location filename="../src/ui/share_manager.cpp" line="219"/>
         <source>Send via Email...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="161"/>
+        <location filename="../src/ui/share_manager.cpp" line="228"/>
         <source>Generate QR Code for smartphone...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="172"/>
-        <location filename="../src/ui/share_manager.cpp" line="181"/>
-        <location filename="../src/ui/share_manager.cpp" line="201"/>
-        <location filename="../src/ui/share_manager.cpp" line="264"/>
-        <location filename="../src/ui/share_manager.cpp" line="283"/>
-        <location filename="../src/ui/share_manager.cpp" line="303"/>
-        <location filename="../src/ui/share_manager.cpp" line="350"/>
+        <location filename="../src/ui/share_manager.cpp" line="246"/>
+        <source>📦 Compress &amp; Share Current Folder (%1.zip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/share_manager.cpp" line="256"/>
+        <location filename="../src/ui/share_manager.cpp" line="265"/>
+        <location filename="../src/ui/share_manager.cpp" line="288"/>
+        <location filename="../src/ui/share_manager.cpp" line="354"/>
+        <location filename="../src/ui/share_manager.cpp" line="376"/>
+        <location filename="../src/ui/share_manager.cpp" line="399"/>
+        <location filename="../src/ui/share_manager.cpp" line="449"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="181"/>
-        <location filename="../src/ui/share_manager.cpp" line="201"/>
-        <location filename="../src/ui/share_manager.cpp" line="264"/>
-        <location filename="../src/ui/share_manager.cpp" line="283"/>
-        <location filename="../src/ui/share_manager.cpp" line="303"/>
-        <location filename="../src/ui/share_manager.cpp" line="350"/>
+        <location filename="../src/ui/share_manager.cpp" line="265"/>
+        <location filename="../src/ui/share_manager.cpp" line="288"/>
+        <location filename="../src/ui/share_manager.cpp" line="354"/>
+        <location filename="../src/ui/share_manager.cpp" line="376"/>
+        <location filename="../src/ui/share_manager.cpp" line="399"/>
+        <location filename="../src/ui/share_manager.cpp" line="449"/>
         <source>No open file to share.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="193"/>
+        <location filename="../src/ui/share_manager.cpp" line="280"/>
         <source>KDE Connect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="193"/>
+        <location filename="../src/ui/share_manager.cpp" line="280"/>
         <source>KDE Connect does not appear to be available on this system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="210"/>
+        <location filename="../src/ui/share_manager.cpp" line="297"/>
         <source>LocalSend Not Found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="211"/>
+        <location filename="../src/ui/share_manager.cpp" line="298"/>
         <source>LocalSend does not appear to be installed on the system.
 You can install it via your package manager (e.g. pacman -S localsend-bin) or via Flatpak.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="257"/>
+        <location filename="../src/ui/share_manager.cpp" line="347"/>
         <source>Launch Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="257"/>
+        <location filename="../src/ui/share_manager.cpp" line="347"/>
         <source>Unable to start LocalSend:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="275"/>
+        <location filename="../src/ui/share_manager.cpp" line="368"/>
         <source>Bluetooth</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="275"/>
+        <location filename="../src/ui/share_manager.cpp" line="368"/>
         <source>No Bluetooth file transfer utility (blueman-sendto or bluetooth-sendto) found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="295"/>
+        <location filename="../src/ui/share_manager.cpp" line="391"/>
         <source>Telegram</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="295"/>
+        <location filename="../src/ui/share_manager.cpp" line="391"/>
         <source>Telegram Desktop does not appear to be installed on the system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="319"/>
+        <location filename="../src/ui/share_manager.cpp" line="418"/>
         <source>Send via Email</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="321"/>
+        <location filename="../src/ui/share_manager.cpp" line="420"/>
         <source>Opening default email client...
 
 💡 Tip for Webmail (e.g. Gmail, Outlook in Firefox or Chrome):
@@ -10037,17 +11779,17 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="326"/>
+        <location filename="../src/ui/share_manager.cpp" line="425"/>
         <source>Do not show this message again</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="339"/>
+        <location filename="../src/ui/share_manager.cpp" line="438"/>
         <source>Sending file: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/share_manager.cpp" line="342"/>
+        <location filename="../src/ui/share_manager.cpp" line="441"/>
         <source>Sending file: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -10319,22 +12061,27 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
 <context>
     <name>main</name>
     <message>
-        <location filename="../src/main.cpp" line="101"/>
+        <location filename="../src/main.cpp" line="148"/>
         <source>BubezView: Instant universal native file viewer in C++</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="107"/>
+        <location filename="../src/main.cpp" line="154"/>
         <source>Run as DBus previewer daemon for Nemo / Nautilus (org.nemo.Preview).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="113"/>
+        <location filename="../src/main.cpp" line="160"/>
         <source>Capture a preview screenshot and save it to the specified file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="118"/>
+        <location filename="../src/main.cpp" line="167"/>
+        <source>Enable verbose debug and diagnostic console output.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="171"/>
         <source>File or folder to preview (optional)</source>
         <translation type="unfinished"></translation>
     </message>

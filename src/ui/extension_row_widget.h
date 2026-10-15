@@ -70,15 +70,10 @@ private:
     QString m_candidateVersion;
     bool m_updateAvailable;
 
-    // UI Elements - Level 1 (Full-width header)
+    // UI Elements - Clean Single Row
     QLabel *m_lblTitle;
     QPushButton *m_btnInfo;
-
-    // UI Elements - Level 2 (Sub-info left, controls right)
-    QLabel *m_lblSubInfo;
-    QPushButton *m_btnSourceBinary;
-    QPushButton *m_btnSourceBuild;
-    QPushButton *m_btnEditSource;
-    QPushButton *m_btnVerify;
-    QPushButton *m_btnAction;
+    QPushButton *m_btnStateBadge;     ///< Clickable pill badge showing ⚡ Compilato / 📦 Sistema / Non installato
+    QPushButton *m_btnAction;         ///< Modern action button [ Installa ] / [ Disinstalla ]
+    QPushButton *m_btnWrench;         ///< Tools & Diagnostics button
 };

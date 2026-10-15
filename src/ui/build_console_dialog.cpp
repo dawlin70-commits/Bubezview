@@ -5,6 +5,7 @@
 
 #include "build_console_dialog.h"
 #include "update_manager.h"
+#include "build_config.h"
 #include "base_skin.h"
 
 #include <QVBoxLayout>
@@ -114,6 +115,11 @@ void BuildConsoleDialog::setupUi()
 
 bool BuildConsoleDialog::startBuild()
 {
+    return startBuildForComponent(QString());
+}
+
+bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
+{
     QString scriptPath = UpdateManager::instance().findInstallerScript();
     if (scriptPath.isEmpty()) {
         m_lblStatus->setText(tr("❌ Installer script not found."));
@@ -145,6 +151,62 @@ bool BuildConsoleDialog::startBuild()
 
     QStringList args;
     args << "--cli" << "--update";
+    if (!targetName.isEmpty()) {
+        args << "--target" << targetName;
+    }
+    args.append(BuildConfig::instance().toCMakeArgs());
+    m_process->start(scriptPath, args);
+    return true;
+}
+
+bool BuildConsoleDialog::startBuildForComponent(const QString &componentId)
+{
+    QString scriptPath = UpdateManager::instance().findInstallerScript();
+    if (scriptPath.isEmpty()) {
+        m_lblStatus->setText(tr("❌ Installer script not found."));
+        m_progressBar->setRange(0, 100);
+        m_progressBar->setValue(0);
+        m_txtLog->append(tr("[Error] Could not locate 'Installa' recompilation script in system or source repository."));
+        m_btnCancel->hide();
+        m_btnClose->show();
+        return false;
+    }
+
+    m_succeeded = false;
+    m_txtLog->clear();
+    m_txtLog->append(tr(">>> Starting compilation: %1 --cli --update\n").arg(scriptPath));
+
+    m_progressBar->setRange(0, 0);
+    m_lblStatus->setText(tr("⚙️ Configuring CMake build environment..."));
+    m_btnCancel->show();
+    m_btnRestart->hide();
+    m_btnClose->hide();
+
+    if (!m_process) {
+        m_process = new QProcess(this);
+        m_process->setProcessChannelMode(QProcess::MergedChannels);
+        connect(m_process, &QProcess::readyReadStandardOutput, this, &BuildConsoleDialog::onReadyReadStandardOutput);
+        connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                this, &BuildConsoleDialog::onProcessFinished);
+    }
+
+    QStringList args;
+    args << "--cli" << "--update";
+    QString normComp = componentId.trimmed().toLower();
+    if (!normComp.isEmpty()) {
+        args << "--build-component" << normComp;
+        CustomSourceConfig srcCfg = BuildConfig::instance().customSourceConfig(normComp);
+        if (!srcCfg.gitUrl.isEmpty()) {
+            args << "--git-url" << srcCfg.gitUrl;
+        }
+        if (!srcCfg.branchTag.isEmpty()) {
+            args << "--git-branch" << srcCfg.branchTag;
+        }
+        if (!srcCfg.buildFlags.isEmpty()) {
+            args << "--extra-build-flags" << srcCfg.buildFlags;
+        }
+    }
+    args.append(BuildConfig::instance().toCMakeArgs());
     m_process->start(scriptPath, args);
     return true;
 }
@@ -172,11 +234,29 @@ void BuildConsoleDialog::onReadyReadStandardOutput()
     }
 }
 
+bool BuildConsoleDialog::startBuildComponents(const QStringList &componentIds)
+{
+    m_pendingComponents = componentIds;
+    if (m_pendingComponents.isEmpty()) {
+        return startBuild();
+    }
+    QString nextComp = m_pendingComponents.takeFirst();
+    return startBuildForComponent(nextComp);
+}
+
 void BuildConsoleDialog::onProcessFinished(int exitCode, int exitStatus)
 {
     m_progressBar->setRange(0, 100);
 
     if (exitStatus == 0 && exitCode == 0) { // QProcess::NormalExit == 0
+        // If there are more components queued, compile the next one
+        if (!m_pendingComponents.isEmpty()) {
+            QString nextComp = m_pendingComponents.takeFirst();
+            m_txtLog->append(tr("\n>>> Component build completed. Starting next component: %1...\n").arg(nextComp));
+            startBuildForComponent(nextComp);
+            return;
+        }
+
         m_succeeded = true;
         m_progressBar->setValue(100);
         m_lblStatus->setText(tr("✅ Compilation completed successfully! Changes will take effect the next time you start BubezView."));
@@ -189,6 +269,7 @@ void BuildConsoleDialog::onProcessFinished(int exitCode, int exitStatus)
         m_btnClose->setText(tr("Close"));
         emit buildSucceeded();
     } else {
+        m_pendingComponents.clear();
         m_succeeded = false;
         m_progressBar->setValue(0);
         m_lblStatus->setText(QString(tr("❌ Compilation failed (exit code %1).")).arg(exitCode));

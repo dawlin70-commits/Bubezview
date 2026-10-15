@@ -886,25 +886,30 @@ QWidget *PdfToolsDialog::createSignatureTab()
 
     m_sigSubTabs->addTab(savedSigTab, tr("📁 Saved Signatures"));
 
-    // 4. Digital / Electronic Certificate (Roadmap)
+    // 4. Digital / Electronic Certificate (Cryptographic Signature Hub)
     auto *digitalTab = new QWidget(m_sigSubTabs);
     auto *digLayout = new QVBoxLayout(digitalTab);
     digLayout->setContentsMargins(12, 12, 12, 12);
     digLayout->setSpacing(12);
 
-    auto *lblDigInfo = new QLabel(tr("<b>Electronic & Digital Signature Hub (PAdES / X.509)</b><br><br>"
-                                     "Support for legal digital signatures using:<br>"
-                                     "• Smart Card / Hardware Token (CIE, CNS, USB crypto tokens)<br>"
-                                     "• PKCS#12 Certificate files (.p12, .pfx)<br>"
-                                     "• Timestamp Authority (TSA) synchronization<br><br>"
-                                     "All signature operations will be centralized in this panel."), digitalTab);
+    auto *lblDigInfo = new QLabel(tr("<b>🔐 Electronic & Digital Signature Hub (PAdES / CAdES .p7m)</b><br><br>"
+                                     "Verify cryptographic signatures, inspect X.509 certificate chains, "
+                                     "generate a personal self-signed certificate (<code>.p12</code>), or digitally sign this document:<br>"
+                                     "• <b>PAdES (Embedded PDF Signature)</b> — Standard signed <code>.pdf</code><br>"
+                                     "• <b>CAdES (PKCS#7 Envelope)</b> — Signed <code>.pdf.p7m</code> envelope<br>"
+                                     "• <b>PKCS#12 Certificates</b> — Import <code>.p12</code> / <code>.pfx</code> or generate 1-click keypair"), digitalTab);
     lblDigInfo->setWordWrap(true);
     lblDigInfo->setStyleSheet("background: rgba(0, 120, 215, 0.08); border: 1px solid rgba(0, 120, 215, 0.3); border-radius: 6px; padding: 12px;");
     digLayout->addWidget(lblDigInfo);
 
-    auto *btnCertSoon = new QPushButton(tr("Digital Certificate Manager (Under Development)"), digitalTab);
-    btnCertSoon->setEnabled(false);
-    digLayout->addWidget(btnCertSoon);
+    auto *btnCertHub = new QPushButton(tr("🔐 Open Cryptographic Signature Hub..."), digitalTab);
+    btnCertHub->setCursor(Qt::PointingHandCursor);
+    btnCertHub->setStyleSheet("background-color: #2563EB; color: white; font-weight: bold; font-size: 13px; padding: 10px 16px; border-radius: 6px;");
+    connect(btnCertHub, &QPushButton::clicked, this, [this]() {
+        m_selectedAction = PdfToolAction::CryptoSignature;
+        accept();
+    });
+    digLayout->addWidget(btnCertHub);
     digLayout->addStretch();
 
     m_sigSubTabs->addTab(digitalTab, tr("🔒 Digital / Electronic Certificate"));
@@ -1041,6 +1046,11 @@ QImage PdfToolsDialog::signatureImage() const
 void PdfToolsDialog::onApplySignature()
 {
     int currentTab = m_sigSubTabs ? m_sigSubTabs->currentIndex() : 0;
+    if (currentTab == 3) {
+        m_selectedAction = PdfToolAction::CryptoSignature;
+        accept();
+        return;
+    }
     QImage result;
 
     if (currentTab == 0) {

@@ -106,8 +106,24 @@ public:
      */
     static void shareQrCode(const QString &filePath, QWidget *parent = nullptr);
 
+    /**
+     * @brief Ensures that a target path is a single shareable file.
+     * If @p filePath is a directory, compresses it on-the-fly into a temporary .zip archive.
+     * @param filePath File or directory path to prepare for sharing.
+     * @param parent Optional parent widget for progress/error dialogs.
+     * @return Path to the shareable file (or temporary .zip archive), or empty string on failure.
+     */
+    static QString ensureShareableFile(const QString &filePath, QWidget *parent = nullptr);
+
+    /**
+     * @brief Registers a custom directory-to-zip compressor function (e.g. backed by the libarchive plugin).
+     * @param compressor Callback taking (folderPath, destZipPath, parentWidget) and returning true on success.
+     */
+    static void setFolderCompressor(std::function<bool(const QString &, const QString &, QWidget *)> compressor);
+
 private:
     QWidget *m_parent;
     std::function<QString()> m_getFilePath;
 };
+
 

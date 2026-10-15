@@ -98,6 +98,77 @@ QStringList ShareManager::getExecutable(const QStringList &commandsOrFlatpaks)
     return QStringList();
 }
 
+namespace {
+std::function<bool(const QString &, const QString &, QWidget *)> s_folderCompressor;
+}
+
+void ShareManager::setFolderCompressor(std::function<bool(const QString &, const QString &, QWidget *)> compressor)
+{
+    s_folderCompressor = std::move(compressor);
+}
+
+QString ShareManager::ensureShareableFile(const QString &filePath, QWidget *parent)
+{
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
+        return QString();
+    }
+
+    QFileInfo fi(filePath);
+    if (!fi.isDir()) {
+        return filePath;
+    }
+
+    // Target is a directory: compress it on-the-fly into a .zip inside BubezShare_Temp
+    QString downloadDir = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+    if (downloadDir.isEmpty() || !QDir(downloadDir).exists()) {
+        downloadDir = QDir::homePath() + "/Downloads";
+        if (!QDir(downloadDir).exists()) {
+            downloadDir = QDir::homePath() + "/Scaricati";
+        }
+        if (!QDir(downloadDir).exists()) {
+            downloadDir = QDir::tempPath();
+        }
+    }
+
+    QString tempShareDir = downloadDir + "/BubezShare_Temp";
+    QDir().mkpath(tempShareDir);
+
+    QString folderName = fi.fileName();
+    if (folderName.isEmpty()) {
+        folderName = QFileInfo(QDir(filePath).canonicalPath()).fileName();
+        if (folderName.isEmpty()) folderName = QStringLiteral("SharedFolder");
+    }
+
+    QString destZipPath = tempShareDir + "/" + folderName + ".zip";
+    QFile::remove(destZipPath);
+
+    bool ok = false;
+    if (s_folderCompressor) {
+        ok = s_folderCompressor(fi.absoluteFilePath(), destZipPath, parent);
+    }
+
+    if (!ok) {
+        // CLI fallbacks if libarchive plugin callback was not registered
+        QString zipBin = QStandardPaths::findExecutable("zip");
+        if (!zipBin.isEmpty()) {
+            QProcess p;
+            p.setWorkingDirectory(fi.absolutePath());
+            p.start(zipBin, QStringList() << "-r" << "-q" << destZipPath << folderName);
+            ok = p.waitForFinished(60000) && p.exitCode() == 0 && QFile::exists(destZipPath);
+        }
+        if (!ok) {
+            QString pyBin = QStandardPaths::findExecutable("python3");
+            if (!pyBin.isEmpty()) {
+                QProcess p;
+                p.start(pyBin, QStringList() << "-m" << "zipfile" << "-c" << destZipPath << fi.absoluteFilePath());
+                ok = p.waitForFinished(60000) && p.exitCode() == 0 && QFile::exists(destZipPath);
+            }
+        }
+    }
+
+    return (ok && QFile::exists(destZipPath)) ? destZipPath : QString();
+}
+
 void ShareManager::populateMenu(QMenu *menu)
 {
     if (!menu) return;
@@ -105,64 +176,77 @@ void ShareManager::populateMenu(QMenu *menu)
     menu->clear();
     QStyle *st = QApplication::style();
 
-    // 1. KDE Connect (if installed)
-    if (isAvailable({"kdeconnect-cli", "org.kde.kdeconnect"})) {
-        QIcon icon = QIcon::fromTheme("kdeconnect", st->standardIcon(QStyle::SP_DriveNetIcon));
-        QAction *act = menu->addAction(icon, tr("Send to device (KDE Connect)..."));
-        connect(act, &QAction::triggered, this, [this]() {
-            QString path = m_getFilePath ? m_getFilePath() : QString();
-            shareKdeConnect(path, m_parent);
-        });
-    }
+    auto addProtocolActions = [this, st](QMenu *targetMenu, std::function<QString()> pathProvider) {
+        // 1. KDE Connect (if installed)
+        if (isAvailable({"kdeconnect-cli", "org.kde.kdeconnect"})) {
+            QIcon icon = QIcon::fromTheme("kdeconnect", st->standardIcon(QStyle::SP_DriveNetIcon));
+            QAction *act = targetMenu->addAction(icon, tr("Send to device (KDE Connect)..."));
+            connect(act, &QAction::triggered, this, [this, pathProvider]() {
+                shareKdeConnect(pathProvider ? pathProvider() : QString(), m_parent);
+            });
+        }
 
-    // 2. LocalSend (if installed)
-    if (isAvailable({"localsend_app", "org.localsend.localsend_app", "localsend"})) {
-        QIcon icon = QIcon::fromTheme("localsend", QIcon::fromTheme("network-workgroup", st->standardIcon(QStyle::SP_DriveNetIcon)));
-        QAction *act = menu->addAction(icon, tr("Send with LocalSend..."));
-        connect(act, &QAction::triggered, this, [this]() {
-            QString path = m_getFilePath ? m_getFilePath() : QString();
-            shareLocalSend(path, m_parent);
-        });
-    }
+        // 2. LocalSend (if installed)
+        if (isAvailable({"localsend_app", "org.localsend.localsend_app", "localsend"})) {
+            QIcon icon = QIcon::fromTheme("localsend", QIcon::fromTheme("network-workgroup", st->standardIcon(QStyle::SP_DriveNetIcon)));
+            QAction *act = targetMenu->addAction(icon, tr("Send with LocalSend..."));
+            connect(act, &QAction::triggered, this, [this, pathProvider]() {
+                shareLocalSend(pathProvider ? pathProvider() : QString(), m_parent);
+            });
+        }
 
-    // 3. Bluetooth (if available)
-    if (isAvailable({"bluetooth-sendto", "blueman-sendto"})) {
-        QIcon icon = QIcon::fromTheme("preferences-system-bluetooth", st->standardIcon(QStyle::SP_DriveNetIcon));
-        QAction *act = menu->addAction(icon, tr("Send via Bluetooth..."));
-        connect(act, &QAction::triggered, this, [this]() {
-            QString path = m_getFilePath ? m_getFilePath() : QString();
-            shareBluetooth(path, m_parent);
-        });
-    }
+        // 3. Bluetooth (if available)
+        if (isAvailable({"bluetooth-sendto", "blueman-sendto"})) {
+            QIcon icon = QIcon::fromTheme("preferences-system-bluetooth", st->standardIcon(QStyle::SP_DriveNetIcon));
+            QAction *act = targetMenu->addAction(icon, tr("Send via Bluetooth..."));
+            connect(act, &QAction::triggered, this, [this, pathProvider]() {
+                shareBluetooth(pathProvider ? pathProvider() : QString(), m_parent);
+            });
+        }
 
-    // 4. Telegram Desktop (if available)
-    if (isAvailable({"telegram-desktop", "org.telegram.desktop"})) {
-        QIcon icon = QIcon::fromTheme("telegram", st->standardIcon(QStyle::SP_ArrowUp));
-        QAction *act = menu->addAction(icon, tr("Send with Telegram Desktop..."));
-        connect(act, &QAction::triggered, this, [this]() {
-            QString path = m_getFilePath ? m_getFilePath() : QString();
-            shareTelegram(path, m_parent);
-        });
-    }
+        // 4. Telegram Desktop (if available)
+        if (isAvailable({"telegram-desktop", "org.telegram.desktop"})) {
+            QIcon icon = QIcon::fromTheme("telegram", st->standardIcon(QStyle::SP_ArrowUp));
+            QAction *act = targetMenu->addAction(icon, tr("Send with Telegram Desktop..."));
+            connect(act, &QAction::triggered, this, [this, pathProvider]() {
+                shareTelegram(pathProvider ? pathProvider() : QString(), m_parent);
+            });
+        }
 
-    // 5. Email (always available)
-    {
-        QIcon icon = QIcon::fromTheme("mail-message-new", st->standardIcon(QStyle::SP_FileDialogDetailedView));
-        QAction *act = menu->addAction(icon, tr("Send via Email..."));
-        connect(act, &QAction::triggered, this, [this]() {
-            QString path = m_getFilePath ? m_getFilePath() : QString();
-            shareEmail(path, m_parent);
-        });
-    }
+        // 5. Email (always available)
+        {
+            QIcon icon = QIcon::fromTheme("mail-message-new", st->standardIcon(QStyle::SP_FileDialogDetailedView));
+            QAction *act = targetMenu->addAction(icon, tr("Send via Email..."));
+            connect(act, &QAction::triggered, this, [this, pathProvider]() {
+                shareEmail(pathProvider ? pathProvider() : QString(), m_parent);
+            });
+        }
 
-    // 6. QR Code for smartphones (always available with built-in HTTP server & libqrencode)
-    {
-        QIcon icon = QIcon::fromTheme("view-barcode-qr", st->standardIcon(QStyle::SP_MessageBoxInformation));
-        QAction *act = menu->addAction(icon, tr("Generate QR Code for smartphone..."));
-        connect(act, &QAction::triggered, this, [this]() {
-            QString path = m_getFilePath ? m_getFilePath() : QString();
-            shareQrCode(path, m_parent);
-        });
+        // 6. QR Code for smartphones (always available with built-in HTTP server & libqrencode)
+        {
+            QIcon icon = QIcon::fromTheme("view-barcode-qr", st->standardIcon(QStyle::SP_MessageBoxInformation));
+            QAction *act = targetMenu->addAction(icon, tr("Generate QR Code for smartphone..."));
+            connect(act, &QAction::triggered, this, [this, pathProvider]() {
+                shareQrCode(pathProvider ? pathProvider() : QString(), m_parent);
+            });
+        }
+    };
+
+    addProtocolActions(menu, m_getFilePath);
+
+    // If the current target is a single file (e.g. viewing an image/PDF), also offer sharing its entire parent folder as .zip
+    QString currentPath = m_getFilePath ? m_getFilePath() : QString();
+    if (!currentPath.isEmpty() && QFileInfo(currentPath).isFile()) {
+        QString parentFolder = QFileInfo(currentPath).absolutePath();
+        if (!parentFolder.isEmpty() && QDir(parentFolder).exists()) {
+            menu->addSeparator();
+            QString folderName = QFileInfo(parentFolder).fileName();
+            QMenu *folderShareMenu = menu->addMenu(
+                QIcon::fromTheme("package-x-generic", st->standardIcon(QStyle::SP_DirIcon)),
+                tr("📦 Compress & Share Current Folder (%1.zip)").arg(folderName)
+            );
+            addProtocolActions(folderShareMenu, [parentFolder]() { return parentFolder; });
+        }
     }
 }
 
@@ -177,16 +261,19 @@ QMenu* ShareManager::createShareMenu(QWidget *parent)
 
 void ShareManager::shareKdeConnect(const QString &filePath, QWidget *parent)
 {
-    if (filePath.isEmpty() || !QFile::exists(filePath)) {
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         if (parent) QMessageBox::warning(parent, tr("Share"), tr("No open file to share."));
         return;
     }
+
+    QString resolvedPath = ensureShareableFile(filePath, parent);
+    if (resolvedPath.isEmpty()) return;
 
     QStringList cmd = getExecutable({"kdeconnect-cli", "org.kde.kdeconnect"});
     if (!cmd.isEmpty()) {
         QString program = cmd.takeFirst();
         cmd.append("--share");
-        cmd.append(filePath);
+        cmd.append(resolvedPath);
         QProcess::startDetached(program, cmd);
     } else {
         if (parent) {
@@ -197,7 +284,7 @@ void ShareManager::shareKdeConnect(const QString &filePath, QWidget *parent)
 
 void ShareManager::shareLocalSend(const QString &filePath, QWidget *parent)
 {
-    if (filePath.isEmpty() || !QFile::exists(filePath)) {
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         if (parent) QMessageBox::warning(parent, tr("Share"), tr("No open file to share."));
         return;
     }
@@ -214,7 +301,10 @@ void ShareManager::shareLocalSend(const QString &filePath, QWidget *parent)
         return;
     }
 
-    QString targetPath = filePath;
+    QString resolvedPath = ensureShareableFile(filePath, parent);
+    if (resolvedPath.isEmpty()) return;
+
+    QString targetPath = resolvedPath;
     bool isFlatpak = false;
     for (const QString &c : cmd) {
         if (c.contains("flatpak") || c.contains("org.localsend")) {
@@ -223,7 +313,7 @@ void ShareManager::shareLocalSend(const QString &filePath, QWidget *parent)
         }
     }
 
-    if (isFlatpak) {
+    if (isFlatpak && !QFileInfo( filePath ).isDir()) {
         QString downloadDir = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
         if (downloadDir.isEmpty() || !QDir(downloadDir).exists()) {
             downloadDir = QDir::homePath() + "/Downloads";
@@ -241,12 +331,12 @@ void ShareManager::shareLocalSend(const QString &filePath, QWidget *parent)
             tempDir.remove(f);
         }
 
-        QFileInfo fi(filePath);
+        QFileInfo fi(resolvedPath);
         QString newPath = tempShareDir + "/" + fi.fileName();
-        if (QFile::copy(filePath, newPath)) {
+        if (QFile::copy(resolvedPath, newPath)) {
             targetPath = newPath;
         } else {
-            targetPath = filePath;
+            targetPath = resolvedPath;
         }
     }
 
@@ -260,15 +350,18 @@ void ShareManager::shareLocalSend(const QString &filePath, QWidget *parent)
 
 void ShareManager::shareBluetooth(const QString &filePath, QWidget *parent)
 {
-    if (filePath.isEmpty() || !QFile::exists(filePath)) {
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         if (parent) QMessageBox::warning(parent, tr("Share"), tr("No open file to share."));
         return;
     }
 
+    QString resolvedPath = ensureShareableFile(filePath, parent);
+    if (resolvedPath.isEmpty()) return;
+
     QStringList cmd = getExecutable({"blueman-sendto", "bluetooth-sendto"});
     if (!cmd.isEmpty()) {
         QString program = cmd.takeFirst();
-        cmd.append(filePath);
+        cmd.append(resolvedPath);
         QProcess::startDetached(program, cmd);
     } else {
         if (parent) {
@@ -279,16 +372,19 @@ void ShareManager::shareBluetooth(const QString &filePath, QWidget *parent)
 
 void ShareManager::shareTelegram(const QString &filePath, QWidget *parent)
 {
-    if (filePath.isEmpty() || !QFile::exists(filePath)) {
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         if (parent) QMessageBox::warning(parent, tr("Share"), tr("No open file to share."));
         return;
     }
+
+    QString resolvedPath = ensureShareableFile(filePath, parent);
+    if (resolvedPath.isEmpty()) return;
 
     QStringList cmd = getExecutable({"telegram-desktop", "org.telegram.desktop"});
     if (!cmd.isEmpty()) {
         QString program = cmd.takeFirst();
         cmd.append("-sendpath");
-        cmd.append(filePath);
+        cmd.append(resolvedPath);
         QProcess::startDetached(program, cmd);
     } else {
         if (parent) {
@@ -299,16 +395,19 @@ void ShareManager::shareTelegram(const QString &filePath, QWidget *parent)
 
 void ShareManager::shareEmail(const QString &filePath, QWidget *parent)
 {
-    if (filePath.isEmpty() || !QFile::exists(filePath)) {
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         if (parent) QMessageBox::warning(parent, tr("Share"), tr("No open file to share."));
         return;
     }
 
-    QFileInfo fi(filePath);
+    QString resolvedPath = ensureShareableFile(filePath, parent);
+    if (resolvedPath.isEmpty()) return;
+
+    QFileInfo fi(resolvedPath);
     QString fileName = fi.fileName();
 
     // Copy absolute path to clipboard
-    QApplication::clipboard()->setText(filePath);
+    QApplication::clipboard()->setText(resolvedPath);
 
     QSettings settings("BubezView", "BubezView");
     bool hideHint = settings.value("hide_email_share_hint", false).toBool();
@@ -336,7 +435,7 @@ void ShareManager::shareEmail(const QString &filePath, QWidget *parent)
     bool started = false;
     QString xdgEmail = QStandardPaths::findExecutable("xdg-email");
     if (!xdgEmail.isEmpty()) {
-        started = QProcess::startDetached(xdgEmail, QStringList() << "--attach" << filePath << "--subject" << QString(tr("Sending file: %1")).arg(fileName));
+        started = QProcess::startDetached(xdgEmail, QStringList() << "--attach" << resolvedPath << "--subject" << QString(tr("Sending file: %1")).arg(fileName));
     }
     if (!started) {
         QUrl mailtoUrl(QString("mailto:?subject=%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(tr("Sending file: ") + fileName))));
@@ -346,11 +445,15 @@ void ShareManager::shareEmail(const QString &filePath, QWidget *parent)
 
 void ShareManager::shareQrCode(const QString &filePath, QWidget *parent)
 {
-    if (filePath.isEmpty() || !QFile::exists(filePath)) {
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         if (parent) QMessageBox::warning(parent, tr("Share"), tr("No open file to share."));
         return;
     }
 
-    ShareDialog dlg(filePath, parent);
+    QString resolvedPath = ensureShareableFile(filePath, parent);
+    if (resolvedPath.isEmpty()) return;
+
+    ShareDialog dlg(resolvedPath, parent);
     dlg.exec();
 }
+

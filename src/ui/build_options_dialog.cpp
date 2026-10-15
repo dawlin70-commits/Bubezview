@@ -264,6 +264,20 @@ void BuildOptionsDialog::onRecompileClicked()
         }
     }
 
+    // Long compilation warning for engine modules
+    QMessageBox::StandardButton warn = QMessageBox::question(
+        this,
+        tr("Long Compilation Warning"),
+        tr("<p><b>Notice: Compiling engine modules from source may take several minutes.</b></p>"
+           "<p>Modules like Poppler PDF or OCR engines involve extensive C++ templates and large source trees.</p>"
+           "<p>Are you sure you want to proceed with compilation?</p>"),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::Yes
+    );
+    if (warn != QMessageBox::Yes) {
+        return;
+    }
+
     m_btnSave->setEnabled(false);
     m_btnRecompile->setEnabled(false);
     m_btnClose->setEnabled(false);
@@ -310,6 +324,20 @@ void BuildOptionsDialog::onProcessFinished(int exitCode, QProcess::ExitStatus ex
         m_lblBuildStatus->setText(tr("✅ Compilation completed successfully! Changes will take effect the next time you start BubezView."));
         m_btnClose->setEnabled(true);
         m_btnClose->setText(tr("Close"));
+
+        QMessageBox::StandardButton cleanQ = QMessageBox::question(
+            this,
+            tr("Clean Up Temporary Build Files?"),
+            tr("<p><b>Compilation completed successfully!</b></p>"
+               "<p>Would you like to clean up temporary intermediate object files and source build caches to save disk space?</p>"
+               "<p><i>(CMake, compilers, and installed binaries will remain intact.)</i></p>"),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::Yes
+        );
+        if (cleanQ == QMessageBox::Yes) {
+            QProcess::startDetached("cmake", QStringList() << "--build" << "build_deb" << "--target" << "clean");
+            m_lblBuildStatus->setText(tr("✅ Compilation completed and temporary files cleaned up!"));
+        }
     } else {
         m_progressBar->setValue(0);
         m_lblBuildStatus->setText(tr("❌ Compilation failed. Check compiler log details."));

@@ -18,12 +18,11 @@ class QScrollArea;
 
 /**
  * @enum FlagSafetyLevel
- * @brief Classification level for compiler flags denoting their safety, precision, and pertinence to BubezView.
+ * @brief Classification level for compiler flags denoting their safety and pertinence to BubezView.
  */
 enum class FlagSafetyLevel {
-    Recommended,    ///< Green: High performance, zero numerical drift risk, highly pertinent to BubezView
-    Conditional,    ///< Yellow: Situational benefits, may increase binary size or compilation time
-    Hazardous       ///< Red: Breaks strict IEEE-754 standards or assumes non-infinite math; potential instability
+    Recommended,    ///< Green: High performance, zero risk, highly pertinent to BubezView
+    Conditional     ///< Yellow: Situational, image/math specific, safe
 };
 
 /**
@@ -33,12 +32,12 @@ enum class FlagSafetyLevel {
 struct CompilerFlagDef {
     QString flag;               ///< Command line flag (e.g. "-march=native", "-flto=auto")
     QString title;              ///< Human-readable feature name
-    QString category;           ///< Functional group (Architecture, Vectorization, Linker, Math)
+    QString category;           ///< Functional group (Architecture, UI & C++, Images & Math)
     FlagSafetyLevel safety;     ///< Safety classification
     QString description;        ///< Clear description of what it enables in hardware and impact on BubezView
     QString requiredTier;       ///< Minimum CPU tier required ("v3", "v4", or "all")
     bool isDefaultActive;       ///< Default toggle state in recommended preset
-    QString mutualGroup;        ///< Mutual exclusion group identifier (e.g. "arch", "opt")
+    QString mutualGroup;        ///< Mutual exclusion group identifier (e.g. "arch")
 };
 
 /**
@@ -62,7 +61,7 @@ public:
 
     /**
      * @brief Builds and returns the generated CMAKE_CXX_FLAGS command-line argument string.
-     * @return Generated flag string (e.g. "-O3 -march=native -flto=auto ...").
+     * @return Generated flag string (e.g. "-march=native -flto=auto ...").
      */
     QString generatedFlags() const;
 
@@ -74,13 +73,19 @@ signals:
 
     /**
      * @brief Emitted when the user clicks the "Save & Recompile Now" action.
+     * @param target Specific CMake target to build (empty for full build).
      */
-    void recompileRequested();
+    void recompileRequested(const QString &target = QString());
+
+    /**
+     * @brief Emitted when the user chooses manual plugin management in Extensions tab.
+     */
+    void openExtensionsTabRequested();
 
 private slots:
     /**
      * @brief Applies a predefined flag configuration profile.
-     * @param index Preset index (0: Default Safe, 1: Performance Recommended, 2: Extreme Overkill, 3: Clear All).
+     * @param index Preset index.
      */
     void applyPreset(int index);
 
@@ -103,7 +108,7 @@ private slots:
     void onSaveClicked();
 
     /**
-     * @brief Saves selected flags and triggers in-place recompilation.
+     * @brief Saves selected flags and triggers in-place recompilation with plugin prompt if needed.
      */
     void onSaveAndRecompileClicked();
 
@@ -128,19 +133,26 @@ private:
      */
     void updatePreview();
 
+    /**
+     * @brief Checks if current flag selection benefits from plugin recompilation.
+     */
+    bool requiresPluginRecompilation() const;
+
     QList<CompilerFlagDef> m_flags;
     QList<QCheckBox*> m_checkboxes;
     bool m_isUpdatingFlags = false;
 
-    QLabel *m_lblCpuModel;
-    QLabel *m_lblCpuTier;
-    QLabel *m_lblCpuCores;
-    QLabel *m_lblCpuCache;
+    QLabel *m_lblCpuModel = nullptr;
+    QLabel *m_lblCpuTier = nullptr;
+    QLabel *m_lblCpuCores = nullptr;
+    QLabel *m_lblCpuCache = nullptr;
+    QLabel *m_lblActiveStatus = nullptr;
 
-    QComboBox *m_comboPreset;
-    QTextEdit *m_txtPreview;
-    QPushButton *m_btnCopy;
-    QPushButton *m_btnSave;
-    QPushButton *m_btnSaveRecompile;
-    QPushButton *m_btnCancel;
+    QComboBox *m_comboPreset = nullptr;
+    QTextEdit *m_txtPreview = nullptr;
+    QLabel *m_lblScopeHint = nullptr;
+    QPushButton *m_btnCopy = nullptr;
+    QPushButton *m_btnSave = nullptr;
+    QPushButton *m_btnSaveRecompile = nullptr;
+    QPushButton *m_btnCancel = nullptr;
 };

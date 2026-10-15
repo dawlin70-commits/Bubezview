@@ -3,7 +3,7 @@
 #include <QFileInfo>
 #include <QFileIconProvider>
 #include <QImageReader>
-#include <poppler/qt6/poppler-qt6.h>
+#include "plugin_manager.h"
 #include <QScrollBar>
 
 // ============================================================================
@@ -230,15 +230,9 @@ void FilmstripWorker::run()
                 }
             }
         } else if (ext == "pdf") {
-            std::unique_ptr<Poppler::Document> doc(Poppler::Document::load(path));
-            if (doc && !doc->isLocked() && doc->numPages() > 0) {
-                std::unique_ptr<Poppler::Page> page(doc->page(0));
-                if (page) {
-                    QImage img = page->renderToImage(72.0, 72.0);
-                    if (!img.isNull()) {
-                        emit thumbnailReady(path, img.scaled(120, 96, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                    }
-                }
+            QImage img = PluginManager::renderPdfThumbnail(path, 120);
+            if (!img.isNull()) {
+                emit thumbnailReady(path, img.scaled(120, 96, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             }
         }
     }

@@ -10,6 +10,7 @@
 class QLabel;
 class QPushButton;
 class QComboBox;
+class QCheckBox;
 
 /**
  * @class SettingsIntegrationTab
@@ -56,9 +57,12 @@ private slots:
      * @brief Toggles system application menu desktop launcher entry.
      */
     void toggleAppMenu();
+    void onUseLibreOfficeToggled(bool checked);
 
 private:
     void setupUi();
+
+    QCheckBox *m_chkUseLibreOffice = nullptr;
 
     // Dolphin
     QLabel *m_lblDolphinStatus = nullptr;

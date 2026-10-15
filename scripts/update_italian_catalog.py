@@ -1,0 +1,680 @@
+#!/usr/bin/env python3
+"""
+update_italian_catalog.py
+Populates missing/unfinished Italian translations in translations/bubezview_it.ts
+and ensures complete, high-quality localization.
+"""
+
+import xml.etree.ElementTree as ET
+import sys
+import os
+
+TRANSLATIONS_DICT = {
+    # Plugins
+    "LibArchive Compressed Archive Engine": "Motore archivi compressi LibArchive",
+    "Browsing, integrity testing, and previewing ZIP, TAR, 7Z, and ISO archives.": "Navigazione, test di integrità e anteprima di archivi ZIP, TAR, 7Z e ISO.",
+    "MPV Audio & Video Engine": "Motore audio e video MPV",
+    "Hardware-accelerated video rendering and high-fidelity audio playback.": "Rendering video con accelerazione hardware e riproduzione audio ad alta fedeltà.",
+    "Poppler Qt6 PDF Document Engine": "Motore documenti PDF Poppler Qt6",
+    "High-resolution vector rendering, annotations, and text extraction for PDF documents.": "Rendering vettoriale ad alta risoluzione, annotazioni ed estrazione testo per documenti PDF.",
+
+    # Archive Viewer & Plugin
+    "+ Add / Edit...": "+ Aggiungi / Modifica...",
+    "Add Files to Archive...": "Aggiungi file all'archivio...",
+    "Add Folder to Archive...": "Aggiungi cartella all'archivio...",
+    "Remove Selected from Archive": "Rimuovi selezionati dall'archivio",
+    "Add Files": "Aggiungi file",
+    "No archive is currently open.": "Nessun archivio attualmente aperto.",
+    "Select Files to Add to Archive": "Seleziona file da aggiungere all'archivio",
+    "All Files (*)": "Tutti i file (*)",
+    "Add Folder": "Aggiungi cartella",
+    "Select Folder to Add to Archive": "Seleziona cartella da aggiungere all'archivio",
+    "Remove from Archive": "Rimuovi dall'archivio",
+    "Please select one or more items in the archive tree to remove.": "Seleziona uno o più elementi nell'albero dell'archivio da rimuovere.",
+    "Remove Selected Items": "Rimuovi elementi selezionati",
+    "Remove %1 selected item(s) from archive '%2'?": "Rimuovere %1 elemento/i selezionato/i dall'archivio '%2'?",
+    "Updating Archive": "Aggiornamento archivio",
+    "⏳ Preparing archive update...": "⏳ Preparazione aggiornamento archivio...",
+    "Cancelling...": "Annullamento in corso...",
+    "%1 • %2 Items (%3 Total)": "%1 • %2 elementi (%3 totali)",
+    "Add or remove files in this archive": "Aggiungi o rimuovi file in questo archivio",
+    "This archive format is read-only and cannot be modified in-place": "Questo formato di archivio è in sola lettura e non può essere modificato direttamente",
+    "7-Zip Engine Recommended": "Motore 7-Zip consigliato",
+    "this": "questo",
+    "<h3>7-Zip Engine Recommended</h3><p>For maximum speed, multi-core extraction, and full compatibility with <b>%1</b> archives, <b>7-Zip</b> (<code>7zz</code>) is recommended.</p><p>Detected distribution: <b>%2</b></p><p>Manual installation command:<br><code>%3</code></p>": "<h3>Motore 7-Zip consigliato</h3><p>Per la massima velocità, l'estrazione multi-core e la completa compatibilità con gli archivi <b>%1</b>, si consiglia <b>7-Zip</b> (<code>7zz</code>).</p><p>Distribuzione rilevata: <b>%2</b></p><p>Comando di installazione manuale:<br><code>%3</code></p>",
+    "Install 7-Zip": "Installa 7-Zip",
+    "Continue with libarchive": "Continua con libarchive",
+    "7-Zip Multi-Core Extraction": "Estrazione multi-core 7-Zip",
+    "⚡ 7-Zip Multi-Core Extracting: %1": "⚡ Estrazione multi-core 7-Zip: %1",
+    "Initializing multi-core 7-Zip engine...": "Inizializzazione motore multi-core 7-Zip...",
+    "Successfully extracted %1 items using the 7-Zip engine to:\n%2": "Estratti con successo %1 elementi tramite il motore 7-Zip in:\n%2",
+    "Could not extract files:\n%1": "Impossibile estrarre i file:\n%1",
+    "Extraction Completed with Warnings": "Estrazione completata con avvisi",
+    "Extracted %1 items, but encountered errors:\n%2": "Estratti %1 elementi, ma si sono verificati errori:\n%2",
+    "Successfully extracted %1 items using libarchive engine to:\n%2": "Estratti con successo %1 elementi tramite il motore libarchive in:\n%2",
+    "Read-Only Archive": "Archivio in sola lettura",
+    "Modifying '%1' archives in-place is not supported to protect data integrity.": "La modifica diretta degli archivi '%1' non è supportata per proteggere l'integrità dei dati.",
+    "Archive Modification Failed": "Modifica archivio non riuscita",
+    "An error occurred while updating the archive.": "Si è verificato un errore durante l'aggiornamento dell'archivio.",
+    "Unable to overwrite archive file (check write permissions).": "Impossibile sovrascrivere il file di archivio (verificare i permessi di scrittura).",
+    "Failed to finalize updated archive.": "Impossibile finalizzare l'archivio aggiornato.",
+    "Create Archive": "Crea archivio",
+    "No valid files or folders found to compress.": "Nessun file o cartella valida trovata da comprimere.",
+    "📦 Compressing Archive...": "📦 Compressione archivio...",
+    "⏳ Starting compression...": "⏳ Avvio compressione...",
+    "Create Archive Failed": "Creazione archivio non riuscita",
+    "Could not create output archive:\n%1": "Impossibile creare l'archivio di destinazione:\n%1",
+    "Could not write final archive to:\n%1": "Impossibile scrivere l'archivio finale in:\n%1",
+    "📦 Compress / Create Archive": "📦 Comprimi / Crea archivio",
+    "ZIP (.zip) — Universal & Compatible (Multi-Core)": "ZIP (.zip) — Universale e compatibile (Multi-Core)",
+    "TAR.GZ (.tar.gz) — Standard Linux Gzip (Multi-Core)": "TAR.GZ (.tar.gz) — Gzip standard Linux (Multi-Core)",
+    "TAR.XZ (.tar.xz) — High Compression XZ (Multi-Core)": "TAR.XZ (.tar.xz) — Alta compressione XZ (Multi-Core)",
+    "TAR.ZST (.tar.zst) — Ultra-Fast Zstandard (Multi-Core)": "TAR.ZST (.tar.zst) — Zstandard ultra-veloce (Multi-Core)",
+    "7-Zip (.7z) — Maximum Compression (Multi-Core)": "7-Zip (.7z) — Massima compressione (Multi-Core)",
+    "Quick Source Selection": "Selezione rapida origine",
+    "Current File (%1)": "File corrente (%1)",
+    "Entire Current Folder (%1/)": "Intera cartella corrente (%1/)",
+    "Files & Folders to Compress": "File e cartelle da comprimere",
+    "+ Add Files...": "+ Aggiungi file...",
+    "+ Add Folder...": "+ Aggiungi cartella...",
+    "Remove Selected": "Rimuovi selezionati",
+    "Add Files to Compress": "Aggiungi file da comprimere",
+    "Add Folder to Compress": "Aggiungi cartella da comprimere",
+    "Output Archive Settings": "Impostazioni archivio di destinazione",
+    "Optional AES-256 password (supported on .zip and .7z)": "Password AES-256 opzionale (supportata su .zip e .7z)",
+    "Open created archive in BubezView when done": "Apri l'archivio creato in BubezView al termine",
+    "Destination:": "Destinazione:",
+    "Password:": "Password:",
+    "Save Compressed Archive As": "Salva archivio compresso come",
+    "Archives (*.%1);;All Files (*)": "Archivi (*.%1);;Tutti i file (*)",
+    "🚀 Compress & Send (LocalSend)": "🚀 Comprimi e invia (LocalSend)",
+    "📦 Create Archive": "📦 Crea archivio",
+    "Please specify at least one source item and a destination path.": "Specifica almeno un elemento di origine e un percorso di destinazione.",
+    "⏳ Compressing...": "⏳ Compressione in corso...",
+    "Cancelling compression...": "Annullamento compressione in corso...",
+    "Failed to start multi-core 7z engine.": "Impossibile avviare il motore multi-core 7z.",
+    "7-Zip operation exited with code %1": "Operazione 7-Zip terminata con codice %1",
+    "No files or directories found to compress.": "Nessun file o directory trovata da comprimere.",
+    "Failed to create temporary list file for compression.": "Impossibile creare il file elenco temporaneo per la compressione.",
+
+    # Audio Trim Dialog
+    "✂️ Audio Trimming": "✂️ Taglio Spezzone (Trimming)",
+    "🎛️ Filters & Noise Reduction": "🎛️ Filtri e Pulizia Rumore",
+    "🔊 Channels, Pitch & Tempo": "🔊 Canali, Pitch & Tonalità",
+    "🎚️ Track Equalizer": "🎚️ Equalizzatore Traccia",
+    "🏷️ Tag Editor...": "🏷️ Editor Tag...",
+    "Edit metadata, titles, and album art for this file": "Modifica metadati, titoli e copertina per questo file",
+    "⚡ Auto-Snap Silence": "⚡ Auto-Snap Silenzi",
+    "Automatically detect start and end of audio, trimming leading and trailing silence.": "Rileva automaticamente l'inizio e la fine dell'audio rimuovendo i silenzi iniziali e finali.",
+    "📑 Split by CUE...": "📑 Dividi da CUE...",
+    "Automatically split audio into individual tracks using a CUE sheet file.": "Suddivide automaticamente l'audio nelle singole tracce usando un file CUE sheet.",
+    "Original (Stereo / Multichannel)": "Originale (Stereo / Multicanale)",
+    "Stereo ➔ Mono (Balanced Downmix)": "Stereo ➔ Mono (Downmix bilanciato)",
+    "Swap Channels (L ⇄ R)": "Inverti Canali (L ⇄ R)",
+    "Left Channel Only (L) on both sides": "Solo Canale Sinistro (L) su entrambi i lati",
+    "Right Channel Only (R) on both sides": "Solo Canale Destro (R) su entrambi i lati",
+    "🎤 Vocal Remover / Karaoke (Center Channel Cancellation)": "🎤 Rimozione Voce / Karaoke (Cancellazione Canale Centrale)",
+    "Pitch Shift & Time Stretch": "Modifica Tonalità & Tempo (Pitch Shift & Time Stretch)",
+    "Pitch Shift:": "Pitch Shift (Tonalità):",
+    "0 semitones (Original)": "0 semitoni (Originale)",
+    "semitone": "semitono",
+    "semitones": "semitoni",
+    "Time Stretch (Speed):": "Time Stretch (Velocità):",
+    "1.00x (Original)": "1.00x (Originale)",
+    "(Original)": "(Originale)",
+    "🔄 Reverse Audio Playback": "🔄 Inversione Audio (Reverse / Al contrario)",
+    "✂️ Auto Silence Removal (Trim long gaps between sounds)": "✂️ Rimozione Silenzio automatico (Taglia pause prolungate tra suoni)",
+    "Auto-Snap Silence": "Auto-Snap Silenzi",
+    "Silence detected successfully!\nAudio start: %1\nAudio end: %2": "Silenzi rilevati con successo!\nInizio audio: %1\nFine audio: %2",
+    "Silence Detection": "Rilevamento Silenzi",
+    "Could not detect silence or no silent intervals found.": "Impossibile rilevare silenzi o nessun intervallo silenzioso trovato.",
+    "Select CUE Sheet File": "Seleziona File CUE Sheet",
+    "CUE Sheet Error": "Errore CUE Sheet",
+    "No valid tracks found in CUE file:\n%1": "Nessuna traccia valida trovata nel file CUE:\n%1",
+    "Split CUE Tracks": "Dividi Tracce CUE",
+    "Found %1 tracks in CUE file.\nProceed with splitting into audio folder?": "Trovate %1 tracce nel file CUE.\nProcedere con la suddivisione nella cartella dell'audio?",
+    "Destination Directory": "Cartella di Destinazione",
+    "Track %1/%2: %3": "Traccia %1/%2: %3",
+    "Successfully split %1 tracks into destination folder:\n%2": "Suddivisione di %1 tracce completata con successo nella cartella:\n%2",
+    "An error occurred while splitting tracks.": "Si è verificato un errore durante la suddivisione delle tracce.",
+
+    # Base Skin
+    "Open with another application...": "Apri con altra applicazione...",
+    "View Hex Dump": "Visualizza Hex Dump",
+    "Tesseract OCR": "Tesseract OCR",
+    "The Archive Engine plugin (libarchive) is not currently active.": "Il plugin del motore archivi (libarchive) non è attualmente attivo.",
+    "Compress / Create Archive...": "Comprimi / Crea archivio...",
+    "MIME Type": "Tipo MIME",
+    "Unknown": "Sconosciuto",
+    "Last modified": "Ultima modifica",
+    "Permissions": "Permessi",
+    "Path": "Percorso",
+
+    # Build Console & Options & Compiler Wizard
+    "\n>>> Component build completed. Starting next component: %1...\n": "\n>>> Compilazione componente completata. Avvio componente successivo: %1...\n",
+    "Long Compilation Warning": "Avviso compilazione prolungata",
+    "<p><b>Notice: Compiling engine modules from source may take several minutes.</b></p><p>Modules like Poppler PDF or OCR engines involve extensive C++ templates and large source trees.</p><p>Are you sure you want to proceed with compilation?</p>": "<p><b>Nota: la compilazione dei moduli da sorgente potrebbe richiedere alcuni minuti.</b></p><p>Moduli come Poppler PDF o OCR implicano ampi template C++ e codice corposo.</p><p>Sei sicuro di voler procedere con la compilazione?</p>",
+    "Clean Up Temporary Build Files?": "Pulire i file di compilazione temporanei?",
+    "<p><b>Compilation completed successfully!</b></p><p>Would you like to clean up temporary intermediate object files and source build caches to save disk space?</p><p><i>(CMake, compilers, and installed binaries will remain intact.)</i></p>": "<p><b>Compilazione completata con successo!</b></p><p>Desideri rimuovere i file oggetto intermedi e le cache di compilazione per liberare spazio su disco?</p><p><i>(CMake, compilatori e binari installati rimarranno intatti.)</i></p>",
+    "✅ Compilation completed and temporary files cleaned up!": "✅ Compilazione completata e file temporanei rimossi!",
+    "Effective Compilation Parameters Preview": "Anteprima parametri di compilazione effettivi",
+    "↺ Reset Defaults": "↺ Ripristina predefiniti",
+    "🔧 Source & Git Settings": "🔧 Impostazioni sorgente e Git",
+    "Executes the official verification command to inspect binary version, system libraries, and runtime status.": "Esegue il comando di verifica ufficiale per ispezionare versione del binario, librerie di sistema e stato a runtime.",
+    "▶ Run Verification Check": "▶ Esegui test di verifica",
+    "🔍 Diagnostics & Status": "🔍 Diagnostica e stato",
+    "Executing diagnostic test: %1 ...\n": "Esecuzione test diagnostico: %1 ...\n",
+    "Command: %1\n": "Comando: %1\n",
+    "Exit Status: %1 (code %2)\n\n": "Stato uscita: %1 (codice %2)\n\n",
+    "Crash": "Crash",
+    "=== Standard Output ===\n%1\n\n": "=== Output standard ===\n%1\n\n",
+    "=== Standard Error / Warnings ===\n%1\n\n": "=== Errori standard / Avvisi ===\n%1\n\n",
+    "Command finished with no output. Component executable appears functional.": "Comando terminato senza output. L'eseguibile del componente sembra funzionante.",
+    "No diagnostic command available for %1.": "Nessun comando diagnostico disponibile per %1.",
+
+    # Engine Prompt Card
+    "🟢 Activate (System Binary)": "🟢 Attiva (Binario di sistema)",
+    "⚙️ Compile from Source...": "⚙️ Compila da sorgente...",
+    "PDF Document Engine": "Motore documenti PDF",
+    "High-resolution vector PDF rendering, annotations, and bookmarks require the Poppler engine.<br><br>You can activate it instantly using your distro's system packages, or compile the plugin from source.": "Il rendering vettoriale ad alta risoluzione dei PDF, le annotazioni e i segnalibri richiedono il motore Poppler.<br><br>Puoi attivarlo istantaneamente tramite i pacchetti di sistema della tua distro, o compilare il plugin da sorgente.",
+    "Compressed Archive Engine": "Motore archivi compressi",
+    "Browsing and extracting ZIP, TAR, 7Z, and ISO archives requires the LibArchive engine.<br><br>You can activate it instantly using your distro's system packages, or compile the plugin from source.": "La navigazione e l'estrazione di archivi ZIP, TAR, 7Z e ISO richiede il motore LibArchive.<br><br>Puoi attivarlo istantaneamente tramite i pacchetti di sistema della tua distro, o compilare il plugin da sorgente.",
+    "Media & Playback Engine": "Motore riproduzione multimediale",
+    "Audio and video playback with hardware acceleration requires the MPV engine.<br><br>You can activate it instantly using your distro's system packages.": "La riproduzione audio e video con accelerazione hardware richiede il motore MPV.<br><br>Puoi attivarlo istantaneamente tramite i pacchetti di sistema della tua distro.",
+    "Plugin Engine Required": "Modulo motore richiesto",
+    "This file requires an optional engine module that is currently inactive.": "Questo file richiede un modulo motore opzionale attualmente non attivo.",
+    "%1 Inactive": "%1 non attivo",
+    "File: <b>%1</b>": "File: <b>%1</b>",
+    "Checking and installing packages...": "Controllo e installazione pacchetti in corso...",
+    "🟢 Engine activated successfully!": "🟢 Motore attivato con successo!",
+    "🟡 Engine is not yet active. Check system packages or compile from source.": "🟡 Il motore non è ancora attivo. Verifica i pacchetti di sistema o compila da sorgente.",
+
+    # Extension Feature Registry
+    "PDF Viewer": "Visualizzatore PDF",
+    "Image Extraction": "Estrazione immagini",
+    "Asian & International Font Support": "Supporto font asiatici e internazionali",
+    "PDF Repair & Advanced Tools": "Riparazione e strumenti avanzati PDF",
+    "Native Office Parser": "Parser nativo Office",
+    "Media Player": "Lettore multimediale",
+    "Audio Equalizer": "Equalizzatore audio",
+    "Metadata & Cover Art": "Metadati e copertine",
+
+    # Fallback Notice Dialog
+    "Performance Optimization Notice": "Avviso ottimizzazione prestazioni",
+    "<h3 style='margin:0;'>Performance Notice: %1</h3>": "<h3 style='margin:0;'>Avviso prestazioni: %1</h3>",
+    "<p>The <b>High-Performance</b> profile is enabled, but a custom source build for <b>%1</b> is not yet installed.</p><p>BubezView will proceed using the standard system package:<br><code>%2</code></p><p style='color: #666; font-size: 11px;'>To achieve maximum speed with hardware optimizations (-O3, native CPU instructions), you can compile this component from source at any time.</p>": "<p>Il profilo <b>Alte Prestazioni</b> è attivo, ma una versione ottimizzata compilata da sorgente per <b>%1</b> non è ancora installata.</p><p>BubezView utilizzerà il pacchetto di sistema standard:<br><code>%2</code></p><p style='color: #666; font-size: 11px;'>Per ottenere la massima velocità con ottimizzazioni hardware (-O3, istruzioni native CPU), puoi compilare questo componente da sorgente in qualsiasi momento.</p>",
+    "Do not show this notice again for %1": "Non mostrare più questo avviso per %1",
+    "Compile from Source Now": "Compila da sorgente adesso",
+    "Use System Version": "Usa versione di sistema",
+
+    # Folder Viewer
+    "Select Folder to Bookmark": "Seleziona cartella da aggiungere ai preferiti",
+    "Remove from Bookmarks": "Rimuovi dai preferiti",
+    "Add Folder to Bookmarks...": "Aggiungi cartella ai preferiti...",
+    "File System": "File system",
+    "Add Folder...": "Aggiungi cartella...",
+    "Click to bookmark a custom folder": "Fai clic per aggiungere una cartella ai preferiti",
+    "Folder": "Cartella",
+    "Created:": "Creato:",
+    "(Unable to read text file)": "(Impossibile leggere il file di testo)",
+    "bytes": "byte",
+    "%1 items (%2 files, %3 folders)": "%1 elementi (%2 file, %3 cartelle)",
+    "Total Size:": "Dimensione totale:",
+    "Location:": "Posizione:",
+
+    # Main Window
+    "Cryptographic Digital Signature (PAdES / .p7m)...": "Firma digitale crittografica (PAdES / .p7m)...",
+    "<b>Debug Mode Active:</b> Remember to deactivate debug mode in Settings to restore standard fast user mode.": "<b>Modalità Debug attiva:</b> Ricordati di disattivare la modalità debug nelle Impostazioni per ripristinare la modalità utente veloce standard.",
+    "Settings...": "Impostazioni...",
+
+    # Media Viewer
+    "--- System Audio Server ---": "--- Server Audio di Sistema ---",
+    "🌐 Auto / Default (PipeWire / PulseAudio)": "🌐 Auto / Predefinito (PipeWire / PulseAudio)",
+    "--- Direct ALSA Hardware (Bit-Perfect Level 2) ---": "--- Hardware ALSA Diretto (Bit-Perfect Livello 2) ---",
+    "🔊 Digital Output S/PDIF (Optical / Coaxial)": "🔊 Uscita Digitale S/PDIF (Ottico / Coassiale)",
+    "🔊 Analog Output / Headphones (3.5mm Jack)": "🔊 Uscita Analogica / Cuffie (Jack 3.5mm)",
+    "🔊 HDMI Output: %1": "🔊 Uscita HDMI: %1",
+
+    # PDF Crypto Signature Dialog
+    "Cryptographic Digital Signatures (PAdES / CAdES)": "Firme digitali crittografiche (PAdES / CAdES)",
+    "🔍 Verify Signatures": "🔍 Verifica firme",
+    "Apply a cryptographic digital signature (PAdES SHA-256 or CAdES <code>.pdf.p7m</code>) using a personal X.509 certificate (<code>.p12</code> / <code>.pfx</code>).": "Applica una firma digitale crittografica (PAdES SHA-256 o CAdES <code>.pdf.p7m</code>) utilizzando un certificato personale X.509 (<code>.p12</code> / <code>.pfx</code>).",
+    "Digital Certificate": "Certificato digitale",
+    "Select .p12 or .pfx certificate file...": "Seleziona file certificato .p12 o .pfx...",
+    "✨ Create Personal Certificate": "✨ Crea certificato personale",
+    "Generate a new self-signed personal cryptographic certificate (.p12) using OpenSSL": "Genera un nuovo certificato crittografico personale auto-firmato (.p12) tramite OpenSSL",
+    "Certificate (.p12/.pfx):": "Certificato (.p12/.pfx):",
+    "Certificate password / PIN": "Password / PIN certificato",
+    "Password / PIN:": "Password / PIN:",
+    "Document approval and authenticity": "Approvazione e autenticità documento",
+    "Digitally approved": "Approvato digitalmente",
+    "Signing Reason:": "Motivo della firma:",
+    "✒️ Sign & Save Document...": "✒️ Firma e salva documento...",
+    "✒️ Sign Document": "✒️ Firma documento",
+    "No Digital Signatures Detected": "Nessuna firma digitale rilevata",
+    "This PDF document does not contain any PAdES or CAdES cryptographic signatures.<br>You can digitally sign it using the <b>'Sign Document'</b> tab.": "Questo documento PDF non contiene firme crittografiche PAdES o CAdES.<br>Puoi firmarlo digitalmente dalla scheda <b>'Firma documento'</b>.",
+    "Detected Digital Signatures": "Firme digitali rilevate",
+    "✓ VALID CRYPTOGRAPHIC SIGNATURE (Document Integrity Verified)": "✓ FIRMA CRITTOGRAFICA VALIDA (Integrità documento verificata)",
+    "⚠ INVALID SIGNATURE OR MODIFIED DOCUMENT": "⚠ FIRMA NON VALIDA O DOCUMENTO MODIFICATO",
+    "Signer": "Firmatario",
+    "Not specified": "Non specificato",
+    "Certificate Authority / DN": "Autorità di certificazione / DN",
+    "Signing Time": "Data e ora firma",
+    "Not available": "Non disponibile",
+    "Algorithm / Format": "Algoritmo / Formato",
+    "Show full technical verification output (pdfsig / OpenSSL)": "Mostra output tecnico completo di verifica (pdfsig / OpenSSL)",
+    "CAdES Signed Document (.p7m)": "Documento firmato CAdES (.p7m)",
+    "Select Digital Certificate (.p12 / .pfx)": "Seleziona certificato digitale (.p12 / .pfx)",
+    "PKCS#12 Certificates (*.p12 *.pfx);;All Files (*)": "Certificati PKCS#12 (*.p12 *.pfx);;Tutti i file (*)",
+    "Create Personal Certificate": "Crea certificato personale",
+    "Enter your Full Name (or Organization) for the certificate:": "Inserisci Nome e Cognome (o Organizzazione) per il certificato:",
+    "Certificate Password": "Password certificato",
+    "Choose a password to protect your .p12 certificate:": "Scegli una password per proteggere il certificato .p12:",
+    "OpenSSL Error": "Errore OpenSSL",
+    "Failed to generate X.509 private key:\n%1": "Generazione chiave privata X.509 non riuscita:\n%1",
+    "PKCS#12 Export Error": "Errore esportazione PKCS#12",
+    "Failed to create .p12 certificate file:\n%1": "Creazione file certificato .p12 non riuscita:\n%1",
+    "✓ Personal certificate created and selected: <code>%1</code>": "✓ Certificato personale creato e selezionato: <code>%1</code>",
+    "Certificate Created": "Certificato creato",
+    "Your personal digital certificate (<b>%1</b>) has been generated and is ready for signing!": "Il tuo certificato digitale personale (<b>%1</b>) è stato generato ed è pronto per la firma!",
+    "Missing Certificate": "Certificato mancante",
+    "Please select a valid certificate file (<code>.p12</code> / <code>.pfx</code>) or click <b>'Create Personal Certificate'</b>.": "Seleziona un file certificato valido (<code>.p12</code> / <code>.pfx</code>) o fai clic su <b>'Crea certificato personale'</b>.",
+    "Save Signed Document": "Salva documento firmato",
+    "Signed PDF Document (*.pdf);;CAdES Cryptographic Envelope (*.pdf.p7m)": "Documento PDF firmato (*.pdf);;Busta crittografica CAdES (*.pdf.p7m)",
+    "Invalid Password or Certificate": "Password o certificato non valido",
+    "Failed to unlock the .p12 certificate. Please verify that the password is correct.": "Impossibile sbloccare il certificato .p12. Verifica che la password sia corretta.",
+    "Signature Completed": "Firma completata",
+    "Document digitally signed in CAdES (<code>.p7m</code>) format successfully!": "Documento firmato digitalmente in formato CAdES (<code>.p7m</code>) con successo!",
+    "CAdES Signing Error": "Errore firma CAdES",
+    "Error during OpenSSL signing:\n%1": "Errore durante la firma OpenSSL:\n%1",
+    "PDF Document Signed": "Documento PDF firmato",
+    "The PAdES digital signature (ETSI.CAdES.detached SHA-256) was applied successfully to:\n<b>%1</b>": "La firma digitale PAdES (ETSI.CAdES.detached SHA-256) è stata applicata con successo a:\n<b>%1</b>",
+    "Invalid Password": "Password non valida",
+    "Unable to open the .p12 certificate. Please check your password.": "Impossibile aprire il certificato .p12. Controlla la tua password.",
+    "Digital Signature Completed": "Firma digitale completata",
+    "Document cryptographically signed with OpenSSL at:\n<b>%1</b>": "Documento firmato crittograficamente con OpenSSL in:\n<b>%1</b>",
+    "Signing Error": "Errore di firma",
+    "Could not complete the digital signature operation.": "Impossibile completare l'operazione di firma digitale.",
+
+    # PDF Image Dialog
+    "🖼️ Insert Image / Logo": "🖼️ Inserisci Immagine / Logo",
+    "Insert Image ➔": "Inserisci immagine ➔",
+    "No image loaded.<br>Click 'Browse Image...' below to select a picture or logo.": "Nessuna immagine caricata.<br>Fai clic su 'Sfoglia immagine...' sotto per selezionare un'immagine o un logo.",
+    "📂 Browse Image...": "📂 Sfoglia immagine...",
+    "↺ Rotate 90° L": "↺ Ruota 90° SX",
+    "↻ Rotate 90° R": "↻ Ruota 90° DX",
+    "✨ Automatic background removal (White -> Transparent)": "✨ Rimozione automatica sfondo (Bianco -> Trasparente)",
+    "Sensitivity:": "Sensibilità:",
+    "⭐ Save to Favorites / Logo Gallery": "⭐ Salva nei Preferiti / Galleria loghi",
+    "🖼️ Choose Image": "🖼️ Scegli immagine",
+    "⭐ Favorite Logos": "⭐ Loghi preferiti",
+    "Select Image / Logo": "Seleziona immagine / logo",
+    "Images (*.png *.jpg *.jpeg *.bmp *.webp *.svg);;All Files (*)": "Immagini (*.png *.jpg *.jpeg *.bmp *.webp *.svg);;Tutti i file (*)",
+    "Poppler Image Extractor (pdfimages)": "Estrattore immagini Poppler (pdfimages)",
+
+    # PDF Merge Dialog
+    "Merge PDF Documents": "Unisci documenti PDF",
+    "Add PDF...": "Aggiungi PDF...",
+    "Move Up": "Sposta Su",
+    "Move Down": "Sposta Giù",
+    "Clear All": "Svuota",
+    "Save as:": "Salva come:",
+    "Destination PDF file path...": "Percorso del file PDF di destinazione...",
+    "Merge Documents": "Unisci Documenti",
+    "🟢 <b>QPDF Engine Active:</b> Optimized merge with automatic font deduplication, linearization, and preserved bookmarks/outlines.": "🟢 <b>Motore QPDF attivo:</b> Unione ottimizzata con deduplicazione automatica dei font, linearizzazione e preservazione intatta di segnalibri e capitoli.",
+    "🟡 <b>Poppler Base Engine Active (pdfunite):</b> Sequential page merging.<br><span style='font-size: 11px;'>💡 Tip: Install the <code>qpdf</code> package to preserve bookmarks/outlines and eliminate duplicate font overhead.</span>": "🟡 <b>Motore Base Poppler attivo (pdfunite):</b> Unione sequenziale delle pagine.<br><span style='font-size: 11px;'>💡 Suggerimento: installa il pacchetto <code>qpdf</code> per preservare segnalibri/capitoli e dimezzare il peso dei font duplicati.</span>",
+    "Select PDF Files to Merge": "Seleziona File PDF da Unire",
+    "Save Merged PDF": "Salva PDF Unito",
+    "Insufficient Files": "File Insufficienti",
+    "Please select at least 2 PDF files to perform a merge.": "Seleziona almeno 2 file PDF per poter effettuare l'unione.",
+    "Merging PDF documents...": "Unione dei documenti PDF in corso...",
+    "Launch Error": "Errore di avvio",
+    "Unable to launch merge tool '%1'. Make sure it is installed on your system.": "Impossibile avviare il tool di unione '%1'. Assicurati che sia installato nel sistema.",
+    "Merge completed successfully!": "Unione completata con successo!",
+    "Merge Succeeded": "Unione Riuscita",
+    "The merged PDF has been successfully generated at:<br><b>%1</b><br><br>Would you like to open it in BubezView now?": "Il file PDF è stato unito e generato con successo in:<br><b>%1</b><br><br>Vuoi aprire subito il documento in BubezView?",
+    "Error during merge.": "Errore durante l'unione.",
+    "PDF Merge Error": "Errore Unione PDF",
+    "An error occurred while merging the PDF:<br><pre>%1</pre>": "Si è verificato un errore durante l'unione del PDF:<br><pre>%1</pre>",
+    "PDF Optimization Tip": "Suggerimento Ottimizzazione PDF",
+    "<h3>💡 You have merged %1 PDF documents using the base engine!</h3><p>BubezView noticed you frequently merge PDF files.<br>We recommend installing the <b>QPDF</b> engine to enjoy:</p><ul><li><b>Font deduplication:</b> merged files take up significantly less disk space.</li><li><b>Preserved bookmarks:</b> chapter outlines and bookmarks remain intact and clickable.</li><li><b>Fast linearization:</b> instant opening across web viewers and mobile devices.</li></ul><p>You can install it quickly via your package manager:<br><code>sudo pacman -S qpdf</code> (on Arch/Garuda)<br><code>sudo apt install qpdf</code> (on Debian/Ubuntu)</p>": "<h3>💡 Hai unito %1 documenti PDF con il motore base!</h3><p>BubezView ha notato che utilizzi frequentemente l'unione PDF.<br>Ti consigliamo di installare il motore <b>QPDF</b> per:</p><ul><li><b>Deduplicare i font:</b> i file generati occupano molto meno spazio.</li><li><b>Preservare i segnalibri:</b> i capitoli e gli indici originali rimangono intatti e navigabili.</li><li><b>Linearizzazione rapida:</b> apertura istantanea via web e visualizzatori.</li></ul><p>Puoi installarlo subito digitando nel terminale:<br><code>sudo pacman -S qpdf</code> (su Arch/Garuda)<br><code>sudo apt install qpdf</code> (su Debian/Ubuntu)</p>",
+    "Don't show again": "Non mostrare più",
+    "Got it": "Ho capito",
+
+    # PDF Modules & Signatures
+    "QPDF Engine": "Motore QPDF",
+    "Paste Image / Area": "Incolla immagine / area",
+    "Highlight Selected Text": "Evidenzia testo selezionato",
+    "<b>🔐 Cryptographic Digital Signatures (PAdES & CAdES .p7m)</b><br><br>Verify existing cryptographic signatures, inspect X.509 certificate chains, generate a personal self-signed certificate (<code>.p12</code>), or digitally sign this PDF:<br><br>• <b>PAdES (Embedded PDF Signature)</b> — Standard signed <code>.pdf</code> readable by any PDF viewer<br>• <b>CAdES (PKCS#7 Envelope)</b> — Signed <code>.pdf.p7m</code> envelope standard": "<b>🔐 Firme digitali crittografiche (PAdES e CAdES .p7m)</b><br><br>Verifica firme crittografiche esistenti, ispeziona catene di certificati X.509, genera un certificato personale auto-firmato (<code>.p12</code>) o firma digitalmente questo PDF:<br><br>• <b>PAdES (Firma PDF incorporata)</b> — File standard <code>.pdf</code> firmato leggibile da qualsiasi lettore PDF<br>• <b>CAdES (Busta PKCS#7)</b> — Busta firmata standard <code>.pdf.p7m</code>",
+    "🔐 Open Cryptographic Signature Hub...": "🔐 Apri centro firme crittografiche...",
+    "🔒 Digital Certificate": "🔒 Certificato digitale",
+    "Open Digital Signature Hub ➔": "Apri centro firme digitali ➔",
+    "⬇️ Push Down": "⬇️ Sposta in basso",
+    "Shift existing content below downwards instead of overlaying": "Sposta il contenuto sottostante verso il basso invece di sovrapporlo",
+
+    # PDF Tools Dialog
+    "PDF Markup & Annotation Tools": "Strumenti di annotazione e disegno PDF",
+    "🖍️ Highlighter": "🖍️ Evidenziatore",
+    "📐 Shapes & Arrows": "📐 Forme e frecce",
+    "⬛ Redaction": "⬛ Oscuramento",
+    "🔖 Watermark": "🔖 Filigrana",
+    "🖼️ Images & Emblems": "🖼️ Immagini ed emblemi",
+    "✍️ Signature": "✍️ Firma",
+    "Drag a rectangular box over any text or graphical area to apply a vibrant, semi-transparent highlight. Highlights can be undone at any time with Ctrl+Z.": "Trascina un riquadro su qualsiasi testo o area grafica per applicare un'evidenziazione semi-trasparente. Le evidenziazioni possono essere annullate in qualsiasi momento con Ctrl+Z.",
+    "Highlight Color": "Colore evidenziazione",
+    "Custom Color...": "Colore personalizzato...",
+    "Transparency / Opacity": "Trasparenza / Opacità",
+    "Sample highlighted text demonstrating transparency over content.": "Esempio di testo evidenziato per dimostrare la trasparenza sopra il contenuto.",
+    "🖍️ Start Highlighting on Document": "🖍️ Inizia a evidenziare sul documento",
+    "Shape Type": "Tipo di forma",
+    "Rectangle": "Rettangolo",
+    "Ellipse": "Ellisse",
+    "Line": "Linea",
+    "Arrow": "Freccia",
+    "Outline & Stroke": "Contorno e tratto",
+    "Stroke Width:": "Spessore tratto:",
+    "Enable Interior Fill": "Abilita riempimento interno",
+    "📐 Start Drawing Shape on Document": "📐 Inizia a disegnare la forma sul documento",
+    "Redaction permanently covers sensitive or confidential sections of the page. Once applied, the information is completely obscured.": "L'oscuramento copre in modo permanente le sezioni riservate o confidenziali della pagina. Una volta applicato, le informazioni risultano del tutto oscurate.",
+    "Redaction Overlay Style": "Stile di oscuramento",
+    "Solid Blackout (Standard confidential blackout box)": "Nero pieno (Riquadro nero confidenziale standard)",
+    "Clean Whiteout (White background eraser)": "Bianco coprente (Cancellino a sfondo bianco)",
+    "Tip: Drag the rectangle over the target area. You can resize and adjust it with the bounding handles, then click 'Apply' to commit.": "Suggerimento: trascina il rettangolo sull'area desiderata. Puoi ridimensionarlo con le maniglie e fare clic su 'Applica' per confermare.",
+    "⬛ Start Redacting Area": "⬛ Inizia a oscurare area",
+    "CONFIDENZIALE": "CONFIDENZIALE",
+    "COPIA": "COPIA",
+    "BOZZA": "BOZZA",
+    "APPROVATO": "APPROVATO",
+    "PAGATO": "PAGATO",
+    "URGENTE": "URGENTE",
+    "CUSTOM...": "PERSONALIZZATO...",
+    "Text:": "Testo:",
+    "45° (Diagonal Up)": "45° (Diagonale su)",
+    "0° (Horizontal)": "0° (Orizzontale)",
+    "-45° (Diagonal Down)": "-45° (Diagonale giù)",
+    "90° (Vertical)": "90° (Verticale)",
+    "Color:": "Colore:",
+    "🔖 Apply Watermark": "🔖 Applica filigrana",
+    "Select Watermark Color": "Seleziona colore filigrana",
+    "📁 Browse Image File...": "📁 Sfoglia file immagine...",
+    "No image selected": "Nessuna immagine selezionata",
+    "Image Preview": "Anteprima immagine",
+    "⭐ Save this emblem / logo to gallery for 1-click reuse": "⭐ Salva questo emblema / logo nella galleria per riutilizzarlo con 1 clic",
+    "📂 From File / Scan": "📂 Da file / scansione",
+    "⭐ Saved Emblems & Logos": "⭐ Emblemi e loghi salvati",
+    "🖼️ Insert Image on Page": "🖼️ Inserisci immagine sulla pagina",
+    "Select Image or Emblem to Insert": "Seleziona immagine o emblema da inserire",
+    "Image Files (*.png *.jpg *.jpeg *.bmp *.svg *.webp);;All Files (*)": "File immagine (*.png *.jpg *.jpeg *.bmp *.svg *.webp);;Tutti i file (*)",
+    "No Image Selected": "Nessuna immagine selezionata",
+    "Please select an image file or choose a saved emblem from the gallery.": "Seleziona un file immagine o scegli un emblema salvato dalla galleria.",
+    "Background Sensitivity:": "Sensibilità sfondo:",
+    "<b>🔐 Electronic & Digital Signature Hub (PAdES / CAdES .p7m)</b><br><br>Verify cryptographic signatures, inspect X.509 certificate chains, generate a personal self-signed certificate (<code>.p12</code>), or digitally sign this document:<br>• <b>PAdES (Embedded PDF Signature)</b> — Standard signed <code>.pdf</code><br>• <b>CAdES (PKCS#7 Envelope)</b> — Signed <code>.pdf.p7m</code> envelope<br>• <b>PKCS#12 Certificates</b> — Import <code>.p12</code> / <code>.pfx</code> or generate 1-click keypair": "<b>🔐 Centro firme elettroniche e digitali (PAdES / CAdES .p7m)</b><br><br>Verifica firme crittografiche, ispeziona catene di certificati X.509, genera un certificato personale auto-firmato (<code>.p12</code>) o firma digitalmente questo documento:<br>• <b>PAdES (Firma PDF incorporata)</b> — File standard firmato <code>.pdf</code><br>• <b>CAdES (Busta PKCS#7)</b> — Busta firmata standard <code>.pdf.p7m</code><br>• <b>Certificati PKCS#12</b> — Importa <code>.p12</code> / <code>.pfx</code> o genera una coppia di chiavi con 1 clic",
+    "🔒 Digital / Electronic Certificate": "🔒 Certificato digitale / elettronico",
+    "💾 Save signature to library for 1-click future reuse": "💾 Salva la firma nella libreria per riutilizzarla in futuro con 1 clic",
+    "✍️ Place Signature on Document": "✍️ Apponi firma sul documento",
+    "Please select a signature image file first.": "Seleziona prima un file immagine della firma.",
+
+    # PDF Viewer
+    "🔍 Certificate Details": "🔍 Dettagli certificato",
+    "✍️ Add Signature": "✍️ Aggiungi firma",
+    "Previous Page (Page Up / Left Arrow)": "Pagina precedente (Pag Su / Freccia Sinistra)",
+    "Page": "Pagina",
+    "of 0": "di 0",
+    "Next Page (Page Down / Right Arrow)": "Pagina successiva (Pag Giù / Freccia Destra)",
+    "Original (100%)": "Originale (100%)",
+    "Fit Page": "Adatta alla pagina",
+    "Rotate Counterclockwise (90° Left)": "Ruota in senso antiorario (90° a sinistra)",
+    "Rotate Clockwise (90° Right)": "Ruota in senso orario (90° a destra)",
+    "Select Page Area to Extract": "Seleziona area pagina da estrarre",
+    "Markup & Annotation Tools": "Strumenti di annotazione e disegno",
+    "Electronic & Cryptographic Signature": "Firma elettronica e crittografica",
+    "Insert Blank Page": "Inserisci pagina vuota",
+    "Insert Blank Page...": "Inserisci pagina vuota...",
+    "After Page": "Dopo la pagina",
+    "Standard Blank Page (White)": "Pagina vuota standard (Bianca)",
+    "Grid / Graph Page (5mm Quadretti)": "Pagina a quadretti (5mm)",
+    "Lined / Ruled Page (Righe)": "Pagina a righe",
+    "Insert Page": "Inserisci pagina",
+    "Page Inserted": "Pagina inserita",
+    "Successfully inserted new blank page into the document.": "Nuova pagina vuota inserita con successo nel documento.",
+    "Failed to insert page into document.": "Impossibile inserire la pagina nel documento.",
+
+    # PDF Watermark Dialog
+    "Style:": "Stile:",
+    "Classic Rounded Border": "Bordo arrotondato classico",
+    "Official Double Border": "Doppio bordo ufficiale",
+    "Dotted Border": "Bordo punteggiato",
+    "Plain Text (No Border)": "Solo testo (Nessun bordo)",
+    "Text Watermark Preview": "Anteprima filigrana di testo",
+
+    # QObject & Package Manager
+    "↩ Undo": "↩ Annulla",
+    "↪ Redo": "↪ Ripristina",
+    "✂️ Cut Text": "✂️ Taglia testo",
+    "📋 Paste Text": "📋 Incolla testo",
+    "🔐 Digital Signature": "🔐 Firma digitale",
+    "Organize / Reorder Pages": "Organizza / Riordina pagine",
+    "Repair / Flatten Document": "Ripara / Appiattisci documento",
+    "Unsupported package manager": "Gestore pacchetti non supportato",
+    "Please install packages manually:\n%1": "Installa manualmente i pacchetti:\n%1",
+    "Installing %1...\nPlease authorize the operation in the system prompt if requested.": "Installazione di %1 in corso...\nAutorizza l'operazione nella finestra di sistema se richiesta.",
+    "Package Installation": "Installazione Pacchetti",
+    "Uninstalling %1...\nPlease authorize the operation in the system prompt if requested.": "Disinstallazione di %1 in corso...\nAutorizza l'operazione nella finestra di sistema se richiesta.",
+    "Package Uninstallation": "Disinstallazione Pacchetti",
+    "Uninstallation Completed": "Disinstallazione Completata",
+    "The packages (%1) were removed successfully!": "I pacchetti (%1) sono stati rimossi con successo!",
+    "Uninstallation Failed": "Disinstallazione Fallita",
+    "<p>Could not complete automatic removal.</p><p>Manual terminal command:</p><p><code>%1</code></p><p>Error details: %2</p>": "<p>Impossibile completare la rimozione automatica.</p><p>Comando manuale da terminale:</p><p><code>%1</code></p><p>Dettaglio errore: %2</p>",
+    "Uninstallation Blocked for Safety": "Disinstallazione Bloccata per Sicurezza",
+    "<p>Cannot safely uninstall package <b>%1</b>.</p><p>The following system packages or applications depend on it:</p><p style='color: #dc2626;'><b>%2</b></p><p>Removal was blocked to prevent breaking system stability or removing other installed applications.</p>": "<p>Non è possibile disinstallare in modo sicuro il pacchetto <b>%1</b>.</p><p>I seguenti programmi o componenti di sistema dipendono da esso:</p><p style='color: #dc2626;'><b>%2</b></p><p>La rimozione è stata bloccata per evitare instabilità o la cancellazione accidentale di altre applicazioni di sistema.</p>",
+    "Confirm Uninstallation": "Conferma Disinstallazione",
+    "<p>Are you sure you want to uninstall package <b>%1</b> from your system?</p><p><i>Safety check passed: no other packages depend on this component.</i></p>": "<p>Sei sicuro di voler disinstallare il pacchetto <b>%1</b> dal sistema?</p><p><i>Controllo di sicurezza completato: nessun altro programma dipende da questo componente.</i></p>",
+    "Source PDF file does not exist.": "Il file PDF di origine non esiste.",
+    "Failed to create temporary blank page file.": "Impossibile creare il file temporaneo per la pagina vuota.",
+    "Failed to create output file for page insertion.": "Impossibile creare il file di destinazione per l'inserimento pagina.",
+    "Could not insert page. Please ensure qpdf is installed on your system.": "Impossibile inserire la pagina. Assicurati che qpdf sia installato nel sistema.",
+
+    # Search Bar Widget
+    "Toggle Replace (Ctrl+H)": "Mostra/Nascondi Sostituisci (Ctrl+H)",
+    "Replace with...": "Sostituisci con...",
+    "Replace": "Sostituisci",
+    "Replace next match": "Sostituisci corrispondenza successiva",
+    "Replace All": "Sostituisci tutto",
+    "Replace all occurrences": "Sostituisci tutte le occorrenze",
+
+    # Settings Appearance, Extra, Performance, Extensions, Integration, Dialog
+    "Dark Slate": "Ardesia Scuro",
+    "Breeze Dark": "Breeze Scuro",
+    "System Default (Automatic)": "Predefinito di sistema (Automatico)",
+    "Language Changed": "Lingua modificata",
+    "Language preference saved.<br><br>Please restart BubezView for the changes to take full effect across all components.": "Preferenza della lingua salvata.<br><br>Riavvia BubezView affinché le modifiche abbiano effetto in tutti i componenti.",
+    "Diagnostics && Maintenance": "Diagnostica && Manutenzione",
+    "<b>Plugins & Extensions</b>": "<b>Plugin ed estensioni</b>",
+    "Archives": "Archivi",
+    "Audio & Video": "Audio e Video",
+    "Manage diagnostic tracing, session logs, and developer compilation levels. In case of issues, you can inspect real-time logs or copy a complete diagnostic report.": "Gestisci il tracciamento diagnostico, i registri di sessione e i livelli di compilazione per sviluppatori. In caso di problemi, puoi ispezionare i log in tempo reale o copiare un report diagnostico completo.",
+    "<b>Diagnostic Mode:</b>": "<b>Modalità diagnostica:</b>",
+    "Disabled — Standard User Mode (Optimal performance)": "Disattivata — Modalità Utente Standard (Prestazioni ottimali)",
+    "Level 1: Lightweight Log (No recompile, session log & CLI output)": "Livello 1: Log leggero (Nessuna ricompilazione, log di sessione e output CLI)",
+    "Level 2: Medium Debug (-O1 with symbols, fast incremental build)": "Livello 2: Debug medio (-O1 con simboli, build incrementale rapida)",
+    "Level 3: Deep Debug (-O0 full symbols & frame pointers)": "Livello 3: Debug profondo (-O0 simboli completi e puntatori di frame)",
+    "💡 <b>Live Terminal Debugging:</b> To trace crashes, console errors, or real-time events live without modifying compiler flags, run in terminal: <code>bubezview --debug</code>": "💡 <b>Debug da terminale in tempo reale:</b> Per tracciare crash, errori di console o eventi in tempo reale senza modificare i flag di compilazione, avvia nel terminale: <code>bubezview --debug</code>",
+    "Copy full system specifications, active compiler flags, soft dependencies, and session debug logs:": "Copia le specifiche di sistema complete, i flag attivi del compilatore, le dipendenze e i log di debug:",
+    "📋 Copy Full Diagnostics Report": "📋 Copia report diagnostico completo",
+    "Setup & Maintenance": "Configurazione e manutenzione",
+    "Re-run the initial onboarding assistant to reconfigure desktop integrations, shortcut triggers, and default settings:": "Riesegui la configurazione guidata iniziale per reimpostare le integrazioni desktop, le scorciatoie e le impostazioni predefinite:",
+    "🟢 <b>Current Status: Standard User Mode</b><br>• Configured Optimization: <b>-%1</b> (Compiled binary: <b>-%2</b>)<br>• Verbose Logging: <b>Disabled</b><br>• Peak runtime performance and battery efficiency enabled.": "🟢 <b>Stato attuale: Modalità Utente Standard</b><br>• Ottimizzazione configurata: <b>-%1</b> (Binario compilato: <b>-%2</b>)<br>• Registrazione dettagliata: <b>Disattivata</b><br>• Massime prestazioni e massima efficienza energetica.",
+    "🟡 <b>Current Status: Level 1 — Lightweight Log</b><br>• Configured Optimization: <b>-%1</b> (No recompilation required)<br>• Verbose Logging: <b>Active</b><br>• Session logs streamed live to terminal and <code>~/.cache/Bubez/BubezView/bubezview.log</code>.": "🟡 <b>Stato attuale: Livello 1 — Log leggero</b><br>• Ottimizzazione configurata: <b>-%1</b> (Nessuna ricompilazione richiesta)<br>• Registrazione dettagliata: <b>Attiva</b><br>• Log di sessione inviati al terminale e a <code>~/.cache/Bubez/BubezView/bubezview.log</code>.",
+    "🟠 <b>Current Status: Level 2 — Medium Debug (-O1)</b><br>• Optimization: <b>-O1</b> with debug symbols (<code>-g</code>)<br>• Fast incremental recompile; suitable for general bug tracking.": "🟠 <b>Stato attuale: Livello 2 — Debug medio (-O1)</b><br>• Ottimizzazione: <b>-O1</b> con simboli di debug (<code>-g</code>)<br>• Ricompilazione incrementale rapida; adatto al tracciamento di bug.",
+    "🔴 <b>Current Status: Level 3 — Deep Debug (-O0)</b><br>• Optimization: <b>-O0</b> (Unoptimized with full debug symbols and frame pointers)<br>• Maximum debuggability for GDB, Valgrind, and backtraces.": "🔴 <b>Stato attuale: Livello 3 — Debug profondo (-O0)</b><br>• Ottimizzazione: <b>-O0</b> (Non ottimizzato con simboli completi e frame pointer)<br>• Massima tracciabilità per GDB, Valgrind e analisi backtrace.",
+    "Restore User Mode": "Ripristina Modalità Utente",
+    "Restoring User Mode will recompile BubezView with standard optimization (<b>-%1</b>).<br><br><b>Target:</b> Main executable only (<code>bubezview</code>). Modular plugins will not be touched.<br><br>Start recompilation now?": "Il ripristino della Modalità Utente ricompilerà BubezView con l'ottimizzazione standard (<b>-%1</b>).<br><br><b>Destinazione:</b> Solo eseguibile principale (<code>bubezview</code>). I plugin modulari non saranno toccati.<br><br>Avviare la ricompilazione adesso?",
+    "Switch to Level 1": "Passa a Livello 1",
+    "Level 1 uses standard optimization with verbose logging enabled.<br><br>Would you like to restore standard optimization (<b>-%1</b>) for 'bubezview'?": "Il Livello 1 usa l'ottimizzazione standard con registrazione dettagliata attiva.<br><br>Vuoi ripristinare l'ottimizzazione standard (<b>-%1</b>) per 'bubezview'?",
+    "Switch to Level 2 (Medium Debug)": "Passa a Livello 2 (Debug medio)",
+    "Level 2 requires recompiling BubezView with <b>-O1 -g</b>.<br><br><b>Target:</b> Main executable only (<code>bubezview</code>). Modular plugins will not be touched.<br><br>Start recompilation now?": "Il Livello 2 richiede la ricompilazione di BubezView con <b>-O1 -g</b>.<br><br><b>Destinazione:</b> Solo eseguibile principale (<code>bubezview</code>). I plugin modulari non saranno toccati.<br><br>Avviare la ricompilazione adesso?",
+    "Switch to Level 3 (Deep Debug)": "Passa a Livello 3 (Debug profondo)",
+    "Level 3 requires recompiling BubezView with <b>-O0 -g -fno-omit-frame-pointer</b>.<br><br><b>Target:</b> Main executable only (<code>bubezview</code>). Modular plugins will not be touched.<br><br>Start recompilation now?": "Il Livello 3 richiede la ricompilazione di BubezView con <b>-O0 -g -fno-omit-frame-pointer</b>.<br><br><b>Destinazione:</b> Solo eseguibile principale (<code>bubezview</code>). I plugin modulari non saranno toccati.<br><br>Avviare la ricompilazione adesso?",
+    "Diagnostics Report Copied": "Report diagnostico copiato",
+    "A complete diagnostics report containing system specifications, compiler settings, plugin statuses, and session logs has been copied to your clipboard.<br><br>You can now paste it directly into your bug report or forum discussion.": "Un report diagnostico completo contenente specifiche di sistema, impostazioni del compilatore, stato dei plugin e log di sessione è stato copiato negli appunti.<br><br>Puoi incollarlo direttamente nella tua segnalazione di bug o nel forum.",
+    "Office Documents Integration": "Integrazione documenti Office",
+    "Use LibreOffice for preview (high-fidelity PDF conversion)": "Usa LibreOffice per l'anteprima (conversione PDF ad alta fedeltà)",
+    "Optimization Alerts": "Avvisi di ottimizzazione",
+    "When using the High-Performance profile, BubezView alerts you if an individual tool (like OCR or PDF repair) is running via an unoptimized system package rather than a custom-compiled source binary.": "Quando si utilizza il profilo Alte Prestazioni, BubezView avvisa se un singolo strumento (come OCR o riparazione PDF) è eseguito tramite un pacchetto di sistema non ottimizzato anziché un binario compilato da sorgente.",
+    "Reset All Optimization Alerts": "Reimposta tutti gli avvisi di ottimizzazione",
+    "Alerts Reset": "Avvisi reimpostati",
+    "All performance optimization alerts have been re-enabled.": "Tutti gli avvisi di ottimizzazione delle prestazioni sono stati riabilitati.",
+    "Compiler Wizard — CPU Architecture": "Procedura guidata compilatore — Architettura CPU",
+    "<h3>Feature Not Supported for this CPU</h3><p>The <b>Compiler Wizard</b> requires a 64-bit processor supporting at least the <b>x86-64-v3</b> microarchitecture tier (AVX2, FMA, BMI2) or higher.</p><p>Your current CPU tier: <b>x86-64-%1</b><br>Hardware Model: <i>%2</i></p><p>On older processors, fine-grained vector tuning can cause illegal instruction faults. Universal standard compilation (-O2) is used instead.</p>": "<h3>Funzionalità non supportata per questa CPU</h3><p>La <b>Procedura guidata del compilatore</b> richiede un processore a 64 bit che supporti almeno il livello microarchitetturale <b>x86-64-v3</b> (AVX2, FMA, BMI2) o superiore.</p><p>Livello CPU attuale: <b>x86-64-%1</b><br>Modello hardware: <i>%2</i></p><p>Sui processori più datati, l'ottimizzazione vettoriale spinta può causare istruzioni illegali. Viene utilizzata la compilazione standard universale (-O2).</p>",
+
+    # Share Manager
+    "📦 Compress & Share Current Folder (%1.zip)": "📦 Comprimi e condividi cartella corrente (%1.zip)",
+
+    # Text Viewer
+    "Read-Only Document": "Documento in sola lettura",
+    "<h3>Source Code / Configuration File</h3><p>This file contains source code or configuration settings.</p><p>Manual editing may affect script or application execution.</p><p>Do you want to enable edit mode to start typing and making changes?</p>": "<h3>Codice sorgente / File di configurazione</h3><p>Questo file contiene codice sorgente o impostazioni di configurazione.</p><p>La modifica manuale può influire sull'esecuzione dello script o dell'applicazione.</p><p>Desideri abilitare la modalità di modifica per iniziare a scrivere e apportare cambiamenti?</p>",
+    "<h3>File is Read-Only</h3><p>This text file is currently open in read-only mode to prevent accidental changes.</p><p>Do you want to enable edit mode to start typing and making changes?</p>": "<h3>File in sola lettura</h3><p>Questo file di testo è attualmente aperto in modalità di sola lettura per prevenire modifiche accidentali.</p><p>Desideri abilitare la modalità di modifica per iniziare a scrivere e apportare cambiamenti?</p>",
+    "Enable Editing": "Abilita modifica",
+    "Line number (1 - %1):": "Numero riga (1 - %1):",
+
+    # Update Dialog & Manager
+    "🛡️ <b>Cryptographically Verified:</b> Signed by Developer (Ed25519)": "🛡️ <b>Verificato crittograficamente:</b> Firmato dallo sviluppatore (Ed25519)",
+    "ℹ️ <b>Integrity Checksum:</b> SHA-256 available": "ℹ️ <b>Checksum di integrità:</b> SHA-256 disponibile",
+    "⚠️ <b>Unsigned Release:</b> Legacy release channel": "⚠️ <b>Release non firmata:</b> Canale di rilascio legacy",
+    "[Security] Verified developer Ed25519 cryptographic signature.": "[Sicurezza] Firma crittografica Ed25519 dello sviluppatore verificata.",
+    "✅ Compilation completed! Finalizing installation...": "✅ Compilazione completata! Finalizzazione installazione in corso...",
+    "✅ Update completed successfully!": "✅ Aggiornamento completato con successo!",
+    "Update Completed": "Aggiornamento completato",
+    "🎉 BubezView has been updated successfully!": "🎉 BubezView è stato aggiornato con successo!",
+    "Installed version:": "Versione installata:",
+    "Would you like to restart BubezView now to apply the updates, or continue using the current session?": "Vuoi riavviare BubezView adesso per applicare gli aggiornamenti, o continuare a usare la sessione corrente?",
+    "🔄 Restart Now": "🔄 Riavvia ora",
+    "Continue": "Continua",
+    "Security alert: Signature is present but SHA-256 hash is missing. Update blocked.": "Avviso di sicurezza: la firma è presente ma l'hash SHA-256 è mancante. Aggiornamento bloccato.",
+    "Security alert: Update payload failed cryptographic signature verification! Update blocked.": "Avviso di sicurezza: il payload di aggiornamento non ha superato la verifica della firma crittografica! Aggiornamento bloccato.",
+    "Replaced %n occurrence(s)": "Sostituita/e %n occorrenza/e",
+    "No image loaded.<br>Click 'Browse Photo / Scan' below.": "Nessuna immagine caricata.<br>Fai clic su 'Sfoglia Foto / Scansione' sotto.",
+    "of %1": "di %1",
+    "Unknown Signer": "Firmatario sconosciuto",
+    "⚠️ <b>INVALID DIGITAL SIGNATURE (%1)</b> — Document integrity check failed! Signed by: <b>%2</b>": "⚠️ <b>FIRMA DIGITALE NON VALIDA (%1)</b> — Controllo di integrità del documento non riuscito! Firmato da: <b>%2</b>",
+    "🛡️ <b>Digitally Signed & Verified (%1)</b> — Signed by: <b>%2</b> (%n signature(s))": "🛡️ <b>Firmato digitalmente e verificato (%1)</b> — Firmato da: <b>%2</b> (%n firma/e)",
+    "🔐 <b>Digitally Signed (%1 — Integrity Valid)</b> — Signed by: <b>%2</b> (Self-Signed / Unverified CA)": "🔐 <b>Firmato digitalmente (%1 — Integrità valida)</b> — Firmato da: <b>%2</b> (Auto-firmato / CA non verificata)",
+    "📋 Area copied to clipboard at 200 DPI (%1 × %2 px)": "📋 Area copiata negli appunti a 200 DPI (%1 × %2 px)",
+    "✂️ Area cut. Press Ctrl+Z to undo anytime.": "✂️ Area tagliata. Premi Ctrl+Z per annullare in qualsiasi momento.",
+    "QPDF Required": "QPDF richiesto",
+    "📋 Area copied to clipboard at 300 DPI (%1 × %2 px)": "📋 Area copiata negli appunti a 300 DPI (%1 × %2 px)",
+    "Select Image to Insert": "Seleziona immagine da inserire",
+    "Images (*.png *.jpg *.jpeg *.webp *.bmp *.svg *.tiff);;All Files (*)": "Immagini (*.png *.jpg *.jpeg *.webp *.bmp *.svg *.tiff);;Tutti i file (*)",
+    "Invalid Image": "Immagine non valida",
+    "Could not load selected image file.": "Impossibile caricare il file immagine selezionato.",
+    "Could not insert page. Please ensure <b>qpdf</b> is installed on your system.": "Impossibile inserire la pagina. Assicurati che <b>qpdf</b> sia installato nel sistema.",
+    "Page Overflow — Insert New Page?": "Spazio insufficiente — Inserire nuova pagina?",
+    "<b>The remaining space on Page %1 is insufficient to accommodate the shifted content.</b><br><br>Shifting existing content downwards will push it past the bottom of the page.<br><br>Would you like to automatically insert a new page (Page %2) and move the overflow content there?": "<b>Lo spazio rimanente sulla pagina %1 è insufficiente per accogliere il contenuto spostato.</b><br><br>Spostare il contenuto verso il basso supererebbe il limite inferiore della pagina.<br><br>Vuoi inserire automaticamente una nuova pagina (Pagina %2) e posizionarvi il contenuto eccedente?",
+    "Done ✓": "Fatto ✓",
+    "🖼️ Insert Image": "🖼️ Inserisci immagine",
+    "➕ Insert Blank Page": "➕ Inserisci pagina vuota",
+    "↔ Fit to Window": "↔ Adatta alla finestra",
+    "⇄ Replace": "⇄ Sostituisci",
+    "✏️ Edit Text": "✏️ Modifica testo",
+    "# Lines": "# Righe",
+    "{ } Syntax": "{ } Sintassi",
+    "↩ Wrap": "↩ A capo",
+    "↷ Go to Line": "↷ Vai a riga",
+    "➕ Add Files...": "➕ Aggiungi file...",
+    "📁 Add Folder...": "📁 Aggiungi cartella...",
+    "🗑️ Remove Selected": "🗑️ Rimuovi selezionati",
+    "Immutable System Detected": "Rilevato sistema immutabile",
+    "<h3>Immutable System Detected</h3><p>Your operating system has a read-only root filesystem.</p><p>Would you like to compile the <b>%1</b> engine from source in your user directory?</p>": "<h3>Rilevato sistema immutabile</h3><p>Il tuo sistema operativo ha un file system radice in sola lettura.</p><p>Vuoi compilare il motore <b>%1</b> da sorgente nella tua cartella utente?</p>",
+    "Compile from Source (Recommended)": "Compila da sorgente (Consigliato)",
+    "<p>Your operating system has a read-only root filesystem.</p><p>Installing runtime packages into <code>/usr</code> is not recommended.</p><p><b>Recommended solution:</b> In BubezView Settings, select <b>'Compiled (Source)'</b> to build the module locally in your user folder.</p><p>Alternatively, apply an overlay via terminal:<br><code>rpm-ostree install %1</code></p>": "<p>Il tuo sistema operativo ha un file system radice in sola lettura.</p><p>L'installazione di pacchetti in <code>/usr</code> non è consigliata.</p><p><b>Soluzione consigliata:</b> Nelle impostazioni di BubezView, seleziona <b>'Compilato (Sorgente)'</b> per compilare il modulo localmente nella cartella utente.</p><p>In alternativa, applica un overlay da terminale:<br><code>rpm-ostree install %1</code></p>",
+    "Gentoo Distribution": "Distribuzione Gentoo",
+    "<p>Detected Gentoo Linux environment.</p><p>Run from terminal:</p><p><code>sudo emerge --ask %1</code></p><p>Verify that required USE flags are enabled in <code>/etc/portage/package.use</code>.</p>": "<p>Rilevato ambiente Gentoo Linux.</p><p>Esegui da terminale:</p><p><code>sudo emerge --ask %1</code></p><p>Verifica che i flag USE richiesti siano abilitati in <code>/etc/portage/package.use</code>.</p>",
+    "Component Activation": "Attivazione componente",
+    "<h3>Activate Engine: %1</h3><p>This engine requires the system package: <code>%2</code></p><p>Detected distribution: <b>%3</b></p><p>How would you like to proceed?</p>": "<h3>Attiva motore: %1</h3><p>Questo motore richiede il pacchetto di sistema: <code>%2</code></p><p>Distribuzione rilevata: <b>%3</b></p><p>Come desideri procedere?</p>",
+    "Install from System (Recommended)": "Installa da sistema (Consigliato)",
+    "System Package Installation": "Installazione pacchetto di sistema",
+    "<p>The component <b>%1</b> requires the system package: <code>%2</code></p><p>Detected distribution: <b>%3</b></p><p>Would you like to proceed with automated installation using administrator privileges?</p>": "<p>Il componente <b>%1</b> richiede il pacchetto di sistema: <code>%2</code></p><p>Distribuzione rilevata: <b>%3</b></p><p>Desideri procedere con l'installazione automatica tramite privilegi di amministratore?</p>",
+    "Installation Failed — Backup Plan": "Installazione non riuscita — Piano di riserva",
+    "<h3>System installation failed</h3><p>Could not install package <code>%1</code> via the system package manager.</p><p><b>Error details:</b> %2</p><p><b>Backup plan:</b> Would you like to compile the engine from source?</p>": "<h3>Installazione di sistema non riuscita</h3><p>Impossibile installare il pacchetto <code>%1</code> tramite il gestore pacchetti di sistema.</p><p><b>Dettagli errore:</b> %2</p><p><b>Piano di riserva:</b> Desideri compilare il motore da sorgente?</p>",
+    "Installation Completed": "Installazione completata",
+    "The packages (%1) were installed successfully!": "I pacchetti (%1) sono stati installati con successo!",
+    "<p>Could not complete automatic installation.</p><p>Manual terminal command:</p><p><code>%1</code></p><p>Error detail: %2</p>": "<p>Impossibile completare l'installazione automatica.</p><p>Comando manuale da terminale:</p><p><code>%1</code></p><p>Dettaglio errore: %2</p>"
+}
+
+def main():
+    ts_file = "translations/bubezview_it.ts"
+    if not os.path.exists(ts_file):
+        print(f"Error: {ts_file} not found")
+        sys.exit(1)
+
+    tree = ET.parse(ts_file)
+    root = tree.getroot()
+
+    updated_count = 0
+    already_good_count = 0
+    unmatched_count = 0
+
+    for context in root.findall("context"):
+        cname = context.find("name").text
+        for message in context.findall("message"):
+            source = message.find("source")
+            if source is None or not source.text:
+                continue
+            s_text = source.text
+            is_numerus = message.get("numerus") == "yes"
+            trans = message.find("translation")
+
+            if trans is None:
+                trans = ET.SubElement(message, "translation")
+
+            if is_numerus:
+                trans.text = None
+                if "type" in trans.attrib:
+                    del trans.attrib["type"]
+                forms = trans.findall("numerusform")
+                if s_text == "Replaced %n occurrence(s)":
+                    if len(forms) >= 2:
+                        forms[0].text = "Sostituita %n occorrenza"
+                        forms[1].text = "Sostituite %n occorrenze"
+                    else:
+                        trans.clear()
+                        f1 = ET.SubElement(trans, "numerusform")
+                        f1.text = "Sostituita %n occorrenza"
+                        f2 = ET.SubElement(trans, "numerusform")
+                        f2.text = "Sostituite %n occorrenze"
+                    updated_count += 1
+                elif "signature(s)" in s_text:
+                    if len(forms) >= 2:
+                        forms[0].text = "🛡️ <b>Firmato digitalmente e verificato (%1)</b> — Firmato da: <b>%2</b> (%n firma)"
+                        forms[1].text = "🛡️ <b>Firmato digitalmente e verificato (%1)</b> — Firmato da: <b>%2</b> (%n firme)"
+                    else:
+                        trans.clear()
+                        f1 = ET.SubElement(trans, "numerusform")
+                        f1.text = "🛡️ <b>Firmato digitalmente e verificato (%1)</b> — Firmato da: <b>%2</b> (%n firma)"
+                        f2 = ET.SubElement(trans, "numerusform")
+                        f2.text = "🛡️ <b>Firmato digitalmente e verificato (%1)</b> — Firmato da: <b>%2</b> (%n firme)"
+                    updated_count += 1
+                continue
+
+            is_unfinished = trans.get("type") == "unfinished"
+            is_empty = not trans.text or not trans.text.strip()
+
+            if is_unfinished or is_empty:
+                if s_text in TRANSLATIONS_DICT:
+                    trans.text = TRANSLATIONS_DICT[s_text]
+                    if "type" in trans.attrib:
+                        del trans.attrib["type"]
+                    updated_count += 1
+                elif trans.text and trans.text.strip():
+                    if "type" in trans.attrib:
+                        del trans.attrib["type"]
+                    already_good_count += 1
+                else:
+                    unmatched_count += 1
+                    print(f"Unmatched: [{cname}] {repr(s_text)}")
+
+    tree.write(ts_file, encoding="utf-8", xml_declaration=True)
+    print(f"\nDone! Updated: {updated_count}, Kept existing and marked finished: {already_good_count}, Unmatched: {unmatched_count}")
+
+if __name__ == "__main__":
+    main()
