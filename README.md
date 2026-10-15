@@ -12,6 +12,7 @@
   <a href="https://github.com/dawlin70-commits/Bubezview/releases"><img src="https://img.shields.io/badge/Release-v0.4.0--beta-blue.svg" alt="Release" /></a>
   <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B" alt="C++17" />
   <img src="https://img.shields.io/badge/Qt-6.4+-41CD52?logo=qt" alt="Qt6" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPLv3" /></a>
   <img src="https://img.shields.io/badge/Platform-Linux-FCC624?logo=linux&logoColor=black" alt="Platform Linux" />
   <img src="https://img.shields.io/badge/Architecture-Modular%20Plugins-orange" alt="Architecture" />
 </p>
@@ -183,5 +184,6 @@ Language preference can also be manually chosen in **Settings → Appearance & I
 
 ## 📄 License & Credits
 
+- BubezView is licensed under the **GNU General Public License v3.0** (GPLv3). See the [LICENSE](LICENSE) file for complete details.
 - Developed by **dawlin70** and contributors.
 - See `CHANGELOG.md` for full release notes and milestone history.
