@@ -2,8 +2,10 @@
 #include "core/interfaces/i_pdf_viewer.h"
 #include "core/plugin_manager.h"
 #include "theme_manager.h"
+#ifdef HAVE_LIBARCHIVE
 #include <archive.h>
 #include <archive_entry.h>
+#endif
 #include <QXmlStreamReader>
 #include <QFileInfo>
 #include <QDir>
@@ -514,6 +516,7 @@ void OfficeViewer::onSaveAsPdf()
 
 void OfficeViewer::onExtractImages()
 {
+#ifdef HAVE_LIBARCHIVE
     if (m_currentFilePath.isEmpty()) return;
 
     QFileInfo fi(m_currentFilePath);
@@ -560,6 +563,9 @@ void OfficeViewer::onExtractImages()
     } else {
         QMessageBox::information(this, tr("No Images"), tr("No images found inside this document."));
     }
+#else
+    QMessageBox::information(this, tr("LibArchive Required"), tr("Extracting images requires the LibArchive engine. You can enable it in Settings → Extensions."));
+#endif
 }
 
 void OfficeViewer::clear()
@@ -589,6 +595,7 @@ QByteArray OfficeViewer::extractZipEntry(const QString &zipPath, const QString &
 QMap<QString, QByteArray> OfficeViewer::extractZipEntries(const QString &zipPath, const QStringList &entryNames)
 {
     QMap<QString, QByteArray> result;
+#ifdef HAVE_LIBARCHIVE
     if (zipPath.isEmpty() || entryNames.isEmpty()) return result;
 
     struct archive *a = archive_read_new();
@@ -635,6 +642,10 @@ QMap<QString, QByteArray> OfficeViewer::extractZipEntries(const QString &zipPath
 
     archive_read_close(a);
     archive_read_free(a);
+#else
+    Q_UNUSED(zipPath);
+    Q_UNUSED(entryNames);
+#endif
     return result;
 }
 
@@ -1174,6 +1185,7 @@ bool OfficeViewer::parseRtf(const QString &filePath)
 
 bool OfficeViewer::parseEpub(const QString &filePath)
 {
+#ifdef HAVE_LIBARCHIVE
     struct archive *a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
@@ -1306,5 +1318,9 @@ bool OfficeViewer::parseEpub(const QString &filePath)
     m_textBrowser->setHtml(fullHtml);
     m_textBrowser->verticalScrollBar()->setValue(0);
     return true;
+#else
+    Q_UNUSED(filePath);
+    return false;
+#endif
 }
 

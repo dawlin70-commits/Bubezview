@@ -128,6 +128,7 @@ endif()
 pkg_check_modules(LIBARCHIVE libarchive)
 if(LIBARCHIVE_FOUND)
     message(STATUS ">>> Archive Plugin Engine: Detected libarchive (${LIBARCHIVE_VERSION}) <<<")
+    add_compile_definitions(HAVE_LIBARCHIVE)
 else()
     message(STATUS ">>> Archive Plugin Engine: libarchive not detected (Archive plugin will be skipped) <<<")
 endif()
@@ -625,15 +626,3 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/bubezview.desktop"
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/bubezview.nemo_action"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/nemo/actions")
 
-# CPack DEB generation
-set(CPACK_PACKAGE_NAME "bubezview")
-set(CPACK_PACKAGE_VENDOR "Davide / Bubez")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Visualizzatore universale di file e anteprima rapida nativa Qt6 C++")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_GENERATOR "DEB")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Davide <bubez@local>")
-set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
-set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libreoffice")
-include(CPack)

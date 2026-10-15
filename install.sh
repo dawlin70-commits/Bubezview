@@ -125,9 +125,6 @@ check_dependencies() {
             pacman -Q qt6-base >/dev/null 2>&1 || missing_pkgs+=("qt6-base")
             pacman -Q qt6-svg >/dev/null 2>&1 || missing_pkgs+=("qt6-svg")
             pacman -Q qrencode >/dev/null 2>&1 || missing_pkgs+=("qrencode")
-            pacman -Q libarchive >/dev/null 2>&1 || missing_pkgs+=("libarchive")
-            pacman -Q poppler-qt6 >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6")
-            pacman -Q mpv >/dev/null 2>&1 || missing_pkgs+=("mpv")
             ;;
         apt)
             command -v cmake >/dev/null 2>&1 || missing_pkgs+=("cmake")
@@ -142,9 +139,6 @@ check_dependencies() {
                 fi
             fi
             dpkg -s libqrencode-dev >/dev/null 2>&1 || missing_pkgs+=("libqrencode-dev")
-            dpkg -s libarchive-dev >/dev/null 2>&1 || missing_pkgs+=("libarchive-dev")
-            dpkg -s libpoppler-qt6-dev >/dev/null 2>&1 || missing_pkgs+=("libpoppler-qt6-dev")
-            dpkg -s libmpv-dev >/dev/null 2>&1 || missing_pkgs+=("libmpv-dev")
             ;;
         dnf)
             command -v cmake >/dev/null 2>&1 || missing_pkgs+=("cmake")
@@ -153,9 +147,6 @@ check_dependencies() {
             rpm -q qt6-qtbase-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtbase-devel")
             rpm -q qt6-qtsvg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtsvg-devel")
             rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
-            rpm -q libarchive-devel >/dev/null 2>&1 || missing_pkgs+=("libarchive-devel")
-            rpm -q poppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6-devel")
-            rpm -q mpv-devel >/dev/null 2>&1 || missing_pkgs+=("mpv-devel")
             ;;
         zypper)
             command -v cmake >/dev/null 2>&1 || missing_pkgs+=("cmake")
@@ -164,14 +155,11 @@ check_dependencies() {
             rpm -q qt6-base-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-base-devel")
             rpm -q qt6-svg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-svg-devel")
             rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
-            rpm -q libarchive-devel >/dev/null 2>&1 || missing_pkgs+=("libarchive-devel")
-            rpm -q poppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6-devel")
-            rpm -q mpv-devel >/dev/null 2>&1 || missing_pkgs+=("mpv-devel")
             ;;
     esac
 
     if [ ${#missing_pkgs[@]} -gt 0 ]; then
-        ui_info "Dependency Check" "The following required packages will now be installed:\n\n${missing_pkgs[*]}"
+        ui_info "Dependency Check" "The following core build packages will now be installed:\n\n${missing_pkgs[*]}"
         install_packages "${missing_pkgs[@]}"
     fi
 }
