@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(bubezview VERSION 0.4.0 LANGUAGES CXX)
-set(BUBEZVIEW_VERSION_STRING "0.4.0-beta")
+project(bubezview VERSION 0.4.1 LANGUAGES CXX)
+set(BUBEZVIEW_VERSION_STRING "0.4.1")
 add_compile_definitions(BUBEZVIEW_VERSION="${BUBEZVIEW_VERSION_STRING}")
 
 set(CMAKE_CXX_STANDARD 17)

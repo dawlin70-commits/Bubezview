@@ -168,6 +168,12 @@ int main(int argc, char *argv[])
     );
     parser.addOption(debugOption);
 
+    QCommandLineOption wizardOption(
+        QStringList() << "setup" << "wizard",
+        QCoreApplication::translate("main", "Force open the initial setup wizard.")
+    );
+    parser.addOption(wizardOption);
+
     parser.addPositionalArgument("file", QCoreApplication::translate("main", "File or folder to preview (optional)"));
 
     parser.process(app);
@@ -219,7 +225,7 @@ int main(int argc, char *argv[])
 
     // Check if first-run setup wizard should be displayed
     bool firstRunCompleted = settings.value("first_run_completed", false).toBool();
-    if (!firstRunCompleted && !parser.isSet(screenshotOption)) {
+    if ((!firstRunCompleted || parser.isSet(wizardOption)) && !parser.isSet(screenshotOption)) {
         FirstRunWizard wizard(&window);
         if (wizard.exec() == QDialog::Accepted) {
             ThemeManager::applyTheme(&app, &window);

@@ -6139,37 +6139,36 @@ Clicca per passare a compilato da sorgenti.</translation>
 <context>
     <name>FirstRunWizard</name>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="97" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="119" />
         <source>BubezView Setup Wizard</source>
         <translation>Configurazione guidata di BubezView</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="113" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="144" />
         <source>Next &gt;</source>
         <translation>Avanti &gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="114" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="145" />
         <source>&lt; Back</source>
         <translation>&lt; Indietro</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="115" />
         <source>Finish &amp; Launch BubezView</source>
-        <translation>Termina e avvia BubezView</translation>
+        <translation type="vanished">Termina e avvia BubezView</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="116" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="147" />
         <source>Cancel</source>
         <translation>Annulla</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="128" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="172" />
         <source>Welcome to BubezView</source>
         <translation>Benvenuto in BubezView</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="129" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="173" />
         <source>High-performance native file viewer and instant preview tool for Linux.</source>
         <translation>Visualizzatore file nativo ad alte prestazioni e anteprima rapida per Linux.</translation>
     </message>
@@ -6178,14 +6177,13 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Questa procedura guidata ti aiuterà a configurare le scorciatoie da tastiera, le integrazioni con il gestore file, il motore di rendering per i documenti Office e l'aspetto grafico.&lt;br&gt;&lt;br&gt;Puoi completarla in meno di un minuto e modificare qualsiasi preferenza in seguito dalla finestra Impostazioni.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="151" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="206" />
         <source>Detected Environment</source>
         <translation>Ambiente rilevato</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="156" />
         <source>&lt;b&gt;Desktop Environment:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Platform:&lt;/b&gt; Native C++ / Qt6 engine (lightweight, hardware-accelerated)</source>
-        <translation>&lt;b&gt;Ambiente desktop:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Piattaforma:&lt;/b&gt; Motore nativo C++ / Qt6 (leggero e accelerato in hardware)</translation>
+        <translation type="vanished">&lt;b&gt;Ambiente desktop:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Piattaforma:&lt;/b&gt; Motore nativo C++ / Qt6 (leggero e accelerato in hardware)</translation>
     </message>
     <message>
         <source>Desktop &amp; File Manager Integration</source>
@@ -6196,7 +6194,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Configura l'integrazione di BubezView con il tuo file manager e le scorciatoie da tastiera.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="532" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="736" />
         <source>Primary Preview Shortcut</source>
         <translation>Scorciatoia principale per l'anteprima</translation>
     </message>
@@ -6221,37 +6219,114 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Registra scorciatoia globale di sistema per l'anteprima dei file selezionati</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="173" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="261" />
         <source>Processor &amp; Hardware Optimization</source>
         <translation>Ottimizzazione Processore e Hardware</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="174" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="262" />
         <source>Select the performance profile tailored for your computer.</source>
         <translation>Seleziona il profilo di prestazioni ideale per il tuo computer.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="180" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="269" />
         <source>Detected Host Processor</source>
         <translation>Processore Rilevato</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="184" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="214" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="274" />
         <source>Generic x86-64 Processor</source>
         <translation>Processore x86-64 Generico</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="188" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="91" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="102" />
+        <source>&lt;b style='color:#10b981;'&gt;✅ Spacebar detected successfully!&lt;/b&gt;</source>
+        <translation>&lt;b style='color:#10b981;'&gt;✅ Tasto Spazio rilevato con successo!&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="146" />
+        <source>Finish &amp;&amp; Launch BubezView</source>
+        <translation>Termina e avvia BubezView</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="218" />
+        <source>&lt;table width='100%' cellspacing='2' cellpadding='1'&gt;&lt;tr&gt;&lt;td width='34%'&gt;&lt;b&gt;Desktop Environment:&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Detected Processor:&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2 (%3 threads)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Core Architecture:&lt;/b&gt;&lt;/td&gt;&lt;td&gt;Native C++17 / Qt6 (Hardware-Accelerated)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation>&lt;table width='100%' cellspacing='2' cellpadding='1'&gt;&lt;tr&gt;&lt;td width='34%'&gt;&lt;b&gt;Ambiente Desktop:&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Processore rilevato:&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2 (%3 thread)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Architettura Core:&lt;/b&gt;&lt;/td&gt;&lt;td&gt;C++17 nativo / Qt6 (Accelerazione hardware)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="233" />
+        <source>Quick Setup Overview</source>
+        <translation>Panoramica configurazione rapida</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="247" />
+        <source>&lt;b&gt;1. CPU Profile:&lt;/b&gt; Native host tuning or system packages</source>
+        <translation>&lt;b&gt;1. Profilo CPU:&lt;/b&gt; Ottimizzazione nativa host o pacchetti di sistema</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="248" />
+        <source>&lt;b&gt;2. Modules:&lt;/b&gt; PDF, Office, Media, Archives &amp;amp; OCR</source>
+        <translation>&lt;b&gt;2. Moduli:&lt;/b&gt; PDF, Office, Media, Archivi e OCR</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="249" />
+        <source>&lt;b&gt;3. Appearance:&lt;/b&gt; System theme &amp;amp; thumbnail bar</source>
+        <translation>&lt;b&gt;3. Aspetto:&lt;/b&gt; Tema di sistema e barra miniature</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="250" />
+        <source>&lt;b&gt;4. Shortcuts:&lt;/b&gt; Instant Spacebar preview in file manager</source>
+        <translation>&lt;b&gt;4. Scorciatoie:&lt;/b&gt; Anteprima istantanea con Spazio nel file manager</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="278" />
         <source>&lt;b&gt;Model:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Architecture tier:&lt;/b&gt; x86-64-%2 (%3 logical cores)</source>
         <translation>&lt;b&gt;Modello:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Livello architettura:&lt;/b&gt; x86-64-%2 (%3 core logici)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="197" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="288" />
         <source>Performance Profile</source>
         <translation>Profilo Prestazioni</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="249" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="294" />
+        <source>🚀 High Performance (Everything Compiled from Source)</source>
+        <translation>🚀 Potente (Tutto compilato da sorgente)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="301" />
+        <source>Maximum speed. All engines compiled with aggressive host optimizations (-O3, -march=native, LTO).</source>
+        <translation>Massima velocità. Tutti i motori compilati con ottimizzazioni spinte per il tuo PC (-O3, -march=native, LTO).</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="309" />
+        <source>📦 Balanced (System Packaged Dependencies)</source>
+        <translation>📦 Bilanciato (Dipendenze da pacchetti di sistema)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="316" />
+        <source>Daily use. Uses precompiled system libraries from your distribution with zero compile wait times.</source>
+        <translation>Uso quotidiano. Usa le librerie precompilate della tua distribuzione senza tempi di attesa.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="335" />
+        <source>&lt;i&gt;✅ Current binary is already built with native -O3 optimizations (no extra compile wait).&lt;/i&gt;</source>
+        <translation>&lt;i&gt;✅ Il binario attuale è già compilato con ottimizzazioni native -O3 (nessuna attesa di compilazione).&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="339" />
+        <source>&lt;i&gt;ℹ️ Optimal profile for your CPU. BubezView will compile with -O3 native tuning upon finish.&lt;/i&gt;</source>
+        <translation>&lt;i&gt;ℹ️ Profilo ottimale per la tua CPU. BubezView compilerà con ottimizzazione nativa -O3 al termine.&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="344" />
+        <source>&lt;i&gt;✅ Uses distribution precompiled packages immediately with zero compilation time.&lt;/i&gt;</source>
+        <translation>&lt;i&gt;✅ Utilizza subito i pacchetti precompilati della distribuzione senza tempi di compilazione.&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="376" />
         <source>Engines &amp; Functional Modules</source>
         <translation>Motori e Moduli Funzionali</translation>
     </message>
@@ -6268,27 +6343,27 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Portatile / Efficienza (Basso Consumo)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="806" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1024" />
         <source>Custom Configuration</source>
         <translation>Configurazione Personalizzata</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="808" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1026" />
         <source>Complete Suite (All modules enabled)</source>
         <translation>Suite Completa (tutti i moduli abilitati)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="810" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1028" />
         <source>Documents &amp; Office</source>
         <translation>Documenti &amp; Ufficio</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="812" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1030" />
         <source>Media &amp; Entertainment</source>
         <translation>Media &amp; Intrattenimento</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="814" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1032" />
         <source>Minimal Core</source>
         <translation>Core Minimo</translation>
     </message>
@@ -6297,7 +6372,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">PDF &amp; Firme</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="828" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1046" />
         <source>Office Preview</source>
         <translation>Anteprima Office</translation>
     </message>
@@ -6306,7 +6381,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Media &amp; Audio</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="835" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1053" />
         <source>Archives</source>
         <translation>Archivi</translation>
     </message>
@@ -6315,17 +6390,16 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Strumenti OCR &amp; QPDF</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="839" />
         <source>None</source>
-        <translation>Nessuno</translation>
+        <translation type="vanished">Nessuno</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="859" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1076" />
         <source>Hardware Performance Profile</source>
         <translation>Profilo Prestazioni Hardware</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="383" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="527" />
         <source>Office Document Preview</source>
         <translation>Anteprima Documenti Office</translation>
     </message>
@@ -6390,7 +6464,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Puoi riconfigurare i moduli o l'ottimizzazione CPU in qualsiasi momento da Impostazioni → Estensioni.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="140" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="192" />
         <source>This wizard will help you configure your preferred processor optimizations, document modules, visual appearance, and navigation behavior.&lt;br&gt;&lt;br&gt;You can complete this setup in under a minute, and change any preference later from the Settings dialog or directly from application menus.</source>
         <translation>Questa configurazione guidata ti aiuterà a impostare le ottimizzazioni del processore, i moduli documenti, l'aspetto visivo e il comportamento di navigazione.&lt;br&gt;&lt;br&gt;Puoi completare la procedura in meno di un minuto e modificare ogni preferenza in seguito dalle Impostazioni o direttamente dai menu.</translation>
     </message>
@@ -6413,9 +6487,8 @@ Clicca per passare a compilato da sorgenti.</translation>
    Profilo conservativo (-O2) a basso impatto sulla batteria e temperature minime.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="233" />
         <source>&lt;i&gt;Optimal profile detected automatically. Changing it will trigger a recompile (also editable later in Settings).&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Profilo ottimale rilevato in automatico. Cambiandolo, BubezView verrà ricompilato (modificabile anche dopo dalle Impostazioni).&lt;/i&gt;</translation>
+        <translation type="vanished">&lt;i&gt;Profilo ottimale rilevato in automatico. Cambiandolo, BubezView verrà ricompilato (modificabile anche dopo dalle Impostazioni).&lt;/i&gt;</translation>
     </message>
     <message>
         <source>⭐ Default (Keep Current Setup)
@@ -6446,42 +6519,39 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="obsolete">Installato</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="47" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="54" />
         <source>Test Spacebar Shortcut</source>
         <translation>Test Scorciatoia Barra Spazio</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="52" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="59" />
         <source>&lt;h3&gt;🧪 Testing Spacebar Key&lt;/h3&gt;</source>
         <translation>&lt;h3&gt;🧪 Test Tasto Barra Spaziatrice&lt;/h3&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="57" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="64" />
         <source>Please press the &lt;b&gt;Spacebar&lt;/b&gt; on your keyboard now to verify key capture.</source>
         <translation>Premi la &lt;b&gt;Barra Spaziatrice&lt;/b&gt; sulla tastiera per verificare l'intercettazione del tasto.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="65" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="72" />
         <source>Cancel / Having Issues</source>
         <translation>Annulla / Problemi rilevati</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="80" />
         <source>&lt;b style='color:#4ade80;'&gt;✅ Spacebar detected successfully!&lt;/b&gt;</source>
-        <translation>&lt;b style='color:#4ade80;'&gt;✅ Tasto Spazio rilevato con successo!&lt;/b&gt;</translation>
+        <translation type="vanished">&lt;b style='color:#4ade80;'&gt;✅ Tasto Spazio rilevato con successo!&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="202" />
         <source>🚀 High Performance (Everything Compiled from Source)
    Maximum speed. All engines compiled with aggressive host optimizations (-O3, -march=native, LTO).</source>
-        <translation>🚀 Potente (Tutto compilato da sorgente)
+        <translation type="vanished">🚀 Potente (Tutto compilato da sorgente)
    Massime prestazioni. Tutti i motori compilati con ottimizzazioni per la macchina (-O3, -march=native, LTO).</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="208" />
         <source>📦 Balanced (System Packaged Dependencies)
    Daily use. Uses precompiled system libraries from your distribution with zero compile wait times.</source>
-        <translation>📦 Bilanciato (Pacchetti di sistema)
+        <translation type="vanished">📦 Bilanciato (Pacchetti di sistema)
    Uso quotidiano. Utilizza i pacchetti e le librerie precompilate della distribuzione, zero attese di compilazione.</translation>
     </message>
     <message>
@@ -6505,34 +6575,32 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">ℹ️ Puoi configurare o ricompilare le singole estensioni in qualsiasi momento da Impostazioni → Estensioni.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="250" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="377" />
         <source>Select which document readers, media players, and preview engines you want to enable.</source>
         <translation>Seleziona quali lettori di documenti, player multimediali e motori di anteprima desideri abilitare.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="266" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="384" />
         <source>Module Setup Presets</source>
         <translation>Preset di configurazione moduli</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="275" />
         <source>⚙️ Custom Configuration
    Choose each component and engine manually using the checkboxes below.</source>
-        <translation>⚙️ Configurazione personalizzata
+        <translation type="vanished">⚙️ Configurazione personalizzata
    Scegli ciascun componente e motore manualmente tramite le caselle sottostanti.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="289" />
         <source>Active Components &amp; Capabilities</source>
-        <translation>Componenti attivi &amp; Funzionalità</translation>
+        <translation type="vanished">Componenti attivi &amp; Funzionalità</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="365" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="509" />
         <source>📄 Documents &amp; Office</source>
         <translation>📄 Documenti &amp; Ufficio</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="368" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="512" />
         <source>PDF Documents &amp; Digital Signatures</source>
         <translation>Documenti PDF &amp; Firme digitali</translation>
     </message>
@@ -6541,7 +6609,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Rendering vettoriale PDF ad alta risoluzione (Poppler) e verifica firme crittografiche (OpenSSL).</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="384" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="528" />
         <source>Preview Microsoft Office (.docx, .xlsx, .pptx) and OpenDocument files via LibreOffice.</source>
         <translation>Anteprima di file Microsoft Office (.docx, .xlsx, .pptx) e OpenDocument tramite LibreOffice.</translation>
     </message>
@@ -6570,226 +6638,305 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Estrazione testo da scansioni (Tesseract OCR) e riparazione/linearizzazione/unione PDF (QPDF).</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="369" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="513" />
         <source>Vector rendering pipeline (Poppler) and cryptographic signature validation (OpenSSL).</source>
         <translation>Pipeline di rendering vettoriale (Poppler) e verifica firme crittografiche (OpenSSL).</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="373" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="517" />
         <source>Optical Character Recognition (Tesseract OCR)</source>
         <translation>Riconoscimento ottico dei caratteri (Tesseract OCR)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="374" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="518" />
         <source>Extract selectable UTF-8 text from scanned pages and visual screen snippets.</source>
         <translation>Estrai testo UTF-8 selezionabile da pagine scansionate e ritagli visivi dello schermo.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="378" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="522" />
         <source>PDF Repair &amp; Advanced Tools (QPDF / pdfimages)</source>
         <translation>Riparazione PDF &amp; Strumenti avanzati (QPDF / pdfimages)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="379" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="523" />
         <source>Fix corrupted PDF streams, linearize for instant loading, and extract embedded lossless images.</source>
         <translation>Ripara stream PDF corrotti, linearizza per caricamento istantaneo ed estrai immagini lossless incorporate.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="388" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="532" />
         <source>🎬 Multimedia &amp; Audio</source>
         <translation>🎬 Multimediale &amp; Audio</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="391" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="535" />
         <source>Multimedia Video &amp; Audio Player (MPV)</source>
         <translation>Player Multimediale Video &amp; Audio (MPV)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="392" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="536" />
         <source>Hardware GPU video decoding (VA-API/NVDEC) and high-fidelity bit-perfect audio streaming.</source>
         <translation>Decodifica video hardware su GPU (VA-API/NVDEC) e riproduzione audio bit-perfect ad alta fedeltà.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="396" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="540" />
         <source>10-Band Equalizer &amp; Visualizer (FFTW3)</source>
         <translation>Equalizzatore a 10 bande &amp; Visualizzatore (FFTW3)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="397" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="541" />
         <source>Real-time stereo spectrum visualizer and studio sound equalization.</source>
         <translation>Visualizzatore di spettro stereo in tempo reale ed equalizzazione audio professionale.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="401" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="545" />
         <source>📦 Compressed Archives</source>
         <translation>📦 Archivi Compressi</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="404" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="548" />
         <source>Archive Manager (LibArchive)</source>
         <translation>Gestione archivi (LibArchive)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="405" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="549" />
         <source>Universal archive browsing, cataloging, and direct extraction for ZIP, TAR, 7Z, and ISO.</source>
         <translation>Navigazione universale archivi, catalogazione ed estrazione diretta per ZIP, TAR, 7Z e ISO.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="409" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="553" />
         <source>Multi-Core 7-Zip &amp; zstd Compression</source>
         <translation>Compressione multi-core 7-Zip &amp; zstd</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="410" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="554" />
         <source>Parallel multi-threaded compression across all CPU cores for ZIP, 7Z, and modern zstd archives.</source>
         <translation>Compressione parallela multithreading su tutti i core CPU per archivi ZIP, 7Z e zstd moderni.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="418" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="565" />
         <source>ℹ️ Settings can be customized or recompiled at any time from Settings → Extensions.</source>
         <translation>ℹ️ Le impostazioni possono essere personalizzate o ricompilate in qualsiasi momento da Impostazioni → Estensioni.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="425" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="572" />
         <source>⚙️ Advanced Settings...</source>
         <translation>⚙️ Impostazioni avanzate...</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="490" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="652" />
         <source>Appearance &amp; Theme</source>
         <translation>Aspetto e Tema</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="491" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="653" />
         <source>Customize the visual style and UI components of BubezView.</source>
         <translation>Personalizza lo stile visivo e i componenti dell'interfaccia di BubezView.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="496" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="659" />
         <source>Application Theme</source>
         <translation>Tema dell'Applicazione</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="500" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="665" />
         <source>Native System Theme (Matches desktop light/dark mode)</source>
         <translation>Tema Nativo di Sistema (Segue la modalità chiaro/scuro del desktop)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="501" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="666" />
         <source>Dark Slate (Deep modern slate theme)</source>
         <translation>Scuro Ardesia (Tema scuro moderno ad alto contrasto)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="502" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="667" />
         <source>Breeze Dark (KDE Breeze-inspired dark styling)</source>
         <translation>Breeze Dark (Stile scuro ispirato a KDE Breeze)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="507" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="679" />
+        <source>&lt;b&gt;Dark Slate:&lt;/b&gt; High-contrast dark slate palette (&lt;code&gt;#0f172a&lt;/code&gt;) ideal for low-light environments, media viewing, and code inspection.</source>
+        <translation>&lt;b&gt;Scuro Ardesia:&lt;/b&gt; Palette scura ad alto contrasto (&lt;code&gt;#0f172a&lt;/code&gt;) ideale per ambienti poco illuminati, multimedia e lettura codice.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="683" />
+        <source>&lt;b&gt;Breeze Dark:&lt;/b&gt; Charcoal KDE Breeze dark palette (&lt;code&gt;#232629&lt;/code&gt;) with crisp cyan accents and soft borders.</source>
+        <translation>&lt;b&gt;Breeze Dark:&lt;/b&gt; Palette antracite in stile KDE Breeze (&lt;code&gt;#232629&lt;/code&gt;) con accenti ciano e bordi morbidi.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="687" />
+        <source>&lt;b&gt;Native System Theme:&lt;/b&gt; Automatically inherits your desktop environment's active Qt color scheme, fonts, and window styling.</source>
+        <translation>&lt;b&gt;Tema Nativo di Sistema:&lt;/b&gt; Eredita automaticamente lo schema colori Qt attivo, i font e lo stile finestre del tuo ambiente desktop.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="699" />
         <source>Viewer Components</source>
         <translation>Componenti di Visualizzazione</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="511" />
-        <source>Show bottom thumbnail filmstrip when viewing folders, galleries, or multi-page documents</source>
-        <translation>Mostra la barra delle miniature inferiore durante la navigazione di cartelle o documenti multipagina</translation>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1084" />
+        <source>Desktop Quick Launcher</source>
+        <translation>Icona di avvio rapido sul Desktop</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="525" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1105" />
+        <source>🚀 Complete Suite (Host Compiled)</source>
+        <translation>🚀 Suite Completa (Compilata per l'Host)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1106" />
+        <source>📄 Documents &amp;&amp; Office (Host Compiled)</source>
+        <translation>📄 Documenti e Ufficio (Compilati per l'Host)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1108" />
+        <source>🚀 Complete Suite (System Packages)</source>
+        <translation>🚀 Suite Completa (Pacchetti di Sistema)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1109" />
+        <source>📄 Documents &amp;&amp; Office (System Packages)</source>
+        <translation>📄 Documenti e Ufficio (Pacchetti di Sistema)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1111" />
+        <source>🎬 Media &amp;&amp; Entertainment</source>
+        <translation>🎬 Media e Intrattenimento</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1112" />
+        <source>🪶 Minimal Core (Zero Extra Deps)</source>
+        <translation>🪶 Core Minimo (Zero dipendenze extra)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1118" />
+        <source>All features compiled from source with aggressive CPU optimizations (-O3, -march=native).</source>
+        <translation>Tutte le funzionalità compilate da sorgente con ottimizzazioni CPU spinte (-O3, -march=native).</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1119" />
+        <source>All features using distribution precompiled packages with zero compile wait time.</source>
+        <translation>Tutte le funzionalità tramite i pacchetti precompilati della distribuzione, senza tempi di attesa.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1122" />
+        <source>Optimized PDF vector rendering, LibreOffice preview, OCR, and digital signatures.</source>
+        <translation>Rendering PDF vettoriale ottimizzato, anteprima LibreOffice, OCR e firme digitali.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1123" />
+        <source>PDF viewing, LibreOffice integration, OCR, and cryptographic signatures.</source>
+        <translation>Visualizzazione PDF, integrazione LibreOffice, OCR e firme crittografiche.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1126" />
+        <source>Hardware GPU video playback, 10-band audio equalizer, and archive management.</source>
+        <translation>Riproduzione video con accelerazione GPU, equalizzatore audio a 10 bande e gestione archivi.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1130" />
+        <source>Fast native image, code, and folder preview with instant cold startup and zero extra dependencies.</source>
+        <translation>Anteprima nativa ultraveloce per immagini, codice e cartelle con avvio istantaneo e zero dipendenze extra.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1134" />
+        <source>Choose each component and engine manually using the checkboxes below.</source>
+        <translation>Scegli ciascun componente e motore manualmente tramite le caselle sottostanti.</translation>
+    </message>
+    <message>
+        <source>Show bottom thumbnail filmstrip when viewing folders, galleries, or multi-page documents</source>
+        <translation type="vanished">Mostra la barra delle miniature inferiore durante la navigazione di cartelle o documenti multipagina</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="728" />
         <source>Navigation, Shortcuts &amp; Behavior</source>
         <translation>Navigazione, Scorciatoie e Comportamento</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="526" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="729" />
         <source>Configure shortcuts, dismissal keys, and navigation caching for daily use.</source>
         <translation>Configura le scorciatoie, i tasti di chiusura e la cache di navigazione.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="536" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="742" />
         <source>&lt;b&gt;Primary Shortcut:&lt;/b&gt; Press &lt;b&gt;Space&lt;/b&gt; on any file in your file manager for instant preview.</source>
         <translation>&lt;b&gt;Scorciatoia principale:&lt;/b&gt; premi &lt;b&gt;Spazio&lt;/b&gt; su qualsiasi file nel file manager per l'anteprima istantanea.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="543" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="752" />
         <source>🧪 Test Shortcut...</source>
         <translation>🧪 Testa scorciatoia...</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="555" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="763" />
         <source>Use Ctrl + Space fallback (connects to trigger_bubez.sh if Space is reserved by Dolphin)</source>
         <translation>Usa fallback Ctrl + Spazio (collegato a trigger_bubez.sh se Spazio è riservato da Dolphin)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="573" />
         <source>&lt;b&gt;Important note for trigger fallback:&lt;/b&gt; In your desktop system settings (KDE Plasma / GNOME Shortcuts), you will need to bind &lt;b&gt;Ctrl + Space&lt;/b&gt; to the trigger script located at:&lt;br&gt;&lt;code style='color:#38bdf8;'&gt;%1&lt;/code&gt;</source>
-        <translation>&lt;b&gt;Nota importante per il fallback trigger:&lt;/b&gt; nelle impostazioni di sistema del tuo desktop (Scorciatoie di KDE Plasma / GNOME), dovrai associare &lt;b&gt;Ctrl + Spazio&lt;/b&gt; allo script trigger che si trova in:&lt;br&gt;&lt;code style='color:#38bdf8;'&gt;%1&lt;/code&gt;</translation>
+        <translation type="vanished">&lt;b&gt;Nota importante per il fallback trigger:&lt;/b&gt; nelle impostazioni di sistema del tuo desktop (Scorciatoie di KDE Plasma / GNOME), dovrai associare &lt;b&gt;Ctrl + Spazio&lt;/b&gt; allo script trigger che si trova in:&lt;br&gt;&lt;code style='color:#38bdf8;'&gt;%1&lt;/code&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="594" />
         <source>&lt;b style='color:#4ade80;'&gt;✅ Spacebar verified and functioning properly!&lt;/b&gt;</source>
-        <translation>&lt;b style='color:#4ade80;'&gt;✅ Tasto Spazio verificato e funzionante con successo!&lt;/b&gt;</translation>
+        <translation type="vanished">&lt;b style='color:#4ade80;'&gt;✅ Tasto Spazio verificato e funzionante con successo!&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="598" />
         <source>&lt;b style='color:#facc15;'&gt;⚠️ Space key not detected or conflict reported. Fallback available:&lt;/b&gt;</source>
-        <translation>&lt;b style='color:#facc15;'&gt;⚠️ Tasto Spazio non rilevato o conflitto segnalato. Fallback disponibile:&lt;/b&gt;</translation>
+        <translation type="vanished">&lt;b style='color:#facc15;'&gt;⚠️ Tasto Spazio non rilevato o conflitto segnalato. Fallback disponibile:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="607" />
         <source>Navigation &amp; Window Memory</source>
-        <translation>Navigazione e Memoria Finestre</translation>
+        <translation type="vanished">Navigazione e Memoria Finestre</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="611" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="819" />
         <source>Instant dismissal: Press Escape (Esc) to close the viewer</source>
         <translation>Chiusura rapida: premi Esc per chiudere istantaneamente il visualizzatore</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="625" />
         <source>Preload adjacent files: Cache next and previous items in background for instant browsing</source>
-        <translation>Precarica file adiacenti: carica in background il file precedente e successivo per una navigazione istantanea</translation>
+        <translation type="vanished">Precarica file adiacenti: carica in background il file precedente e successivo per una navigazione istantanea</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="632" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="840" />
         <source>Memory standby: Release preview memory cache when idle to save RAM</source>
         <translation>Standby memoria: rilascia la cache di anteprima quando inattivo per risparmiare RAM</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="641" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="849" />
         <source>Desktop Integration</source>
         <translation>Integrazione Desktop</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="759" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="764" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="769" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="774" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="779" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="783" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="787" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="792" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="975" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="980" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="985" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="990" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="995" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="999" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1003" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1008" />
         <source>&lt;span style='color: #10b981; font-weight: 600;'&gt;● Ready&lt;/span&gt;</source>
         <translation>&lt;span style='color: #10b981; font-weight: 600;'&gt;● Pronto&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="760" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="976" />
         <source>&lt;span style='color: #f59e0b;'&gt;○ Available&lt;/span&gt;</source>
         <translation>&lt;span style='color: #f59e0b;'&gt;○ Disponibile&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="765" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="770" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="981" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="986" />
         <source>&lt;span style='color: #64748b;'&gt;○ Optional&lt;/span&gt;</source>
         <translation>&lt;span style='color: #64748b;'&gt;○ Opzionale&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="780" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="788" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="996" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1004" />
         <source>&lt;span style='color: #64748b;'&gt;○ Available&lt;/span&gt;</source>
         <translation>&lt;span style='color: #64748b;'&gt;○ Disponibile&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="793" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1009" />
         <source>&lt;span style='color: #64748b;'&gt;○ Optional: 7zip&lt;/span&gt;</source>
         <translation>&lt;span style='color: #64748b;'&gt;○ Opzionale: 7zip&lt;/span&gt;</translation>
     </message>
@@ -6802,7 +6949,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Disponibile</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="775" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="991" />
         <source>&lt;span style='color: #64748b;'&gt;○ Optional: libreoffice&lt;/span&gt;</source>
         <translation>&lt;span style='color: #64748b;'&gt;○ Opzionale: libreoffice&lt;/span&gt;</translation>
     </message>
@@ -6823,76 +6970,68 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">&lt;span style='color: #64748b;'&gt;○ Opzionale: tesseract/qpdf&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="804" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1022" />
         <source>📦 Balanced (System Packages)</source>
         <translation>📦 Bilanciato (Pacchetti di sistema)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="819" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1037" />
         <source>PDF</source>
         <translation>PDF</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="830" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1048" />
         <source>Media</source>
         <translation>Media</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="831" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1049" />
         <source> (+Equalizer)</source>
         <translation> (+Equalizzatore)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="836" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1054" />
         <source> (+7-Zip)</source>
         <translation> (+7-Zip)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="880" />
         <source>🚀 Complete Suite — Host Compiled
    All features compiled from source with aggressive CPU optimizations (-O3, -march=native).</source>
-        <translation>🚀 Suite Completa — Compilata per l'Host
+        <translation type="vanished">🚀 Suite Completa — Compilata per l'Host
    Tutte le funzionalità compilate dai sorgenti con ottimizzazioni CPU spinte (-O3, -march=native).</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="884" />
         <source>📄 Documents &amp; Office — Host Compiled
    Optimized PDF vector rendering, LibreOffice preview, OCR, and digital signatures.</source>
-        <translation>📄 Documenti &amp; Ufficio — Compilati per l'Host
+        <translation type="vanished">📄 Documenti &amp; Ufficio — Compilati per l'Host
    Rendering PDF vettoriale ottimizzato, anteprima LibreOffice, OCR e firme digitali.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="888" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="905" />
         <source>🎬 Media &amp; Entertainment
    Hardware GPU video playback, 10-band audio equalizer, and archive management.</source>
-        <translation>🎬 Media &amp; Intrattenimento
+        <translation type="vanished">🎬 Media &amp; Intrattenimento
    Riproduzione video GPU, equalizzatore audio a 10 bande e gestione archivi.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="892" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="909" />
         <source>🪶 Minimal Core (Zero Extra Dependencies)
    Fast native image, code, and folder preview with instant cold startup.</source>
-        <translation>🪶 Core Minimo (Zero dipendenze extra)
+        <translation type="vanished">🪶 Core Minimo (Zero dipendenze extra)
    Anteprima nativa ultraveloce per immagini, codice e cartelle con avvio a freddo istantaneo.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="897" />
         <source>🚀 Complete Suite — System Packages
    All features using distribution precompiled packages with zero compile wait time.</source>
-        <translation>🚀 Suite Completa — Pacchetti di Sistema
+        <translation type="vanished">🚀 Suite Completa — Pacchetti di Sistema
    Tutte le funzionalità con pacchetti precompilati della distribuzione, senza tempi di compilazione.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="901" />
         <source>📄 Documents &amp; Office — System Packages
    PDF viewing, LibreOffice integration, OCR, and cryptographic signatures.</source>
-        <translation>📄 Documenti &amp; Ufficio — Pacchetti di Sistema
+        <translation type="vanished">📄 Documenti &amp; Ufficio — Pacchetti di Sistema
    Visualizzazione PDF, integrazione LibreOffice, OCR e firme crittografiche.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="803" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1021" />
         <source>🚀 High Performance (Compiled from Source)</source>
         <translation>🚀 Potente (Compilato da sorgente)</translation>
     </message>
@@ -6935,7 +7074,7 @@ Clicca per passare a compilato da sorgenti.</translation>
    Usa i binari precompilati per i visualizzatori core ed esclude le estensioni opzionali.</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="957" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1182" />
         <source>Compiling BubezView — High Performance Profile</source>
         <translation>Compilazione BubezView — Profilo Potente</translation>
     </message>
@@ -6960,27 +7099,97 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Suite Completa (Tutti i motori e Office)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="860" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1077" />
         <source>Modules Preset</source>
         <translation>Preset Moduli</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="861" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1078" />
         <source>Enabled Modules</source>
         <translation>Moduli abilitati</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="864" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1081" />
         <source>Quick Dismissal Key</source>
         <translation>Tasto Chiusura Rapida</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="864" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1061" />
         <source>Escape (Esc)</source>
         <translation>Escape (Esc)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="865" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="397" />
+        <source>⚙️ Custom Configuration</source>
+        <translation>⚙️ Configurazione Personalizzata</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="415" />
+        <source>Active Components &amp;&amp; Capabilities</source>
+        <translation>Componenti attivi e funzionalità</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="705" />
+        <source>Show bottom thumbnail filmstrip when viewing folders or multi-page documents</source>
+        <translation>Mostra la barra inferiore delle miniature (filmstrip) per cartelle o documenti multipagina</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="713" />
+        <source>Displays a quick-jump thumbnail strip along the bottom edge. You can also toggle it on demand while viewing any file.</source>
+        <translation>Mostra una striscia di miniature sul bordo inferiore per la navigazione rapida. Puoi anche attivarla/disattivarla al volo.</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="779" />
+        <source>&lt;b&gt;Important note for trigger fallback:&lt;/b&gt; In your desktop system settings (KDE Plasma / GNOME Shortcuts), you will need to bind &lt;b&gt;Ctrl + Space&lt;/b&gt; to the trigger script located at:&lt;br&gt;&lt;code style='color:#0284c7;'&gt;%1&lt;/code&gt;</source>
+        <translation>&lt;b&gt;Nota importante per il fallback:&lt;/b&gt; Nelle impostazioni di sistema del desktop (Scorciatoie KDE Plasma / GNOME), dovrai associare &lt;b&gt;Ctrl + Spazio&lt;/b&gt; allo script situato in:&lt;br&gt;&lt;code style='color:#0284c7;'&gt;%1&lt;/code&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="800" />
+        <source>&lt;b style='color:#10b981;'&gt;✅ Spacebar verified and functioning properly!&lt;/b&gt;</source>
+        <translation>&lt;b style='color:#10b981;'&gt;✅ Tasto Spazio verificato e funzionante con successo!&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="804" />
+        <source>&lt;b style='color:#f59e0b;'&gt;⚠️ Space key not detected or conflict reported. Fallback available:&lt;/b&gt;</source>
+        <translation>&lt;b style='color:#f59e0b;'&gt;⚠️ Tasto Spazio non rilevato o conflitto segnalato. Fallback disponibile:&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="813" />
+        <source>Navigation &amp;&amp; Window Memory</source>
+        <translation>Navigazione e Memoria Finestre</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="833" />
+        <source>Preload adjacent files in background for instant browsing</source>
+        <translation>Precarica i file adiacenti in background per una navigazione istantanea</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1018" />
+        <source>Ctrl + Space (trigger)</source>
+        <translation>Ctrl + Spazio (trigger)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1019" />
+        <source>Space</source>
+        <translation>Spazio</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1057" />
+        <source>None (Core Viewers Only)</source>
+        <translation>Nessuno (Solo visualizzatori Core)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1065" />
+        <source>RAM Standby Active</source>
+        <translation>Standby RAM attivo</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1082" />
+        <source>Remember Window Geometry</source>
+        <translation>Ricorda geometria finestra</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/first_run_wizard.cpp" line="1083" />
         <source>Preload Cache</source>
         <translation>Precaricamento Cache</translation>
     </message>
@@ -7001,7 +7210,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Chiusura istantanea: premi Spazio o Esc per chiudere subito l'anteprima</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="618" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="826" />
         <source>Remember window size and position across preview sessions</source>
         <translation>Ricorda dimensioni e posizione della finestra tra le sessioni di anteprima</translation>
     </message>
@@ -7010,17 +7219,17 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Scorciatoie e Lanciatori</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="645" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="854" />
         <source>Place a quick launcher on the Desktop (~/Desktop or ~/Scrivania)</source>
         <translation>Posiziona un'icona di avvio rapido sulla Scrivania (~/Desktop o ~/Scrivania)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="660" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="869" />
         <source>Setup Complete!</source>
         <translation>Configurazione Completata!</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="661" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="870" />
         <source>Review your configuration before launching BubezView.</source>
         <translation>Rivedi la configurazione scelta prima di avviare BubezView.</translation>
     </message>
@@ -7033,17 +7242,17 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Visualizzatore Interno di Fallback</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="841" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1059" />
         <source>Native</source>
         <translation>Nativo</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="857" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="877" />
         <source>Summary of Your Choices:</source>
         <translation>Riepilogo delle tue scelte:</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="858" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1075" />
         <source>Primary Shortcut</source>
         <translation>Scorciatoia Principale</translation>
     </message>
@@ -7052,24 +7261,29 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Motore Office</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="862" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1079" />
         <source>Theme</source>
         <translation>Tema</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="863" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1080" />
         <source>Thumbnail Filmstrip</source>
         <translation>Barra Miniature (Filmstrip)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="863" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="865" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1060" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1062" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1063" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1067" />
         <source>Enabled</source>
         <translation>Attivato</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="863" />
-        <location filename="../src/ui/first_run_wizard.cpp" line="865" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1060" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1061" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1062" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1063" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1067" />
         <source>Disabled</source>
         <translation>Disattivato</translation>
     </message>
@@ -7078,7 +7292,7 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation type="vanished">Chiusura Rapida (Spazio/Esc)</translation>
     </message>
     <message>
-        <location filename="../src/ui/first_run_wizard.cpp" line="866" />
+        <location filename="../src/ui/first_run_wizard.cpp" line="1091" />
         <source>Click 'Finish &amp; Launch BubezView' to apply these settings and begin!</source>
         <translation>Clicca 'Termina e avvia BubezView' per applicare le preferenze e iniziare!</translation>
     </message>
@@ -9138,17 +9352,17 @@ Clicca per selezionare Hardware ALSA Diretto (Bit-Perfect Livello 2).</translati
 <context>
     <name>OfficeConvertWorker</name>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="76" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="78" />
         <source>LibreOffice not found or cannot be launched.</source>
         <translation>LibreOffice non trovato o impossibile da avviare.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="88" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="90" />
         <source>Unable to launch LibreOffice.</source>
         <translation>Impossibile avviare LibreOffice.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="110" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="112" />
         <source>Conversion failed.</source>
         <translation>Conversione fallita.</translation>
     </message>
@@ -9156,144 +9370,154 @@ Clicca per selezionare Hardware ALSA Diretto (Bit-Perfect Livello 2).</translati
 <context>
     <name>OfficeViewer</name>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="172" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="174" />
         <source>✏️ Edit in LibreOffice</source>
         <translation>✏️ Modifica in LibreOffice</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="173" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="175" />
         <source>Open file directly in LibreOffice desktop suite</source>
         <translation>Apri il file direttamente nella suite desktop LibreOffice</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="176" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="178" />
         <source>💾 Save as PDF</source>
         <translation>💾 Salva come PDF</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="177" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="179" />
         <source>Save and export a copy of the document in PDF format</source>
         <translation>Salva ed esporta una copia del documento in formato PDF</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="180" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="182" />
         <source>🖼️ Extract Images</source>
         <translation>🖼️ Estrai immagini</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="181" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="183" />
         <source>Extract all images embedded in document</source>
         <translation>Estrai tutte le immagini incorporate nel documento</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="200" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="202" />
         <source>⚡ Rendering document layout...</source>
         <translation>⚡ Rendering del layout del documento...</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="360" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="362" />
         <source>⏳ Loading presentation with LibreOffice...</source>
         <translation>⏳ Caricamento presentazione con LibreOffice...</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="411" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="413" />
         <source>⚠️ Unable to display the document.</source>
         <translation>⚠️ Impossibile visualizzare il documento.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="384" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="386" />
         <source>⚠️ LibreOffice is required to preview presentation files (.pptx, .odp).</source>
         <translation>⚠️ LibreOffice è richiesto per l'anteprima delle presentazioni (.pptx, .odp).</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="328" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="330" />
         <source>⚠️ LibreOffice preview is disabled in Settings and the Internal Office module is not compiled.&lt;br&gt;Enable LibreOffice in Preferences or compile the internal module in Settings → Extensions.</source>
         <translation>⚠️ L'anteprima di LibreOffice è disattivata nelle Impostazioni e il modulo Office interno non è compilato.&lt;br&gt;Abilita LibreOffice nelle Preferenze o compila il modulo interno in Impostazioni → Estensioni.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="362" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="364" />
         <source>⏳ Converting office document with LibreOffice...</source>
         <translation>⏳ Conversione documento office con LibreOffice...</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="379" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="381" />
         <source>⚠️ LibreOffice is not installed and the Internal Office module is disabled.&lt;br&gt;Please install LibreOffice or enable the internal module in Settings → Extensions.</source>
         <translation>⚠️ LibreOffice non è installato e il modulo Office Interno è disattivato.&lt;br&gt;Installa LibreOffice o abilita il modulo interno in Impostazioni → Estensioni.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="489" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="491" />
         <source>LibreOffice</source>
         <translation>LibreOffice</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="489" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="491" />
         <source>LibreOffice is not installed on your system.</source>
         <translation>LibreOffice non è installato nel tuo sistema.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="501" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="503" />
         <source>Save as PDF</source>
         <translation>Salva come PDF</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="501" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="503" />
         <source>PDF Documents (*.pdf)</source>
         <translation>Documenti PDF (*.pdf)</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="507" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="509" />
         <source>Save Complete</source>
         <translation>Salvataggio completato</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="507" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="509" />
         <source>File saved successfully to:
 </source>
         <translation>File salvato con successo in:
 </translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="512" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="514" />
         <source>Error</source>
         <translation>Errore</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="512" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="514" />
         <source>Unable to save document as PDF.</source>
         <translation>Impossibile salvare il documento come PDF.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="520" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="523" />
         <source>Select directory for extracted images</source>
         <translation>Seleziona cartella per le immagini estratte</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="529" />
-        <location filename="../src/viewers/office/office_viewer.cpp" line="561" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="532" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="564" />
         <source>No Images</source>
         <translation>Nessuna immagine</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="529" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="532" />
         <source>Unable to extract images from this format.</source>
         <translation>Impossibile estrarre immagini da questo formato.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="559" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="562" />
         <source>Images Extracted</source>
         <translation>Immagini estratte</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="559" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="562" />
         <source>Successfully extracted %1 images to:
 %2</source>
         <translation>Estratte con successo %1 immagini in:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="561" />
+        <location filename="../src/viewers/office/office_viewer.cpp" line="564" />
         <source>No images found inside this document.</source>
         <translation>Nessuna immagine trovata all'interno del documento.</translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="567" />
+        <source>LibArchive Required</source>
+        <translation>LibArchive richiesto</translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="567" />
+        <source>Extracting images requires the LibArchive engine. You can enable it in Settings → Extensions.</source>
+        <translation>L'estrazione delle immagini richiede il motore LibArchive. Puoi abilitarlo in Impostazioni → Estensioni.</translation>
     </message>
 </context>
 <context>
@@ -11793,7 +12017,7 @@ Vuoi incollare come testo uniforme o copiare l'area originale?</translation>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/main.cpp" line="254" />
+        <location filename="../src/main.cpp" line="260" />
         <source>Select a file to open</source>
         <translation>Seleziona un file da aprire</translation>
     </message>
@@ -14786,7 +15010,12 @@ L'applicazione verrà ora riavviata.</translation>
         <translation>Abilita output di debug dettagliato e diagnostica su console.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="171" />
+        <location filename="../src/main.cpp" line="173" />
+        <source>Force open the initial setup wizard.</source>
+        <translation>Forza apertura della procedura guidata di configurazione iniziale.</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="177" />
         <source>File or folder to preview (optional)</source>
         <translation>File o cartella da visualizzare in anteprima (facoltativo)</translation>
     </message>

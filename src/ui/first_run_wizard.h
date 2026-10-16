@@ -69,6 +69,7 @@ private:
     QRadioButton *m_radioPresetMedia = nullptr;
     QRadioButton *m_radioPresetMinimal = nullptr;
     QRadioButton *m_radioPresetCustom = nullptr;
+    QLabel *m_lblPresetDesc = nullptr;
 
     // Granular Module Toggles (Hierarchical Document, Media & Archive structure)
     QCheckBox *m_chkModulePdf = nullptr;
