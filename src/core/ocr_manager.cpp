@@ -1,4 +1,5 @@
 #include "ocr_manager.h"
+#include "build_config.h"
 #include <QStandardPaths>
 #include <QDir>
 #include <QFileInfo>
@@ -69,9 +70,11 @@ QString OcrManager::tesseractExecutablePath() const
     const QString homeBin = QDir::homePath() + "/.local/bin/tesseract";
     if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) return homeBin;
 
-    const QString projectRoot = "/home/davide/Progetti/BubezView";
-    const QString containerBin = projectRoot + "/container/.local/bin/tesseract";
-    if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) return containerBin;
+    const QString projectRoot = BuildConfig::projectDevRoot();
+    if (!projectRoot.isEmpty()) {
+        const QString containerBin = projectRoot + "/container/.local/bin/tesseract";
+        if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) return containerBin;
+    }
 
     return QStandardPaths::findExecutable("tesseract");
 }

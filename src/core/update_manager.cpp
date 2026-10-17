@@ -4,6 +4,7 @@
  */
 
 #include "update_manager.h"
+#include "build_config.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -135,13 +136,19 @@ QString UpdateManager::findInstallerScript() const
     // Check known locations for C++ Installa or install.sh scripts
     QStringList candidates = {
         QCoreApplication::applicationDirPath() + "/Installa",
-        QCoreApplication::applicationDirPath() + "/../Installa",
-        "/home/davide/Progetti/BubezView/bubezview_cpp/Installa",
-        QCoreApplication::applicationDirPath() + "/../install.sh",
-        QCoreApplication::applicationDirPath() + "/../../install.sh",
-        QDir::homePath() + "/.local/share/bubezview/install.sh",
-        "/home/davide/Progetti/BubezView/install.sh"
+        QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../Installa"),
+        QCoreApplication::applicationDirPath() + "/install.sh",
+        QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../install.sh"),
+        QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../install.sh"),
+        QDir::homePath() + "/.local/share/bubezview/install.sh"
     };
+
+    const QString devRoot = BuildConfig::projectDevRoot();
+    if (!devRoot.isEmpty()) {
+        candidates << devRoot + "/install.sh";
+        candidates << devRoot + "/bubezview_cpp/Installa";
+        candidates << devRoot + "/Installa";
+    }
 
     for (const QString &path : candidates) {
         QFileInfo fi(path);

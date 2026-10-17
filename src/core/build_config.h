@@ -141,6 +141,13 @@ public:
     static QString sevenZipExecutable();
     static bool isSevenZipAvailable();
     static bool isPopplerDataInstalled();
+
+    /**
+     * @brief Dynamically discovers the project development root directory (if running in dev mode).
+     * Inspects BUBEZVIEW_DEV_ROOT or ascends from applicationDirPath() looking for project markers.
+     * @return Absolute path to project root, or empty QString if running from a standard system install.
+     */
+    static QString projectDevRoot();
     
     /**
      * @enum HardwareProfile

@@ -205,11 +205,9 @@ MediaViewer::~MediaViewer()
 
 void MediaViewer::resetAudioMixer()
 {
-    // Restart PipeWire and WirePlumber to immediately reclaim audio hardware for desktop/KDE mixer
-    if (QFile::exists("/usr/bin/distrobox-host-exec")) {
-        QProcess::startDetached("/usr/bin/distrobox-host-exec", {"systemctl", "--user", "restart", "pipewire", "wireplumber"});
-    }
-    QProcess::startDetached("systemctl", {"--user", "restart", "pipewire", "wireplumber"});
+    // Safely release ALSA hardware device reservation via standard FreeDesktop DBus ReserveDevice1
+    // protocol without abruptly restarting the desktop sound server (PipeWire/WirePlumber).
+    requestAlsaDeviceRelease();
 }
 
 void MediaViewer::requestAlsaDeviceRelease(int cardIndex)

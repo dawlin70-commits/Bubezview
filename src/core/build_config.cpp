@@ -25,13 +25,9 @@ BuildConfig::BuildConfig()
     : m_optimizationLevel("O2")
     , m_cpuProfile("native")
     , m_libraryStrategy("dynamic")
-    , m_staticPdf(QFile::exists(QDir::currentPath() + "/poppler/CMakeLists.txt") ||
-                  QFile::exists(QDir::currentPath() + "/build_install/_deps/poppler-src/CMakeLists.txt") ||
-                  QFile::exists("/home/davide/Progetti/BubezView/build_install/_deps/poppler-src/CMakeLists.txt"))
+    , m_staticPdf(false)
     , m_popplerVersion("26.08.0")
-    , m_staticArchive(QFile::exists(QDir::currentPath() + "/libarchive/CMakeLists.txt") ||
-                      QFile::exists(QDir::currentPath() + "/build_install/_deps/libarchive-src/CMakeLists.txt") ||
-                      QFile::exists("/home/davide/Progetti/BubezView/build_install/_deps/libarchive-src/CMakeLists.txt"))
+    , m_staticArchive(false)
 #ifdef ENABLE_INTERNAL_OFFICE
     , m_enableInternalOffice(true)
 #else
@@ -342,10 +338,12 @@ QString BuildConfig::qpdfExecutable()
         if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) {
             return homeBin;
         }
-        const QString projectRoot = "/home/davide/Progetti/BubezView";
-        const QString containerBin = projectRoot + "/container/.local/bin/qpdf";
-        if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
-            return containerBin;
+        const QString projectRoot = projectDevRoot();
+        if (!projectRoot.isEmpty()) {
+            const QString containerBin = projectRoot + "/container/.local/bin/qpdf";
+            if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
+                return containerBin;
+            }
         }
     }
 
@@ -358,11 +356,7 @@ QString BuildConfig::qpdfExecutable()
 
 bool BuildConfig::isQpdfAvailable()
 {
-#ifdef HAVE_LIBQPDF
-    return true;
-#else
     return !qpdfExecutable().isEmpty();
-#endif
 }
 
 bool BuildConfig::isTesseractAvailable()
@@ -378,10 +372,12 @@ QString BuildConfig::pdfimagesExecutable()
         if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) {
             return homeBin;
         }
-        const QString projectRoot = "/home/davide/Progetti/BubezView";
-        const QString containerBin = projectRoot + "/container/.local/bin/pdfimages";
-        if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
-            return containerBin;
+        const QString projectRoot = projectDevRoot();
+        if (!projectRoot.isEmpty()) {
+            const QString containerBin = projectRoot + "/container/.local/bin/pdfimages";
+            if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
+                return containerBin;
+            }
         }
     }
 
@@ -433,10 +429,12 @@ QString BuildConfig::sevenZipExecutable()
         if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) {
             return homeBin;
         }
-        const QString projectRoot = QStringLiteral("/home/davide/Progetti/BubezView");
-        const QString containerBin = projectRoot + QStringLiteral("/container/.local/bin/") + binName;
-        if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
-            return containerBin;
+        const QString projectRoot = projectDevRoot();
+        if (!projectRoot.isEmpty()) {
+            const QString containerBin = projectRoot + QStringLiteral("/container/.local/bin/") + binName;
+            if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
+                return containerBin;
+            }
         }
     }
 
@@ -453,6 +451,23 @@ bool BuildConfig::isPopplerDataInstalled()
     return isPkgInstalled("poppler-data") ||
            QDir("/usr/share/poppler/cMap").exists() ||
            QDir("/usr/local/share/poppler/cMap").exists();
+}
+
+QString BuildConfig::projectDevRoot()
+{
+    const QString envRoot = qEnvironmentVariable("BUBEZVIEW_DEV_ROOT");
+    if (!envRoot.isEmpty() && QDir(envRoot).exists()) {
+        return QDir::cleanPath(envRoot);
+    }
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    for (int i = 0; i < 4; ++i) {
+        if (dir.exists("CMakeLists.txt") && (dir.exists("container") || dir.exists("src"))) {
+            return dir.absolutePath();
+        }
+        if (!dir.cdUp()) break;
+    }
+    return QString();
 }
 
 bool BuildConfig::hasSystemBinary(const QString &componentId)
@@ -533,9 +548,11 @@ bool BuildConfig::hasSourceBinary(const QString &componentId)
     const QString homeBin = QDir::homePath() + "/.local/bin/" + exe;
     if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) return true;
 
-    const QString projectRoot = "/home/davide/Progetti/BubezView";
-    const QString containerBin = projectRoot + "/container/.local/bin/" + exe;
-    if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) return true;
+    const QString projectRoot = projectDevRoot();
+    if (!projectRoot.isEmpty()) {
+        const QString containerBin = projectRoot + "/container/.local/bin/" + exe;
+        if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) return true;
+    }
 
     const QString appBin = QCoreApplication::applicationDirPath() + "/" + exe;
     if (QFile::exists(appBin) && QFileInfo(appBin).isExecutable()) return true;
@@ -615,16 +632,18 @@ bool BuildConfig::removeLocalSourceBuild(const QString &componentId)
     }
 
     // Remove from container .local
-    const QString projectRoot = "/home/davide/Progetti/BubezView";
-    const QString containerBin = projectRoot + "/container/.local/bin/" + exe;
-    if (QFile::exists(containerBin)) {
-        QFile::remove(containerBin);
-    }
+    const QString projectRoot = projectDevRoot();
+    if (!projectRoot.isEmpty()) {
+        const QString containerBin = projectRoot + "/container/.local/bin/" + exe;
+        if (QFile::exists(containerBin)) {
+            QFile::remove(containerBin);
+        }
 
-    // Clean build directory in build_deps if present
-    QDir depDir(projectRoot + "/build_deps/" + id);
-    if (depDir.exists()) {
-        depDir.removeRecursively();
+        // Clean build directory in build_deps if present
+        QDir depDir(projectRoot + "/build_deps/" + id);
+        if (depDir.exists()) {
+            depDir.removeRecursively();
+        }
     }
 
     // Reset preference to system
