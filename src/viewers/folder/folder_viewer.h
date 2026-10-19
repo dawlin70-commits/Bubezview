@@ -8,10 +8,18 @@
 #include <QStyledItemDelegate>
 #include <QThread>
 #include <QPointer>
+#include <QHash>
 #include <atomic>
 
 class QPlainTextEdit;
+class QLineEdit;
 
+/**
+ * @brief Background worker thread for asynchronous folder thumbnail generation.
+ *
+ * Extracts and downscales raster images, renders first-page PDF previews via Poppler,
+ * and paints micro-text document sheets without blocking the GUI thread.
+ */
 class ThumbnailWorker : public QThread
 {
     Q_OBJECT
@@ -19,6 +27,9 @@ public:
     explicit ThumbnailWorker(const QStringList &filePaths, QObject *parent = nullptr);
     ~ThumbnailWorker() override;
 
+    /**
+     * @brief Signals the worker loop to abort and waits for thread completion.
+     */
     void cancelAndWait();
 
     /**
@@ -29,6 +40,11 @@ public:
     static QImage renderTextThumbnail(const QString &filePath);
 
 signals:
+    /**
+     * @brief Emitted when a thumbnail has been generated for a file.
+     * @param filePath Absolute path to the source file.
+     * @param image Generated thumbnail image.
+     */
     void thumbnailReady(const QString &filePath, const QImage &image);
 
 protected:
@@ -39,6 +55,9 @@ private:
     std::atomic<bool> m_isCancelled;
 };
 
+/**
+ * @brief Custom item delegate that renders folder gallery items as modern elevated cards.
+ */
 class FolderCardDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
@@ -81,10 +100,19 @@ public:
      */
     void updateTheme();
 
+    /** @brief Returns the total number of visible items (folders + files) in the current directory. */
     int itemCount() const { return m_itemCount; }
+
+    /** @brief Returns the combined byte size of all files in the current directory. */
     qint64 totalSize() const { return m_totalSize; }
+
+    /** @brief Returns the canonical path of the currently loaded directory. */
     QString currentFolder() const { return m_currentFolder; }
+
+    /** @brief Returns the central card grid list widget. */
     QListWidget *listWidget() const { return m_listWidget; }
+
+    /** @brief Returns the parent directory navigation button. */
     QPushButton *upButton() const { return m_btnUp; }
 
     /**
@@ -94,7 +122,10 @@ public:
     QString selectedFilePath() const;
 
 public slots:
+    /** @brief Navigates to the parent directory of the current folder if one exists. */
     void goUpDirectory();
+
+    /** @brief Shows or hides the right-side details/inspector panel. */
     void toggleInspector();
 
     /**
@@ -114,6 +145,13 @@ public slots:
      * @return List of absolute folder paths.
      */
     QStringList customBookmarks() const;
+
+    /**
+     * @brief Updates thumbnail icon for a single file card in the gallery.
+     * @param filePath Absolute path of the file.
+     * @param image Updated thumbnail image.
+     */
+    void updateThumbnail(const QString &filePath, const QImage &image);
 
 signals:
     /**
@@ -150,10 +188,13 @@ private slots:
     void onItemDoubleClicked(QListWidgetItem *item);
     void onItemSelectionChanged();
     void onThumbnailReady(const QString &filePath, const QImage &image);
+    void onFilterTextChanged(const QString &text);
+    void openSelectedItem();
 
 private:
     void setupUi();
     void populateBookmarks();
+    void updateBookmarksHighlight();
     void updateInspectorPane(const QString &filePath);
     QString formatSize(qint64 bytes) const;
     QIcon getFolderIcon(const QString &path) const;
@@ -164,21 +205,26 @@ private:
     QFrame *m_pillBadge;
     QLabel *m_pillIcon;
     QLabel *m_pillText;
+    QLineEdit *m_filterEdit;
     QPushButton *m_btnToggleInspector;
 
     // Layout Components
     QListWidget *m_bookmarksWidget;
     QListWidget *m_listWidget;
     
-    // Right Column: Dolphin-Style Inspector & Preview
+    // Right Column: Modern Inspector & Preview
     QWidget *m_previewPane;
     QLabel *m_inspectorBadge;
+    QPushButton *m_btnCloseInspector;
+    QFrame *m_previewCard;
     QLabel *m_previewImgLabel;
     QPlainTextEdit *m_previewTextEdit;
     QLabel *m_previewTitleLabel;
     QLabel *m_previewMetaLabel;
+    QPushButton *m_btnOpenSelected;
 
     QPointer<ThumbnailWorker> m_worker;
+    QHash<QString, QListWidgetItem*> m_pathToItem;
 
     QString m_currentFolder;
     int m_itemCount;

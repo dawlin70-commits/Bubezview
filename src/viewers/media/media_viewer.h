@@ -11,7 +11,7 @@
 #include <QDialog>
 #include <mpv/client.h>
 #include "mpv_video_widget.h"
-#include "ui/equalizer_widget.h"
+#include "equalizer_widget.h"
 
 /**
  * @brief Universal high-performance audio and video playback widget utilizing libmpv.

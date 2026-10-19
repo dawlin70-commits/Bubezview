@@ -1,5 +1,5 @@
 #include "stereo_oscilloscope_widget.h"
-#include "core/audio_processor.h"
+#include "core/audio/audio_processor.h"
 #include "theme_manager.h"
 #include <QPainter>
 #include <QPainterPath>

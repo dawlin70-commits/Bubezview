@@ -16,7 +16,10 @@
 #include "build_config.h"
 #include "package_manager_helper.h"
 #include "filmstrip_widget.h"
+#include "preload_cache_manager.h"
 #include "settings_dialog.h"
+#include "core/interfaces/viewer_plugin_interface.h"
+#include <QPluginLoader>
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QDir>
@@ -107,6 +110,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_actAudioTags(nullptr)
     , m_actAudioExtract(nullptr)
     , m_actMergePdf(nullptr)
+    , m_actImageCrop(nullptr)
     , m_actOpenFile(nullptr)
     , m_actOpenFolder(nullptr)
     , m_actOpenWith(nullptr)
@@ -162,6 +166,17 @@ MainWindow::MainWindow(QWidget *parent)
     if (m_imageViewer) {
         connect(m_imageViewer, &ImageViewer::zoomChanged, this, [this](double) {
             updateStatusBar();
+        });
+        connect(m_imageViewer, &ImageViewer::modificationChanged, this, [this](bool) {
+            updateContextualMenuStates();
+            updateStatusBar();
+            updateWindowTitle();
+        });
+        connect(m_imageViewer, &ImageViewer::undoAvailabilityChanged, this, [this](bool, bool) {
+            updateContextualMenuStates();
+        });
+        connect(m_imageViewer, &ImageViewer::cropModeChanged, this, [this](bool) {
+            updateContextualMenuStates();
         });
         connect(m_imageViewer, &ImageViewer::nextFileRequested, this, &BaseSkin::nextFile);
         connect(m_imageViewer, &ImageViewer::prevFileRequested, this, &BaseSkin::prevFile);
@@ -292,6 +307,9 @@ void MainWindow::setupUi()
         } else if (m_textViewer && m_textViewer->document()->isUndoAvailable()) {
             m_textViewer->undo();
             updateContextualMenuStates();
+        } else if (m_imageViewer && m_imageViewer->canUndo()) {
+            m_imageViewer->undo();
+            updateContextualMenuStates();
         }
     });
     m_actUndo->setShortcut(QKeySequence::Undo);
@@ -302,6 +320,9 @@ void MainWindow::setupUi()
             updateContextualMenuStates();
         } else if (m_textViewer && m_textViewer->document()->isRedoAvailable()) {
             m_textViewer->redo();
+            updateContextualMenuStates();
+        } else if (m_imageViewer && m_imageViewer->canRedo()) {
+            m_imageViewer->redo();
             updateContextualMenuStates();
         }
     });
@@ -331,6 +352,15 @@ void MainWindow::setupUi()
 
     m_actFlipV = m_menuEdit->addAction(QIcon::fromTheme("object-flip-vertical"), tr("Flip Vertically"), this, &BaseSkin::flipCurrentVertical);
     m_actFlipV->setShortcut(QKeySequence("V"));
+
+    m_actImageCrop = m_menuEdit->addAction(QIcon::fromTheme("transform-crop-and-resize"), tr("✂️ Crop Image (Canvas Selection)..."), this, [this]() {
+        if (m_imageViewer) {
+            m_imageViewer->setCropModeActive(!m_imageViewer->isCropModeActive());
+            updateContextualMenuStates();
+        }
+    });
+    m_actImageCrop->setShortcut(QKeySequence("C"));
+    m_actImageCrop->setCheckable(true);
 
     m_menuEdit->addSeparator();
 
@@ -865,6 +895,9 @@ void MainWindow::setupToolbarActionsMap()
     registerAction("flip_h", m_actFlipH, tr("Flip Horizontally"));
     registerAction("flip_v", m_actFlipV, tr("Flip Vertically"));
 
+    // Native Image Crop
+    registerAction("image_crop", m_actImageCrop, tr("✂️ Crop Image"));
+
     // Folder actions
     registerAction("folder_rename", m_actFolderRename, tr("Rename Folder Item"));
     registerAction("folder_trash", m_actFolderTrash, tr("Move Item to Trash"));
@@ -1129,15 +1162,17 @@ void MainWindow::updateContextualMenuStates()
 
     if (m_actUndo) {
         bool canUndo = (isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canUndo())
-                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isUndoAvailable());
-        m_actUndo->setVisible((isPdf || isText) && !isFolder);
+                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isUndoAvailable())
+                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canUndo());
+        m_actUndo->setVisible((isPdf || isText || isImage) && !isFolder);
         m_actUndo->setEnabled(canUndo);
     }
 
     if (m_actRedo) {
         bool canRedo = (isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canRedo())
-                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isRedoAvailable());
-        m_actRedo->setVisible((isPdf || isText) && !isFolder);
+                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isRedoAvailable())
+                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canRedo());
+        m_actRedo->setVisible((isPdf || isText || isImage) && !isFolder);
         m_actRedo->setEnabled(canRedo);
     }
 
@@ -1177,6 +1212,13 @@ void MainWindow::updateContextualMenuStates()
     if (m_actFlipV) {
         m_actFlipV->setVisible(isImage && !isFolder);
         m_actFlipV->setEnabled(isImage && !isFolder);
+    }
+
+    bool isImageDoc = (isImage && !isFolder);
+    if (m_actImageCrop) {
+        m_actImageCrop->setVisible(isImageDoc);
+        m_actImageCrop->setEnabled(isImageDoc && hasFile);
+        m_actImageCrop->setChecked(m_imageViewer && m_imageViewer->isCropModeActive());
     }
 
     if (m_actFolderRename) {
@@ -1444,7 +1486,6 @@ void MainWindow::updateContextualMenuStates()
         m_actToolsExportAs->setVisible((isImage || isPdf || isText || isOffice) && !isFolder);
         m_actToolsExportAs->setEnabled(hasFile && !isFolder);
     }
-
     updateDiscoveryActions();
 }
 
@@ -1773,5 +1814,6 @@ QString MainWindow::currentActiveTargetFilePath() const
     }
     return m_currentFilePath;
 }
+
 
 

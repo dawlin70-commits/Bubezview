@@ -1,6 +1,6 @@
 #include "office_viewer.h"
 #include "core/interfaces/i_pdf_viewer.h"
-#include "core/plugin_manager.h"
+#include "core/services/plugin_manager.h"
 #include "theme_manager.h"
 #ifdef HAVE_LIBARCHIVE
 #include <archive.h>
@@ -132,6 +132,12 @@ OfficeViewer::~OfficeViewer()
         m_worker = nullptr;
     }
     clear();
+
+    // Clean up temporary converted office PDFs on exit to prevent /tmp accumulation
+    QString outDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + QStringLiteral("/bubez_office_pdf");
+    if (QDir(outDir).exists()) {
+        QDir(outDir).removeRecursively();
+    }
 }
 
 void OfficeViewer::setupUi()

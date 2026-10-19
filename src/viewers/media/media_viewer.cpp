@@ -2,7 +2,7 @@
 #include "stereo_oscilloscope_widget.h"
 #include "audio_trim_dialog.h"
 #include "audio_tag_dialog.h"
-#include "core/audio_processor.h"
+#include "core/audio/audio_processor.h"
 #include "theme_manager.h"
 #include "vector_icons.h"
 #include <QFileInfo>
@@ -522,7 +522,7 @@ void MediaViewer::setupUi()
     m_btnEqualizer = new QPushButton(m_controlsWidget);
     m_btnEqualizer->setFixedSize(30, 30);
     m_btnEqualizer->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Equalizer, QColor("#cbd5e1"), 18));
-    m_btnEqualizer->setToolTip(tr("Equalizzatore & DSP Audio"));
+    m_btnEqualizer->setToolTip(tr("Audio Equalizer & DSP Effects"));
     m_btnEqualizer->setCursor(Qt::PointingHandCursor);
     connect(m_btnEqualizer, &QPushButton::clicked, this, &MediaViewer::toggleEqualizerDialog);
 
@@ -1393,7 +1393,7 @@ void MediaViewer::updateBitPerfectUi()
             }
         } else {
             m_btnEqualizer->setEnabled(true);
-            m_btnEqualizer->setToolTip(tr("Equalizzatore & DSP Audio"));
+            m_btnEqualizer->setToolTip(tr("Audio Equalizer & DSP Effects"));
         }
     }
 

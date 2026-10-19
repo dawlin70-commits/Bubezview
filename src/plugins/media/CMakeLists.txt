@@ -10,12 +10,12 @@ if(MPV_FOUND)
 
     set(MEDIA_PLUGIN_SOURCES
         media_plugin.cpp
-        ${CMAKE_SOURCE_DIR}/src/core/audio_processor.cpp
-        ${CMAKE_SOURCE_DIR}/src/core/equalizer_manager.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/audio_tag_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/audio_trim_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/cover_selection_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/equalizer_widget.cpp
+        ${CMAKE_SOURCE_DIR}/src/core/audio/audio_processor.cpp
+        ${CMAKE_SOURCE_DIR}/src/core/audio/equalizer_manager.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_tag_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_trim_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/audio/cover_selection_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/audio/equalizer_widget.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/media/media_viewer.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/media/mpv_video_widget.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/media/stereo_oscilloscope_widget.cpp
@@ -28,7 +28,16 @@ if(MPV_FOUND)
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/core
         ${CMAKE_SOURCE_DIR}/src/core/interfaces
+        ${CMAKE_SOURCE_DIR}/src/core/system
+        ${CMAKE_SOURCE_DIR}/src/core/services
+        ${CMAKE_SOURCE_DIR}/src/core/audio
         ${CMAKE_SOURCE_DIR}/src/ui
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf
+        ${CMAKE_SOURCE_DIR}/src/ui/audio
+        ${CMAKE_SOURCE_DIR}/src/ui/ocr
+        ${CMAKE_SOURCE_DIR}/src/ui/extensions
+        ${CMAKE_SOURCE_DIR}/src/ui/dialogs
+        ${CMAKE_SOURCE_DIR}/src/ui/settings
         ${CMAKE_SOURCE_DIR}/src/viewers/media
         ${MPV_INCLUDE_DIRS}
     )

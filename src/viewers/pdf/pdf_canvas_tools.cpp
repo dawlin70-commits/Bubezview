@@ -172,6 +172,7 @@ void PdfCanvasTools::drawTextSelection(QPainter &painter,
     for (int idx : selectedIndices) {
         if (idx >= 0 && idx < static_cast<int>(textBoxes.size())) {
             const auto &box = textBoxes[idx];
+            if (!box) continue;
             QRectF b = box->boundingBox();
             QRectF pixelRect(b.x() * scaleX,
                              b.y() * scaleY,
@@ -212,6 +213,7 @@ int PdfCanvasTools::findClosestTextBox(const QPoint &pt,
 
     for (int i = 0; i < static_cast<int>(textBoxes.size()); ++i) {
         const auto &box = textBoxes[i];
+        if (!box) continue;
         QRectF b = box->boundingBox();
         QRectF pixelRect(b.x() * scaleX,
                          b.y() * scaleY,
@@ -226,6 +228,7 @@ int PdfCanvasTools::findClosestTextBox(const QPoint &pt,
     double minOverallDist = 1e9;
     for (int i = 0; i < static_cast<int>(textBoxes.size()); ++i) {
         const auto &box = textBoxes[i];
+        if (!box) continue;
         QRectF b = box->boundingBox();
         QRectF pixelRect(b.x() * scaleX,
                          b.y() * scaleY,

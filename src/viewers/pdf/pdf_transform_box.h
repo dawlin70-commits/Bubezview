@@ -78,7 +78,7 @@ public:
 
     /**
      * @brief Activates the transform box for a watermark / stamp.
-     * @param text Stamp text (e.g. "COPIA", "BOZZA").
+     * @param text Stamp text (e.g. "COPY", "DRAFT").
      * @param angle Rotation angle in degrees (e.g. 45.0).
      * @param opacity Translucency (0.1 to 1.0).
      * @param color Stamp color.

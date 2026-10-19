@@ -1,5 +1,5 @@
 #include "image_viewer.h"
-#include "../../core/theme_manager.h"
+#include "theme_manager.h"
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -8,9 +8,11 @@
 #include <QMouseEvent>
 #include <QTransform>
 
+#include <cmath>
+
 /**
- * @brief Inner canvas widget responsible for rendering the scaled pixmap
- * and supporting interactive click-and-drag panning.
+ * @brief Inner canvas widget responsible for rendering the scaled pixmap,
+ * supporting interactive click-and-drag panning, and on-canvas cropping.
  */
 class ImageCanvasWidget : public QWidget {
 public:
@@ -18,18 +20,43 @@ public:
         : QWidget(parent)
         , m_viewer(viewer)
         , m_isDragging(false)
+        , m_cropActive(false)
+        , m_isSelectingCrop(false)
     {
         setAttribute(Qt::WA_OpaquePaintEvent, false);
+        setFocusPolicy(Qt::StrongFocus);
     }
 
     void setPixmap(const QPixmap &pixmap)
     {
         m_pixmap = pixmap;
         setFixedSize(m_pixmap.isNull() ? QSize(0, 0) : m_pixmap.size());
+        if (m_cropActive) {
+            m_cropRect = m_cropRect.intersected(rect());
+        }
         update();
     }
 
     const QPixmap &pixmap() const { return m_pixmap; }
+
+    void setCropActive(bool active)
+    {
+        if (m_cropActive != active) {
+            m_cropActive = active;
+            m_isSelectingCrop = false;
+            m_cropRect = QRect();
+            if (m_cropActive) {
+                setCursor(Qt::CrossCursor);
+                setFocus();
+            } else {
+                unsetCursor();
+            }
+            update();
+        }
+    }
+
+    bool isCropActive() const { return m_cropActive; }
+    QRect cropRect() const { return m_cropRect; }
 
 protected:
     void paintEvent(QPaintEvent *) override
@@ -37,10 +64,93 @@ protected:
         if (m_pixmap.isNull()) return;
         QPainter painter(this);
         painter.drawPixmap(0, 0, m_pixmap);
+
+        if (m_cropActive) {
+            if (m_cropRect.isValid() && !m_cropRect.isEmpty()) {
+                QColor dimColor(0, 0, 0, 140);
+                // Top
+                if (m_cropRect.top() > 0) {
+                    painter.fillRect(0, 0, width(), m_cropRect.top(), dimColor);
+                }
+                // Bottom
+                if (m_cropRect.bottom() < height() - 1) {
+                    painter.fillRect(0, m_cropRect.bottom() + 1, width(), height() - m_cropRect.bottom() - 1, dimColor);
+                }
+                // Left
+                if (m_cropRect.left() > 0) {
+                    painter.fillRect(0, m_cropRect.top(), m_cropRect.left(), m_cropRect.height(), dimColor);
+                }
+                // Right
+                if (m_cropRect.right() < width() - 1) {
+                    painter.fillRect(m_cropRect.right() + 1, m_cropRect.top(), width() - m_cropRect.right() - 1, m_cropRect.height(), dimColor);
+                }
+
+                // White dashed selection border
+                QPen pen(Qt::white, 1, Qt::DashLine);
+                painter.setPen(pen);
+                painter.drawRect(m_cropRect);
+
+                // 4 Corner handles
+                painter.setBrush(Qt::white);
+                painter.setPen(QPen(Qt::black, 1));
+                const int hsz = 6;
+                painter.drawRect(m_cropRect.left() - hsz / 2, m_cropRect.top() - hsz / 2, hsz, hsz);
+                painter.drawRect(m_cropRect.right() - hsz / 2, m_cropRect.top() - hsz / 2, hsz, hsz);
+                painter.drawRect(m_cropRect.left() - hsz / 2, m_cropRect.bottom() - hsz / 2, hsz, hsz);
+                painter.drawRect(m_cropRect.right() - hsz / 2, m_cropRect.bottom() - hsz / 2, hsz, hsz);
+
+                // Resolution badge
+                if (m_viewer && !m_viewer->originalImage().isNull() && width() > 0 && height() > 0) {
+                    double sx = double(m_viewer->originalImage().width()) / double(width());
+                    double sy = double(m_viewer->originalImage().height()) / double(height());
+                    int origW = qMax(1, qRound(m_cropRect.width() * sx));
+                    int origH = qMax(1, qRound(m_cropRect.height() * sy));
+                    QString badgeText = QString("%1 × %2 px (Enter = Crop, Esc = Cancel)").arg(origW).arg(origH);
+
+                    QFont f = painter.font();
+                    f.setPointSize(9);
+                    f.setBold(true);
+                    painter.setFont(f);
+                    QFontMetrics fm(f);
+                    int tw = fm.horizontalAdvance(badgeText) + 16;
+                    int th = fm.height() + 8;
+                    int bx = m_cropRect.center().x() - tw / 2;
+                    int by = m_cropRect.bottom() + 10;
+                    if (by + th > height()) by = m_cropRect.top() - th - 10;
+                    if (by < 0) by = m_cropRect.top() + 10;
+                    bx = qBound(5, bx, qMax(5, width() - tw - 5));
+
+                    QRect badgeRect(bx, by, tw, th);
+                    painter.setBrush(QColor(15, 23, 42, 220));
+                    painter.setPen(QPen(QColor(255, 255, 255, 70), 1));
+                    painter.drawRoundedRect(badgeRect, 5, 5);
+                    painter.setPen(Qt::white);
+                    painter.drawText(badgeRect, Qt::AlignCenter, badgeText);
+                }
+            } else {
+                // Dim entire canvas lightly when crop mode is waiting for first drag
+                painter.fillRect(rect(), QColor(0, 0, 0, 75));
+            }
+        }
     }
 
     void mousePressEvent(QMouseEvent *event) override
     {
+        if (m_cropActive) {
+            if (event->button() == Qt::LeftButton) {
+                m_isSelectingCrop = true;
+                m_cropStartPos = event->pos();
+                m_cropRect = QRect(m_cropStartPos, m_cropStartPos);
+                update();
+                event->accept();
+                return;
+            } else if (event->button() == Qt::RightButton) {
+                if (m_viewer) m_viewer->cancelCropMode();
+                event->accept();
+                return;
+            }
+        }
+
         if (m_viewer && m_viewer->isZoomToolActive()) {
             QPoint vpPos = (m_viewer->scrollArea() && m_viewer->scrollArea()->viewport())
                                ? m_viewer->scrollArea()->viewport()->mapFromGlobal(event->globalPosition().toPoint())
@@ -68,6 +178,14 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *event) override
     {
+        if (m_cropActive && m_isSelectingCrop) {
+            m_cropRect = QRect(m_cropStartPos, event->pos()).normalized();
+            m_cropRect = m_cropRect.intersected(rect());
+            update();
+            event->accept();
+            return;
+        }
+
         if (m_isDragging) {
             QPoint currentGlobalPos = event->globalPosition().toPoint();
             QPoint delta = currentGlobalPos - m_lastGlobalPos;
@@ -96,9 +214,20 @@ protected:
 
     void mouseReleaseEvent(QMouseEvent *event) override
     {
+        if (m_cropActive && m_isSelectingCrop && event->button() == Qt::LeftButton) {
+            m_isSelectingCrop = false;
+            m_cropRect = QRect(m_cropStartPos, event->pos()).normalized();
+            m_cropRect = m_cropRect.intersected(rect());
+            update();
+            event->accept();
+            return;
+        }
+
         if (m_isDragging && (event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton)) {
             m_isDragging = false;
-            if (m_viewer && m_viewer->isZoomToolActive()) {
+            if (m_cropActive) {
+                setCursor(Qt::CrossCursor);
+            } else if (m_viewer && m_viewer->isZoomToolActive()) {
                 QPixmap zoomPix = QIcon::fromTheme("zoom-in").pixmap(24, 24);
                 setCursor(zoomPix.isNull() ? Qt::CrossCursor : QCursor(zoomPix, 8, 8));
             } else {
@@ -108,6 +237,32 @@ protected:
         } else {
             QWidget::mouseReleaseEvent(event);
         }
+    }
+
+    void mouseDoubleClickEvent(QMouseEvent *event) override
+    {
+        if (m_cropActive && !m_cropRect.isEmpty() && m_cropRect.contains(event->pos())) {
+            if (m_viewer) m_viewer->confirmCrop();
+            event->accept();
+            return;
+        }
+        QWidget::mouseDoubleClickEvent(event);
+    }
+
+    void keyPressEvent(QKeyEvent *event) override
+    {
+        if (m_cropActive) {
+            if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+                if (m_viewer) m_viewer->confirmCrop();
+                event->accept();
+                return;
+            } else if (event->key() == Qt::Key_Escape) {
+                if (m_viewer) m_viewer->cancelCropMode();
+                event->accept();
+                return;
+            }
+        }
+        QWidget::keyPressEvent(event);
     }
 
     void wheelEvent(QWheelEvent *event) override
@@ -124,6 +279,10 @@ private:
     QPixmap m_pixmap;
     bool m_isDragging;
     QPoint m_lastGlobalPos;
+    bool m_cropActive;
+    bool m_isSelectingCrop;
+    QPoint m_cropStartPos;
+    QRect m_cropRect;
 };
 
 ImageViewer::ImageViewer(QWidget *parent)
@@ -178,6 +337,14 @@ void ImageViewer::updateTheme()
     }
 }
 
+void ImageViewer::setModified(bool mod)
+{
+    if (m_isModified != mod) {
+        m_isModified = mod;
+        emit modificationChanged(m_isModified);
+    }
+}
+
 bool ImageViewer::loadFile(const QString &filePath)
 {
     QImageReader reader(filePath);
@@ -188,9 +355,10 @@ bool ImageViewer::loadFile(const QString &filePath)
         return false;
     }
 
+    clearUndoRedo();
     m_zoomFactor = 1.0;
     m_fitToWindow = true;
-    m_isModified = false;
+    setModified(false);
     updateScaledPixmap();
     return true;
 }
@@ -201,22 +369,24 @@ bool ImageViewer::loadImage(const QImage &image)
         return false;
     }
 
+    clearUndoRedo();
     m_originalImage = image;
     m_zoomFactor = 1.0;
     m_fitToWindow = true;
-    m_isModified = false;
+    setModified(false);
     updateScaledPixmap();
     return true;
 }
 
 void ImageViewer::clear()
 {
+    clearUndoRedo();
     m_originalImage = QImage();
     m_scaledPixmap = QPixmap();
     if (m_canvas) {
         m_canvas->setPixmap(m_scaledPixmap);
     }
-    m_isModified = false;
+    setModified(false);
 }
 
 void ImageViewer::resetZoom()
@@ -304,44 +474,49 @@ void ImageViewer::zoomAt(const QPoint &viewportPos, double factor)
 void ImageViewer::rotateClockwise()
 {
     if (m_originalImage.isNull()) return;
+    pushUndoState();
     QTransform t;
     t.rotate(90);
     m_originalImage = m_originalImage.transformed(t);
-    m_isModified = true;
+    setModified(true);
     updateScaledPixmap();
 }
 
 void ImageViewer::rotateCounterClockwise()
 {
     if (m_originalImage.isNull()) return;
+    pushUndoState();
     QTransform t;
     t.rotate(-90);
     m_originalImage = m_originalImage.transformed(t);
-    m_isModified = true;
+    setModified(true);
     updateScaledPixmap();
 }
 
 void ImageViewer::flipHorizontal()
 {
     if (m_originalImage.isNull()) return;
+    pushUndoState();
     m_originalImage = m_originalImage.mirrored(true, false);
-    m_isModified = true;
+    setModified(true);
     updateScaledPixmap();
 }
 
 void ImageViewer::flipVertical()
 {
     if (m_originalImage.isNull()) return;
+    pushUndoState();
     m_originalImage = m_originalImage.mirrored(false, true);
-    m_isModified = true;
+    setModified(true);
     updateScaledPixmap();
 }
 
 void ImageViewer::invertColors()
 {
     if (m_originalImage.isNull()) return;
+    pushUndoState();
     m_originalImage.invertPixels();
-    m_isModified = true;
+    setModified(true);
     updateScaledPixmap();
 }
 
@@ -353,9 +528,15 @@ void ImageViewer::updateScaledPixmap()
         return;
     }
 
-    QSize viewportSize = (m_scrollArea && m_scrollArea->viewport()->width() > 10 && m_scrollArea->viewport()->height() > 10)
-                             ? m_scrollArea->viewport()->size()
-                             : (size().width() > 10 && size().height() > 10 ? size() : QSize(800, 600));
+    QSize viewportSize;
+    if (m_scrollArea && m_scrollArea->viewport() &&
+        m_scrollArea->viewport()->width() > 50 && m_scrollArea->viewport()->height() > 50) {
+        viewportSize = m_scrollArea->viewport()->size();
+    } else if (width() > 50 && height() > 50) {
+        viewportSize = size();
+    } else {
+        viewportSize = QSize(800, 600);
+    }
 
     QSize targetSize;
     if (m_fitToWindow) {
@@ -388,6 +569,9 @@ void ImageViewer::updateScaledPixmap()
 void ImageViewer::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+    if (layout()) {
+        layout()->activate();
+    }
     if (m_fitToWindow) {
         updateScaledPixmap();
     }
@@ -509,3 +693,95 @@ bool ImageViewer::eventFilter(QObject *watched, QEvent *event)
     }
     return QWidget::eventFilter(watched, event);
 }
+
+void ImageViewer::clearUndoRedo()
+{
+    m_undoStack.clear();
+    m_redoStack.clear();
+    emit undoAvailabilityChanged(false, false);
+}
+
+void ImageViewer::pushUndoState()
+{
+    if (m_originalImage.isNull()) return;
+    if (m_undoStack.size() >= 20) {
+        m_undoStack.removeFirst();
+    }
+    m_undoStack.append(m_originalImage);
+    m_redoStack.clear();
+    emit undoAvailabilityChanged(canUndo(), canRedo());
+}
+
+void ImageViewer::undo()
+{
+    if (m_undoStack.isEmpty()) return;
+    m_redoStack.append(m_originalImage);
+    m_originalImage = m_undoStack.takeLast();
+    setModified(true);
+    updateScaledPixmap();
+    emit undoAvailabilityChanged(canUndo(), canRedo());
+}
+
+void ImageViewer::redo()
+{
+    if (m_redoStack.isEmpty()) return;
+    m_undoStack.append(m_originalImage);
+    m_originalImage = m_redoStack.takeLast();
+    setModified(true);
+    updateScaledPixmap();
+    emit undoAvailabilityChanged(canUndo(), canRedo());
+}
+
+
+void ImageViewer::applyCrop(const QRect &cropRect)
+{
+    if (m_originalImage.isNull()) return;
+    QRect validRect = cropRect.intersected(m_originalImage.rect());
+    if (validRect.width() < 1 || validRect.height() < 1) return;
+
+    pushUndoState();
+    m_originalImage = m_originalImage.copy(validRect);
+    setModified(true);
+    updateScaledPixmap();
+}
+
+void ImageViewer::setCropModeActive(bool active)
+{
+    if (m_canvas) {
+        m_canvas->setCropActive(active);
+    }
+    emit cropModeChanged(active);
+}
+
+bool ImageViewer::isCropModeActive() const
+{
+    return m_canvas && m_canvas->isCropActive();
+}
+
+void ImageViewer::confirmCrop()
+{
+    if (!m_canvas || !m_canvas->isCropActive() || m_canvas->cropRect().isEmpty()) {
+        setCropModeActive(false);
+        return;
+    }
+    QRect cr = m_canvas->cropRect();
+    if (m_canvas->width() <= 0 || m_canvas->height() <= 0 || m_originalImage.isNull()) {
+        setCropModeActive(false);
+        return;
+    }
+    double sx = double(m_originalImage.width()) / double(m_canvas->width());
+    double sy = double(m_originalImage.height()) / double(m_canvas->height());
+    int ix = qBound(0, qRound(cr.x() * sx), m_originalImage.width() - 1);
+    int iy = qBound(0, qRound(cr.y() * sy), m_originalImage.height() - 1);
+    int iw = qBound(1, qRound(cr.width() * sx), m_originalImage.width() - ix);
+    int ih = qBound(1, qRound(cr.height() * sy), m_originalImage.height() - iy);
+
+    setCropModeActive(false);
+    applyCrop(QRect(ix, iy, iw, ih));
+}
+
+void ImageViewer::cancelCropMode()
+{
+    setCropModeActive(false);
+}
+

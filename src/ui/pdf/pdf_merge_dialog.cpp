@@ -1,0 +1,348 @@
+#include "pdf_merge_dialog.h"
+#include "build_config.h"
+#include "package_manager_helper.h"
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QListWidget>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QLabel>
+#include <QProgressBar>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QFileInfo>
+#include <QProcess>
+#include <QStandardPaths>
+
+PdfMergeDialog::PdfMergeDialog(const QStringList &initialFiles, QWidget *parent)
+    : QDialog(parent)
+    , m_fileListWidget(nullptr)
+    , m_editOutput(nullptr)
+    , m_process(new QProcess(this))
+    , m_usingQpdf(false)
+{
+    setWindowTitle(tr("Merge PDF Documents"));
+    resize(640, 480);
+    setupUi();
+
+    for (const QString &file : initialFiles) {
+        if (QFileInfo::exists(file) && file.endsWith(".pdf", Qt::CaseInsensitive)) {
+            m_fileListWidget->addItem(file);
+        }
+    }
+
+    if (!initialFiles.isEmpty()) {
+        QFileInfo first(initialFiles.first());
+        m_editOutput->setText(first.dir().absoluteFilePath("Merged_Document.pdf"));
+    }
+
+    connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &PdfMergeDialog::onProcessFinished);
+}
+
+PdfMergeDialog::~PdfMergeDialog()
+{
+    if (m_process && m_process->state() == QProcess::Running) {
+        m_process->kill();
+        m_process->waitForFinished(500);
+    }
+}
+
+QString PdfMergeDialog::outputFilePath() const
+{
+    return m_outPath;
+}
+
+void PdfMergeDialog::setupUi()
+{
+    auto *mainLay = new QVBoxLayout(this);
+    mainLay->setSpacing(10);
+    mainLay->setContentsMargins(16, 16, 16, 16);
+
+    // Engine banner
+    m_lblEngineStatus = new QLabel(this);
+    m_lblEngineStatus->setWordWrap(true);
+    m_lblEngineStatus->setStyleSheet("padding: 8px 12px; border-radius: 6px; font-size: 12px;");
+    mainLay->addWidget(m_lblEngineStatus);
+    updateEngineBanner();
+
+    // List and manipulation buttons
+    auto *listLay = new QHBoxLayout();
+    m_fileListWidget = new QListWidget(this);
+    m_fileListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    listLay->addWidget(m_fileListWidget, 1);
+
+    auto *btnLay = new QVBoxLayout();
+    btnLay->setSpacing(6);
+
+    m_btnAdd = new QPushButton(tr("Add PDF..."), this);
+    m_btnRemove = new QPushButton(tr("Remove"), this);
+    m_btnMoveUp = new QPushButton(tr("Move Up"), this);
+    m_btnMoveDown = new QPushButton(tr("Move Down"), this);
+    m_btnClear = new QPushButton(tr("Clear All"), this);
+
+    btnLay->addWidget(m_btnAdd);
+    btnLay->addWidget(m_btnRemove);
+    btnLay->addWidget(m_btnMoveUp);
+    btnLay->addWidget(m_btnMoveDown);
+    btnLay->addWidget(m_btnClear);
+    btnLay->addStretch();
+    listLay->addLayout(btnLay);
+
+    mainLay->addLayout(listLay);
+
+    // Output destination
+    auto *outBox = new QHBoxLayout();
+    auto *lblOut = new QLabel(tr("Save as:"), this);
+    m_editOutput = new QLineEdit(this);
+    m_editOutput->setPlaceholderText(tr("Destination PDF file path..."));
+    m_btnBrowseOutput = new QPushButton(tr("Browse..."), this);
+
+    outBox->addWidget(lblOut);
+    outBox->addWidget(m_editOutput, 1);
+    outBox->addWidget(m_btnBrowseOutput);
+    mainLay->addLayout(outBox);
+
+    // Progress and status
+    m_progressBar = new QProgressBar(this);
+    m_progressBar->setRange(0, 0); // indeterminate
+    m_progressBar->setVisible(false);
+    mainLay->addWidget(m_progressBar);
+
+    m_lblStatus = new QLabel(this);
+    m_lblStatus->setStyleSheet("color: #64748b; font-size: 11px;");
+    mainLay->addWidget(m_lblStatus);
+
+    // Bottom action buttons
+    auto *bottomLay = new QHBoxLayout();
+    bottomLay->addStretch();
+
+    m_btnClose = new QPushButton(tr("Cancel"), this);
+    m_btnMerge = new QPushButton(tr("Merge Documents"), this);
+    m_btnMerge->setDefault(true);
+    m_btnMerge->setStyleSheet("QPushButton { background-color: #0284c7; color: white; font-weight: bold; padding: 6px 16px; border-radius: 4px; }"
+                              "QPushButton:hover { background-color: #0369a1; }");
+
+    bottomLay->addWidget(m_btnClose);
+    bottomLay->addWidget(m_btnMerge);
+    mainLay->addLayout(bottomLay);
+
+    // Connect signals
+    connect(m_btnAdd, &QPushButton::clicked, this, &PdfMergeDialog::onAddFiles);
+    connect(m_btnRemove, &QPushButton::clicked, this, &PdfMergeDialog::onRemoveSelected);
+    connect(m_btnMoveUp, &QPushButton::clicked, this, &PdfMergeDialog::onMoveUp);
+    connect(m_btnMoveDown, &QPushButton::clicked, this, &PdfMergeDialog::onMoveDown);
+    connect(m_btnClear, &QPushButton::clicked, this, &PdfMergeDialog::onClearAll);
+    connect(m_btnBrowseOutput, &QPushButton::clicked, this, &PdfMergeDialog::onBrowseOutput);
+    connect(m_btnMerge, &QPushButton::clicked, this, &PdfMergeDialog::onStartMerge);
+    connect(m_btnClose, &QPushButton::clicked, this, &QDialog::reject);
+}
+
+void PdfMergeDialog::updateEngineBanner()
+{
+    m_usingQpdf = BuildConfig::isQpdfAvailable();
+    if (m_usingQpdf) {
+        m_lblEngineStatus->setStyleSheet("background-color: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #166534; padding: 8px 12px; border-radius: 6px;");
+        m_lblEngineStatus->setText(tr("🟢 <b>QPDF Engine Active:</b> Optimized merge with automatic font deduplication, linearization, and preserved bookmarks/outlines."));
+    } else {
+        m_lblEngineStatus->setStyleSheet("background-color: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.4); color: #854d0e; padding: 8px 12px; border-radius: 6px;");
+        m_lblEngineStatus->setText(tr("🟡 <b>Poppler Base Engine Active (pdfunite):</b> Sequential page merging.<br><span style='font-size: 11px;'>💡 Tip: Install the <code>qpdf</code> package to preserve bookmarks/outlines and eliminate duplicate font overhead.</span>"));
+    }
+}
+
+void PdfMergeDialog::onAddFiles()
+{
+    QStringList files = QFileDialog::getOpenFileNames(this, tr("Select PDF Files to Merge"), QString(), tr("PDF Documents (*.pdf)"));
+    for (const QString &f : files) {
+        m_fileListWidget->addItem(f);
+    }
+    if (m_editOutput->text().trimmed().isEmpty() && !files.isEmpty()) {
+        QFileInfo first(files.first());
+        m_editOutput->setText(first.dir().absoluteFilePath("Merged_Document.pdf"));
+    }
+}
+
+void PdfMergeDialog::onRemoveSelected()
+{
+    qDeleteAll(m_fileListWidget->selectedItems());
+}
+
+void PdfMergeDialog::onMoveUp()
+{
+    int row = m_fileListWidget->currentRow();
+    if (row > 0) {
+        QListWidgetItem *item = m_fileListWidget->takeItem(row);
+        m_fileListWidget->insertItem(row - 1, item);
+        m_fileListWidget->setCurrentRow(row - 1);
+    }
+}
+
+void PdfMergeDialog::onMoveDown()
+{
+    int row = m_fileListWidget->currentRow();
+    if (row >= 0 && row < m_fileListWidget->count() - 1) {
+        QListWidgetItem *item = m_fileListWidget->takeItem(row);
+        m_fileListWidget->insertItem(row + 1, item);
+        m_fileListWidget->setCurrentRow(row + 1);
+    }
+}
+
+void PdfMergeDialog::onClearAll()
+{
+    m_fileListWidget->clear();
+}
+
+void PdfMergeDialog::onBrowseOutput()
+{
+    QString defaultPath = m_editOutput->text().trimmed();
+    if (defaultPath.isEmpty() && m_fileListWidget->count() > 0) {
+        defaultPath = QFileInfo(m_fileListWidget->item(0)->text()).dir().absoluteFilePath("Merged_Document.pdf");
+    }
+    QString dest = QFileDialog::getSaveFileName(this, tr("Save Merged PDF"), defaultPath, tr("PDF Documents (*.pdf)"));
+    if (!dest.isEmpty()) {
+        if (!dest.endsWith(".pdf", Qt::CaseInsensitive)) {
+            dest += ".pdf";
+        }
+        m_editOutput->setText(dest);
+    }
+}
+
+void PdfMergeDialog::onStartMerge()
+{
+    if (m_fileListWidget->count() < 2) {
+        QMessageBox::warning(this, tr("Insufficient Files"), tr("Please select at least 2 PDF files to perform a merge."));
+        return;
+    }
+
+    m_outPath = m_editOutput->text().trimmed();
+    if (m_outPath.isEmpty()) {
+        onBrowseOutput();
+        m_outPath = m_editOutput->text().trimmed();
+        if (m_outPath.isEmpty()) return;
+    }
+
+    const QString absOut = QFileInfo(m_outPath).absoluteFilePath();
+    QStringList inputFiles;
+    for (int i = 0; i < m_fileListWidget->count(); ++i) {
+        const QString f = m_fileListWidget->item(i)->text();
+        if (QFileInfo(f).absoluteFilePath() == absOut) {
+            QMessageBox::warning(this, tr("Output Path Conflict"),
+                tr("The output file path cannot be one of the input PDF files being merged.\nPlease choose a different output filename."));
+            return;
+        }
+        inputFiles << f;
+    }
+
+    auto setUiInteractive = [this](bool enabled) {
+        m_btnMerge->setEnabled(enabled);
+        m_btnAdd->setEnabled(enabled);
+        m_btnRemove->setEnabled(enabled);
+        m_btnMoveUp->setEnabled(enabled);
+        m_btnMoveDown->setEnabled(enabled);
+        m_btnClear->setEnabled(enabled);
+        m_btnBrowseOutput->setEnabled(enabled);
+        m_fileListWidget->setEnabled(enabled);
+    };
+
+    setUiInteractive(false);
+    m_progressBar->setVisible(true);
+    m_lblStatus->setText(tr("Merging PDF documents..."));
+
+    QString program;
+    QStringList args;
+
+    if (m_usingQpdf) {
+        program = BuildConfig::qpdfExecutable();
+        if (program.isEmpty()) program = QStringLiteral("qpdf");
+        args << "--empty" << "--pages";
+        for (const QString &f : inputFiles) {
+            args << f;
+        }
+        args << "--" << m_outPath;
+    } else {
+        program = BuildConfig::pdfuniteExecutable();
+        if (program.isEmpty()) program = QStringLiteral("pdfunite");
+        for (const QString &f : inputFiles) {
+            args << f;
+        }
+        args << m_outPath;
+    }
+
+    m_process->start(program, args);
+    if (!m_process->waitForStarted(2000)) {
+        m_progressBar->setVisible(false);
+        setUiInteractive(true);
+        QMessageBox::critical(this, tr("Launch Error"),
+            tr("Unable to launch merge tool '%1'. Make sure it is installed on your system.").arg(program));
+    }
+}
+
+void PdfMergeDialog::onProcessFinished(int exitCode)
+{
+    m_progressBar->setVisible(false);
+    m_btnMerge->setEnabled(true);
+    m_btnAdd->setEnabled(true);
+    m_btnRemove->setEnabled(true);
+    m_btnMoveUp->setEnabled(true);
+    m_btnMoveDown->setEnabled(true);
+    m_btnClear->setEnabled(true);
+    m_btnBrowseOutput->setEnabled(true);
+    m_fileListWidget->setEnabled(true);
+
+    if (exitCode == 0 && QFileInfo::exists(m_outPath)) {
+        BuildConfig::incrementPdfMergeCount();
+        m_lblStatus->setText(tr("Merge completed successfully!"));
+        emit fileMerged(m_outPath);
+
+        checkSmartTip();
+
+        QMessageBox::StandardButton res = QMessageBox::information(
+            this,
+            tr("Merge Succeeded"),
+            tr("The merged PDF has been successfully generated at:<br><b>%1</b><br><br>Would you like to open it in BubezView now?").arg(m_outPath.toHtmlEscaped()),
+            QMessageBox::Yes | QMessageBox::No
+        );
+
+        if (res == QMessageBox::Yes) {
+            accept();
+        }
+    } else {
+        QString err = QString::fromUtf8(m_process->readAllStandardError());
+        m_lblStatus->setText(tr("Error during merge."));
+        QMessageBox::critical(this, tr("PDF Merge Error"),
+            tr("An error occurred while merging the PDF:<br><pre>%1</pre>").arg(err.toHtmlEscaped()));
+    }
+}
+
+void PdfMergeDialog::checkSmartTip()
+{
+    if (BuildConfig::pdfMergeCount() >= 5 && !BuildConfig::isQpdfTipDismissed() && !BuildConfig::isQpdfAvailable()) {
+        const QString distro = PackageManagerHelper::distroDisplayName();
+        const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("qpdf"));
+
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle(tr("PDF Optimization Tip"));
+        msgBox.setText(tr("<h3>💡 You have merged %1 PDF documents using the base engine!</h3>"
+                          "<p>BubezView noticed you frequently merge PDF files.<br>"
+                          "We recommend installing the <b>QPDF</b> engine to enjoy:</p>"
+                          "<ul>"
+                          "<li><b>Font deduplication:</b> merged files take up significantly less disk space.</li>"
+                          "<li><b>Preserved bookmarks:</b> chapter outlines and bookmarks remain intact and clickable.</li>"
+                          "<li><b>Fast linearization:</b> instant opening across web viewers and mobile devices.</li>"
+                          "</ul>"
+                          "<p>You can install it quickly on <b>%2</b> via terminal:<br>"
+                          "<code>%3</code></p>")
+                          .arg(BuildConfig::pdfMergeCount())
+                          .arg(distro.toHtmlEscaped())
+                          .arg(installCmd.toHtmlEscaped()));
+        
+        QPushButton *btnDismiss = msgBox.addButton(tr("Don't show again"), QMessageBox::DestructiveRole);
+        QPushButton *btnOk = msgBox.addButton(tr("Got it"), QMessageBox::AcceptRole);
+        Q_UNUSED(btnOk);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == btnDismiss) {
+            BuildConfig::dismissQpdfTip();
+        }
+    }
+}

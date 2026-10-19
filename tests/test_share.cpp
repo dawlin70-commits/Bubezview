@@ -4,6 +4,7 @@
 #include <QAction>
 #include "share_manager.h"
 #include "share_dialog.h"
+#include "vector_icons.h"
 
 class TestShare : public QObject
 {
@@ -14,6 +15,7 @@ private slots:
     void testExecutableLookup();
     void testMenuPopulation();
     void testShareDialogUI();
+    void testVectorIcons();
 };
 
 void TestShare::testAvailabilityChecks()
@@ -77,6 +79,36 @@ void TestShare::testShareDialogUI()
     QPixmap pix = dlg.grab();
     pix.save("/home/davide/.gemini/antigravity/brain/c8aaa138-5782-4f22-ba66-d5f04036bb68/share_dialog_preview.png");
     QVERIFY(!pix.isNull());
+}
+
+void TestShare::testVectorIcons()
+{
+    // Verify that all new vector icons produce valid, crisp, non-null pixmaps
+    QList<VectorIcons::Type> types = {
+        VectorIcons::Type::Folder,
+        VectorIcons::Type::FolderDownloads,
+        VectorIcons::Type::FolderPictures,
+        VectorIcons::Type::FolderDocuments,
+        VectorIcons::Type::FolderMusic,
+        VectorIcons::Type::FolderVideos,
+        VectorIcons::Type::FolderDesktop,
+        VectorIcons::Type::Code,
+        VectorIcons::Type::Zip,
+        VectorIcons::Type::Image,
+        VectorIcons::Type::Media,
+        VectorIcons::Type::Document,
+        VectorIcons::Type::Pdf,
+        VectorIcons::Type::Office,
+        VectorIcons::Type::Text
+    };
+
+    for (VectorIcons::Type t : types) {
+        QIcon icon = VectorIcons::createIcon(t);
+        QVERIFY(!icon.isNull());
+        QPixmap pix = icon.pixmap(96, 96);
+        QVERIFY(!pix.isNull());
+        QCOMPARE(pix.size(), QSize(96, 96));
+    }
 }
 
 QTEST_MAIN(TestShare)

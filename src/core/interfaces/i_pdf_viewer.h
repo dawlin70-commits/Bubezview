@@ -9,7 +9,12 @@
 #pragma once
 
 #include "i_viewer_widget.h"
+#include <QColor>
 #include <QImage>
+#include <functional>
+#include <utility>
+
+class QWidget;
 
 /**
  * @class IPdfViewer
@@ -198,17 +203,39 @@ public:
      */
     virtual void setModified(bool mod) = 0;
 
+    /**
+     * @brief Starts the highlighter tool with the given color and opacity.
+     * @param color Highlight color (default translucent yellow).
+     * @param opacity Opacity factor between 0.0 and 1.0 (default 0.40).
+     */
     virtual void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40) {
         Q_UNUSED(color); Q_UNUSED(opacity);
     }
 
+    /**
+     * @brief Starts interactive geometric shape drawing tool.
+     * @param shapeType Identifier for the shape type (rectangle, ellipse, line, arrow).
+     * @param strokeWidth Stroke line thickness in points.
+     * @param strokeColor Stroke contour color.
+     * @param fillColor Fill background color.
+     */
     virtual void startShape(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor) {
         Q_UNUSED(shapeType); Q_UNUSED(strokeWidth); Q_UNUSED(strokeColor); Q_UNUSED(fillColor);
     }
 
+    /**
+     * @brief Exits persistent/continuous drawing mode for shapes or highlighters.
+     */
     virtual void exitContinuousToolMode() {}
-    virtual void openToolsDialog(int defaultTab = 0) { Q_UNUSED(defaultTab); }
+
+    /**
+     * @brief Opens shape insertion configuration dialog.
+     */
     virtual void openShapeDialog() {}
+
+    /**
+     * @brief Initiates interactive snapshot area capture tool.
+     */
     virtual void startSnapshot() {}
 
     /**
@@ -216,7 +243,7 @@ public:
      * @param callback Function receiving boolean modified state.
      */
     virtual void setOnDocumentModified(std::function<void(bool)> callback) {
-        m_docModifiedCallback = callback;
+        m_docModifiedCallback = std::move(callback);
     }
 
     /**
@@ -224,19 +251,31 @@ public:
      * @param callback Function receiving 0-based page index and total pages.
      */
     virtual void setOnPageChanged(std::function<void(int current, int total)> callback) {
-        m_pageChangedCallback = callback;
+        m_pageChangedCallback = std::move(callback);
     }
 
+    /**
+     * @brief Registers callback invoked when canvas text or area selection changes.
+     * @param callback Function receiving notification.
+     */
     virtual void setOnSelectionChanged(std::function<void()> callback) {
-        m_selectionChangedCallback = callback;
+        m_selectionChangedCallback = std::move(callback);
     }
 
+    /**
+     * @brief Registers callback invoked when undo/redo command history changes.
+     * @param callback Function receiving notification.
+     */
     virtual void setOnHistoryChanged(std::function<void()> callback) {
-        m_historyChangedCallback = callback;
+        m_historyChangedCallback = std::move(callback);
     }
 
+    /**
+     * @brief Registers callback invoked when continuous tool drawing mode is exited.
+     * @param callback Function receiving notification.
+     */
     virtual void setOnContinuousModeExited(std::function<void()> callback) {
-        m_continuousModeExitedCallback = callback;
+        m_continuousModeExitedCallback = std::move(callback);
     }
 
     /**
@@ -253,7 +292,7 @@ public:
      * @param callback Function receiving path of organized PDF.
      */
     virtual void setOnFileOrganized(std::function<void(const QString &)> callback) {
-        m_fileOrganizedCallback = callback;
+        m_fileOrganizedCallback = std::move(callback);
     }
 
     /**
@@ -261,7 +300,7 @@ public:
      * @param callback Function receiving new zoom factor.
      */
     virtual void setOnZoomChanged(std::function<void(double)> callback) {
-        m_zoomChangedCallback = callback;
+        m_zoomChangedCallback = std::move(callback);
     }
 
 protected:

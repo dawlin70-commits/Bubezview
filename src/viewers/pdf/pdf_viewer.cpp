@@ -1,14 +1,12 @@
 #include "pdf_viewer.h"
 #include "pdf_document_ops.h"
-#include "../../core/theme_manager.h"
-#include "../../ui/pdf_typewriter_dialog.h"
-#include "../../ui/pdf_signature_dialog.h"
-#include "../../ui/pdf_crypto_signature_dialog.h"
-#include "../../ui/pdf_image_dialog.h"
-#include "../../ui/pdf_shape_dialog.h"
-#include "../../ui/pdf_watermark_dialog.h"
-#include "../../ui/pdf_tools_dialog.h"
-#include "../../ui/pdf_page_organizer_dialog.h"
+#include "theme_manager.h"
+#include "pdf_typewriter_dialog.h"
+#include "pdf_signature_dialog.h"
+#include "pdf_crypto_signature_dialog.h"
+#include "pdf_image_dialog.h"
+#include "pdf_watermark_dialog.h"
+#include "pdf_page_organizer_dialog.h"
 #include <poppler/qt6/poppler-qt6.h>
 #include <poppler/qt6/poppler-annotation.h>
 #include <poppler/qt6/poppler-form.h>
@@ -271,8 +269,8 @@ PdfViewer::~PdfViewer()
     if (m_pageWidget) {
         m_pageWidget->disconnect();
     }
-    resetDocument();
     clearUndoRedoStacks();
+    resetDocument();
 }
 
 void PdfViewer::resetDocument()
@@ -284,8 +282,14 @@ void PdfViewer::resetDocument()
     m_doc.reset();
     if (!m_extractedP7mTempPath.isEmpty() && QFile::exists(m_extractedP7mTempPath)) {
         QFile::remove(m_extractedP7mTempPath);
+        m_extractedP7mTempPath.clear();
     }
-    m_extractedP7mTempPath.clear();
+    if (!m_activeSnapshotPath.isEmpty() && QFile::exists(m_activeSnapshotPath)) {
+        if (!m_undoStack.contains(m_activeSnapshotPath) && !m_redoStack.contains(m_activeSnapshotPath)) {
+            QFile::remove(m_activeSnapshotPath);
+        }
+        m_activeSnapshotPath.clear();
+    }
 }
 
 void PdfViewer::updateTheme()
@@ -1279,45 +1283,6 @@ void PdfViewer::openTypewriterDialog()
     PdfTypewriterDialog dlg(window());
     if (dlg.exec() == QDialog::Accepted) {
         m_pageWidget->startTypewriter(dlg.text(), dlg.selectedFont(), dlg.textColor(), dlg.isWhiteout());
-    }
-}
-
-void PdfViewer::openToolsDialog(int defaultTab)
-{
-    if (!m_doc) return;
-    PdfToolsDialog dlg(defaultTab, window());
-    if (dlg.exec() == QDialog::Accepted) {
-        switch (dlg.selectedAction()) {
-        case PdfToolAction::Highlighter:
-            startHighlighter(dlg.highlighterColor(), dlg.highlighterOpacity());
-            break;
-        case PdfToolAction::Shape:
-            m_pageWidget->startShape(static_cast<int>(dlg.shapeType()), dlg.shapeStrokeWidth(),
-                                     dlg.shapeStrokeColor(), dlg.shapeFillColor());
-            break;
-        case PdfToolAction::Redact:
-            m_pageWidget->startRedaction();
-            break;
-        case PdfToolAction::Watermark:
-            m_pageWidget->startWatermark(dlg.watermarkText(), dlg.watermarkAngle(),
-                                         dlg.watermarkOpacity(), dlg.watermarkColor());
-            break;
-        case PdfToolAction::InsertImage:
-            m_pageWidget->startInsertImage(dlg.imageToInsert());
-            break;
-        case PdfToolAction::Signature: {
-            QImage sig = dlg.signatureImage();
-            if (!sig.isNull()) {
-                m_pageWidget->startSignature(sig);
-            }
-            break;
-        }
-        case PdfToolAction::CryptoSignature:
-            openCryptoSignatureDialog(1);
-            break;
-        default:
-            break;
-        }
     }
 }
 

@@ -7,13 +7,14 @@ enable_testing()
 # Automated fast test (executed during ctest)
 add_executable(test_share
     test_share.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/share_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/share_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/share_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/share_dialog.cpp
 )
 
 target_include_directories(test_share PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs
     ${LIBQRENCODE_INCLUDE_DIRS}
 )
 
@@ -32,26 +33,24 @@ add_test(NAME TestShare COMMAND test_share)
 add_executable(test_interactive EXCLUDE_FROM_ALL
     test_interactive.cpp
     ${APP_CORE_SOURCES}
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_crypto_signature_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_image_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_page_organizer_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_shape_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_signature_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_tools_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_typewriter_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf_watermark_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_crypto_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_image_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_page_organizer_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_typewriter_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_watermark_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_viewer.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/archive/archive_viewer.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/audio_processor.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/equalizer_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/audio_tag_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/audio_trim_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/cover_selection_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/equalizer_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/audio/audio_processor.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/audio/equalizer_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_tag_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_trim_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/audio/cover_selection_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/audio/equalizer_widget.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/media/media_viewer.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/media/mpv_video_widget.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/media/stereo_oscilloscope_widget.cpp

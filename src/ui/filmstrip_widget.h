@@ -56,6 +56,13 @@ public:
      */
     bool hasFiles() const;
 
+    /**
+     * @brief Updates thumbnail icon for a single file item in the filmstrip.
+     * @param filePath Absolute path of the file.
+     * @param image Updated thumbnail image.
+     */
+    void updateThumbnail(const QString &filePath, const QImage &image);
+
 signals:
     /**
      * @brief Emitted when the user clicks or selects a thumbnail in the filmstrip.

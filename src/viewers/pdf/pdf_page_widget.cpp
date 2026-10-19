@@ -5,11 +5,11 @@
 
 #include "pdf_page_widget.h"
 #include "pdf_canvas_tools.h"
-#include "../../core/theme_manager.h"
-#include "../../ui/pdf_typewriter_dialog.h"
-#include "../../ui/pdf_watermark_dialog.h"
-#include "../../ui/pdf_signature_dialog.h"
-#include "../../ui/pdf_image_dialog.h"
+#include "theme_manager.h"
+#include "pdf_typewriter_dialog.h"
+#include "pdf_watermark_dialog.h"
+#include "pdf_signature_dialog.h"
+#include "pdf_image_dialog.h"
 #include <poppler/qt6/poppler-qt6.h>
 #include <poppler/qt6/poppler-form.h>
 
@@ -20,6 +20,7 @@
 #include <QMenu>
 #include <QApplication>
 #include <QClipboard>
+#include <QSettings>
 #include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -57,6 +58,10 @@ PdfPageWidget::PdfPageWidget(QWidget *parent)
     setAttribute(Qt::WA_OpaquePaintEvent, true);
     setFocusPolicy(Qt::StrongFocus);
     setCursor(Qt::IBeamCursor);
+
+    // Initialize hardware profile page cache limit
+    QSettings settings(QStringLiteral("Bubez"), QStringLiteral("BubezView"));
+    m_maxCachePages = (settings.value(QStringLiteral("hardware_profile"), QStringLiteral("balanced")).toString() == QStringLiteral("desktop")) ? 20 : 8;
 
     // Initialize 8-handle transformation box overlay
     m_transformBox = new PdfTransformBox(this);
@@ -339,6 +344,8 @@ void PdfPageWidget::invalidatePages()
 
 void PdfPageWidget::updateTheme()
 {
+    QSettings settings(QStringLiteral("Bubez"), QStringLiteral("BubezView"));
+    m_maxCachePages = (settings.value(QStringLiteral("hardware_profile"), QStringLiteral("balanced")).toString() == QStringLiteral("desktop")) ? 20 : 8;
     update();
 }
 
@@ -1723,10 +1730,8 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
                     px = QPixmap::fromImage(img);
                     m_pageCache.insert(pl.pageIndex, px);
 
-                    // Keep cache bounded (20 pages in HighPerformance, 8 in Balanced)
-                    QSettings settings("Bubez", "BubezView");
-                    int maxCachePages = (settings.value("hardware_profile", "balanced").toString() == "desktop") ? 20 : 8;
-                    if (m_pageCache.size() > maxCachePages) {
+                    // Keep cache bounded using cached hardware profile setting
+                    if (m_pageCache.size() > m_maxCachePages) {
                         int furthest = pl.pageIndex;
                         int maxDist = -1;
                         for (auto it = m_pageCache.begin(); it != m_pageCache.end(); ++it) {

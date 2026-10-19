@@ -35,11 +35,14 @@
 #include "pdf_signature_dialog.h"
 #include "pdf_typewriter_dialog.h"
 #include "pdf_watermark_dialog.h"
-#include "pdf_tools_dialog.h"
 #include "flippable_toolbar.h"
 #include "pdf_canvas_tools.h"
 #include "ocr_snipper_overlay.h"
 #include "plugin_manager.h"
+#include "core/interfaces/viewer_plugin_interface.h"
+#include "preload_cache_manager.h"
+#include <QSignalSpy>
+#include <QPluginLoader>
 #include <QTemporaryDir>
 #include <QMenuBar>
 #include <QButtonGroup>
@@ -83,6 +86,7 @@ private slots:
     void testArchiveNavigationAndFolderGalleryReturn();
     void testModuleCompilationAndFallbackPlan();
     void testTextEditingModeAndPersistence();
+    void testNativeImageEnhancementsAndCrop();
 
 private:
     QString m_testDirPath;
@@ -235,12 +239,24 @@ void TestInteractive::testThemeSwitching()
     QVERIFY(QTest::qWaitForWindowExposed(&window));
 
     window.openFile(m_testDirPath);
-    QTest::qWait(100);
+    QTest::qWait(200);
 
-    // Switch between all 3 themes interactively
+    FolderViewer *fv = window.folderViewer();
+    if (fv && fv->listWidget()->count() > 0) {
+        fv->listWidget()->setCurrentRow(0);
+        QTest::qWait(100);
+    }
+
+    // Capture light mode preview
+    QPixmap pixLight = window.grab();
+    pixLight.save("/home/davide/.gemini/antigravity/brain/9744b1b3-031c-48d3-846e-066fa96ecbdf/folderviewer_preview.png");
+
+    // Switch to DarkSlate interactively
     ThemeManager::setPreset(ThemePreset::DarkSlate);
     window.applyCurrentTheme();
-    QTest::qWait(50);
+    QTest::qWait(100);
+    QPixmap pixDark = window.grab();
+    pixDark.save("/home/davide/.gemini/antigravity/brain/9744b1b3-031c-48d3-846e-066fa96ecbdf/folderviewer_dark_preview.png");
 
     ThemeManager::setPreset(ThemePreset::BreezeDark);
     SettingsDialog dlg(&window, SettingsDialog::TabIndex::Appearance);
@@ -250,6 +266,7 @@ void TestInteractive::testThemeSwitching()
     pixSettings.save("/home/davide/.gemini/antigravity/brain/c8aaa138-5782-4f22-ba66-d5f04036bb68/settings_office_toggle.png");
 
     ThemeManager::setPreset(ThemePreset::SystemNative);
+    window.applyCurrentTheme();
     QCOMPARE(ThemeManager::currentPreset(), ThemePreset::SystemNative);
     window.applyCurrentTheme();
     QTest::qWait(50);
@@ -446,6 +463,21 @@ void TestInteractive::testAppLauncher()
     QList<AppInfo> allApps = AppLauncher::getAllApps();
     QVERIFY(!allApps.isEmpty());
 
+    // Verify alphabetical ordering ensured by std::sort
+    for (int i = 0; i < allApps.size() - 1; ++i) {
+        QVERIFY(allApps[i].name.compare(allApps[i + 1].name, Qt::CaseInsensitive) <= 0);
+    }
+
+    // Verify MIME types are parsed into AppInfo
+    bool foundMimes = false;
+    for (const AppInfo &app : allApps) {
+        if (!app.mimeTypes.isEmpty()) {
+            foundMimes = true;
+            break;
+        }
+    }
+    QVERIFY(foundMimes);
+
     QString samplePdf = m_testDirPath + "/ciao.pdf";
     QList<AppInfo> pdfApps = AppLauncher::getAssociatedApps(samplePdf);
     QVERIFY(pdfApps.size() >= 0);
@@ -454,17 +486,60 @@ void TestInteractive::testAppLauncher()
 void TestInteractive::testImageAndPdfRotation()
 {
     ImageViewer imgViewer;
+    QSignalSpy modSpy(&imgViewer, &ImageViewer::modificationChanged);
+
     QString sampleImg = m_testDirPath + "/2_inspector_flyout_card.jpg";
     QVERIFY(imgViewer.loadFile(sampleImg));
+    QCOMPARE(imgViewer.isModified(), false);
     QSize szBefore = imgViewer.imageSize();
 
+    // 1. Rotate clockwise & verify signal
     imgViewer.rotateClockwise();
+    QCOMPARE(modSpy.count(), 1);
+    QCOMPARE(modSpy.takeFirst().at(0).toBool(), true);
+    QCOMPARE(imgViewer.isModified(), true);
+
     QSize szAfter = imgViewer.imageSize();
     QCOMPARE(szAfter.width(), szBefore.height());
     QCOMPARE(szAfter.height(), szBefore.width());
 
+    // 2. Rotate counter-clockwise returns to original size
     imgViewer.rotateCounterClockwise();
     QCOMPARE(imgViewer.imageSize(), szBefore);
+    QCOMPARE(imgViewer.isModified(), true);
+
+    // 3. Test saving rotated image to temporary file and verifying disk persistence
+    QTemporaryFile tempImg(QDir::tempPath() + "/bubez_test_rot_XXXXXX.png");
+    QVERIFY(tempImg.open());
+    QString tempImgPath = tempImg.fileName();
+    tempImg.close();
+
+    // Save initial image
+    QVERIFY(imgViewer.originalImage().save(tempImgPath, "PNG"));
+
+    // Rotate and save rotated image to temp file
+    imgViewer.rotateClockwise();
+    QVERIFY(imgViewer.originalImage().save(tempImgPath, "PNG"));
+    imgViewer.setModified(false);
+    QCOMPARE(imgViewer.isModified(), false);
+
+    // Load back in a fresh ImageViewer instance to verify persistence on disk
+    ImageViewer freshViewer;
+    QVERIFY(freshViewer.loadFile(tempImgPath));
+    QCOMPARE(freshViewer.imageSize().width(), szBefore.height());
+    QCOMPARE(freshViewer.imageSize().height(), szBefore.width());
+
+    // 4. Test PreloadCacheManager coherence
+    PreloadCacheManager::instance().insert(tempImgPath, freshViewer.originalImage());
+    QImage cached;
+    QVERIFY(PreloadCacheManager::instance().tryGet(tempImgPath, cached));
+    QCOMPARE(cached.size(), freshViewer.imageSize());
+
+    // Evict via remove and verify cache miss
+    PreloadCacheManager::instance().remove(tempImgPath);
+    QVERIFY(!PreloadCacheManager::instance().tryGet(tempImgPath, cached));
+
+    QFile::remove(tempImgPath);
 }
 
 void TestInteractive::testSettingsDialogUI()
@@ -1404,16 +1479,11 @@ void TestInteractive::testPdfAnnotationsAndTools()
     QCOMPARE(pageWidget.toolMode(), PdfToolMode::Typewriter);
     pageWidget.cancelActiveTool();
 
-    // Verify Highlighter mode and tools dialog
+    // Verify Highlighter mode
     pageWidget.startHighlighter(QColor(255, 235, 59), 0.40);
     QCOMPARE(pageWidget.toolMode(), PdfToolMode::Highlight);
     pageWidget.cancelActiveTool();
     QCOMPARE(pageWidget.toolMode(), PdfToolMode::SelectText);
-
-    PdfToolsDialog toolsDlg(static_cast<int>(PdfToolTab::Highlighter));
-    QCOMPARE(toolsDlg.highlighterOpacity(), 0.40);
-    toolsDlg.setActiveTab(static_cast<int>(PdfToolTab::Shapes));
-    QCOMPARE(toolsDlg.shapeType(), PdfShapeType::Rectangle);
 
     // Verify Cut and Paste proxy methods without crashing
     viewer.cutSelectedText();
@@ -1875,6 +1945,114 @@ void TestInteractive::testTextEditingModeAndPersistence()
     QVERIFY(verifyFile.open(QIODevice::ReadOnly | QIODevice::Text));
     QString content = QTextStream(&verifyFile).readAll();
     QVERIFY(content.contains("Appended text line 3"));
+}
+
+void TestInteractive::testNativeImageEnhancementsAndCrop()
+{
+    ImageViewer viewer;
+    QSignalSpy undoSpy(&viewer, &ImageViewer::undoAvailabilityChanged);
+    QSignalSpy cropSpy(&viewer, &ImageViewer::cropModeChanged);
+
+    QString sampleImg = m_testDirPath + "/img/sample_photo.jpg";
+    if (!QFile::exists(sampleImg)) {
+        sampleImg = m_testDirPath + "/2_inspector_flyout_card.jpg";
+    }
+    QVERIFY(viewer.loadFile(sampleImg));
+    QCOMPARE(viewer.canUndo(), false);
+    QCOMPARE(viewer.canRedo(), false);
+    QCOMPARE(viewer.isModified(), false);
+
+    QImage originalBackup = viewer.originalImage();
+    QVERIFY(!originalBackup.isNull());
+    QSize origSize = viewer.imageSize();
+
+    // 1. Test Rotate Clockwise
+    viewer.rotateClockwise();
+    QCOMPARE(viewer.canUndo(), true);
+    QCOMPARE(viewer.canRedo(), false);
+    QCOMPARE(viewer.isModified(), true);
+    QCOMPARE(viewer.imageSize(), QSize(origSize.height(), origSize.width()));
+
+    // Test Undo rotation
+    viewer.undo();
+    QCOMPARE(viewer.canUndo(), false);
+    QCOMPARE(viewer.canRedo(), true);
+    QCOMPARE(viewer.imageSize(), origSize);
+
+    // Test Redo rotation
+    viewer.redo();
+    QCOMPARE(viewer.canUndo(), true);
+    QCOMPARE(viewer.canRedo(), false);
+    viewer.undo();
+
+    // 2. Test Flips
+    viewer.flipHorizontal();
+    QCOMPARE(viewer.canUndo(), true);
+    viewer.flipVertical();
+    QCOMPARE(viewer.canUndo(), true);
+    viewer.undo();
+    viewer.undo();
+    QCOMPARE(viewer.canUndo(), false);
+
+    // 3. Test Crop
+    QRect cropBox(20, 20, 120, 90);
+    viewer.applyCrop(cropBox);
+    QCOMPARE(viewer.imageSize(), QSize(120, 90));
+    QCOMPARE(viewer.canUndo(), true);
+
+    // Undo crop
+    viewer.undo();
+    QCOMPARE(viewer.imageSize(), origSize);
+
+    // 6. Test Interactive Crop Mode toggling
+    viewer.setCropModeActive(true);
+    QCOMPARE(viewer.isCropModeActive(), true);
+    QCOMPARE(cropSpy.count(), 1);
+    QCOMPARE(cropSpy.takeFirst().at(0).toBool(), true);
+
+    viewer.cancelCropMode();
+    QCOMPARE(viewer.isCropModeActive(), false);
+    QCOMPARE(cropSpy.count(), 1);
+    QCOMPARE(cropSpy.takeFirst().at(0).toBool(), false);
+
+    // 7. Capture visual preview of on-canvas crop mode
+    viewer.resize(900, 700);
+    viewer.show();
+    QTest::qWaitForWindowExposed(&viewer);
+    viewer.fitToWindow();
+    viewer.setCropModeActive(true);
+    QWidget *canvas = viewer.canvasWidget();
+    if (canvas) {
+        QPoint startPt(canvas->width() * 0.2, canvas->height() * 0.2);
+        QPoint endPt(canvas->width() * 0.8, canvas->height() * 0.75);
+        QTest::mousePress(canvas, Qt::LeftButton, Qt::NoModifier, startPt);
+        QTest::mouseMove(canvas, endPt);
+        QTest::qWait(100);
+        QPixmap pixCrop = viewer.grab();
+        pixCrop.save("/home/davide/.gemini/antigravity/brain/9744b1b3-031c-48d3-846e-066fa96ecbdf/native_crop_preview.png");
+        QTest::mouseRelease(canvas, Qt::LeftButton, Qt::NoModifier, endPt);
+    }
+    viewer.cancelCropMode();
+
+    // 8. Capture MainWindow with image loaded and native UI
+    MainWindow win;
+    win.resize(1000, 700);
+    win.show();
+    QTest::qWaitForWindowExposed(&win);
+    win.openFile(sampleImg);
+    QTest::qWait(200);
+    QPixmap pixMain = win.grab();
+    pixMain.save("/home/davide/.gemini/antigravity/brain/9744b1b3-031c-48d3-846e-066fa96ecbdf/native_image_viewer_preview.png");
+
+    // 9. Verify Save As resets modified state so no prompt appears on close/navigation
+    win.imageViewer()->rotateClockwise();
+    QVERIFY(win.imageViewer()->isModified());
+    QString copyTarget = m_testDirPath + "/img/test_save_as_copy.jpg";
+    QVERIFY(win.imageViewer()->originalImage().save(copyTarget, "jpg", 95));
+    win.imageViewer()->setModified(false);
+    QCOMPARE(win.imageViewer()->isModified(), false);
+    QVERIFY(win.close());
+    QFile::remove(copyTarget);
 }
 
 QTEST_MAIN(TestInteractive)

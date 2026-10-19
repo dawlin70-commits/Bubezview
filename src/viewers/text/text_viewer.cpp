@@ -6,7 +6,7 @@
 #include "text_viewer.h"
 #include "line_number_area.h"
 #include "syntax_highlighter.h"
-#include "../../core/theme_manager.h"
+#include "theme_manager.h"
 #include <QFile>
 #include <QTextStream>
 #include <QFontDatabase>
@@ -152,10 +152,9 @@ bool TextViewer::saveFile(const QString &targetPath)
     out << toPlainText();
     file.close();
 
-    if (targetPath.isEmpty() || targetPath == m_currentFilePath) {
-        document()->setModified(false);
-        emit modificationChanged(false);
-    }
+    m_currentFilePath = path;
+    document()->setModified(false);
+    emit modificationChanged(false);
     return true;
 }
 

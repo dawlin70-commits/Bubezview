@@ -10,6 +10,12 @@ namespace VectorIcons {
 
 enum class Type {
     Folder,
+    FolderDownloads,
+    FolderPictures,
+    FolderDocuments,
+    FolderMusic,
+    FolderVideos,
+    FolderDesktop,
     Code,
     Zip,
     Image,
@@ -20,220 +26,376 @@ enum class Type {
     Text
 };
 
+/**
+ * @brief Generates high-DPI crisp vector icons with rich colors, subtle depth, and crisp glyphs.
+ * @param type Icon category or specific folder type.
+ * @param customColor Optional color override for tinting.
+ * @return Scalable QIcon containing the rendered 96x96 vector pixmap.
+ */
 inline QIcon createIcon(Type type, const QColor &customColor = QColor()) {
-    QPixmap pix(64, 64);
+    QPixmap pix(96, 96);
     pix.fill(Qt::transparent);
 
     QPainter p(&pix);
     p.setRenderHint(QPainter::Antialiasing);
-    QPen pen(customColor.isValid() ? customColor : QColor("#9da4af"), 1.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-    p.setPen(pen);
+    p.setRenderHint(QPainter::SmoothPixmapTransform);
 
     switch (type) {
-    case Type::Folder: {
-        // Vibrant modern folder with tab and body
+    case Type::Folder:
+    case Type::FolderDownloads:
+    case Type::FolderPictures:
+    case Type::FolderDocuments:
+    case Type::FolderMusic:
+    case Type::FolderVideos:
+    case Type::FolderDesktop: {
+        // Vibrant modern folder with 3D depth, tab, peeking sheet, and badge glyph
         QColor tabColor = customColor.isValid() ? customColor : QColor("#38bdf8");
-        QColor bodyColor = customColor.isValid() ? customColor.lighter(110) : QColor("#0284c7");
+        QColor backColor = customColor.isValid() ? customColor.darker(140) : QColor("#0369a1");
+        QColor frontTop = customColor.isValid() ? customColor.lighter(108) : QColor("#38bdf8");
+        QColor frontBottom = customColor.isValid() ? customColor : QColor("#0284c7");
 
-        // Tab
+        // 1. Top Folder Tab
         QPainterPath tab;
-        tab.moveTo(6, 20);
-        tab.lineTo(6, 15);
-        tab.quadTo(6, 12, 10, 12);
-        tab.lineTo(26, 12);
-        tab.quadTo(30, 12, 33, 16);
-        tab.lineTo(36, 20);
+        tab.moveTo(10, 30);
+        tab.lineTo(10, 21);
+        tab.quadTo(10, 16, 16, 16);
+        tab.lineTo(40, 16);
+        tab.quadTo(46, 16, 50, 22);
+        tab.lineTo(55, 30);
         tab.closeSubpath();
         p.setPen(Qt::NoPen);
         p.setBrush(tabColor);
         p.drawPath(tab);
 
-        // Back folder body
-        p.setBrush(QColor("#0369a1"));
-        p.drawRoundedRect(6, 18, 52, 38, 5, 5);
+        // 2. Back Body Plate
+        p.setBrush(backColor);
+        p.drawRoundedRect(QRectF(10, 24, 76, 56), 7, 7);
 
-        // Front folder body (folded front sheet)
-        p.setBrush(bodyColor);
+        // 3. Peeking Document Sheet Inside Folder (gives physical depth)
+        p.setBrush(QColor("#f8fafc"));
+        p.drawRoundedRect(QRectF(20, 18, 56, 30), 4, 4);
+        p.setPen(QPen(QColor("#cbd5e1"), 1.2));
+        p.drawLine(26, 25, 48, 25);
+        p.drawLine(26, 31, 62, 31);
+
+        // 4. Front Folder Flap (with gradient fill and subtle top-edge highlight)
+        p.setPen(Qt::NoPen);
+        QLinearGradient flapGrad(0, 34, 0, 84);
+        flapGrad.setColorAt(0.0, frontTop);
+        flapGrad.setColorAt(1.0, frontBottom);
+        p.setBrush(flapGrad);
+
         QPainterPath front;
-        front.moveTo(6, 25);
-        front.lineTo(58, 25);
-        front.lineTo(54, 56);
-        front.quadTo(53, 58, 50, 58);
-        front.lineTo(14, 58);
-        front.quadTo(11, 58, 10, 56);
-        front.lineTo(6, 25);
+        front.moveTo(10, 34);
+        front.lineTo(86, 34);
+        front.lineTo(81, 79);
+        front.quadTo(80, 83, 75, 83);
+        front.lineTo(21, 83);
+        front.quadTo(16, 83, 15, 79);
+        front.lineTo(10, 34);
         p.drawPath(front);
+
+        // Subtle specular highlight line along top flap edge
+        p.setPen(QPen(QColor(255, 255, 255, 120), 1.4));
+        p.drawLine(11, 35, 85, 35);
+
+        // 5. Specialized Front Glyphs for System Folders
+        p.setPen(QPen(Qt::white, 2.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(Qt::NoBrush);
+
+        if (type == Type::FolderDownloads) {
+            // Arrow pointing down into tray
+            p.drawLine(48, 48, 48, 64);
+            p.drawLine(42, 58, 48, 64);
+            p.drawLine(54, 58, 48, 64);
+            p.drawPolyline(QPolygonF() << QPointF(38, 62) << QPointF(38, 69) << QPointF(58, 69) << QPointF(58, 62));
+        } else if (type == Type::FolderPictures) {
+            // Landscape sun and mountain peaks
+            p.setBrush(Qt::white);
+            p.setPen(Qt::NoPen);
+            p.drawEllipse(QRectF(52, 47, 7, 7));
+            p.setPen(QPen(Qt::white, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            p.setBrush(Qt::NoBrush);
+            p.drawPolyline(QPolygonF() << QPointF(36, 68) << QPointF(45, 55) << QPointF(52, 64) << QPointF(56, 58) << QPointF(62, 68));
+        } else if (type == Type::FolderDocuments) {
+            // 3 clean document lines
+            p.drawLine(38, 51, 58, 51);
+            p.drawLine(38, 58, 58, 58);
+            p.drawLine(38, 65, 50, 65);
+        } else if (type == Type::FolderMusic) {
+            // Beamed musical notes
+            p.setBrush(Qt::white);
+            p.drawEllipse(QRectF(38, 62, 7, 5));
+            p.drawEllipse(QRectF(52, 57, 7, 5));
+            p.drawLine(44, 63, 44, 48);
+            p.drawLine(58, 58, 58, 43);
+            p.setPen(QPen(Qt::white, 2.6, Qt::SolidLine, Qt::RoundCap));
+            p.drawLine(44, 48, 58, 43);
+        } else if (type == Type::FolderVideos) {
+            // Play triangle badge
+            p.setBrush(QColor(255, 255, 255, 220));
+            p.setPen(Qt::NoPen);
+            QPolygonF tri;
+            tri << QPointF(44, 50) << QPointF(56, 58) << QPointF(44, 66);
+            p.drawPolygon(tri);
+        } else if (type == Type::FolderDesktop) {
+            // Monitor screen
+            p.drawRoundedRect(QRectF(36, 48, 24, 16), 2, 2);
+            p.drawLine(48, 64, 48, 69);
+            p.drawLine(42, 69, 54, 69);
+        }
         break;
     }
     case Type::Zip: {
         // Vibrant modern archive package/folder in warm amber with zipper
         QColor tabColor = customColor.isValid() ? customColor : QColor("#f59e0b");
-        QColor bodyColor = customColor.isValid() ? customColor.lighter(110) : QColor("#d97706");
+        QColor bodyColor = customColor.isValid() ? customColor.lighter(108) : QColor("#d97706");
         QColor backColor = QColor("#b45309");
 
         // Tab
         QPainterPath tab;
-        tab.moveTo(6, 20);
-        tab.lineTo(6, 15);
-        tab.quadTo(6, 12, 10, 12);
-        tab.lineTo(26, 12);
-        tab.quadTo(30, 12, 33, 16);
-        tab.lineTo(36, 20);
+        tab.moveTo(10, 30);
+        tab.lineTo(10, 21);
+        tab.quadTo(10, 16, 16, 16);
+        tab.lineTo(40, 16);
+        tab.quadTo(46, 16, 50, 22);
+        tab.lineTo(55, 30);
         tab.closeSubpath();
         p.setPen(Qt::NoPen);
         p.setBrush(tabColor);
         p.drawPath(tab);
 
-        // Back folder body
+        // Back body
         p.setBrush(backColor);
-        p.drawRoundedRect(6, 18, 52, 38, 5, 5);
+        p.drawRoundedRect(QRectF(10, 24, 76, 56), 7, 7);
 
-        // Front folder body
+        // Front flap
         p.setBrush(bodyColor);
         QPainterPath front;
-        front.moveTo(6, 25);
-        front.lineTo(58, 25);
-        front.lineTo(54, 56);
-        front.quadTo(53, 58, 50, 58);
-        front.lineTo(14, 58);
-        front.quadTo(11, 58, 10, 56);
-        front.lineTo(6, 25);
+        front.moveTo(10, 34);
+        front.lineTo(86, 34);
+        front.lineTo(81, 79);
+        front.quadTo(80, 83, 75, 83);
+        front.lineTo(21, 83);
+        front.quadTo(16, 83, 15, 79);
+        front.lineTo(10, 34);
         p.drawPath(front);
 
         // Vertical zipper band down center
         p.setPen(Qt::NoPen);
         p.setBrush(QColor("#334155"));
-        p.drawRoundedRect(QRectF(29, 18, 6, 40), 1.5, 1.5);
+        p.drawRoundedRect(QRectF(44, 24, 8, 58), 2.0, 2.0);
 
         // Zipper teeth (alternating gold/silver marks)
-        p.setPen(QPen(QColor("#fbbf24"), 1.2));
-        for (int y = 20; y <= 54; y += 4) {
-            p.drawLine(29, y, 32, y);
-            p.drawLine(32, y + 2, 35, y + 2);
+        p.setPen(QPen(QColor("#fbbf24"), 1.6));
+        for (int y = 26; y <= 76; y += 5) {
+            p.drawLine(44, y, 48, y);
+            p.drawLine(48, y + 2, 52, y + 2);
         }
 
         // Zipper pull slider box
         p.setPen(QPen(QColor("#475569"), 1.0));
         p.setBrush(QColor("#cbd5e1"));
-        p.drawRoundedRect(QRectF(28, 34, 8, 8), 1.5, 1.5);
+        p.drawRoundedRect(QRectF(43, 46, 10, 11), 2.0, 2.0);
 
         // Zipper pull tab
         QPainterPath pull;
-        pull.moveTo(30, 42);
-        pull.lineTo(34, 42);
-        pull.lineTo(35, 51);
-        pull.quadTo(32, 53, 29, 51);
+        pull.moveTo(45, 57);
+        pull.lineTo(51, 57);
+        pull.lineTo(53, 68);
+        pull.quadTo(48, 71, 43, 68);
         pull.closeSubpath();
         p.setBrush(QColor("#94a3b8"));
         p.drawPath(pull);
         p.setBrush(QColor("#334155"));
-        p.drawEllipse(QRectF(31, 46, 2, 2));
+        p.drawEllipse(QRectF(47, 62, 3, 3));
         break;
     }
-    default: {
-        // Scaled drawing from 24x24 reference box to 64x64 canvas
-        p.save();
-        double scale = 64.0 / 24.0;
-        p.scale(scale, scale);
-        QPen scaledPen(customColor.isValid() ? customColor : QColor("#9da4af"), 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        p.setPen(scaledPen);
+    case Type::Code: {
+        // Dark slate card with folded corner and vibrant syntax brackets
+        QRectF card(16, 12, 64, 72);
+        QLinearGradient grad(0, 12, 0, 84);
+        grad.setColorAt(0.0, QColor("#1e293b"));
+        grad.setColorAt(1.0, QColor("#0f172a"));
+        p.setPen(QPen(QColor("#334155"), 1.5));
+        p.setBrush(grad);
+        p.drawRoundedRect(card, 8, 8);
 
-        switch (type) {
-        case Type::Code: {
-            // <
-            QPainterPath p1;
-            p1.moveTo(8, 8);
-            p1.lineTo(4, 12);
-            p1.lineTo(8, 16);
-            p.strokePath(p1, scaledPen);
-            // /
-            p.drawLine(14, 7, 10, 17);
-            // >
-            QPainterPath p2;
-            p2.moveTo(16, 8);
-            p2.lineTo(20, 12);
-            p2.lineTo(16, 16);
-            p.strokePath(p2, scaledPen);
-            break;
-        }
-        case Type::Image: {
-            QPainterPath path;
-            path.addRoundedRect(QRectF(4, 5, 16, 14), 2, 2);
-            p.strokePath(path, scaledPen);
-            p.drawEllipse(7, 8, 2, 2);
-            QPainterPath m;
-            m.moveTo(6, 17);
-            m.lineTo(10, 12);
-            m.lineTo(13, 15);
-            m.lineTo(16, 11);
-            m.lineTo(18, 15);
-            p.strokePath(m, scaledPen);
-            break;
-        }
-        case Type::Media: {
-            p.drawEllipse(6, 13, 5, 4);
-            p.drawLine(11, 15, 11, 6);
-            p.drawLine(11, 6, 17, 4);
-            p.drawLine(17, 4, 17, 13);
-            p.drawEllipse(12, 11, 5, 4);
-            break;
-        }
-        case Type::Pdf: {
-            QPainterPath path;
-            path.moveTo(5, 4);
-            path.lineTo(14, 4);
-            path.lineTo(19, 9);
-            path.lineTo(19, 20);
-            path.lineTo(5, 20);
-            path.closeSubpath();
-            p.strokePath(path, scaledPen);
-            p.drawLine(14, 4, 14, 9);
-            p.drawLine(14, 9, 19, 9);
-            QFont f = p.font();
-            f.setPixelSize(8);
-            f.setBold(true);
-            p.setFont(f);
-            p.drawText(QRect(5, 11, 14, 8), Qt::AlignCenter, "PDF");
-            break;
-        }
-        case Type::Office: {
-            QPainterPath path;
-            path.moveTo(5, 4);
-            path.lineTo(14, 4);
-            path.lineTo(19, 9);
-            path.lineTo(19, 20);
-            path.lineTo(5, 20);
-            path.closeSubpath();
-            p.strokePath(path, scaledPen);
-            p.drawLine(14, 4, 14, 9);
-            p.drawLine(14, 9, 19, 9);
-            p.drawLine(8, 12, 16, 12);
-            p.drawLine(8, 15, 16, 15);
-            p.drawLine(8, 18, 13, 18);
-            break;
-        }
-        case Type::Text:
-        case Type::Document:
-        default: {
-            QPainterPath path;
-            path.moveTo(5, 4);
-            path.lineTo(14, 4);
-            path.lineTo(19, 9);
-            path.lineTo(19, 20);
-            path.lineTo(5, 20);
-            path.closeSubpath();
-            p.strokePath(path, scaledPen);
-            p.drawLine(14, 4, 14, 9);
-            p.drawLine(14, 9, 19, 9);
-            p.drawLine(8, 13, 16, 13);
-            p.drawLine(8, 16, 14, 16);
-            break;
-        }
-        }
-        p.restore();
+        // Folded top-right corner
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#475569"));
+        QPolygonF fold;
+        fold << QPointF(64, 12) << QPointF(80, 28) << QPointF(64, 28);
+        p.drawPolygon(fold);
+
+        // Syntax code symbol: < / >
+        p.setPen(QPen(QColor("#38bdf8"), 2.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(Qt::NoBrush);
+        // <
+        p.drawLine(34, 43, 27, 49);
+        p.drawLine(27, 49, 34, 55);
+        // /
+        p.drawLine(46, 41, 41, 57);
+        // >
+        p.drawLine(53, 43, 60, 49);
+        p.drawLine(60, 49, 53, 55);
+
+        // Colored syntax lines below
+        p.setPen(QPen(QColor("#10b981"), 2.2, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(27, 67, 45, 67);
+        p.setPen(QPen(QColor("#f59e0b"), 2.2, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(49, 67, 65, 67);
+        break;
+    }
+    case Type::Pdf: {
+        // Crimson document card with bold white "PDF" pill
+        QRectF card(16, 12, 64, 72);
+        QLinearGradient grad(0, 12, 0, 84);
+        grad.setColorAt(0.0, QColor("#ef4444"));
+        grad.setColorAt(1.0, QColor("#b91c1c"));
+        p.setPen(QPen(QColor("#dc2626"), 1.5));
+        p.setBrush(grad);
+        p.drawRoundedRect(card, 8, 8);
+
+        // Folded top-right corner
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#fca5a5"));
+        QPolygonF fold;
+        fold << QPointF(64, 12) << QPointF(80, 28) << QPointF(64, 28);
+        p.drawPolygon(fold);
+
+        // White pill badge
+        p.setBrush(Qt::white);
+        p.drawRoundedRect(QRectF(26, 42, 44, 20), 5, 5);
+
+        // PDF text
+        p.setPen(QColor("#dc2626"));
+        QFont f = p.font();
+        f.setPointSize(9);
+        f.setBold(true);
+        p.setFont(f);
+        p.drawText(QRectF(26, 42, 44, 20), Qt::AlignCenter, "PDF");
+        break;
+    }
+    case Type::Image: {
+        // Violet/indigo card with mountain and sun landscape
+        QRectF card(16, 12, 64, 72);
+        QLinearGradient grad(0, 12, 0, 84);
+        grad.setColorAt(0.0, QColor("#8b5cf6"));
+        grad.setColorAt(1.0, QColor("#6366f1"));
+        p.setPen(QPen(QColor("#7c3aed"), 1.5));
+        p.setBrush(grad);
+        p.drawRoundedRect(card, 8, 8);
+
+        // Folded top-right corner
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#c4b5fd"));
+        QPolygonF fold;
+        fold << QPointF(64, 12) << QPointF(80, 28) << QPointF(64, 28);
+        p.drawPolygon(fold);
+
+        // Image Frame
+        p.setBrush(QColor("#312e81"));
+        p.setPen(QPen(QColor("#a78bfa"), 1.2));
+        p.drawRoundedRect(QRectF(26, 36, 44, 34), 4, 4);
+
+        // Sun
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#fbbf24"));
+        p.drawEllipse(QRectF(53, 41, 7, 7));
+
+        // Mountain Peaks
+        p.setBrush(QColor("#c4b5fd"));
+        QPolygonF m1;
+        m1 << QPointF(29, 68) << QPointF(40, 52) << QPointF(48, 62) << QPointF(53, 56) << QPointF(63, 68);
+        p.drawPolygon(m1);
+        break;
+    }
+    case Type::Media: {
+        // Rose/magenta card with sound notes
+        QRectF card(16, 12, 64, 72);
+        QLinearGradient grad(0, 12, 0, 84);
+        grad.setColorAt(0.0, QColor("#ec4899"));
+        grad.setColorAt(1.0, QColor("#be185d"));
+        p.setPen(QPen(QColor("#db2777"), 1.5));
+        p.setBrush(grad);
+        p.drawRoundedRect(card, 8, 8);
+
+        // Folded top-right corner
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#fbcfe8"));
+        QPolygonF fold;
+        fold << QPointF(64, 12) << QPointF(80, 28) << QPointF(64, 28);
+        p.drawPolygon(fold);
+
+        // Musical note
+        p.setBrush(Qt::white);
+        p.setPen(QPen(Qt::white, 2.2, Qt::SolidLine, Qt::RoundCap));
+        p.drawEllipse(QRectF(34, 58, 8, 6));
+        p.drawEllipse(QRectF(50, 52, 8, 6));
+        p.drawLine(41, 59, 41, 42);
+        p.drawLine(57, 53, 57, 36);
+        p.setPen(QPen(Qt::white, 2.8, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(41, 42, 57, 36);
+        break;
+    }
+    case Type::Office: {
+        // Emerald/teal card with grid table
+        QRectF card(16, 12, 64, 72);
+        QLinearGradient grad(0, 12, 0, 84);
+        grad.setColorAt(0.0, QColor("#10b981"));
+        grad.setColorAt(1.0, QColor("#047857"));
+        p.setPen(QPen(QColor("#059669"), 1.5));
+        p.setBrush(grad);
+        p.drawRoundedRect(card, 8, 8);
+
+        // Folded corner
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#a7f3d0"));
+        QPolygonF fold;
+        fold << QPointF(64, 12) << QPointF(80, 28) << QPointF(64, 28);
+        p.drawPolygon(fold);
+
+        // Table grid
+        p.setPen(QPen(Qt::white, 1.4));
+        p.setBrush(QColor(255, 255, 255, 30));
+        p.drawRoundedRect(QRectF(26, 38, 44, 30), 3, 3);
+        p.drawLine(26, 48, 70, 48);
+        p.drawLine(26, 58, 70, 58);
+        p.drawLine(44, 38, 44, 68);
+        break;
+    }
+    case Type::Text:
+    case Type::Document:
+    default: {
+        // Document sheet with folded corner and clean text lines
+        QRectF card(16, 12, 64, 72);
+        QLinearGradient grad(0, 12, 0, 84);
+        grad.setColorAt(0.0, QColor("#262a33"));
+        grad.setColorAt(1.0, QColor("#1e2229"));
+        p.setPen(QPen(QColor("#3b4252"), 1.5));
+        p.setBrush(grad);
+        p.drawRoundedRect(card, 8, 8);
+
+        // Folded top-right corner
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#64748b"));
+        QPolygonF fold;
+        fold << QPointF(64, 12) << QPointF(80, 28) << QPointF(64, 28);
+        p.drawPolygon(fold);
+
+        // Text lines
+        p.setPen(QPen(QColor("#38bdf8"), 2.4, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(28, 38, 46, 38);
+
+        p.setPen(QPen(QColor("#94a3b8"), 2.0, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(28, 48, 64, 48);
+        p.drawLine(28, 56, 60, 56);
+        p.drawLine(28, 64, 44, 64);
         break;
     }
     }
+
     p.end();
     return QIcon(pix);
 }

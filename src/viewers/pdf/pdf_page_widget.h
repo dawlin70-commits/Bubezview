@@ -212,13 +212,13 @@ public:
 
     /**
      * @brief Activates the Watermark tool with the specified watermark text.
-     * @param text Watermark string (e.g. "COPIA", "BOZZA").
+     * @param text Watermark string (e.g. "COPY", "DRAFT").
      * @param angle Rotation angle in degrees.
      * @param opacity Translucency (0.1 to 1.0).
      * @param color Watermark color.
      * @param initialPos Center point in widget coordinates.
      */
-    void startWatermark(const QString &text = QStringLiteral("COPIA"), qreal angle = 45.0, qreal opacity = 0.35,
+    void startWatermark(const QString &text = QStringLiteral("COPY"), qreal angle = 45.0, qreal opacity = 0.35,
                        const QColor &color = QColor(QStringLiteral("#DC2626")), const QPoint &initialPos = QPoint(), int style = 0);
 
     /**
@@ -533,5 +533,6 @@ private:
     bool m_fitToWidth = true;
     int m_rotationDegrees = 0;
     int m_availWidth = 800;
+    int m_maxCachePages = 8;
     mutable QMap<int, QPixmap> m_pageCache;
 };

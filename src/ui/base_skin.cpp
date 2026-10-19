@@ -1238,9 +1238,34 @@ void BaseSkin::extractOcrCurrentFile()
 void BaseSkin::saveCurrentFile()
 {
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified()) {
-        if (!m_currentFilePath.isEmpty() && m_imageViewer->originalImage().save(m_currentFilePath)) {
+        if (m_currentFilePath.isEmpty()) {
+            QMessageBox::warning(this, tr("Save Error"), tr("No active image file to save."));
+            return;
+        }
+
+        QFileInfo fi(m_currentFilePath);
+        QByteArray ext = fi.suffix().toLower().toUtf8();
+        const char *fmt = ext.isEmpty() ? nullptr : ext.constData();
+        int quality = (ext == "jpg" || ext == "jpeg") ? 95 : -1;
+
+        if (m_imageViewer->originalImage().save(m_currentFilePath, fmt, quality)) {
             m_imageViewer->setModified(false);
+
+            // Invalidate/refresh PreloadCacheManager so cache stays in sync
+            PreloadCacheManager::instance().remove(m_currentFilePath);
+            PreloadCacheManager::instance().insert(m_currentFilePath, m_imageViewer->originalImage());
+
+            // Update filmstrip and folder gallery thumbnails
+            if (m_filmstrip) {
+                m_filmstrip->updateThumbnail(m_currentFilePath, m_imageViewer->originalImage());
+            }
+            if (m_folderViewer) {
+                m_folderViewer->updateThumbnail(m_currentFilePath, m_imageViewer->originalImage());
+            }
+
             QMessageBox::information(this, tr("Save"), tr("Image modifications saved successfully!"));
+        } else {
+            QMessageBox::warning(this, tr("Save Error"), tr("Failed to save image changes to:\n%1\n\nPlease check write permissions or disk space.").arg(m_currentFilePath));
         }
     } else if (m_stackedWidget->currentIndex() == 1 && m_textViewer && m_textViewer->document()->isModified()) {
         if (m_textViewer->saveFile()) {
@@ -1265,22 +1290,49 @@ void BaseSkin::saveAsCurrentFile()
     QFileInfo fi(m_currentFilePath);
     QString target = QFileDialog::getSaveFileName(this, tr("Save As"), fi.dir().filePath(tr("copy_") + fi.fileName()));
     if (!target.isEmpty()) {
-        if (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified()) {
-            m_imageViewer->originalImage().save(target);
+        bool saved = false;
+        if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
+            QFileInfo targetFi(target);
+            QByteArray ext = targetFi.suffix().toLower().toUtf8();
+            const char *fmt = ext.isEmpty() ? nullptr : ext.constData();
+            int quality = (ext == "jpg" || ext == "jpeg") ? 95 : -1;
+            if (m_imageViewer->originalImage().save(target, fmt, quality)) {
+                m_imageViewer->setModified(false);
+                PreloadCacheManager::instance().remove(target);
+                PreloadCacheManager::instance().insert(target, m_imageViewer->originalImage());
+                saved = true;
+            } else {
+                QMessageBox::warning(this, tr("Save As Error"), tr("Failed to save image to:\n%1").arg(target));
+            }
         } else if (m_stackedWidget->currentIndex() == 1 && m_textViewer) {
             if (m_textViewer->saveFile(target)) {
-                QMessageBox::information(this, tr("Save As"), tr("Text file saved successfully to:\n%1").arg(target));
+                saved = true;
             } else {
                 QMessageBox::warning(this, tr("Save As Error"), tr("Failed to save text file to:\n%1").arg(target));
             }
         } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
             if (m_pdfViewer->saveAs(target)) {
-                QMessageBox::information(this, tr("Save As"), tr("PDF saved successfully to:\n%1").arg(target));
+                saved = true;
             } else {
                 QMessageBox::warning(this, tr("Save As Error"), tr("Failed to save PDF to:\n%1").arg(target));
             }
         } else {
-            QFile::copy(m_currentFilePath, target);
+            if (QFile::copy(m_currentFilePath, target)) {
+                saved = true;
+            } else {
+                QMessageBox::warning(this, tr("Save As Error"), tr("Failed to copy file to:\n%1").arg(target));
+            }
+        }
+
+        if (saved) {
+            m_currentFilePath = target;
+            scanDirectory(target);
+            if (m_filmstrip) {
+                m_filmstrip->setFiles(m_siblingFiles, m_currentIndex);
+            }
+            updateWindowTitle();
+            updateStatusBar();
+            QMessageBox::information(this, tr("Save As"), tr("File saved successfully to:\n%1").arg(target));
         }
     }
 }
@@ -1360,13 +1412,27 @@ bool BaseSkin::promptAndSaveIfModified()
 
     if (res == QMessageBox::Save) {
         if (isImgMod) {
-            if (!m_currentFilePath.isEmpty() && m_imageViewer->originalImage().save(m_currentFilePath)) {
-                m_imageViewer->setModified(false);
-                return true;
-            } else {
-                QMessageBox::warning(this, tr("Save Error"), tr("Failed to save image changes."));
-                return false;
+            if (!m_currentFilePath.isEmpty()) {
+                QFileInfo fi(m_currentFilePath);
+                QByteArray ext = fi.suffix().toLower().toUtf8();
+                const char *fmt = ext.isEmpty() ? nullptr : ext.constData();
+                int quality = (ext == "jpg" || ext == "jpeg") ? 95 : -1;
+
+                if (m_imageViewer->originalImage().save(m_currentFilePath, fmt, quality)) {
+                    m_imageViewer->setModified(false);
+                    PreloadCacheManager::instance().remove(m_currentFilePath);
+                    PreloadCacheManager::instance().insert(m_currentFilePath, m_imageViewer->originalImage());
+                    if (m_filmstrip) {
+                        m_filmstrip->updateThumbnail(m_currentFilePath, m_imageViewer->originalImage());
+                    }
+                    if (m_folderViewer) {
+                        m_folderViewer->updateThumbnail(m_currentFilePath, m_imageViewer->originalImage());
+                    }
+                    return true;
+                }
             }
+            QMessageBox::warning(this, tr("Save Error"), tr("Failed to save image changes."));
+            return false;
         } else if (isTextMod) {
             if (m_textViewer->saveFile()) {
                 return true;
@@ -1669,6 +1735,8 @@ void BaseSkin::rotateCurrentRight()
     } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
         m_officeViewer->pdfViewer()->rotateClockwise();
     }
+    updateWindowTitle();
+    updateStatusBar();
 }
 
 void BaseSkin::rotateCurrentLeft()
@@ -1680,6 +1748,8 @@ void BaseSkin::rotateCurrentLeft()
     } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
         m_officeViewer->pdfViewer()->rotateCounterClockwise();
     }
+    updateWindowTitle();
+    updateStatusBar();
 }
 
 void BaseSkin::flipCurrentHorizontal()
@@ -1687,6 +1757,8 @@ void BaseSkin::flipCurrentHorizontal()
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->flipHorizontal();
     }
+    updateWindowTitle();
+    updateStatusBar();
 }
 
 void BaseSkin::flipCurrentVertical()
@@ -1694,6 +1766,8 @@ void BaseSkin::flipCurrentVertical()
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->flipVertical();
     }
+    updateWindowTitle();
+    updateStatusBar();
 }
 
 void BaseSkin::togglePdfToc()

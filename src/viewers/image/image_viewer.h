@@ -70,6 +70,12 @@ public:
      */
     QScrollArea *scrollArea() const { return m_scrollArea; }
 
+    /**
+     * @brief Returns the canvas widget rendering the image and crop selection.
+     * @return Pointer to inner canvas widget.
+     */
+    QWidget *canvasWidget() const { return reinterpret_cast<QWidget*>(m_canvas); }
+
     // Geometric & visual transformations
     void rotateClockwise();
     void rotateCounterClockwise();
@@ -77,8 +83,31 @@ public:
     void flipVertical();
     void invertColors();
 
+    // Undo / Redo support
+    bool canUndo() const { return !m_undoStack.isEmpty(); }
+    bool canRedo() const { return !m_redoStack.isEmpty(); }
+    void undo();
+    void redo();
+    void clearUndoRedo();
+
+    // Geometric cropping & visual tools
+    /**
+     * @brief Crops the original image to the specified rectangle.
+     * @param cropRect Bounding rectangle in original image coordinates.
+     */
+    void applyCrop(const QRect &cropRect);
+
+    /**
+     * @brief Toggles interactive visual cropping mode on the canvas.
+     * @param active True to activate crop selection; false to cancel.
+     */
+    void setCropModeActive(bool active);
+    bool isCropModeActive() const;
+    void confirmCrop();
+    void cancelCropMode();
+
     bool isModified() const { return m_isModified; }
-    void setModified(bool mod) { m_isModified = mod; }
+    void setModified(bool mod);
 
     /**
      * @brief Refreshes scrollbar styles and canvas background based on active theme preset.
@@ -92,6 +121,24 @@ public:
     void handleWheel(QWheelEvent *event);
 
 signals:
+    /**
+     * @brief Emitted when the undo/redo availability changes.
+     * @param canUndo True if undo actions are available.
+     * @param canRedo True if redo actions are available.
+     */
+    void undoAvailabilityChanged(bool canUndo, bool canRedo);
+
+    /**
+     * @brief Emitted when interactive crop mode state changes.
+     * @param active True if currently in crop selection mode.
+     */
+    void cropModeChanged(bool active);
+    /**
+     * @brief Emitted when the image dirty/modified state changes.
+     * @param modified True if image has unsaved modifications; false otherwise.
+     */
+    void modificationChanged(bool modified);
+
     /**
      * @brief Emitted when the image zoom factor changes.
      * @param factor Current zoom scale factor.
@@ -115,11 +162,14 @@ protected:
 
 private:
     void updateScaledPixmap();
+    void pushUndoState();
 
     QScrollArea *m_scrollArea;
     ImageCanvasWidget *m_canvas;
 
     QImage m_originalImage;
+    QList<QImage> m_undoStack;
+    QList<QImage> m_redoStack;
     QPixmap m_scaledPixmap;
     double m_zoomFactor;
     bool m_fitToWindow;

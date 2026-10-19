@@ -183,6 +183,12 @@ void FilmstripWidget::onThumbnailReady(const QString &filePath, const QImage &th
     }
 }
 
+void FilmstripWidget::updateThumbnail(const QString &filePath, const QImage &image)
+{
+    if (image.isNull()) return;
+    onThumbnailReady(filePath, image.scaled(120, 96, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+}
+
 // ============================================================================
 // FilmstripWorker Implementation
 // ============================================================================

@@ -10,14 +10,12 @@ if(POPPLER_QT6_FOUND OR STATIC_PDF)
 
     set(PDF_PLUGIN_SOURCES
         pdf_plugin.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_crypto_signature_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_image_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_page_organizer_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_shape_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_signature_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_tools_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_typewriter_dialog.cpp
-        ${CMAKE_SOURCE_DIR}/src/ui/pdf_watermark_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_crypto_signature_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_image_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_page_organizer_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_typewriter_dialog.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_watermark_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp
@@ -32,7 +30,16 @@ if(POPPLER_QT6_FOUND OR STATIC_PDF)
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/core
         ${CMAKE_SOURCE_DIR}/src/core/interfaces
+        ${CMAKE_SOURCE_DIR}/src/core/system
+        ${CMAKE_SOURCE_DIR}/src/core/services
+        ${CMAKE_SOURCE_DIR}/src/core/audio
         ${CMAKE_SOURCE_DIR}/src/ui
+        ${CMAKE_SOURCE_DIR}/src/ui/pdf
+        ${CMAKE_SOURCE_DIR}/src/ui/audio
+        ${CMAKE_SOURCE_DIR}/src/ui/ocr
+        ${CMAKE_SOURCE_DIR}/src/ui/extensions
+        ${CMAKE_SOURCE_DIR}/src/ui/dialogs
+        ${CMAKE_SOURCE_DIR}/src/ui/settings
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf
         ${POPPLER_QT6_INCLUDE_DIRS}
     )

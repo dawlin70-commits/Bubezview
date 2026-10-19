@@ -200,7 +200,6 @@ public slots:
     void setTocVisible(bool visible);
 
     // PDF Annotation & Tool Launchers
-    void openToolsDialog(int defaultTab = 0);
     void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40);
     void startShape(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
     void exitContinuousToolMode();
