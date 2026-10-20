@@ -327,6 +327,13 @@ build_and_launch() {
     echo -e "${BLUE}${BOLD}[*] Installing ${APP_NAME} to ${HOME}/.local...${NC}"
     cmake --install "$BUILD_DIR"
 
+    # Salva una copia di install.sh per aggiornamenti automatici
+    mkdir -p "${HOME}/.local/share/bubezview"
+    if [ -f "${SCRIPT_DIR}/install.sh" ]; then
+        cp -f "${SCRIPT_DIR}/install.sh" "${HOME}/.local/share/bubezview/install.sh" 2>/dev/null || true
+        chmod +x "${HOME}/.local/share/bubezview/install.sh" 2>/dev/null || true
+    fi
+
     # Ensure desktop databases are updated for instant launcher availability
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "${HOME}/.local/share/applications" 2>/dev/null || true

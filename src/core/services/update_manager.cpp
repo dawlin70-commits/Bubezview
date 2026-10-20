@@ -140,7 +140,9 @@ QString UpdateManager::findInstallerScript() const
         QCoreApplication::applicationDirPath() + "/install.sh",
         QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../install.sh"),
         QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../install.sh"),
-        QDir::homePath() + "/.local/share/bubezview/install.sh"
+        QDir::homePath() + "/.local/share/bubezview/install.sh",
+        QDir::homePath() + "/Progetti/BubezView/install.sh",
+        QDir::homePath() + "/Progetti/espertoneweb/install-bubezview.sh"
     };
 
     const QString devRoot = BuildConfig::projectDevRoot();

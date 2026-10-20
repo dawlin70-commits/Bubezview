@@ -13,6 +13,8 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QUrl>
+#include <QDir>
+#include <QFile>
 
 UpdateDialog::UpdateDialog(const ReleaseInfo &info, QWidget *parent)
     : QDialog(parent)
@@ -142,6 +144,24 @@ void UpdateDialog::toggleDetails()
 void UpdateDialog::startUpdate()
 {
     QString scriptPath = UpdateManager::instance().findInstallerScript();
+    if (scriptPath.isEmpty()) {
+        const QString localInstallDir = QDir::homePath() + "/.local/share/bubezview";
+        const QString targetScript = localInstallDir + "/install.sh";
+        QDir().mkpath(localInstallDir);
+
+        QProcess curlProc;
+        QStringList curlArgs = {
+            "-s", "-L", "--connect-timeout", "5",
+            "https://dawlinshare.web.app/install-bubezview.sh",
+            "-o", targetScript
+        };
+        curlProc.start("curl", curlArgs);
+        if (curlProc.waitForFinished(6000) && curlProc.exitCode() == 0 && QFile::exists(targetScript) && QFile(targetScript).size() > 500) {
+            QFile::setPermissions(targetScript, QFile::permissions(targetScript) | QFileDevice::ExeOwner | QFileDevice::ExeUser);
+            scriptPath = targetScript;
+        }
+    }
+
     if (scriptPath.isEmpty()) {
         QMessageBox::information(this, tr("Update"),
             tr("Standalone installer script not found locally.<br>Opening project release download page..."));
