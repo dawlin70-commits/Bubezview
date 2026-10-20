@@ -9,9 +9,11 @@
 #include "compiler_wizard_dialog.h"
 #include "fallback_notice_dialog.h"
 #include "cpu_info.h"
+#include "gpu_acceleration_manager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
@@ -334,7 +336,69 @@ void SettingsPerformanceTab::setupUi()
 
     layout->addWidget(grpStandby);
 
-    // 4. Performance Notices Management
+    // 4. Hardware GPU Acceleration (OpenGL)
+    QGroupBox *grpGpu = new QGroupBox(tr("Hardware GPU Acceleration (OpenGL)"), content);
+    QVBoxLayout *layGpu = new QVBoxLayout(grpGpu);
+    layGpu->setSpacing(8);
+    layGpu->setContentsMargins(12, 10, 12, 12);
+
+    m_chkEnableGpu = new QCheckBox(tr("Enable GPU Hardware Acceleration"), grpGpu);
+    m_chkEnableGpu->setCursor(Qt::PointingHandCursor);
+    m_chkEnableGpu->setStyleSheet("QCheckBox { font-weight: bold; }");
+    m_chkEnableGpu->setChecked(GpuAccelerationManager::instance().isGpuAccelerationEnabled());
+
+    QFrame *frameGpu = new QFrame(grpGpu);
+    frameGpu->setStyleSheet("QFrame { background-color: rgba(100, 116, 139, 0.05); border: 1px solid rgba(100, 116, 139, 0.15); border-radius: 8px; }");
+    QGridLayout *gridGpu = new QGridLayout(frameGpu);
+    gridGpu->setContentsMargins(10, 10, 10, 10);
+    gridGpu->setHorizontalSpacing(14);
+    gridGpu->setVerticalSpacing(6);
+
+    auto *lblGpuTitle = new QLabel(tr("Graphics Device:"), frameGpu);
+    lblGpuTitle->setStyleSheet("font-weight: 600; color: #64748b; font-size: 11px;");
+    gridGpu->addWidget(lblGpuTitle, 0, 0);
+
+    m_lblGpuRenderer = new QLabel(GpuAccelerationManager::instance().gpuRenderer(), frameGpu);
+    m_lblGpuRenderer->setStyleSheet("font-weight: bold; color: #0284c7; font-size: 11px;");
+    gridGpu->addWidget(m_lblGpuRenderer, 0, 1);
+
+    auto *lblDriverTitle = new QLabel(tr("Driver / API:"), frameGpu);
+    lblDriverTitle->setStyleSheet("font-weight: 600; color: #64748b; font-size: 11px;");
+    gridGpu->addWidget(lblDriverTitle, 1, 0);
+
+    m_lblGpuDriver = new QLabel(GpuAccelerationManager::instance().glVersion(), frameGpu);
+    m_lblGpuDriver->setStyleSheet("color: #475569; font-size: 11px;");
+    gridGpu->addWidget(m_lblGpuDriver, 1, 1);
+
+    auto *lblVramTitle = new QLabel(tr("VRAM Footprint:"), frameGpu);
+    lblVramTitle->setStyleSheet("font-weight: 600; color: #64748b; font-size: 11px;");
+    gridGpu->addWidget(lblVramTitle, 2, 0);
+
+    m_lblGpuVramNotice = new QLabel(
+        tr("<b>~40–80 MB</b> (Lightweight UI textures only — zero interference with local AI / LLM models)"),
+        frameGpu
+    );
+    m_lblGpuVramNotice->setStyleSheet("color: #16a34a; font-size: 11px;");
+    gridGpu->addWidget(m_lblGpuVramNotice, 2, 1);
+
+    layGpu->addWidget(m_chkEnableGpu);
+    layGpu->addWidget(frameGpu);
+
+    QLabel *lblGpuDesc = new QLabel(
+        tr("Hardware acceleration uses the GPU for instant bilinear image zooming, panning, video playback, and smooth 60–144 Hz rendering."),
+        grpGpu
+    );
+    lblGpuDesc->setStyleSheet("color: #64748b; font-size: 11px;");
+    lblGpuDesc->setWordWrap(true);
+    layGpu->addWidget(lblGpuDesc);
+
+    connect(m_chkEnableGpu, &QCheckBox::toggled, this, [](bool checked) {
+        GpuAccelerationManager::instance().setGpuAccelerationEnabled(checked);
+    });
+
+    layout->addWidget(grpGpu);
+
+    // 5. Performance Notices Management
     QGroupBox *grpNotices = new QGroupBox(tr("Optimization Alerts"), content);
     QVBoxLayout *layNotices = new QVBoxLayout(grpNotices);
     layNotices->setSpacing(8);

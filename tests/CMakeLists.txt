@@ -29,6 +29,54 @@ target_link_libraries(test_share PRIVATE
 
 add_test(NAME TestShare COMMAND test_share)
 
+# Automated GPU acceleration manager test
+add_executable(test_gpu
+    test_gpu.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/gpu_acceleration_manager.cpp
+)
+
+target_include_directories(test_gpu PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/system
+)
+
+target_link_libraries(test_gpu PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::OpenGLWidgets
+    Qt6::Test
+)
+
+add_test(NAME TestGpu COMMAND test_gpu)
+
+# Automated image viewer and transparency test
+add_executable(test_image
+    test_image.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/image/image_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/gpu_acceleration_manager.cpp
+)
+
+target_include_directories(test_image PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/viewers/image
+)
+
+target_link_libraries(test_image PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::OpenGLWidgets
+    Qt6::Test
+)
+
+add_test(NAME TestImage COMMAND test_image)
+
 # Interactive manual test target (excluded from default build and ctest per Rule 2)
 add_executable(test_interactive EXCLUDE_FROM_ALL
     test_interactive.cpp

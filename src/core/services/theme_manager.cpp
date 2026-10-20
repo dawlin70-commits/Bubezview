@@ -15,6 +15,7 @@ void ThemeManager::setPreset(ThemePreset preset)
 {
     QSettings settings("Bubez", "BubezView");
     settings.setValue("theme_preset", presetToString(preset));
+    settings.sync();
 }
 
 QString ThemeManager::presetToString(ThemePreset preset)
@@ -45,6 +46,7 @@ void ThemeManager::setTransition(TransitionEffect effect)
 {
     QSettings settings("Bubez", "BubezView");
     settings.setValue("transition_effect", transitionToString(effect));
+    settings.sync();
 }
 
 QString ThemeManager::transitionToString(TransitionEffect effect)
@@ -76,6 +78,7 @@ void ThemeManager::setUseLibreOffice(bool enable)
 {
     QSettings settings("Bubez", "BubezView");
     settings.setValue("use_libreoffice", enable);
+    settings.sync();
 }
 
 

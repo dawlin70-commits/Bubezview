@@ -3,6 +3,7 @@
 #include "theme_manager.h"
 #include "first_run_wizard.h"
 #include "plugin_manager.h"
+#include "gpu_acceleration_manager.h"
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QFileDialog>
@@ -81,11 +82,38 @@ int main(int argc, char *argv[])
 #define BUBEZVIEW_VERSION "0.1.0"
 #endif
 
+    // Setup high-performance OpenGL surface format (VSync, DoubleBuffering, 4x MSAA)
+    GpuAccelerationManager::setupSurfaceFormat();
+
     QApplication app(argc, argv);
     app.setApplicationName("BubezView");
     app.setApplicationVersion(BUBEZVIEW_VERSION);
     app.setOrganizationName("Bubez");
     app.setDesktopFileName("bubezview");
+
+    // Self-heal configuration file permissions if a root-owned container process replaced it
+    {
+        QSettings checkSettings("Bubez", "BubezView");
+        const QString cfgPath = checkSettings.fileName();
+        QFileInfo cfgInfo(cfgPath);
+        if (cfgInfo.exists() && !cfgInfo.isWritable()) {
+            QFile oldFile(cfgPath);
+            if (oldFile.open(QIODevice::ReadOnly)) {
+                const QByteArray rawData = oldFile.readAll();
+                oldFile.close();
+                if (QFile::remove(cfgPath)) {
+                    QFile newFile(cfgPath);
+                    if (newFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                        newFile.write(rawData);
+                        newFile.close();
+                    }
+                }
+            }
+        }
+    }
+
+    // Initialize GPU acceleration detection and driver capabilities
+    GpuAccelerationManager::instance().initialize();
 
     // Ensure Distrobox/container environments can locate host system icons (e.g. Breeze)
     QStringList iconSearchPaths = QIcon::themeSearchPaths();

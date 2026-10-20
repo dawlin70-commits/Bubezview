@@ -31,6 +31,7 @@
 #include <QFrame>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QActionGroup>
 
 MainWindow::MainWindow(QWidget *parent)
     : BaseSkin(parent)
@@ -111,6 +112,9 @@ MainWindow::MainWindow(QWidget *parent)
     , m_actAudioExtract(nullptr)
     , m_actMergePdf(nullptr)
     , m_actImageCrop(nullptr)
+    , m_actFlattenImage(nullptr)
+    , m_menuTransparency(nullptr)
+    , m_grpTransparency(nullptr)
     , m_actOpenFile(nullptr)
     , m_actOpenFolder(nullptr)
     , m_actOpenWith(nullptr)
@@ -136,6 +140,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_updateBanner(nullptr)
     , m_lblUpdateBannerText(nullptr)
 {
+    setAttribute(Qt::WA_TranslucentBackground, false);
     setupUi();
     setupUpdateBanner();
     setupDebugBanner();
@@ -362,6 +367,13 @@ void MainWindow::setupUi()
     m_actImageCrop->setShortcut(QKeySequence("C"));
     m_actImageCrop->setCheckable(true);
 
+    m_actFlattenImage = m_menuEdit->addAction(QIcon::fromTheme("fill-color"), tr("✨ Flatten Image (Remove Transparency)..."), this, [this]() {
+        if (m_imageViewer && m_imageViewer->originalImage().hasAlphaChannel()) {
+            m_imageViewer->removeTransparency(Qt::white);
+            updateContextualMenuStates();
+        }
+    });
+
     m_menuEdit->addSeparator();
 
     m_actFolderRename = m_menuEdit->addAction(QIcon::fromTheme("edit-rename"), tr("Rename Item..."), this, &BaseSkin::renameCurrentFolderItem);
@@ -580,6 +592,30 @@ void MainWindow::setupUi()
     });
     m_actShowWhitespace->setCheckable(true);
 
+    m_menuView->addSeparator();
+    m_menuTransparency = m_menuView->addMenu(QIcon::fromTheme("fill-color"), tr("Transparency Background"));
+    m_grpTransparency = new QActionGroup(this);
+
+    auto addTranspAction = [this](const QString &title, ImageViewer::TransparencyMode mode, const QString &modeStr) {
+        QAction *act = m_menuTransparency->addAction(title, this, [this, mode]() {
+            if (m_imageViewer) {
+                m_imageViewer->setTransparencyMode(mode);
+            }
+        });
+        act->setCheckable(true);
+        m_grpTransparency->addAction(act);
+        connect(m_menuTransparency, &QMenu::aboutToShow, this, [this, act, modeStr]() {
+            QSettings settings("Bubez", "BubezView");
+            act->setChecked(settings.value("image/transparency_mode", "white").toString() == modeStr);
+        });
+        return act;
+    };
+
+    addTranspAction(tr("Solid White (Removes Transparency)"), ImageViewer::TransparencyMode::White, "white");
+    addTranspAction(tr("Checkerboard Pattern"), ImageViewer::TransparencyMode::Checkerboard, "checkerboard");
+    addTranspAction(tr("Interface Theme Color"), ImageViewer::TransparencyMode::Theme, "theme");
+    addTranspAction(tr("Solid Black"), ImageViewer::TransparencyMode::Black, "black");
+
     connect(m_menuView, &QMenu::aboutToShow, this, [this]() {
         updateContextualMenuStates();
         if (m_actFilmstrip) m_actFilmstrip->setChecked(isFilmstripVisible());
@@ -740,6 +776,10 @@ void MainWindow::setupUi()
     auto *topToolBar = addToolBar(tr("Main Toolbar"));
     topToolBar->setObjectName("MainToolbarDock");
     topToolBar->setMovable(false);
+    if (topToolBar->layout()) {
+        topToolBar->layout()->setContentsMargins(0, 0, 0, 0);
+        topToolBar->layout()->setSpacing(0);
+    }
     topToolBar->addWidget(m_flippableToolbar);
 
     int savedStyle = settings.value("toolbar/button_style", static_cast<int>(Qt::ToolButtonIconOnly)).toInt();
@@ -1219,6 +1259,16 @@ void MainWindow::updateContextualMenuStates()
         m_actImageCrop->setVisible(isImageDoc);
         m_actImageCrop->setEnabled(isImageDoc && hasFile);
         m_actImageCrop->setChecked(m_imageViewer && m_imageViewer->isCropModeActive());
+    }
+
+    if (m_actFlattenImage) {
+        bool hasAlpha = isImageDoc && hasFile && m_imageViewer && m_imageViewer->originalImage().hasAlphaChannel();
+        m_actFlattenImage->setVisible(isImageDoc);
+        m_actFlattenImage->setEnabled(hasAlpha);
+    }
+
+    if (m_menuTransparency) {
+        m_menuTransparency->menuAction()->setVisible(isImageDoc);
     }
 
     if (m_actFolderRename) {

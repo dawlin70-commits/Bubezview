@@ -18,6 +18,7 @@ if(POPPLER_QT6_FOUND OR STATIC_PDF)
         ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_watermark_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
+        ${CMAKE_SOURCE_DIR}/src/core/system/gpu_acceleration_manager.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_viewer.cpp
@@ -48,6 +49,7 @@ if(POPPLER_QT6_FOUND OR STATIC_PDF)
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
+        Qt6::OpenGLWidgets
         Qt6::PrintSupport
         ${POPPLER_QT6_LIBRARIES}
     )

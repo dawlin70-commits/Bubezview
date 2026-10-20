@@ -1,13 +1,13 @@
 /**
  * @file flippable_toolbar.cpp
- * @brief Implementation of FlippableToolbar with 400ms 3D vertical card flip animation.
+ * @brief Implementation of FlippableToolbar with smooth zero-layout-shift transition.
  */
 
 #include "flippable_toolbar.h"
 #include <QPainter>
-#include <QPaintEvent>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QStackedLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
@@ -15,7 +15,8 @@
 #include <QButtonGroup>
 #include <QColorDialog>
 #include <QEasingCurve>
-#include <QTransform>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
 
 FlippableToolbar::FlippableToolbar(QWidget *parent)
     : QWidget(parent)
@@ -24,46 +25,41 @@ FlippableToolbar::FlippableToolbar(QWidget *parent)
     , m_shapeStrokeColor(QColor(239, 68, 68))
     , m_shapeFillColor(QColor(239, 68, 68, 40))
 {
-    // Container layout holds whichever bar is active when not animating
-    auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    setFixedHeight(38);
+
+    // QStackedLayout with StackAll allows seamless cross-fading with zero layout jumps
+    m_stackedLayout = new QStackedLayout(this);
+    m_stackedLayout->setContentsMargins(0, 0, 0, 0);
+    m_stackedLayout->setSpacing(0);
+    m_stackedLayout->setStackingMode(QStackedLayout::StackAll);
 
     // 1. Standard Main QToolBar
     m_mainToolBar = new QToolBar(tr("Main Toolbar"), this);
     m_mainToolBar->setObjectName(QStringLiteral("MainToolbar"));
     m_mainToolBar->setMovable(false);
-    layout->addWidget(m_mainToolBar);
+    m_mainToolBar->setFixedHeight(38);
+    m_stackedLayout->addWidget(m_mainToolBar);
 
-    // 2. Annotation Container
-    m_annotationContainer = new QWidget(this);
-    auto *annLayout = new QVBoxLayout(m_annotationContainer);
-    annLayout->setContentsMargins(0, 0, 0, 0);
-    annLayout->setSpacing(0);
-
+    // 2. Highlighter Toolstrip
     setupHighlighterBar();
+    m_stackedLayout->addWidget(m_highlighterBar);
+    m_highlighterBar->setVisible(false);
+
+    // 3. Shapes Toolstrip
     setupShapesBar();
+    m_stackedLayout->addWidget(m_shapesBar);
+    m_shapesBar->setVisible(false);
 
-    annLayout->addWidget(m_highlighterBar);
-    annLayout->addWidget(m_shapesBar);
-    m_annotationContainer->hide();
-    layout->addWidget(m_annotationContainer);
-
-    // 3. Toolbar Transition Animation: 200ms with OutCubic easing curve for smooth cross-fade
-    m_flipAnimation = new QVariantAnimation(this);
-    m_flipAnimation->setDuration(200);
-    m_flipAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    m_flipAnimation->setStartValue(0.0);
-    m_flipAnimation->setEndValue(1.0);
-
-    connect(m_flipAnimation, &QVariantAnimation::valueChanged, this, &FlippableToolbar::onAnimationValueChanged);
-    connect(m_flipAnimation, &QVariantAnimation::finished, this, &FlippableToolbar::onAnimationFinished);
+    m_mainToolBar->setVisible(true);
+    m_mainToolBar->raise();
 }
 
 void FlippableToolbar::setupHighlighterBar()
 {
-    m_highlighterBar = new QWidget(m_annotationContainer);
+    m_highlighterBar = new QWidget(this);
     m_highlighterBar->setObjectName(QStringLiteral("HighlighterToolstrip"));
+    m_highlighterBar->setFixedHeight(38);
     m_highlighterBar->setStyleSheet(
         "QWidget#HighlighterToolstrip {"
         "  background: palette(window);"
@@ -72,7 +68,7 @@ void FlippableToolbar::setupHighlighterBar()
     );
 
     auto *hLayout = new QHBoxLayout(m_highlighterBar);
-    hLayout->setContentsMargins(12, 4, 12, 4);
+    hLayout->setContentsMargins(12, 0, 12, 0);
     hLayout->setSpacing(10);
 
     auto *lblTitle = new QLabel(tr("🖍️ HIGHLIGHTER"), m_highlighterBar);
@@ -181,8 +177,9 @@ void FlippableToolbar::setupHighlighterBar()
 
 void FlippableToolbar::setupShapesBar()
 {
-    m_shapesBar = new QWidget(m_annotationContainer);
+    m_shapesBar = new QWidget(this);
     m_shapesBar->setObjectName(QStringLiteral("ShapesToolstrip"));
+    m_shapesBar->setFixedHeight(38);
     m_shapesBar->setStyleSheet(
         "QWidget#ShapesToolstrip {"
         "  background: palette(window);"
@@ -191,7 +188,7 @@ void FlippableToolbar::setupShapesBar()
     );
 
     auto *hLayout = new QHBoxLayout(m_shapesBar);
-    hLayout->setContentsMargins(12, 4, 12, 4);
+    hLayout->setContentsMargins(12, 0, 12, 0);
     hLayout->setSpacing(10);
 
     auto *lblTitle = new QLabel(tr("📐 SHAPES & ARROWS"), m_shapesBar);
@@ -378,7 +375,7 @@ void FlippableToolbar::flipToHighlighter(const QColor &color, double opacity)
         if (m_hlOpacityLabel) m_hlOpacityLabel->setText(QStringLiteral("%1%").arg(qRound(opacity * 100)));
     }
     updateHighlighterColorButtons();
-    startFlipAnimation(FlippableToolbarMode::Highlighter);
+    startTransition(FlippableToolbarMode::Highlighter);
     emit highlighterParamsChanged(m_hlColor, m_hlOpacity);
 }
 
@@ -399,135 +396,106 @@ void FlippableToolbar::flipToShapes(int shapeType, int strokeWidth, const QColor
         m_btnShapeFillToggle->setChecked(fillColor.isValid() && fillColor.alpha() > 0);
     }
     updateShapeButtons();
-    startFlipAnimation(FlippableToolbarMode::Shapes);
+    startTransition(FlippableToolbarMode::Shapes);
     emit shapeParamsChanged(m_shapeType, m_shapeStrokeWidth, m_shapeStrokeColor, m_shapeFillColor);
 }
 
 void FlippableToolbar::flipToMain()
 {
     if (m_currentMode == FlippableToolbarMode::Main && !m_isFlipping) return;
-    startFlipAnimation(FlippableToolbarMode::Main);
+    startTransition(FlippableToolbarMode::Main);
     emit annotationModeExited();
 }
 
-void FlippableToolbar::startFlipAnimation(FlippableToolbarMode targetMode)
+QWidget *FlippableToolbar::widgetForMode(FlippableToolbarMode mode) const
 {
-    if (m_currentMode == targetMode && !m_isFlipping) return;
+    switch (mode) {
+    case FlippableToolbarMode::Main:
+        return m_mainToolBar;
+    case FlippableToolbarMode::Highlighter:
+        return m_highlighterBar;
+    case FlippableToolbarMode::Shapes:
+        return m_shapesBar;
+    }
+    return m_mainToolBar;
+}
+
+void FlippableToolbar::startTransition(FlippableToolbarMode targetMode)
+{
+    if (m_currentMode == targetMode && !m_isFlipping) {
+        return;
+    }
+
+    if (m_fadeAnimation) {
+        m_fadeAnimation->stop();
+        m_fadeAnimation = nullptr;
+    }
+
+    QWidget *outgoing = widgetForMode(m_currentMode);
+    QWidget *incoming = widgetForMode(targetMode);
+
+    if (outgoing) {
+        outgoing->setGraphicsEffect(nullptr);
+    }
+    if (incoming) {
+        incoming->setGraphicsEffect(nullptr);
+    }
+
+    if (!outgoing || !incoming || outgoing == incoming) {
+        if (incoming) incoming->setVisible(true);
+        m_currentMode = targetMode;
+        m_targetMode = targetMode;
+        m_isFlipping = false;
+        return;
+    }
 
     m_targetMode = targetMode;
-
-    // Grab pixmap of current visible view (front)
-    m_frontPixmap = grab();
-
-    // Prepare back view in hidden mode to grab its snapshot
-    if (targetMode == FlippableToolbarMode::Main) {
-        m_mainToolBar->show();
-        m_annotationContainer->hide();
-    } else {
-        m_mainToolBar->hide();
-        m_annotationContainer->show();
-        m_highlighterBar->setVisible(targetMode == FlippableToolbarMode::Highlighter);
-        m_shapesBar->setVisible(targetMode == FlippableToolbarMode::Shapes);
-    }
-
-    // Force layout update and grab back snapshot
-    layout()->activate();
-    m_backPixmap = grab();
-
-    // Restore views to front state while animating
-    if (m_currentMode == FlippableToolbarMode::Main) {
-        m_mainToolBar->show();
-        m_annotationContainer->hide();
-    } else {
-        m_mainToolBar->hide();
-        m_annotationContainer->show();
-        m_highlighterBar->setVisible(m_currentMode == FlippableToolbarMode::Highlighter);
-        m_shapesBar->setVisible(m_currentMode == FlippableToolbarMode::Shapes);
-    }
-
-    // Hide child widgets during the 3D paint transition so only our custom paintEvent renders the rotation
-    m_mainToolBar->setVisible(false);
-    m_annotationContainer->setVisible(false);
-
     m_isFlipping = true;
-    m_flipAngle = 0.0;
-    m_flipAnimation->stop();
-    m_flipAnimation->setStartValue(0.0);
-    m_flipAnimation->setEndValue(1.0);
-    m_flipAnimation->start();
-    update();
+
+    incoming->setVisible(true);
+    incoming->raise();
+
+    auto *effect = new QGraphicsOpacityEffect(incoming);
+    effect->setOpacity(0.0);
+    incoming->setGraphicsEffect(effect);
+
+    m_fadeAnimation = new QPropertyAnimation(effect, "opacity", this);
+    m_fadeAnimation->setDuration(120);
+    m_fadeAnimation->setStartValue(0.0);
+    m_fadeAnimation->setEndValue(1.0);
+    m_fadeAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    connect(m_fadeAnimation, &QPropertyAnimation::finished, this, [this, outgoing, incoming]() {
+        if (outgoing != incoming) {
+            outgoing->setVisible(false);
+        }
+        incoming->setGraphicsEffect(nullptr);
+        m_currentMode = m_targetMode;
+        m_isFlipping = false;
+        if (m_fadeAnimation) {
+            m_fadeAnimation->deleteLater();
+            m_fadeAnimation = nullptr;
+        }
+    });
+
+    m_fadeAnimation->start();
 }
 
-void FlippableToolbar::onAnimationValueChanged(const QVariant &value)
+QSize FlippableToolbar::sizeHint() const
 {
-    m_flipAngle = value.toReal();
-    update();
-}
-
-void FlippableToolbar::onAnimationFinished()
-{
-    m_isFlipping = false;
-    m_currentMode = m_targetMode;
-
-    // Show the target widget permanently
-    if (m_currentMode == FlippableToolbarMode::Main) {
-        m_mainToolBar->show();
-        m_annotationContainer->hide();
-    } else {
-        m_mainToolBar->hide();
-        m_annotationContainer->show();
-        m_highlighterBar->setVisible(m_currentMode == FlippableToolbarMode::Highlighter);
-        m_shapesBar->setVisible(m_currentMode == FlippableToolbarMode::Shapes);
+    int w = 200;
+    if (m_mainToolBar) {
+        w = qMax(w, m_mainToolBar->sizeHint().width());
     }
-    update();
+    return QSize(w, 38);
+}
+
+QSize FlippableToolbar::minimumSizeHint() const
+{
+    return QSize(100, 38);
 }
 
 void FlippableToolbar::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
-}
-
-void FlippableToolbar::paintEvent(QPaintEvent *event)
-{
-    if (!m_isFlipping) {
-        QWidget::paintEvent(event);
-        return;
-    }
-
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform);
-
-    int w = width();
-    int h = height();
-    if (w <= 0 || h <= 0) return;
-
-    painter.fillRect(rect(), palette().window());
-
-    // Elegant cross-fade with subtle 4px vertical glide
-    // Progress goes smoothly from 0.0 to 1.0
-    qreal progress = qBound(0.0, m_flipAngle, 1.0);
-    qreal outOpacity = qBound(0.0, 1.0 - progress, 1.0);
-    qreal inOpacity = qBound(0.0, progress, 1.0);
-
-    // Direction: switching to annotation glides up slightly (-4px); returning to main glides down (+4px)
-    bool entering = (m_targetMode != FlippableToolbarMode::Main);
-    int dyOut = entering ? -qRound(progress * 4.0) : qRound(progress * 4.0);
-    int dyIn = entering ? qRound((1.0 - progress) * 4.0) : -qRound((1.0 - progress) * 4.0);
-
-    // Draw outgoing toolbar
-    if (!m_frontPixmap.isNull() && outOpacity > 0.01) {
-        painter.save();
-        painter.setOpacity(outOpacity);
-        painter.drawPixmap(0, dyOut, m_frontPixmap);
-        painter.restore();
-    }
-
-    // Draw incoming toolbar
-    if (!m_backPixmap.isNull() && inOpacity > 0.01) {
-        painter.save();
-        painter.setOpacity(inOpacity);
-        painter.drawPixmap(0, dyIn, m_backPixmap);
-        painter.restore();
-    }
 }

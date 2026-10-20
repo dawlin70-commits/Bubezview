@@ -86,9 +86,12 @@ public:
     int shapeType() const { return m_shapeType; }
 
     /**
-     * @brief Initiates 3D vertical card-flip back to the standard Main Toolbar.
+     * @brief Initiates smooth transition back to the standard Main Toolbar.
      */
     void flipToMain();
+
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 signals:
     /**
@@ -107,34 +110,24 @@ signals:
     void annotationModeExited();
 
 protected:
-    void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-
-private slots:
-    void onAnimationValueChanged(const QVariant &value);
-    void onAnimationFinished();
 
 private:
     void setupHighlighterBar();
     void setupShapesBar();
-    void startFlipAnimation(FlippableToolbarMode targetMode);
+    void startTransition(FlippableToolbarMode targetMode);
+    QWidget *widgetForMode(FlippableToolbarMode mode) const;
     void updateHighlighterColorButtons();
     void updateShapeButtons();
 
+    class QStackedLayout *m_stackedLayout = nullptr;
     QToolBar *m_mainToolBar = nullptr;
-    QWidget *m_annotationContainer = nullptr;
     QWidget *m_highlighterBar = nullptr;
     QWidget *m_shapesBar = nullptr;
 
     FlippableToolbarMode m_currentMode = FlippableToolbarMode::Main;
     FlippableToolbarMode m_targetMode = FlippableToolbarMode::Main;
-
-    // Flip animation state
-    QVariantAnimation *m_flipAnimation = nullptr;
-    qreal m_flipAngle = 0.0;     ///< Current rotation in degrees: 0° to 180°
     bool m_isFlipping = false;
-    QPixmap m_frontPixmap;
-    QPixmap m_backPixmap;
 
     // --- Highlighter toolstrip controls ---
     QColor m_hlColor;
@@ -152,4 +145,6 @@ private:
     QButtonGroup *m_shapeTypeGroup = nullptr;
     QList<QPushButton*> m_shapeStrokeColorButtons;
     QPushButton *m_btnShapeFillToggle = nullptr;
+
+    class QPropertyAnimation *m_fadeAnimation = nullptr;
 };

@@ -8,6 +8,7 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/cpu_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/dbus_previewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/desktop_integrator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/system/gpu_acceleration_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/ocr_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/package_manager_helper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/plugin_manager.cpp
@@ -98,6 +99,7 @@ target_link_libraries(bubezview PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::OpenGLWidgets
     Qt6::Xml
     Qt6::DBus
     Qt6::PrintSupport

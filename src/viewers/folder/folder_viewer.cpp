@@ -12,6 +12,9 @@
 #include <QFileInfo>
 #include <QKeyEvent>
 #include <QScrollBar>
+#include <QPropertyAnimation>
+#include <QEasingCurve>
+#include <QWheelEvent>
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
@@ -394,6 +397,92 @@ void FolderCardDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->restore();
 }
 
+/**
+ * @brief High-performance QListWidget with smooth progressive mouse-wheel scrolling.
+ *
+ * Replaces default violent multi-row jumps with a responsive, easing-interpolated
+ * progressive scroll (60px per wheel notch) and 1:1 precision touchpad tracking.
+ */
+class FolderListWidget : public QListWidget {
+public:
+    explicit FolderListWidget(QWidget *parent = nullptr)
+        : QListWidget(parent)
+        , m_targetScrollValue(0)
+    {
+        m_scrollAnimation = new QPropertyAnimation(verticalScrollBar(), "value", this);
+        m_scrollAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+        if (verticalScrollBar()) {
+            verticalScrollBar()->setSingleStep(40);
+            connect(verticalScrollBar(), &QScrollBar::sliderPressed,
+                    m_scrollAnimation, &QPropertyAnimation::stop);
+        }
+    }
+
+protected:
+    void wheelEvent(QWheelEvent *event) override
+    {
+        // 1. High-precision touchpad / smooth kinetic wheel support (Wayland/libinput/macOS)
+        if (event->pixelDelta().y() != 0) {
+            m_scrollAnimation->stop();
+            if (verticalScrollBar()) {
+                verticalScrollBar()->setValue(verticalScrollBar()->value() - event->pixelDelta().y());
+            }
+            event->accept();
+            return;
+        }
+
+        // 2. Progressive easing scroll for standard stepped mouse wheels
+        int angleY = event->angleDelta().y();
+        if (angleY != 0 && verticalScrollBar()) {
+            double notches = static_cast<double>(angleY) / 120.0;
+            // 60 pixels per notch for a smooth, progressive descent/ascent
+            int deltaPixels = qRound(notches * 60.0);
+
+            int currentVal = (m_scrollAnimation->state() == QAbstractAnimation::Running)
+                                 ? m_targetScrollValue
+                                 : verticalScrollBar()->value();
+
+            int minVal = verticalScrollBar()->minimum();
+            int maxVal = verticalScrollBar()->maximum();
+            m_targetScrollValue = qBound(minVal, currentVal - deltaPixels, maxVal);
+
+            if (m_targetScrollValue != verticalScrollBar()->value()) {
+                m_scrollAnimation->stop();
+                m_scrollAnimation->setDuration(160);
+                m_scrollAnimation->setStartValue(verticalScrollBar()->value());
+                m_scrollAnimation->setEndValue(m_targetScrollValue);
+                m_scrollAnimation->start();
+            }
+            event->accept();
+            return;
+        }
+
+        QListWidget::wheelEvent(event);
+    }
+
+    void updateGeometries() override
+    {
+        QListWidget::updateGeometries();
+        if (verticalScrollBar()) {
+            // Keep singleStep at a comfortable progressive 40px
+            verticalScrollBar()->setSingleStep(40);
+        }
+    }
+
+    void currentChanged(const QModelIndex &current, const QModelIndex &previous) override
+    {
+        if (m_scrollAnimation && m_scrollAnimation->state() == QAbstractAnimation::Running) {
+            m_scrollAnimation->stop();
+        }
+        QListWidget::currentChanged(current, previous);
+    }
+
+private:
+    QPropertyAnimation *m_scrollAnimation = nullptr;
+    int m_targetScrollValue = 0;
+};
+
 // ==========================================
 // FolderViewer
 // ==========================================
@@ -504,6 +593,10 @@ void FolderViewer::setupUi()
     m_bookmarksWidget->setIconSize(QSize(18, 18));
     m_bookmarksWidget->setFrameShape(QFrame::NoFrame);
     m_bookmarksWidget->setFocusPolicy(Qt::NoFocus);
+    m_bookmarksWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    if (m_bookmarksWidget->verticalScrollBar()) {
+        m_bookmarksWidget->verticalScrollBar()->setSingleStep(28);
+    }
     connect(m_bookmarksWidget, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         if (!item) return;
         bool isAddAction = item->data(Qt::UserRole + 2).toBool();
@@ -568,7 +661,7 @@ void FolderViewer::setupUi()
     contentLayout->addWidget(m_bookmarksWidget);
 
     // Center Column: Card Grid List Widget with Large Cards
-    m_listWidget = new QListWidget(this);
+    m_listWidget = new FolderListWidget(this);
     m_listWidget->setViewMode(QListWidget::IconMode);
     m_listWidget->setResizeMode(QListWidget::Adjust);
     m_listWidget->setMovement(QListWidget::Static);
@@ -576,6 +669,9 @@ void FolderViewer::setupUi()
     m_listWidget->setGridSize(QSize(154, 168));
     m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    if (m_listWidget->verticalScrollBar()) {
+        m_listWidget->verticalScrollBar()->setSingleStep(40);
+    }
     m_listWidget->setFrameShape(QFrame::NoFrame);
     m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     m_listWidget->setItemDelegate(new FolderCardDelegate(m_listWidget));

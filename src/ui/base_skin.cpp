@@ -69,6 +69,102 @@
 #include "share_dialog.h"
 #include "share_manager.h"
 #include "filmstrip_widget.h"
+#include <QVariantAnimation>
+#include <QPainterPath>
+
+/**
+ * @brief Tear-free, single-pass transition overlay widget.
+ *
+ * Renders file switch transitions (Zoom & Fade, Parallax Slide, Cross Fade)
+ * directly via QPainter opacity and transforms within a fixed geometry, avoiding
+ * QGraphicsOpacityEffect offscreen FBO reallocations and layout overflow glitches.
+ */
+class TransitionOverlayWidget : public QWidget {
+public:
+    explicit TransitionOverlayWidget(QWidget *parent = nullptr)
+        : QWidget(parent)
+    {
+        setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        setAttribute(Qt::WA_NoSystemBackground, true);
+        hide();
+    }
+
+    void begin(const QPixmap &pixmap, const QColor &bgColor, TransitionEffect effect, bool forward)
+    {
+        m_pixmap = pixmap;
+        m_bgColor = bgColor;
+        m_effect = effect;
+        m_forward = forward;
+        m_progress = 0.0;
+        show();
+        raise();
+        update();
+    }
+
+    void setProgress(qreal progress)
+    {
+        m_progress = qBound(0.0, progress, 1.0);
+        update();
+    }
+
+    void resetOverlay()
+    {
+        m_pixmap = QPixmap();
+        m_progress = 0.0;
+        hide();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *) override
+    {
+        if (m_pixmap.isNull() || m_progress >= 1.0) return;
+
+        QPainter p(this);
+        p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+        p.setOpacity(1.0 - m_progress);
+
+        const QRect bounds = rect();
+        QTransform tx;
+        switch (m_effect) {
+        case TransitionEffect::ZoomFade: {
+            const qreal deltaScale = (m_forward ? 0.035 : -0.035) * m_progress;
+            const qreal scale = 1.0 + deltaScale;
+            const QPointF center = QRectF(bounds).center();
+            tx.translate(center.x(), center.y());
+            tx.scale(scale, scale);
+            tx.translate(-center.x(), -center.y());
+            break;
+        }
+        case TransitionEffect::ParallaxSlide: {
+            const qreal slideOffset = (m_forward ? -64.0 : 64.0) * m_progress;
+            tx.translate(slideOffset, 0.0);
+            break;
+        }
+        case TransitionEffect::CrossFade:
+        default:
+            break;
+        }
+
+        const QRectF mappedRect = tx.mapRect(QRectF(bounds));
+        if (!mappedRect.contains(QRectF(bounds))) {
+            QPainterPath outer;
+            outer.addRect(QRectF(bounds));
+            QPainterPath inner;
+            inner.addRect(mappedRect);
+            p.fillPath(outer.subtracted(inner), m_bgColor);
+        }
+
+        p.setTransform(tx);
+        p.drawPixmap(bounds, m_pixmap);
+    }
+
+private:
+    QPixmap m_pixmap;
+    QColor m_bgColor = QColor("#22262b");
+    TransitionEffect m_effect = TransitionEffect::ZoomFade;
+    bool m_forward = true;
+    qreal m_progress = 0.0;
+};
 
 
 BaseSkin::BaseSkin(QWidget *parent)
@@ -100,11 +196,13 @@ BaseSkin::BaseSkin(QWidget *parent)
     m_filmstripWanted = settings.value("ui/filmstrip", false).toBool();
 
     m_centralContainer = new QWidget(this);
+    m_centralContainer->setAutoFillBackground(true);
     QVBoxLayout *centralLayout = new QVBoxLayout(m_centralContainer);
     centralLayout->setContentsMargins(0, 0, 0, 0);
     centralLayout->setSpacing(0);
 
     m_stackedWidget = new QStackedWidget(m_centralContainer);
+    m_stackedWidget->setAutoFillBackground(true);
 
     m_imageViewer = new ImageViewer(this);
     m_textViewer = new TextViewer(this);
@@ -278,21 +376,15 @@ BaseSkin::BaseSkin(QWidget *parent)
     });
 
     // Transitions
-    m_transitionOverlay = new QLabel(m_centralContainer);
-    m_transitionOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
-    m_transitionOverlay->setScaledContents(true);
-    m_transitionOverlay->hide();
-    m_overlayOpacity = new QGraphicsOpacityEffect(m_transitionOverlay);
-    m_transitionOverlay->setGraphicsEffect(m_overlayOpacity);
+    m_transitionOverlay = new TransitionOverlayWidget(m_centralContainer);
 
     m_animGroup = new QParallelAnimationGroup(this);
     connect(m_animGroup, &QParallelAnimationGroup::finished, this, [this]() {
         if (m_transitionOverlay) {
-            m_transitionOverlay->hide();
+            m_transitionOverlay->resetOverlay();
             if (m_stackedWidget) {
                 m_transitionOverlay->setGeometry(m_stackedWidget->geometry());
             }
-            if (m_overlayOpacity) m_overlayOpacity->setOpacity(1.0);
         }
     });
 
@@ -601,82 +693,48 @@ void BaseSkin::startTransitionAnimation(bool forward)
         if (m_animGroup && m_animGroup->state() == QAbstractAnimation::Running) {
             m_animGroup->stop();
         }
-        if (m_transitionOverlay) m_transitionOverlay->hide();
+        if (m_transitionOverlay) m_transitionOverlay->resetOverlay();
         return;
     }
     m_lastSwitchTimeMs = now;
 
-    QPixmap oldPix = m_stackedWidget->grab();
-    if (oldPix.isNull()) return;
-
-    if (!m_transitionOverlay || !m_overlayOpacity || !m_animGroup) return;
+    if (!m_transitionOverlay || !m_animGroup) return;
 
     if (m_animGroup->state() == QAbstractAnimation::Running) {
         m_animGroup->stop();
     }
     m_animGroup->clear();
+    m_transitionOverlay->resetOverlay();
+
+    QPixmap oldPix = m_stackedWidget->grab();
+    if (oldPix.isNull()) return;
 
     QRect widgetRect = m_stackedWidget->geometry();
-
-    m_transitionOverlay->setPixmap(oldPix);
     m_transitionOverlay->setGeometry(widgetRect);
-    m_transitionOverlay->show();
-    m_transitionOverlay->raise();
 
-    switch (effect) {
-    case TransitionEffect::ZoomFade: {
-        m_overlayOpacity->setOpacity(1.0);
-        auto *fadeAnim = new QPropertyAnimation(m_overlayOpacity, "opacity", m_animGroup);
-        fadeAnim->setDuration(150);
-        fadeAnim->setStartValue(1.0);
-        fadeAnim->setEndValue(0.0);
-        fadeAnim->setEasingCurve(QEasingCurve::OutQuad);
-        m_animGroup->addAnimation(fadeAnim);
+    QColor bgColor = m_imageViewer ? m_imageViewer->canvasBackgroundColor() : palette().window().color();
+    m_transitionOverlay->begin(oldPix, bgColor, effect, forward);
 
-        int zoomDelta = forward ? 18 : -18;
-        QRect zoomRect = widgetRect.adjusted(-zoomDelta, -zoomDelta, zoomDelta, zoomDelta);
-        auto *geomAnim = new QPropertyAnimation(m_transitionOverlay, "geometry", m_animGroup);
-        geomAnim->setDuration(150);
-        geomAnim->setStartValue(widgetRect);
-        geomAnim->setEndValue(zoomRect);
-        geomAnim->setEasingCurve(QEasingCurve::OutQuad);
-        m_animGroup->addAnimation(geomAnim);
-        break;
+    auto *progressAnim = new QVariantAnimation(m_animGroup);
+    int durationMs = 140;
+    QEasingCurve::Type curve = QEasingCurve::OutCubic;
+    if (effect == TransitionEffect::ZoomFade) {
+        durationMs = 145;
+        curve = QEasingCurve::OutQuad;
+    } else if (effect == TransitionEffect::CrossFade) {
+        durationMs = 130;
+        curve = QEasingCurve::InOutQuad;
     }
-    case TransitionEffect::ParallaxSlide: {
-        m_overlayOpacity->setOpacity(1.0);
-        int slideOffset = forward ? -80 : 80;
-        QRect targetRect = widgetRect.translated(slideOffset, 0);
-
-        auto *slideAnim = new QPropertyAnimation(m_transitionOverlay, "geometry", m_animGroup);
-        slideAnim->setDuration(140);
-        slideAnim->setStartValue(widgetRect);
-        slideAnim->setEndValue(targetRect);
-        slideAnim->setEasingCurve(QEasingCurve::OutCubic);
-        m_animGroup->addAnimation(slideAnim);
-
-        auto *fadeAnim = new QPropertyAnimation(m_overlayOpacity, "opacity", m_animGroup);
-        fadeAnim->setDuration(140);
-        fadeAnim->setStartValue(1.0);
-        fadeAnim->setEndValue(0.0);
-        fadeAnim->setEasingCurve(QEasingCurve::OutQuad);
-        m_animGroup->addAnimation(fadeAnim);
-        break;
-    }
-    case TransitionEffect::CrossFade: {
-        m_overlayOpacity->setOpacity(1.0);
-        auto *fadeAnim = new QPropertyAnimation(m_overlayOpacity, "opacity", m_animGroup);
-        fadeAnim->setDuration(130);
-        fadeAnim->setStartValue(1.0);
-        fadeAnim->setEndValue(0.0);
-        fadeAnim->setEasingCurve(QEasingCurve::InOutQuad);
-        m_animGroup->addAnimation(fadeAnim);
-        break;
-    }
-    default:
-        break;
-    }
-
+    progressAnim->setDuration(durationMs);
+    progressAnim->setStartValue(0.0);
+    progressAnim->setEndValue(1.0);
+    progressAnim->setEasingCurve(curve);
+    connect(progressAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &val) {
+        if (m_transitionOverlay) {
+            m_transitionOverlay->setProgress(val.toReal());
+        }
+    });
+    m_animGroup->addAnimation(progressAnim);
     m_animGroup->start();
 }
 

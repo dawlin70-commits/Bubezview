@@ -121,4 +121,9 @@ private:
     QPushButton *m_btnStandbyPlus = nullptr;
     QLabel *m_lblStandbyValue = nullptr;
     int m_standbyMinutes = 0;
+
+    QCheckBox *m_chkEnableGpu = nullptr;
+    QLabel *m_lblGpuRenderer = nullptr;
+    QLabel *m_lblGpuDriver = nullptr;
+    QLabel *m_lblGpuVramNotice = nullptr;
 };

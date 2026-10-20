@@ -76,6 +76,42 @@ public:
      */
     QWidget *canvasWidget() const { return reinterpret_cast<QWidget*>(m_canvas); }
 
+    /**
+     * @brief Returns the coordinated background color matching the active theme preset.
+     */
+    QColor canvasBackgroundColor() const;
+
+    /**
+     * @brief Transparency background rendering mode for images with an alpha channel.
+     */
+    enum class TransparencyMode {
+        White,        ///< Solid pure white background (Default, high contrast, removes transparency).
+        Checkerboard, ///< Subtle checkerboard pattern (Photoshop / GIMP style).
+        Theme,        ///< Theme coordinated background color (Dark Slate / Breeze Dark / Native).
+        Black         ///< Solid black background.
+    };
+
+    /**
+     * @brief Gets current transparency background mode from settings.
+     */
+    TransparencyMode transparencyMode() const;
+
+    /**
+     * @brief Sets transparency background mode and refreshes canvas.
+     */
+    void setTransparencyMode(TransparencyMode mode);
+
+    /**
+     * @brief Permanently flattens image transparency onto a solid color (with full Undo/Redo support).
+     * @param fillColor Color to replace transparent pixels with (defaults to pure white).
+     */
+    void removeTransparency(const QColor &fillColor = Qt::white);
+
+    /**
+     * @brief Helper indicating if the currently active theme is a dark theme.
+     */
+    bool isDarkTheme() const;
+
     // Geometric & visual transformations
     void rotateClockwise();
     void rotateCounterClockwise();
@@ -170,6 +206,7 @@ private:
     QImage m_originalImage;
     QList<QImage> m_undoStack;
     QList<QImage> m_redoStack;
+    QPixmap m_sourcePixmap;
     QPixmap m_scaledPixmap;
     double m_zoomFactor;
     bool m_fitToWindow;

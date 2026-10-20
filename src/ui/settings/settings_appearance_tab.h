@@ -37,6 +37,7 @@ signals:
 private slots:
     void onThemeChanged(int index);
     void onTransitionChanged(int index);
+    void onTransparencyChanged(int index);
     void onLanguageChanged(int index);
 
 private:
@@ -44,5 +45,6 @@ private:
 
     QComboBox *m_comboTheme = nullptr;
     QComboBox *m_comboTransition = nullptr;
+    QComboBox *m_comboTransparency = nullptr;
     QComboBox *m_comboLanguage = nullptr;
 };

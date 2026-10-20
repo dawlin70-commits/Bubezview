@@ -242,7 +242,7 @@ protected:
     void openArchiveFile(const QString &extractedFilePath, const QString &internalEntryPath);
 
     // Fast-Skip Transition System
-    class QLabel *m_transitionOverlay;
+    class TransitionOverlayWidget *m_transitionOverlay;
     class QGraphicsOpacityEffect *m_overlayOpacity;
     class QParallelAnimationGroup *m_animGroup;
     qint64 m_lastSwitchTimeMs;

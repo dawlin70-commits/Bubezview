@@ -134,6 +134,9 @@ private:
     QAction *m_actRepairPdf;
     QAction *m_actOrganizePdf;
     QAction *m_actImageCrop;
+    QAction *m_actFlattenImage;
+    QMenu   *m_menuTransparency;
+    class QActionGroup *m_grpTransparency;
 
     QAction *m_actOpenFile;
     QAction *m_actOpenFolder;

@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.16)
 # BubezView — Modern Modular Document & Media Viewer
 # Root Build System Configuration
 # ==============================================================================
-project(bubezview VERSION 0.4.3 LANGUAGES CXX)
-set(BUBEZVIEW_VERSION_STRING "0.4.3")
+project(bubezview VERSION 0.4.4 LANGUAGES CXX)
+set(BUBEZVIEW_VERSION_STRING "0.4.4")
 add_compile_definitions(BUBEZVIEW_VERSION="${BUBEZVIEW_VERSION_STRING}")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -151,6 +151,7 @@ set(BUBEZVIEW_RESOURCES
 # -----------------------------------------------------------------------------
 # 5. Tree Subdirectories (Core, Plugins, Tests)
 # -----------------------------------------------------------------------------
+enable_testing()
 add_subdirectory(src)
 add_subdirectory(tests)
 

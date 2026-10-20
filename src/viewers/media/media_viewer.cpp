@@ -126,7 +126,9 @@ MediaViewer::MediaViewer(QWidget *parent)
     if (m_mpv) {
         mpv_set_option_string(m_mpv, "terminal", "yes");
         mpv_set_option_string(m_mpv, "msg-level", "ao=v,alsa=v,audio=v");
-        mpv_set_option_string(m_mpv, "hwdec", "auto-safe");
+        QSettings mediaSettings("Bubez", "BubezView");
+        bool gpuEnabled = mediaSettings.value("performance/gpu_acceleration", true).toBool();
+        mpv_set_option_string(m_mpv, "hwdec", gpuEnabled ? "auto-safe" : "no");
         mpv_set_option_string(m_mpv, "vo", "libmpv");
         if (m_isBitPerfect) {
             mpv_set_option_string(m_mpv, "audio-resample", "no");

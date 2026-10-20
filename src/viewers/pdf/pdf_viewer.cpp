@@ -7,6 +7,7 @@
 #include "pdf_image_dialog.h"
 #include "pdf_watermark_dialog.h"
 #include "pdf_page_organizer_dialog.h"
+#include "gpu_acceleration_manager.h"
 #include <poppler/qt6/poppler-qt6.h>
 #include <poppler/qt6/poppler-annotation.h>
 #include <poppler/qt6/poppler-form.h>
@@ -138,6 +139,8 @@ PdfViewer::PdfViewer(QWidget *parent)
     m_scrollArea->setAlignment(Qt::AlignCenter);
 
     m_pageWidget = new PdfPageWidget(m_scrollArea);
+    m_scrollArea->setWidget(m_pageWidget);
+
     connect(m_pageWidget, &PdfPageWidget::selectionChanged, this, [this](bool hasSel) {
         emit selectionChanged(hasSel);
         emit historyChanged();
@@ -175,7 +178,6 @@ PdfViewer::PdfViewer(QWidget *parent)
         }
     });
 
-    m_scrollArea->setWidget(m_pageWidget);
     m_splitter->addWidget(m_scrollArea);
 
     connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged, this, &PdfViewer::onVerticalScrollChanged);
@@ -273,6 +275,7 @@ PdfViewer::~PdfViewer()
     resetDocument();
 }
 
+
 void PdfViewer::resetDocument()
 {
     if (m_pageWidget) {
@@ -321,6 +324,13 @@ void PdfViewer::updateTheme()
                 "QScrollArea { background-color: #e4e7eb; border: none; }\n" +
                 ThemeManager::scrollBarStyleSheet(preset)
             );
+            if (m_scrollArea->viewport()) {
+                QPalette pal = m_scrollArea->viewport()->palette();
+                pal.setColor(QPalette::Window, QColor("#e4e7eb"));
+                m_scrollArea->viewport()->setPalette(pal);
+                m_scrollArea->viewport()->setStyleSheet("background-color: #e4e7eb; border: none;");
+                m_scrollArea->viewport()->setAutoFillBackground(true);
+            }
         }
     } else if (preset == ThemePreset::DarkSlate) {
         m_splitter->setStyleSheet("QSplitter::handle { background-color: #3b3b3b; }");
@@ -346,6 +356,13 @@ void PdfViewer::updateTheme()
                 "QScrollArea { background-color: #22262b; border: none; }\n" +
                 ThemeManager::scrollBarStyleSheet(preset)
             );
+            if (m_scrollArea->viewport()) {
+                QPalette pal = m_scrollArea->viewport()->palette();
+                pal.setColor(QPalette::Window, QColor("#22262b"));
+                m_scrollArea->viewport()->setPalette(pal);
+                m_scrollArea->viewport()->setStyleSheet("background-color: #22262b; border: none;");
+                m_scrollArea->viewport()->setAutoFillBackground(true);
+            }
         }
     } else { // BreezeDark
         m_splitter->setStyleSheet("QSplitter::handle { background-color: #3b3b3b; }");
@@ -371,6 +388,13 @@ void PdfViewer::updateTheme()
                 "QScrollArea { background-color: #2b2b2b; border: none; }\n" +
                 ThemeManager::scrollBarStyleSheet(preset)
             );
+            if (m_scrollArea->viewport()) {
+                QPalette pal = m_scrollArea->viewport()->palette();
+                pal.setColor(QPalette::Window, QColor("#2b2b2b"));
+                m_scrollArea->viewport()->setPalette(pal);
+                m_scrollArea->viewport()->setStyleSheet("background-color: #2b2b2b; border: none;");
+                m_scrollArea->viewport()->setAutoFillBackground(true);
+            }
         }
     }
 

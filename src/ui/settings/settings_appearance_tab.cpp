@@ -91,7 +91,33 @@ void SettingsAppearanceTab::setupUi()
     layTransition->addWidget(m_comboTransition, 1);
     layout->addWidget(grpTransition);
 
-    // 3. Language Selection Group
+    // 3. Transparent Images Background Group
+    QGroupBox *grpTransp = new QGroupBox(tr("Transparent Images Background"), content);
+    QHBoxLayout *layTransp = new QHBoxLayout(grpTransp);
+    layTransp->setContentsMargins(12, 10, 12, 12);
+
+    QLabel *lblTransp = new QLabel(tr("Background behind transparency:"), grpTransp);
+    m_comboTransparency = new QComboBox(grpTransp);
+    m_comboTransparency->setCursor(Qt::PointingHandCursor);
+    m_comboTransparency->addItem(tr("Solid White (Recommended - Removes Transparency)"), "white");
+    m_comboTransparency->addItem(tr("Checkerboard Pattern (Classic Grid)"), "checkerboard");
+    m_comboTransparency->addItem(tr("Interface Theme Color"), "theme");
+    m_comboTransparency->addItem(tr("Solid Black"), "black");
+
+    QSettings settings("Bubez", "BubezView");
+    QString savedTransp = settings.value("image/transparency_mode", "white").toString();
+    int transpIdx = m_comboTransparency->findData(savedTransp);
+    if (transpIdx >= 0) {
+        m_comboTransparency->setCurrentIndex(transpIdx);
+    }
+    connect(m_comboTransparency, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SettingsAppearanceTab::onTransparencyChanged);
+
+    layTransp->addWidget(lblTransp);
+    layTransp->addWidget(m_comboTransparency, 1);
+    layout->addWidget(grpTransp);
+
+    // 4. Language Selection Group
     QGroupBox *grpLang = new QGroupBox(tr("Language"), content);
     QHBoxLayout *layLang = new QHBoxLayout(grpLang);
     layLang->setContentsMargins(12, 10, 12, 12);
@@ -106,7 +132,6 @@ void SettingsAppearanceTab::setupUi()
     m_comboLanguage->addItem("Français", "fr");
     m_comboLanguage->addItem("Deutsch", "de");
 
-    QSettings settings("Bubez", "BubezView");
     QString savedLang = settings.value("language", "system").toString();
     int langIdx = m_comboLanguage->findData(savedLang);
     if (langIdx >= 0) {
@@ -142,12 +167,23 @@ void SettingsAppearanceTab::onTransitionChanged(int index)
     ThemeManager::setTransition(effect);
 }
 
+void SettingsAppearanceTab::onTransparencyChanged(int index)
+{
+    if (!m_comboTransparency || index < 0) return;
+    QString mode = m_comboTransparency->itemData(index).toString();
+    QSettings settings("Bubez", "BubezView");
+    settings.setValue("image/transparency_mode", mode);
+    settings.sync();
+    emit themeChanged();
+}
+
 void SettingsAppearanceTab::onLanguageChanged(int index)
 {
     if (!m_comboLanguage || index < 0) return;
     QString langCode = m_comboLanguage->itemData(index).toString();
     QSettings settings("Bubez", "BubezView");
     settings.setValue("language", langCode);
+    settings.sync();
 
     QMessageBox::information(
         this,
