@@ -861,8 +861,8 @@ except Exception:
         make_flag=("-DCMAKE_MAKE_PROGRAM=$make_prog")
     fi
 
-    local build_log="/tmp/${APP_ID}_build.log"
-    rm -f "$build_log"
+    local build_log="$work_dir/${APP_ID}_build.log"
+    rm -f "$build_log" 2>/dev/null || true
 
     if [ "$UI_MODE" = "zenity" ]; then
         (
