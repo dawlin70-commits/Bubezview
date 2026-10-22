@@ -141,21 +141,39 @@ QString UpdateManager::findInstallerScript() const
         QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../install.sh"),
         QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../install.sh"),
         QDir::homePath() + "/.local/share/bubezview/install.sh",
+        QDir::homePath() + "/Progetti/BubezView/Installa",
         QDir::homePath() + "/Progetti/BubezView/install.sh",
         QDir::homePath() + "/Progetti/espertoneweb/install-bubezview.sh"
     };
 
     const QString devRoot = BuildConfig::projectDevRoot();
     if (!devRoot.isEmpty()) {
-        candidates << devRoot + "/install.sh";
         candidates << devRoot + "/bubezview_cpp/Installa";
         candidates << devRoot + "/Installa";
+        candidates << devRoot + "/install.sh";
     }
 
     for (const QString &path : candidates) {
         QFileInfo fi(path);
         if (fi.exists() && fi.isExecutable()) {
-            return fi.canonicalFilePath();
+            // Verify the script is valid:
+            // 1. Either CMakeLists.txt exists in the same directory (source tree build helper)
+            // 2. Or the file is a genuine standalone installer containing cryptographic or catalog signatures
+            bool isValid = false;
+            if (QFile::exists(fi.dir().filePath("CMakeLists.txt"))) {
+                isValid = true;
+            } else {
+                QFile f(path);
+                if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                    QByteArray snippet = f.read(4096);
+                    if (snippet.contains("RELEASE_PUBKEY") || snippet.contains("PROJECT_URL") || snippet.contains("cpp_installer_template")) {
+                        isValid = true;
+                    }
+                }
+            }
+            if (isValid) {
+                return fi.canonicalFilePath();
+            }
         }
     }
     return QString();
@@ -205,6 +223,7 @@ void UpdateManager::checkForUpdates(bool silent)
         QString changelog = bubezObj.value("changelog").toString(tr("Bug fixes and performance improvements."));
         QString sha256 = bubezObj.value("sha256").toString().trimmed().toLower();
         QString signature = bubezObj.value("signature").toString().trimmed();
+        QString installerUrl = bubezObj.value("link_installer").toString().trimmed();
 
         bool isAuthentic = false;
         if (!signature.isEmpty()) {
@@ -229,6 +248,7 @@ void UpdateManager::checkForUpdates(bool silent)
             info.version = remoteVer;
             info.changelog = changelog;
             info.downloadUrl = downloadUrl;
+            info.installerUrl = installerUrl;
             info.sha256 = sha256;
             info.signature = signature;
             info.isAuthentic = isAuthentic;

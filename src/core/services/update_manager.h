@@ -21,6 +21,7 @@ struct ReleaseInfo {
     QString version;     ///< Semantic version string, e.g. "1.1.0".
     QString changelog;   ///< Human-readable release notes or summary.
     QString downloadUrl; ///< Direct URL to release artifacts or installer script.
+    QString installerUrl; ///< Direct URL to web installer script if available.
     QString sha256;      ///< Expected SHA-256 cryptographic digest of the release payload.
     QString signature;   ///< Base64-encoded Ed25519 digital signature of sha256 digest.
     bool isAuthentic = false; ///< True if cryptographically verified against developer's public key.

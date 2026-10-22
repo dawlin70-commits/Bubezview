@@ -143,23 +143,31 @@ void UpdateDialog::toggleDetails()
 
 void UpdateDialog::startUpdate()
 {
-    QString scriptPath = UpdateManager::instance().findInstallerScript();
-    if (scriptPath.isEmpty()) {
-        const QString localInstallDir = QDir::homePath() + "/.local/share/bubezview";
-        const QString targetScript = localInstallDir + "/install.sh";
-        QDir().mkpath(localInstallDir);
+    QString scriptPath;
+    const QString localInstallDir = QDir::homePath() + "/.local/share/bubezview";
+    const QString targetScript = localInstallDir + "/install.sh";
+    QDir().mkpath(localInstallDir);
 
-        QProcess curlProc;
-        QStringList curlArgs = {
-            "-s", "-L", "--connect-timeout", "5",
-            "https://dawlinshare.web.app/install-bubezview.sh",
-            "-o", targetScript
-        };
-        curlProc.start("curl", curlArgs);
-        if (curlProc.waitForFinished(6000) && curlProc.exitCode() == 0 && QFile::exists(targetScript) && QFile(targetScript).size() > 500) {
-            QFile::setPermissions(targetScript, QFile::permissions(targetScript) | QFileDevice::ExeOwner | QFileDevice::ExeUser);
-            scriptPath = targetScript;
-        }
+    // Prefer fetching the latest standalone installer matching this release directly from update server
+    const QString installerUrl = m_info.installerUrl.isEmpty()
+        ? QStringLiteral("https://dawlinshare.web.app/install-bubezview.sh")
+        : m_info.installerUrl;
+
+    QProcess curlProc;
+    QStringList curlArgs = {
+        "-s", "-L", "--connect-timeout", "5",
+        installerUrl,
+        "-o", targetScript
+    };
+    curlProc.start("curl", curlArgs);
+    if (curlProc.waitForFinished(6000) && curlProc.exitCode() == 0 && QFile::exists(targetScript) && QFile(targetScript).size() > 500) {
+        QFile::setPermissions(targetScript, QFile::permissions(targetScript) | QFileDevice::ExeOwner | QFileDevice::ExeUser);
+        scriptPath = targetScript;
+    }
+
+    // Fall back to local verified installer candidates if network retrieval failed
+    if (scriptPath.isEmpty()) {
+        scriptPath = UpdateManager::instance().findInstallerScript();
     }
 
     if (scriptPath.isEmpty()) {

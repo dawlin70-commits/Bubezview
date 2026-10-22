@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.7] - 2026-10-22
+
+### 🚀 Highlights
+- **OTA In-App Update & Installer Fix**: Resolved CMakeLists source directory resolution issue during automatic in-app updates.
+- **Robust Standalone Installer Integration**: UpdateManager now dynamically fetches and executes the verified standalone web installer, guaranteeing seamless background updates across all environments.
+
+---
+
 ## [0.4.6] - 2026-10-22
 
 ### 🚀 Highlights

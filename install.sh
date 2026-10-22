@@ -342,10 +342,13 @@ build_and_launch() {
     echo -e "${BLUE}${BOLD}[*] Installing ${APP_NAME} to ${HOME}/.local...${NC}"
     cmake --install "$BUILD_DIR"
 
-    # Salva una copia di install.sh per aggiornamenti automatici
+    # Salva una copia dell'installer autonomo per aggiornamenti automatici
     mkdir -p "${HOME}/.local/share/bubezview"
-    if [ -f "${SCRIPT_DIR}/install.sh" ]; then
-        cp -f "${SCRIPT_DIR}/install.sh" "${HOME}/.local/share/bubezview/install.sh" 2>/dev/null || true
+    if [ -f "${SCRIPT_DIR}/Installa" ]; then
+        cp -f "${SCRIPT_DIR}/Installa" "${HOME}/.local/share/bubezview/install.sh" 2>/dev/null || true
+        chmod +x "${HOME}/.local/share/bubezview/install.sh" 2>/dev/null || true
+    elif [ -f "/home/davide/Progetti/espertoneweb/install-bubezview.sh" ]; then
+        cp -f "/home/davide/Progetti/espertoneweb/install-bubezview.sh" "${HOME}/.local/share/bubezview/install.sh" 2>/dev/null || true
         chmod +x "${HOME}/.local/share/bubezview/install.sh" 2>/dev/null || true
     fi
 
