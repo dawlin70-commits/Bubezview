@@ -2254,7 +2254,7 @@ void BaseSkin::showAboutDialog()
     aboutBox.setTextFormat(Qt::RichText);
     aboutBox.setIconPixmap(QIcon::fromTheme("bubezview", windowIcon()).pixmap(64, 64));
     aboutBox.setText(
-        "<h3>BubezView 1.0.0</h3>"
+        QString("<h3>BubezView v%1</h3>").arg(QApplication::applicationVersion()) +
         "<p><b>" + tr("Native C++ / Qt6 Universal Viewer for Linux") + "</b></p>"
         "<p>" + tr("Developed by <b>Davide (Bubez)</b>.<br>Designed to be ultra-fast, responsive, and well integrated into the Linux desktop ecosystem.") + "</p>"
         "<hr>"
