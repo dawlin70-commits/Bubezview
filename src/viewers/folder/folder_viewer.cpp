@@ -1956,7 +1956,9 @@ void FolderViewer::updateInspectorPane(const QString &filePath)
             QImageReader reader(filePath);
             QSize sz = reader.size();
             if (sz.isValid() && sz.width() > 0 && sz.height() > 0) {
-                html += makeRow(tr("Resolution"), QString("%1 × %2 px").arg(sz.width()).arg(sz.height()));
+                const double mp = (static_cast<double>(sz.width()) * sz.height()) / 1000000.0;
+                const QString mpStr = (mp >= 0.1) ? QString("%1 MP").arg(mp, 0, 'f', 1) : QStringLiteral("<0.1 MP");
+                html += makeRow(tr("Resolution"), QString("%1 × %2 px (%3)").arg(sz.width()).arg(sz.height()).arg(mpStr));
             }
         }
         html += "</table></div>";

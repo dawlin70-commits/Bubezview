@@ -35,6 +35,8 @@
 #include <QDir>
 #include <QCollator>
 #include <algorithm>
+#include <numeric>
+#include <cmath>
 #include <QTemporaryFile>
 #include <QApplication>
 #include <QClipboard>
@@ -1661,6 +1663,66 @@ QString BaseSkin::fileIndexText() const
     return QString("[%1/%2]").arg(m_currentIndex + 1).arg(m_siblingFiles.size());
 }
 
+/**
+ * @brief Computes a standardized human-readable aspect ratio string from pixel dimensions.
+ *
+ * Checks exact integer ratios using std::gcd (standardizing 8:5 to industry-standard 16:10),
+ * and matches close photography/cinematic display ratios (e.g. 16:9, 4:3, 3:2, 21:9)
+ * within a small tolerance for slightly cropped images.
+ *
+ * @param w Width in pixels.
+ * @param h Height in pixels.
+ * @return Formatted aspect ratio string (e.g. "16:9", "4:3", "3:2"), or empty string if invalid.
+ */
+static QString formatAspectRatio(int w, int h)
+{
+    if (w <= 0 || h <= 0) {
+        return QString();
+    }
+
+    // Check exact integer ratio via greatest common divisor
+    const int g = std::gcd(w, h);
+    const int rw = w / g;
+    const int rh = h / g;
+
+    // Check if directly reducible to standard small integer ratio (<= 25)
+    if (rw <= 25 && rh <= 25) {
+        // Standardize 8:5 to industry-standard 16:10 display ratio
+        if (rw == 8 && rh == 5) return QStringLiteral("16:10");
+        if (rw == 5 && rh == 8) return QStringLiteral("10:16");
+        return QString("%1:%2").arg(rw).arg(rh);
+    }
+
+    // Handle common ultra-wide / cinema or slight sensor crop ratios
+    const double ratio = static_cast<double>(w) / static_cast<double>(h);
+    static const struct { double val; const char *name; } s_standards[] = {
+        {1.0,           "1:1"},
+        {4.0 / 3.0,     "4:3"},
+        {3.0 / 4.0,     "3:4"},
+        {3.0 / 2.0,     "3:2"},
+        {2.0 / 3.0,     "2:3"},
+        {16.0 / 9.0,    "16:9"},
+        {9.0 / 16.0,    "9:16"},
+        {16.0 / 10.0,   "16:10"},
+        {10.0 / 16.0,   "10:16"},
+        {5.0 / 4.0,     "5:4"},
+        {4.0 / 5.0,     "4:5"},
+        {64.0 / 27.0,   "21:9"},
+        {27.0 / 64.0,   "9:21"},
+        {43.0 / 18.0,   "21:9"},
+        {18.0 / 43.0,   "9:21"}
+    };
+
+    for (const auto &stdRatio : s_standards) {
+        if (std::abs(ratio - stdRatio.val) < 0.02) {
+            return QString::fromLatin1(stdRatio.name);
+        }
+    }
+
+    // Fallback: decimal ratio format (e.g. "2.35:1")
+    return QString("%1:1").arg(ratio, 0, 'f', 2);
+}
+
 QString BaseSkin::fileInfoText() const
 {
     if (m_currentFilePath.isEmpty()) return QString();
@@ -1670,8 +1732,25 @@ QString BaseSkin::fileInfoText() const
     if (idx == 0) { // Image
         QSize sz = m_imageViewer->imageSize();
         int zoomPercent = qRound(m_imageViewer->zoomFactor() * 100.0);
-        return QString("%1x%2 px • %3 • %4%")
-            .arg(sz.width()).arg(sz.height())
+        int w = sz.width();
+        int h = sz.height();
+
+        QString dimStr;
+        if (w > 0 && h > 0) {
+            double mp = (static_cast<double>(w) * h) / 1000000.0;
+            QString mpStr = (mp >= 0.1) ? QString("%1 MP").arg(mp, 0, 'f', 1) : QStringLiteral("<0.1 MP");
+            QString aspectStr = formatAspectRatio(w, h);
+            if (!aspectStr.isEmpty()) {
+                dimStr = QString("%1x%2 px (%3 • %4)").arg(w).arg(h).arg(mpStr, aspectStr);
+            } else {
+                dimStr = QString("%1x%2 px (%3)").arg(w).arg(h).arg(mpStr);
+            }
+        } else {
+            dimStr = QString("%1x%2 px").arg(w).arg(h);
+        }
+
+        return QString("%1 • %2 • %3%")
+            .arg(dimStr)
             .arg(formatFileSize(info.size()))
             .arg(zoomPercent);
     } else if (idx == 1) { // Text
