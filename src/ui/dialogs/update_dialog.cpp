@@ -269,6 +269,11 @@ void UpdateDialog::onProcessFinished(int exitCode, QProcess::ExitStatus exitStat
 void UpdateDialog::restartApplication()
 {
     QString appPath = QApplication::applicationFilePath();
+    const QString installedBin = QDir::homePath() + "/.local/bin/bubezview";
+    if (QFile::exists(installedBin) && (QFile::permissions(installedBin) & QFileDevice::ExeUser)) {
+        appPath = installedBin;
+    }
+
     QStringList args;
 
     // Detect if there is an active file open to restore it on relaunch

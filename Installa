@@ -382,8 +382,8 @@ select_cpu_optimization() {
         SAVED_CPU=$(python3 -c "import json; d=json.load(open('$CONFIG_FILE')); print(d.get('cpu_profile', 'native'))" 2>/dev/null || echo "native")
         CMAKE_OPT_FLAGS=(-DCMAKE_BUILD_TYPE=Release)
         if [ "$SAVED_CPU" = "native" ]; then
-            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3 -march=native -mtune=native -flto")
-            echo -e "${BLUE}[*] CPU Optimization: Native (-march=native -O3)${NC}"
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3 -march=native -mtune=native -flto=auto")
+            echo -e "${BLUE}[*] CPU Optimization: Native (-march=native -O3 -flto=auto)${NC}"
         else
             CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O2 -march=x86-64")
             echo -e "${BLUE}[*] CPU Optimization: Standard (-O2)${NC}"
@@ -430,10 +430,10 @@ select_cpu_optimization() {
     fi
 
     if [ "$opt_choice" = "5" ]; then
-        local def_flags="-O3 -march=native -flto -fno-math-errno"
+        local def_flags="-O3 -march=native -flto=auto -fno-math-errno"
         if [ "$UI_MODE" = "zenity" ]; then
             expert_cxx_flags=$(zenity --entry --title="Opzioni Esperto Compilazione - $APP_NAME" \
-                --text="Inserisci le flag del compilatore (CXX FLAGS) personalizzate:\n(Esempio: -O3 -march=native -flto -funroll-loops -fno-math-errno)" \
+                --text="Inserisci le flag del compilatore (CXX FLAGS) personalizzate:\n(Esempio: -O3 -march=native -flto=auto -funroll-loops -fno-math-errno)" \
                 --entry-text="$def_flags" --width=540 2>/dev/null || echo "$def_flags")
         elif [ "$UI_MODE" = "kdialog" ]; then
             expert_cxx_flags=$(kdialog --title "Opzioni Esperto Compilazione" \
@@ -448,7 +448,7 @@ select_cpu_optimization() {
     CMAKE_OPT_FLAGS=(-DCMAKE_BUILD_TYPE=Release)
     case "$opt_choice" in
         1)
-            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3 -march=native -mtune=native -flto")
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3 -march=native -mtune=native -flto=auto")
             ;;
         2)
             CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3")
@@ -925,6 +925,13 @@ except Exception:
     cp -f "$exe_path" "$app_install_dir/$final_exe_name"
     chmod +x "$app_install_dir/$final_exe_name"
     ln -sf "$app_install_dir/$final_exe_name" "$user_bin/$APP_ID"
+
+    # Se esiste un binario di sviluppo in build_deb, aggiorna anche quello per coerenza tra gli ambienti
+    local dev_build_deb="/home/davide/Progetti/BubezView/build_deb/$final_exe_name"
+    if [ -f "$dev_build_deb" ]; then
+        cp -f "$exe_path" "$dev_build_deb" 2>/dev/null || true
+        chmod +x "$dev_build_deb" 2>/dev/null || true
+    fi
 
     # Salva una copia dell'installer autonomo per futuri aggiornamenti
     if [ -f "$0" ]; then

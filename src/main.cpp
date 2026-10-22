@@ -63,8 +63,30 @@ static void bubezLogMessageHandler(QtMsgType type, const QMessageLogContext &con
     }
 }
 
+#ifndef BUBEZVIEW_VERSION
+#define BUBEZVIEW_VERSION "0.1.0"
+#endif
+
 int main(int argc, char *argv[])
 {
+    // Fast-path command-line options that do not require GUI or X11/Wayland display initialization
+    for (int i = 1; i < argc; ++i) {
+        std::string_view arg(argv[i]);
+        if (arg == "--version" || arg == "-v" || arg == "-version") {
+            std::cout << "BubezView " << BUBEZVIEW_VERSION << "\n";
+            return 0;
+        }
+        if (arg == "--help" || arg == "-h" || arg == "-help") {
+            std::cout << "BubezView " << BUBEZVIEW_VERSION << " — Universal fast file viewer\n"
+                      << "Usage: bubezview [options] [file]\n\n"
+                      << "Options:\n"
+                      << "  -h, --help       Displays help on commandline options.\n"
+                      << "  -v, --version    Displays version information.\n"
+                      << "  -d, --debug      Enable verbose debug output.\n";
+            return 0;
+        }
+    }
+
     // libmpv requires LC_NUMERIC to be set to "C" for proper decimal parsing
     std::setlocale(LC_NUMERIC, "C");
 
@@ -77,10 +99,6 @@ int main(int argc, char *argv[])
     if (!qEnvironmentVariableIsSet("PULSE_LATENCY_MSEC")) {
         qputenv("PULSE_LATENCY_MSEC", "200");
     }
-
-#ifndef BUBEZVIEW_VERSION
-#define BUBEZVIEW_VERSION "0.1.0"
-#endif
 
     // Setup high-performance OpenGL surface format (VSync, DoubleBuffering, 4x MSAA)
     GpuAccelerationManager::setupSurfaceFormat();
