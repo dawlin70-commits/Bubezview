@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.6] - 2026-10-22
+
+### 🚀 Highlights
+- **First-Run Wizard Overhaul**: Streamlined onboarding experience with decluttered configuration presets (Complete Suite, Minimal Core, Custom Category Selection), interactive real-time summary card, and responsive layout for compact screens.
+- **Native System Media Fallback**: Audio and video files now play seamlessly without requiring MPV or external heavy packages, leveraging OS native system codecs via Qt Multimedia.
+- **Photo Studio & Basic Image Retouching Suite**: Added dedicated photo studio with creative presets, scene profiles, adaptive shadow lift, skin tone vitality protection, noise suppression, image resizing, and EXIF/GPS inspector.
+- **Complete i18n Localization & Code Quality**: Fully synchronized translation catalogs (100% complete Italian translation with 2,385 strings and 0 unfinished), enhanced automated unit tests, and comprehensive Doxygen documentation.
+
+### 🌟 New Features & Enhancements
+
+#### 🧙 First-Run Wizard Redesign
+- **Simplified Modular Presets**:
+  - *Complete Suite*: Enables all viewers and full extension packages (LibreOffice, OCR, QPDF, PAdES/CAdES signatures, MPV GPU, 10-Band Equalizer, 7-Zip Multi-Core, extended codecs).
+  - *Minimal Core*: Pure lightweight core engines without any heavy external dependencies (zero background bloat).
+  - *Custom Selection*: Granular per-category toggles for Documents & Office, Archives & ISO, Video & Movies, Music & Audio, and Images & Graphics.
+- **Dedicated Archives & ISO Category**: Added full support for configuring 7-Zip Multi-Core and ISO tools directly in the wizard and settings.
+- **Dynamic Live Summary**: Interactive configuration summary card detailing active viewers, enabled extension packages, and future update policy.
+- **Responsive Layout**: Re-engineered page layout to cleanly adapt to non-fullscreen and compact window dimensions without visual overlap or awkward scrollbars.
+
+#### 🎨 Photo Studio & Image Processing
+- **Creative Filter Presets**: 11 one-click creative filters (Hollywood Cinematic, Classic Antique Sepia, Analog Matte Shadows, Dramatic Monochrome, Deep Sky & Foliage, Soft Flattering Portraits, Warm Amber Sunset, Cyan Glacial, Punchy Lomo, Cyberpunk Night Neon, Clean Document & Text).
+- **Intelligent Scene Profiles**: Optimized processing profiles for Natural & Balanced, Vivid Landscapes, Backlight & Shadows, and Dehaze/Atmospheric.
+- **Tone & Detail Preservation**:
+  - Adaptive Shadows: Dynamic lift of underexposed shadow details for backlit portraits and dark scenes.
+  - Skin Tone Protection: Preserves natural peach warmth and prevents human complexion from shifting to cold cyan hues.
+  - Shadow Noise Suppression: Removes high-frequency noise from boosted dark areas.
+  - Center-Weighted Metering: Prioritizes subject exposure in high-contrast or backlit framing.
+  - Eyedropper White Balance Calibration: Instant sample-point neutral color balancing.
+- **Image Resizing (`Ctrl+R`)**: Proportional or absolute scaling (pixels or percentage) with live megapixel and delta percentage calculation.
+- **EXIF & Properties Inspector (`Alt+Return`)**: Comprehensive photo metadata viewer displaying camera model, lens, exposure, aperture, ISO, GPS coordinates with one-click clipboard copying, and live RGB/luminance histogram.
+- **Full Non-Destructive Undo/Redo**: Seamless multi-level history for all transformations, adjustments, and filter operations in `ImageViewer`.
+
+#### 🎬 Native System Media Engine (`SystemMediaViewer`)
+- **Lightweight OS Fallback**: Built-in fallback player utilizing `Qt6::Multimedia` and native OS decoders.
+- **Zero-Dependency Media Playback**: Audio and video files play immediately even when MPV is not installed or when running in Minimal Core mode.
+
+#### 🧪 Code Cleanup, Quality & Verification
+- **Codebase Simplification**: Removed legacy, redundant table widgets and obsolete code paths from the wizard.
+- **Full Internationalization (i18n)**: All new UI strings fully localized in English and Italian (2,385 source strings, 100% finished), and synchronized across German, Spanish, and French catalogs.
+- **Automated Test Suite Expansion**: Added dedicated tests (`test_exif`, `test_media_system`, and extended `test_image`) covering transformations, EXIF parsing, and system playback with 100% pass rate in <1s.
+
+---
+
 ## [0.4.0-beta] - 2026-10-15
 
 ### 🚀 Highlights

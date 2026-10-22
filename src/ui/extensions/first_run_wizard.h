@@ -10,6 +10,7 @@
 #include <QRadioButton>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QPushButton>
 #include <QVBoxLayout>
 
 /**
@@ -51,11 +52,17 @@ public:
     void accept() override;
 
 private:
+    /** @brief Creates the initial welcome and hardware summary page. */
     QWizardPage *createWelcomePage();
+    /** @brief Creates the CPU microarchitecture and build profile page. */
     QWizardPage *createCpuOptimizationPage();
+    /** @brief Creates the unified module presets and functional categories page. */
     QWizardPage *createModulesPage();
+    /** @brief Creates the visual theme and filmstrip configuration page. */
     QWizardPage *createAppearancePage();
+    /** @brief Creates the keyboard shortcut, dismissal, and cache behavior page. */
     QWizardPage *createBehaviorPage();
+    /** @brief Creates the final review and confirmation summary page. */
     QWizardPage *createSummaryPage();
 
     // CPU Performance Profile
@@ -63,57 +70,38 @@ private:
     QRadioButton *m_radioCpuBalanced = nullptr;
     QLabel *m_lblCpuDetectedNotice = nullptr;
 
-    // Functional Modules & Engine Presets (Proposal 3)
+    // Functional Modules & Engine Presets (Full, Minimal, Custom)
     QRadioButton *m_radioPresetFull = nullptr;
-    QRadioButton *m_radioPresetDocs = nullptr;
-    QRadioButton *m_radioPresetMedia = nullptr;
     QRadioButton *m_radioPresetMinimal = nullptr;
     QRadioButton *m_radioPresetCustom = nullptr;
-    QLabel *m_lblPresetDesc = nullptr;
 
-    // Granular Module Toggles (Hierarchical Document, Media & Archive structure)
-    QCheckBox *m_chkModulePdf = nullptr;
-    QCheckBox *m_chkSubOcr = nullptr;
-    QCheckBox *m_chkSubQpdf = nullptr;
+    // 5 Category Extension Toggles
+    QCheckBox *m_chkCatDocs = nullptr;
+    QCheckBox *m_chkCatImages = nullptr;
+    QCheckBox *m_chkCatVideo = nullptr;
+    QCheckBox *m_chkCatAudio = nullptr;
+    QCheckBox *m_chkCatArchives = nullptr;
 
-    QCheckBox *m_chkModuleOffice = nullptr;
-
-    QCheckBox *m_chkModuleMedia = nullptr;
-    QCheckBox *m_chkSubEqualizer = nullptr;
-
-    QCheckBox *m_chkModuleArchive = nullptr;
-    QCheckBox *m_chkSubSevenZip = nullptr;
-
-    // Status Badges
-    QLabel *m_badgePdf = nullptr;
-    QLabel *m_badgeOcr = nullptr;
-    QLabel *m_badgeQpdf = nullptr;
-    QLabel *m_badgeOffice = nullptr;
-    QLabel *m_badgeMedia = nullptr;
-    QLabel *m_badgeEqualizer = nullptr;
-    QLabel *m_badgeArchive = nullptr;
-    QLabel *m_badgeSevenZip = nullptr;
-
+    QLabel *m_lblDynamicSummary = nullptr;
     QPushButton *m_btnConfigureExtensions = nullptr;
-    QLabel *m_lblModulesHint = nullptr;
 
     bool m_syncingModules = false;
 
     /**
-     * @brief Applies a functional preset to the module checkboxes.
-     * @param presetIndex 0=Full, 1=Docs/Office, 2=Media, 3=Minimal.
+     * @brief Applies a functional preset to the module category checkboxes.
+     * @param presetIndex 0=Full Suite, 1=Minimal Core, 2=Custom.
      */
     void applyPreset(int presetIndex);
 
     /**
-     * @brief Evaluates the current state of module checkboxes to dynamically select the corresponding preset.
+     * @brief Evaluates the current state of category checkboxes to select the corresponding preset radio.
      */
     void evaluatePresetFromCheckboxes();
 
     /**
-     * @brief Refreshes the runtime status indicators next to each module.
+     * @brief Updates the real-time dynamic summary card in the modules selection page.
      */
-    void updateModuleStatusBadges();
+    void updateDynamicSummary();
 
     // Appearance & UI
     QComboBox *m_comboTheme = nullptr;
@@ -133,6 +121,8 @@ private:
     // Summary Page label
     QLabel *m_lblSummaryDetails = nullptr;
 
+    /** @brief Populates the final confirmation summary page table. */
     void updateSummaryText();
+    /** @brief Updates preset labels according to the selected CPU compilation profile. */
     void updateModuleOptionTexts();
 };

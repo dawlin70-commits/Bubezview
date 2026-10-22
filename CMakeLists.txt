@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.16)
 # BubezView — Modern Modular Document & Media Viewer
 # Root Build System Configuration
 # ==============================================================================
-project(bubezview VERSION 0.4.5 LANGUAGES CXX)
-set(BUBEZVIEW_VERSION_STRING "0.4.5")
+project(bubezview VERSION 0.4.6 LANGUAGES CXX)
+set(BUBEZVIEW_VERSION_STRING "0.4.6")
 add_compile_definitions(BUBEZVIEW_VERSION="${BUBEZVIEW_VERSION_STRING}")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -94,7 +94,7 @@ endif()
 # -----------------------------------------------------------------------------
 # 3. Dependencies Discovery
 # -----------------------------------------------------------------------------
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml DBus PrintSupport Test Network OpenGLWidgets Svg)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Xml DBus PrintSupport Test Network OpenGLWidgets Svg Multimedia MultimediaWidgets)
 find_package(PkgConfig REQUIRED)
 
 # Prioritize user-compiled libraries in ~/.local/lib/pkgconfig if present

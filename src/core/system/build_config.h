@@ -143,6 +143,12 @@ public:
     static QString sevenZipExecutable();
     static bool isSevenZipAvailable();
     static bool isPopplerDataInstalled();
+    /**
+     * @brief Checks if extended Qt6 image formats plugins (TGA, TIFF, WebP, JXL, PSD, HDR) are available.
+     * Inspects system plugin directories and supported formats reported by QImageReader.
+     * @return True if extended image format plugins are installed and ready.
+     */
+    static bool isImageFormatsInstalled();
 
     /**
      * @brief Dynamically discovers the project development root directory (if running in dev mode).

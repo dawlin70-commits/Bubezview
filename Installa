@@ -1,0 +1,1014 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# INSTALLATORE STANDALONE C++ / CMAKE
+# Generato da Release Studio
+# ==============================================================================
+
+set -e
+
+APP_ID="bubezview"
+APP_NAME="Bubezview"
+PROJECT_URL="https://dawlinshare.web.app/versioni.json"
+TARGET_EXE="bubezview"
+ICON_NAME="bubezview_icon.jpg"
+APP_CATEGORY="Utility"
+
+RELEASE_PUBKEY="-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAfr3yn0QMgvYvEjW+fkfKAF8ZP4EWsn9DOrhtjHPEe1I=
+-----END PUBLIC KEY-----"
+
+# ------------------------------------------------------------------------------
+# 1. RILEVAMENTO INTERFACCIA (GUI o TERMINALE)
+# ------------------------------------------------------------------------------
+UI_MODE="cli"
+FORCE_CLI=0
+VERBOSE=0
+IS_UPDATE=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --cli|-c)
+            FORCE_CLI=1
+            ;;
+        --update|-u)
+            IS_UPDATE=1
+            FORCE_CLI=1
+            ;;
+        --yes|-y)
+            IS_UPDATE=1
+            FORCE_CLI=1
+            ;;
+        --verbose|-v)
+            VERBOSE=1
+            ;;
+    esac
+done
+
+if [ "$FORCE_CLI" -eq 0 ] && ([ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]); then
+    if command -v zenity >/dev/null 2>&1; then
+        UI_MODE="zenity"
+    elif command -v kdialog >/dev/null 2>&1; then
+        UI_MODE="kdialog"
+    elif command -v yad >/dev/null 2>&1; then
+        UI_MODE="yad"
+    fi
+fi
+
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[1;33m"
+BOLD="\033[1m"
+NC="\033[0m"
+
+ui_info() {
+    local title="$1"
+    local msg="$2"
+    if [ "$UI_MODE" = "zenity" ]; then
+        zenity --info --title="$title" --text="$msg" --width=400 2>/dev/null || true
+    elif [ "$UI_MODE" = "kdialog" ]; then
+        kdialog --title "$title" --msgbox "$msg" 2>/dev/null || true
+    elif [ "$UI_MODE" = "yad" ]; then
+        yad --info --title="$title" --text="$msg" --width=400 2>/dev/null || true
+    else
+        echo -e "${BLUE}${BOLD}[*] ${title}:${NC} ${msg}"
+    fi
+}
+
+ui_error() {
+    local title="$1"
+    local msg="$2"
+    if [ "$UI_MODE" = "zenity" ]; then
+        zenity --error --title="$title" --text="$msg" --width=420 2>/dev/null || true
+    elif [ "$UI_MODE" = "kdialog" ]; then
+        kdialog --title "$title" --error "$msg" 2>/dev/null || true
+    elif [ "$UI_MODE" = "yad" ]; then
+        yad --error --title="$title" --text="$msg" --width=420 2>/dev/null || true
+    else
+        echo -e "${RED}${BOLD}[ERRORE] ${title}:${NC} ${msg}"
+    fi
+}
+
+ui_ask_yesno() {
+    local title="$1"
+    local msg="$2"
+    if [ "$IS_UPDATE" -eq 1 ]; then
+        return 0
+    fi
+    if [ "$UI_MODE" = "zenity" ]; then
+        zenity --question --title="$title" --text="$msg" --width=400 2>/dev/null
+        return $?
+    elif [ "$UI_MODE" = "kdialog" ]; then
+        kdialog --title "$title" --yesno "$msg" 2>/dev/null
+        return $?
+    elif [ "$UI_MODE" = "yad" ]; then
+        yad --question --title="$title" --text="$msg" --width=400 2>/dev/null
+        return $?
+    else
+        echo -en "${YELLOW}${BOLD}[?] ${title}:${NC} ${msg} [S/n]: "
+        read -r resp
+        case "$resp" in
+            [nN][oO]|[nN]) return 1 ;;
+            *) return 0 ;;
+        esac
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 2. CONTROLLO STRUMENTI BASE (curl, tar, cmake, compiler)
+detect_distro_family() {
+    if [ -f /run/ostree-booted ] || [ -f /etc/NIXOS ] || [ -d /nix/store ] || grep -qiE 'silverblue|kinoite|microos|steamos|nixos' /etc/os-release 2>/dev/null; then
+        echo "immutable"
+        return
+    fi
+    if [ -f /etc/gentoo-release ] || grep -qi "gentoo" /etc/os-release 2>/dev/null; then
+        echo "gentoo"
+        return
+    fi
+    if command -v apt-get >/dev/null 2>&1; then echo "apt"
+    elif command -v dnf >/dev/null 2>&1; then echo "dnf"
+    elif command -v pacman >/dev/null 2>&1; then echo "pacman"
+    elif command -v zypper >/dev/null 2>&1; then echo "zypper"
+    elif command -v xbps-install >/dev/null 2>&1; then echo "void"
+    elif command -v eopkg >/dev/null 2>&1; then echo "solus"
+    elif command -v apk >/dev/null 2>&1; then echo "alpine"
+    else echo "unknown"
+    fi
+}
+
+detect_package_manager() {
+    detect_distro_family
+}
+
+install_missing_packages() {
+    local pkgs=("$@")
+    local PM
+    PM=$(detect_package_manager)
+    
+    if [ "$PM" = "immutable" ]; then
+        ui_info "Sistema Immutabile Rilevato" "Il tuo sistema ha il file system di sistema in sola lettura (OSTree / NixOS / SteamOS).\n\nNon è consigliato installare pacchetti in /usr.\nConsigliato: procedi compilando con motori incorporati da sorgente."
+        return 0
+    fi
+    if [ "$PM" = "gentoo" ]; then
+        ui_info "Gentoo Linux Rilevato" "Installa i pacchetti tramite portage:\nsudo emerge --ask ${pkgs[*]}"
+        return 0
+    fi
+
+    local install_cmd=""
+    case "$PM" in
+        apt)
+            install_cmd="apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ${pkgs[*]}"
+            ;;
+        dnf)
+            install_cmd="dnf install -y ${pkgs[*]}"
+            ;;
+        pacman)
+            install_cmd="pacman -Sy --noconfirm --needed ${pkgs[*]}"
+            ;;
+        zypper)
+            install_cmd="zypper --non-interactive in ${pkgs[*]}"
+            ;;
+        void)
+            install_cmd="xbps-install -y ${pkgs[*]}"
+            ;;
+        solus)
+            install_cmd="eopkg install -y ${pkgs[*]}"
+            ;;
+        alpine)
+            install_cmd="apk add ${pkgs[*]}"
+            ;;
+        *)
+            ui_error "Installatore Pacchetti" "Gestore pacchetti non supportato. Installa manualmente: ${pkgs[*]}"
+            return 1
+            ;;
+    esac
+
+    if [ "$EUID" -eq 0 ]; then
+        bash -c "$install_cmd"
+    elif command -v pkexec >/dev/null 2>&1; then
+        pkexec bash -c "$install_cmd"
+    elif command -v sudo >/dev/null 2>&1; then
+        sudo bash -c "$install_cmd"
+    else
+        ui_error "Permessi insufficienti" "Sono necessari i privilegi di root per installare: ${pkgs[*]}"
+        return 1
+    fi
+}
+
+check_build_tools() {
+    local missing_tools=()
+    local missing_libs=()
+    local PM
+    PM=$(detect_package_manager)
+
+    command -v curl >/dev/null 2>&1 || missing_tools+=("curl")
+    command -v tar >/dev/null 2>&1 || missing_tools+=("tar")
+    command -v cmake >/dev/null 2>&1 || missing_tools+=("cmake")
+    command -v g++ >/dev/null 2>&1 || command -v clang++ >/dev/null 2>&1 || {
+        case "$PM" in
+            apt) missing_tools+=("build-essential" "g++") ;;
+            pacman) missing_tools+=("base-devel" "gcc") ;;
+            dnf) missing_tools+=("gcc-c++" "make") ;;
+            *) missing_tools+=("g++") ;;
+        esac
+    }
+    command -v pkg-config >/dev/null 2>&1 || {
+        case "$PM" in
+            apt) missing_tools+=("pkg-config") ;;
+            pacman) missing_tools+=("pkgconf") ;;
+            *) missing_tools+=("pkg-config") ;;
+        esac
+    }
+
+    # Verifica presenza librerie di sviluppo C++ / Qt6 via pkg-config
+    check_pkg_dev() {
+        local pkg_name="$1"
+        pkg-config --exists "$pkg_name" 2>/dev/null
+    }
+
+    # Se pkg-config è già installato, verifichiamo in dettaglio le librerie
+    if command -v pkg-config >/dev/null 2>&1; then
+        case "$PM" in
+            apt)
+                check_pkg_dev "Qt6Core" || missing_libs+=("qt6-base-dev" "qt6-base-dev-tools")
+                check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia-dev")
+                check_pkg_dev "poppler-qt6" || missing_libs+=("libpoppler-qt6-dev")
+                check_pkg_dev "libarchive" || missing_libs+=("libarchive-dev")
+                check_pkg_dev "librevenge-0.0" || missing_libs+=("librevenge-dev")
+                check_pkg_dev "libqrencode" || missing_libs+=("libqrencode-dev")
+                check_pkg_dev "mpv" || missing_libs+=("libmpv-dev")
+                ;;
+            pacman)
+                check_pkg_dev "Qt6Core" || missing_libs+=("qt6-base")
+                check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia")
+                check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6")
+                check_pkg_dev "libarchive" || missing_libs+=("libarchive")
+                check_pkg_dev "librevenge-0.0" || missing_libs+=("librevenge")
+                check_pkg_dev "libqrencode" || missing_libs+=("qrencode")
+                check_pkg_dev "mpv" || missing_libs+=("mpv")
+                ;;
+            dnf)
+                check_pkg_dev "Qt6Core" || missing_libs+=("qt6-qtbase-devel")
+                check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-qtmultimedia-devel")
+                check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6-devel")
+                check_pkg_dev "libarchive" || missing_libs+=("libarchive-devel")
+                check_pkg_dev "librevenge-0.0" || missing_libs+=("librevenge-devel")
+                check_pkg_dev "libqrencode" || missing_libs+=("qrencode-devel")
+                check_pkg_dev "mpv" || missing_libs+=("mpv-libs-devel")
+                ;;
+        esac
+    else
+        # Se pkg-config non c'è ancora, accoda direttamente le dipendenze per Debian/Ubuntu
+        if [ "$PM" = "apt" ]; then
+            missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libarchive-dev" "librevenge-dev" "libqrencode-dev" "libmpv-dev")
+        elif [ "$PM" = "pacman" ]; then
+            missing_libs+=("qt6-base" "qt6-multimedia" "poppler-qt6" "libarchive" "librevenge" "qrencode" "mpv")
+        elif [ "$PM" = "dnf" ]; then
+            missing_libs+=("qt6-qtbase-devel" "qt6-qtmultimedia-devel" "poppler-qt6-devel" "libarchive-devel" "librevenge-devel" "qrencode-devel" "mpv-libs-devel")
+        fi
+    fi
+
+    local all_missing=("${missing_tools[@]}" "${missing_libs[@]}")
+    if [ ${#all_missing[@]} -gt 0 ]; then
+        ui_info "Installazione Dipendenze" "Per compilare l'applicazione è necessario installare i seguenti pacchetti:
+${all_missing[*]}
+
+Procedo con l'installazione automatica..."
+        install_missing_packages "${all_missing[@]}" || {
+            ui_error "Errore" "Impossibile installare i pacchetti richiesti. Installa manualmente: ${all_missing[*]}"
+            exit 1
+        }
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 3. DOWNLOAD SORGENTI (GITHUB RELEASES O GOOGLE DRIVE)
+# ------------------------------------------------------------------------------
+download_from_drive() {
+    download_source_payload "$@"
+}
+
+download_source_payload() {
+    local source_url="$1"
+    local dest_file="$2"
+
+    if [[ "$source_url" =~ drive\.google\.com ]]; then
+        local file_id=""
+        if [[ "$source_url" =~ /d/([^/]+) ]]; then
+            file_id="${BASH_REMATCH[1]}"
+        elif [[ "$source_url" =~ id=([^&]+) ]]; then
+            file_id="${BASH_REMATCH[1]}"
+        fi
+
+        if [ -z "$file_id" ]; then
+            ui_error "Download" "Link di Google Drive non valido o non trovato."
+            exit 1
+        fi
+
+        local cookie_file
+        cookie_file=$(mktemp)
+        
+        local confirm_token
+        confirm_token=$(curl -s -c "$cookie_file" -L "https://drive.google.com/uc?export=download&id=${file_id}" | \
+            grep -o 'name="confirm" value="[^"]*"' | head -n 1 | sed -e 's/name="confirm" value="//' -e 's/"//' || true)
+
+        if [ -z "$confirm_token" ]; then
+            confirm_token=$(curl -s -c "$cookie_file" -L "https://drive.google.com/uc?export=download&id=${file_id}" | \
+                grep -o 'confirm=[0-9a-zA-Z_]\+' | head -n 1 | cut -d'=' -f2 || true)
+        fi
+
+        local download_url="https://drive.google.com/uc?export=download&id=${file_id}"
+        if [ -n "$confirm_token" ]; then
+            download_url="https://drive.google.com/uc?export=download&confirm=${confirm_token}&id=${file_id}"
+        fi
+
+        if [ "$UI_MODE" = "zenity" ]; then
+            (
+                curl -b "$cookie_file" -L "$download_url" -o "$dest_file" 2>&1 | \
+                stdbuf -oL tr '\r' '\n' | \
+                grep --line-buffered -o '[0-9]*\.[0-9]*%' | \
+                sed -u 's/\..*//'
+            ) | zenity --progress --title="Scaricamento $APP_NAME" --text="Download dei sorgenti da Google Drive..." --percentage=0 --auto-close 2>/dev/null || true
+        else
+            echo -e "${BLUE}[*] Scaricamento dei sorgenti da Google Drive...${NC}"
+            curl -b "$cookie_file" -L --progress-bar "$download_url" -o "$dest_file"
+        fi
+
+        rm -f "$cookie_file"
+    else
+        # Download diretto ad alta velocità (GitHub Releases o CDN diretta)
+        if [ "$UI_MODE" = "zenity" ]; then
+            (
+                curl -L "$source_url" -o "$dest_file" 2>&1 | \
+                stdbuf -oL tr '\r' '\n' | \
+                grep --line-buffered -o '[0-9]*\.[0-9]*%' | \
+                sed -u 's/\..*//'
+            ) | zenity --progress --title="Scaricamento $APP_NAME" --text="Download dei sorgenti da GitHub..." --percentage=0 --auto-close 2>/dev/null || true
+        else
+            echo -e "${BLUE}[*] Scaricamento dei sorgenti da GitHub...${NC}"
+            curl -L --progress-bar "$source_url" -o "$dest_file"
+        fi
+    fi
+
+    if [ ! -s "$dest_file" ]; then
+        ui_error "Download fallito" "Il download non ha prodotto un file valido."
+        exit 1
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 4. RILEVAMENTO CPU E LIVELLO DI OTTIMIZZAZIONE
+# ------------------------------------------------------------------------------
+select_cpu_optimization() {
+    local cpu_flags=""
+    if [ -f /proc/cpuinfo ]; then
+        cpu_flags=$(grep -m 1 "^flags" /proc/cpuinfo || true)
+    fi
+
+    local max_microarch="v1"
+    if [[ "$cpu_flags" =~ sse4_2 ]] && [[ "$cpu_flags" =~ popcnt ]]; then
+        max_microarch="v2"
+    fi
+    if [[ "$cpu_flags" =~ avx2 ]] && [[ "$cpu_flags" =~ fma ]] && [[ "$cpu_flags" =~ bmi2 ]]; then
+        max_microarch="v3"
+    fi
+    if [[ "$cpu_flags" =~ avx512f ]] && [[ "$cpu_flags" =~ avx512vl ]]; then
+        max_microarch="v4"
+    fi
+
+    local CONFIG_FILE="$HOME/.local/share/$APP_ID/build_config.json"
+    if [ "$IS_UPDATE" -eq 1 ] && [ -f "$CONFIG_FILE" ]; then
+        local SAVED_CPU
+        SAVED_CPU=$(python3 -c "import json; d=json.load(open('$CONFIG_FILE')); print(d.get('cpu_profile', 'native'))" 2>/dev/null || echo "native")
+        CMAKE_OPT_FLAGS=(-DCMAKE_BUILD_TYPE=Release)
+        if [ "$SAVED_CPU" = "native" ]; then
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3 -march=native -mtune=native -flto")
+            echo -e "${BLUE}[*] CPU Optimization: Native (-march=native -O3)${NC}"
+        else
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O2 -march=x86-64")
+            echo -e "${BLUE}[*] CPU Optimization: Standard (-O2)${NC}"
+        fi
+        return 0
+    fi
+
+    local opt_choice="2"
+    local expert_cxx_flags=""
+
+    if [ "$UI_MODE" = "zenity" ]; then
+        opt_choice=$(zenity --list --radiolist \
+            --title="Come vuoi compilare? - $APP_NAME" \
+            --text="Seleziona la modalità di compilazione per il tuo processore:" \
+            --column="Scelta" --column="ID" --column="Descrizione" \
+            FALSE "1" "1. Estrema (-march=native, massima velocità sul tuo PC)" \
+            TRUE  "2" "2. Buona (-O3 standard, veloce e sicura) [Consigliata]" \
+            FALSE "3" "3. Microarchitettura (x86-64-$max_microarch per la tua CPU)" \
+            FALSE "4" "4. Compatibile (x86-64 baseline universale)" \
+            FALSE "5" "5. ⚙️ Opzioni Esperto (Personalizza flag CXX, LTO, fast-math, ecc.)" \
+            --hide-column=2 --print-column=2 --height=320 --width=580 2>/dev/null || echo "2")
+    elif [ "$UI_MODE" = "kdialog" ]; then
+        opt_choice=$(kdialog --title "Come vuoi compilare? - $APP_NAME" --radiolist \
+            "Seleziona la modalità di compilazione:" \
+            "1" "1. Estrema (-march=native, massima velocità sul tuo PC)" off \
+            "2" "2. Buona (-O3 standard, veloce e sicura)" on \
+            "3" "3. Microarchitettura (x86-64-$max_microarch)" off \
+            "4" "4. Compatibile (x86-64 baseline)" off \
+            "5" "5. Opzioni Esperto (Personalizza flag CXX/LTO)" off 2>/dev/null || echo "2")
+    else
+        echo -e "\n${BOLD}Come vuoi compilare BubezView?${NC}"
+        echo -e "  ${BOLD}1)${NC} Estrema (-march=native, massima velocità sul tuo processore)"
+        echo -e "  ${BOLD}2)${NC} Buona (-O3 standard, veloce ed efficiente) [Consigliata]"
+        echo -e "  ${BOLD}3)${NC} Microarchitettura (x86-64-$max_microarch rilevata per la tua generazione)"
+        echo -e "  ${BOLD}4)${NC} Compatibile (x86-64 baseline universale, compatibilità massima)"
+        echo -e "  ${BOLD}5)${NC} ⚙️  Opzioni Esperto (flag personalizzate CXX, LTO, vettorizzazione)"
+        echo -en "${YELLOW}Scelta [1-5, default 2]: ${NC}"
+        read -r input_opt
+        if [[ "$input_opt" =~ ^[1-5]$ ]]; then
+            opt_choice="$input_opt"
+        else
+            opt_choice="2"
+        fi
+    fi
+
+    if [ "$opt_choice" = "5" ]; then
+        local def_flags="-O3 -march=native -flto -fno-math-errno"
+        if [ "$UI_MODE" = "zenity" ]; then
+            expert_cxx_flags=$(zenity --entry --title="Opzioni Esperto Compilazione - $APP_NAME" \
+                --text="Inserisci le flag del compilatore (CXX FLAGS) personalizzate:\n(Esempio: -O3 -march=native -flto -funroll-loops -fno-math-errno)" \
+                --entry-text="$def_flags" --width=540 2>/dev/null || echo "$def_flags")
+        elif [ "$UI_MODE" = "kdialog" ]; then
+            expert_cxx_flags=$(kdialog --title "Opzioni Esperto Compilazione" \
+                --inputbox "Inserisci le flag del compilatore (CXX FLAGS):" "$def_flags" 2>/dev/null || echo "$def_flags")
+        else
+            echo -en "${YELLOW}Inserisci flag CXX personalizzate [default: $def_flags]: ${NC}"
+            read -r user_cxx
+            expert_cxx_flags="${user_cxx:-$def_flags}"
+        fi
+    fi
+
+    CMAKE_OPT_FLAGS=(-DCMAKE_BUILD_TYPE=Release)
+    case "$opt_choice" in
+        1)
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3 -march=native -mtune=native -flto")
+            ;;
+        2)
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3")
+            ;;
+        3)
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O3 -march=x86-64-$max_microarch")
+            ;;
+        4)
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=-O2 -march=x86-64")
+            ;;
+        5)
+            CMAKE_OPT_FLAGS+=("-DCMAKE_CXX_FLAGS=${expert_cxx_flags}")
+            ;;
+        *)
+            ;;
+    esac
+}
+
+# ------------------------------------------------------------------------------
+# 5. PARSING CMAKELISTS & SELEZIONE MODULI STATICI / DINAMICI
+# ------------------------------------------------------------------------------
+configure_cmake_modules() {
+    local cmakelists="$1"
+    CMAKE_EXTRA_MODULES_FLAGS=()
+
+    if [ ! -f "$cmakelists" ]; then
+        return
+    fi
+
+    # Estrae opzioni modificabili dal CMakeLists.txt ignorando opzioni di test o interne
+    # Cerca pattern option(NOME "Descrizione" VALORE)
+    local module_options=()
+    local module_descriptions=()
+    local module_defaults=()
+
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^[[:space:]]*option\([[:space:]]*([A-Za-z0-9_]+)[[:space:]]+\"([^\"]*)\"[[:space:]]*([A-Za-z0-9_]*)\) ]]; then
+            local opt_name="${BASH_REMATCH[1]}"
+            local opt_desc="${BASH_REMATCH[2]}"
+            local opt_def="${BASH_REMATCH[3]}"
+
+            # Filtra opzioni non pertinenti a moduli (es. CPU o test generici o shortcut)
+            if [[ "$opt_name" =~ ^STATIC_ ]] && [ "$opt_name" != "STATIC_BUILD" ]; then
+                module_options+=("$opt_name")
+                module_descriptions+=("$opt_desc")
+                module_defaults+=("${opt_def:-OFF}")
+            fi
+        fi
+    done < "$cmakelists"
+
+    # Se non ci sono opzioni granulari STATIC_*, controlla se esiste STATIC_BUILD
+    if [ ${#module_options[@]} -eq 0 ]; then
+        if grep -E '^\s*option\s*\(\s*STATIC_BUILD' "$cmakelists" >/dev/null 2>&1; then
+            module_options+=("STATIC_BUILD")
+            module_descriptions+=("Incorpora staticamente tutti i motori dati")
+            module_defaults+=("OFF")
+        fi
+    fi
+
+    if [ ${#module_options[@]} -eq 0 ]; then
+        return
+    fi
+
+    # Menu principale selezione modalità: Tutti statici, Tutti dinamici (nessuno), o Personalizzato uno per uno
+    local CONFIG_FILE="$HOME/.local/share/$APP_ID/build_config.json"
+    if [ "$IS_UPDATE" -eq 1 ] && [ -f "$CONFIG_FILE" ]; then
+        local S_PDF S_ARCH S_OFFICE
+        S_PDF=$(python3 -c "import json; d=json.load(open('$CONFIG_FILE')); print(d.get('modules', {}).get('static_pdf', False))" 2>/dev/null || echo "False")
+        S_ARCH=$(python3 -c "import json; d=json.load(open('$CONFIG_FILE')); print(d.get('modules', {}).get('static_archive', False))" 2>/dev/null || echo "False")
+        S_OFFICE=$(python3 -c "import json; d=json.load(open('$CONFIG_FILE')); print(d.get('modules', {}).get('enable_internal_office', False))" 2>/dev/null || echo "False")
+
+        [ "$S_PDF" = "True" ] && CMAKE_EXTRA_MODULES_FLAGS+=("-DSTATIC_PDF=ON") || CMAKE_EXTRA_MODULES_FLAGS+=("-DSTATIC_PDF=OFF")
+        [ "$S_ARCH" = "True" ] && CMAKE_EXTRA_MODULES_FLAGS+=("-DSTATIC_ARCHIVE=ON") || CMAKE_EXTRA_MODULES_FLAGS+=("-DSTATIC_ARCHIVE=OFF")
+        [ "$S_OFFICE" = "True" ] && CMAKE_EXTRA_MODULES_FLAGS+=("-DENABLE_INTERNAL_OFFICE=ON") || CMAKE_EXTRA_MODULES_FLAGS+=("-DENABLE_INTERNAL_OFFICE=OFF")
+        echo -e "${BLUE}[*] Modules Configuration applied from $CONFIG_FILE${NC}"
+        return 0
+    fi
+
+    local mode_choice="2"
+    if [ "$UI_MODE" = "zenity" ]; then
+        mode_choice=$(zenity --list --radiolist \
+            --title="Configurazione Moduli Motore - $APP_NAME" \
+            --text="Come desideri configurare i moduli e i motori di elaborazione?\n(I componenti hardware e di sistema come D-Bus rimangono sempre dinamici)" \
+            --column="Scelta" --column="ID" --column="Modalità" \
+            FALSE "1" "1. Includi TUTTI statici (Massima autonomia, motori incorporati)" \
+            TRUE  "2" "2. NESSUNO statico (Tutti Dinamici di sistema - Leggero e veloce) [Consigliato]" \
+            FALSE "3" "3. Personalizza modulo per modulo (Scegli singolarmente quali includere)" \
+            --hide-column=2 --print-column=2 --width=600 --height=260 2>/dev/null || echo "2")
+    elif [ "$UI_MODE" = "kdialog" ]; then
+        mode_choice=$(kdialog --title "Configurazione Moduli Motore" --radiolist \
+            "Come desideri configurare i moduli e motori di elaborazione?" \
+            "1" "1. Includi TUTTI statici" off \
+            "2" "2. NESSUNO statico (Tutti Dinamici) [Consigliato]" on \
+            "3" "3. Personalizza modulo per modulo" off 2>/dev/null || echo "2")
+    else
+        echo -e "\n${BOLD}Configurazione moduli e motori di elaborazione:${NC}"
+        echo -e "  ${BOLD}1)${NC} Includi TUTTI statici (motori incorporati nel binario)"
+        echo -e "  ${BOLD}2)${NC} NESSUNO statico (tutti dinamici di sistema) [Consigliato]"
+        echo -e "  ${BOLD}3)${NC} Personalizza modulo per modulo (seleziona uno per uno)"
+        echo -en "${YELLOW}Scelta [1/2/3, default 2]: ${NC}"
+        read -r input_m
+        if [[ "$input_m" =~ ^[1-3]$ ]]; then
+            mode_choice="$input_m"
+        else
+            mode_choice="2"
+        fi
+    fi
+
+    if [ "$mode_choice" = "1" ]; then
+        # Tutti statici
+        for opt in "${module_options[@]}"; do
+            CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=ON")
+        done
+        if grep -E '^\s*option\s*\(\s*STATIC_BUILD' "$cmakelists" >/dev/null 2>&1; then
+            CMAKE_EXTRA_MODULES_FLAGS+=("-DSTATIC_BUILD=ON")
+        fi
+    elif [ "$mode_choice" = "2" ]; then
+        # Nessuno statico (tutti dinamici)
+        for opt in "${module_options[@]}"; do
+            CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=OFF")
+        done
+        if grep -E '^\s*option\s*\(\s*STATIC_BUILD' "$cmakelists" >/dev/null 2>&1; then
+            CMAKE_EXTRA_MODULES_FLAGS+=("-DSTATIC_BUILD=OFF")
+        fi
+    elif [ "$mode_choice" = "3" ]; then
+        # Selezione granulare uno per uno
+        if [ "$UI_MODE" = "zenity" ]; then
+            local zenity_args=(--list --checklist --title="Selezione Moduli Statici - $APP_NAME"
+                --text="Seleziona i moduli che desideri compilare staticamente (i deselezionati saranno dinamici):"
+                --column="Attivo" --column="Opzione" --column="Descrizione")
+            for i in "${!module_options[@]}"; do
+                local def_state="FALSE"
+                [ "${module_defaults[$i]}" = "ON" ] && def_state="TRUE"
+                zenity_args+=("$def_state" "${module_options[$i]}" "${module_descriptions[$i]}")
+            done
+            local selected
+            selected=$(zenity "${zenity_args[@]}" --separator="|" --width=620 --height=320 2>/dev/null || true)
+            for opt in "${module_options[@]}"; do
+                if [[ "|$selected|" =~ \|$opt\| ]]; then
+                    CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=ON")
+                else
+                    CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=OFF")
+                fi
+            done
+        elif [ "$UI_MODE" = "kdialog" ]; then
+            local kdialog_args=(--title "Selezione Moduli Statici" --checklist
+                "Seleziona i moduli che desideri compilare staticamente:")
+            for i in "${!module_options[@]}"; do
+                local def_state="off"
+                [ "${module_defaults[$i]}" = "ON" ] && def_state="on"
+                kdialog_args+=("${module_options[$i]}" "${module_descriptions[$i]}" "$def_state")
+            done
+            local selected_k
+            selected_k=$(kdialog "${kdialog_args[@]}" 2>/dev/null || true)
+            for opt in "${module_options[@]}"; do
+                if [[ "$selected_k" =~ "$opt" ]]; then
+                    CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=ON")
+                else
+                    CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=OFF")
+                fi
+            done
+        else
+            echo -e "\n${BOLD}Configurazione Modulo per Modulo:${NC}"
+            for i in "${!module_options[@]}"; do
+                local opt="${module_options[$i]}"
+                local desc="${module_descriptions[$i]}"
+                echo -en "  ${BLUE}${BOLD}${opt}${NC} (${desc}) [s=Statico / N=Dinamico]: "
+                read -r resp_s
+                case "$resp_s" in
+                    [sS]|[yY]|[sS][iI])
+                        CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=ON")
+                        ;;
+                    *)
+                        CMAKE_EXTRA_MODULES_FLAGS+=("-D${opt}=OFF")
+                        ;;
+                esac
+            done
+        fi
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 6. ESECUZIONE PRINCIPALE
+# ------------------------------------------------------------------------------
+main() {
+    check_build_tools
+
+    local work_dir
+    work_dir=$(mktemp -d -t "${APP_ID}_installer_XXXXXX")
+    trap 'rm -rf "$work_dir"' EXIT
+
+    local tar_file="$work_dir/source.tar.gz"
+    local extract_dir="$work_dir/source"
+    mkdir -p "$extract_dir"
+
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local src_cmakelists=""
+
+    if [ -f "$script_dir/CMakeLists.txt" ]; then
+        src_cmakelists="$script_dir/CMakeLists.txt"
+        extract_dir="$script_dir"
+    else
+        local info_json="$work_dir/versioni.json"
+        curl -s -L "$PROJECT_URL" -o "$info_json" || {
+            ui_error "Errore di Rete" "Impossibile scaricare l'indice delle versioni da $PROJECT_URL"
+            exit 1
+        }
+
+        local drive_url=""
+        if command -v python3 >/dev/null 2>&1; then
+            drive_url=$(python3 -c "
+import json, sys
+try:
+    with open('$info_json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    app = data.get('$APP_ID', {})
+    url = app.get('link_download_source') or app.get('link_download') or app.get('link_download_rolling') or ''
+    print(url)
+except Exception:
+    pass
+")
+        elif command -v jq >/dev/null 2>&1; then
+            drive_url=$(jq -r ".\"$APP_ID\".link_download_source // .\"$APP_ID\".link_download // .\"$APP_ID\".link_download_rolling // empty" "$info_json" 2>/dev/null || true)
+        fi
+
+        # Fallback con grep se né python3 né jq sono disponibili
+        if [ -z "$drive_url" ]; then
+            drive_url=$(grep -A 60 "\"$APP_ID\"" "$info_json" | grep -m 1 -E '"link_download_source"|"link_download"|"link_download_rolling"' | cut -d'"' -f4 || true)
+        fi
+
+        if [ -z "$drive_url" ]; then
+            ui_error "Errore" "Link di download per '$APP_ID' non trovato nel catalogo."
+            exit 1
+        fi
+
+        download_from_drive "$drive_url" "$tar_file"
+
+        # ----------------------------------------------------------------------
+        # VERIFICA INTEGRITÀ SHA-256 E AUTENTICITÀ FIRMA CRITTOGRAFICA ED25519
+        # ----------------------------------------------------------------------
+        if [ ! -f "$tar_file" ] || [ ! -s "$tar_file" ]; then
+            ui_error "Errore Download" "Il file scaricato non esiste o è vuoto (0 byte)."
+            rm -f "$tar_file"
+            exit 1
+        fi
+
+        local expected_sha256=""
+        local signature_b64=""
+
+        if command -v python3 >/dev/null 2>&1; then
+            eval "$(python3 -c "
+import json
+try:
+    with open('$info_json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    app = data.get('$APP_ID', {})
+    sha = app.get('sha256', '')
+    sig = app.get('signature', '')
+    print(f'expected_sha256=\"{sha}\"')
+    print(f'signature_b64=\"{sig}\"')
+except Exception:
+    pass
+")"
+        elif command -v jq >/dev/null 2>&1; then
+            expected_sha256=$(jq -r ".\"$APP_ID\".sha256 // empty" "$info_json" 2>/dev/null || true)
+            signature_b64=$(jq -r ".\"$APP_ID\".signature // empty" "$info_json" 2>/dev/null || true)
+        fi
+
+        if [ -z "$expected_sha256" ]; then
+            expected_sha256=$(grep -A 40 "\"$APP_ID\"" "$info_json" | grep -m 1 '"sha256"' | cut -d'"' -f4 || true)
+        fi
+        if [ -z "$signature_b64" ]; then
+            signature_b64=$(grep -A 40 "\"$APP_ID\"" "$info_json" | grep -m 1 '"signature"' | cut -d'"' -f4 || true)
+        fi
+
+        local actual_sha256=""
+        if command -v sha256sum >/dev/null 2>&1; then
+            actual_sha256=$(sha256sum "$tar_file" | awk '{print $1}')
+        elif command -v shasum >/dev/null 2>&1; then
+            actual_sha256=$(shasum -a 256 "$tar_file" | awk '{print $1}')
+        elif command -v openssl >/dev/null 2>&1; then
+            actual_sha256=$(openssl dgst -sha256 "$tar_file" | awk '{print $NF}')
+        fi
+
+        # 1. Controllo Impronta SHA-256
+        if [ -n "$expected_sha256" ]; then
+            if [ -z "$actual_sha256" ] || [ "$actual_sha256" != "$expected_sha256" ]; then
+                rm -f "$tar_file"
+                ui_error "Errore Integrità" "L'impronta SHA-256 del file scaricato non corrisponde! Possibile manomissione o download corrotto."
+                exit 1
+            fi
+            echo -e "${GREEN}[✓] Impronta SHA-256 verificata con successo:${NC} $actual_sha256"
+        fi
+
+        # 2. Controllo Firma Crittografica Asimmetrica Ed25519
+        if [ -n "$signature_b64" ]; then
+            if [ -z "$RELEASE_PUBKEY" ]; then
+                rm -f "$tar_file"
+                ui_error "Errore Sicurezza" "Firma crittografica presente ma Chiave Pubblica non configurata nell'installer."
+                exit 1
+            fi
+
+            local pubkey_file="$work_dir/release_pubkey.pem"
+            local hash_file="$work_dir/release_hash.txt"
+            local sig_file="$work_dir/release_sig.bin"
+
+            if [[ "$RELEASE_PUBKEY" == *"BEGIN PUBLIC KEY"* ]]; then
+                printf "%s\n" "$RELEASE_PUBKEY" > "$pubkey_file"
+            else
+                local clean_key
+                clean_key="$(echo "$RELEASE_PUBKEY" | tr -d '[:space:]')"
+                cat << PUB_EOF > "$pubkey_file"
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEA${clean_key}
+-----END PUBLIC KEY-----
+PUB_EOF
+            fi
+
+            printf "%s" "$actual_sha256" > "$hash_file"
+
+            if ! (echo "$signature_b64" | base64 -d > "$sig_file" 2>/dev/null); then
+                rm -f "$tar_file" "$sig_file" "$hash_file" "$pubkey_file"
+                ui_error "Errore Sicurezza" "Firma crittografica presente ma non decodificabile (Base64 invalido)."
+                exit 1
+            fi
+
+            local sig_valid=0
+
+            # Metodo primario: OpenSSL pkeyutl con PureEdDSA raw in
+            if command -v openssl >/dev/null 2>&1; then
+                if openssl pkeyutl -verify -rawin -pubin -inkey "$pubkey_file" -in "$hash_file" -sigfile "$sig_file" >/dev/null 2>&1; then
+                    sig_valid=1
+                fi
+            fi
+
+            # Metodo fallback: Python cryptography
+            if [ "$sig_valid" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
+                if python3 -c "
+import sys
+try:
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+    from cryptography.hazmat.primitives import serialization
+    with open('$pubkey_file', 'rb') as f:
+        pub = serialization.load_pem_public_key(f.read())
+    with open('$hash_file', 'rb') as f:
+        data = f.read()
+    with open('$sig_file', 'rb') as f:
+        sig = f.read()
+    pub.verify(sig, data)
+    sys.exit(0)
+except Exception:
+    sys.exit(1)
+" >/dev/null 2>&1; then
+                    sig_valid=1
+                fi
+            fi
+
+            rm -f "$sig_file" "$hash_file" "$pubkey_file"
+
+            if [ "$sig_valid" -ne 1 ]; then
+                rm -f "$tar_file"
+                ui_error "Errore Sicurezza" "Verifica della firma crittografica Ed25519 FALLITA! Il pacchetto potrebbe essere stato manomesso o non proviene dallo sviluppatore ufficiale."
+                exit 1
+            fi
+
+            echo -e "${GREEN}[✓] Firma crittografica Ed25519 AUTENTICATA con successo!${NC}"
+        fi
+
+        if [ "$UI_MODE" = "zenity" ]; then
+            (
+                tar -xzf "$tar_file" -C "$extract_dir" --strip-components=1 2>&1 || \
+                tar -xzf "$tar_file" -C "$extract_dir" 2>&1
+            ) | zenity --progress --title="Estrazione - $APP_NAME" --text="Estrazione dei file in corso..." --pulsate --auto-close 2>/dev/null || true
+        else
+            echo -e "${BLUE}[*] Estrazione archivio sorgente...${NC}"
+            tar -xzf "$tar_file" -C "$extract_dir" --strip-components=1 2>/dev/null || \
+            tar -xzf "$tar_file" -C "$extract_dir" 2>/dev/null
+        fi
+
+        src_cmakelists="$extract_dir/CMakeLists.txt"
+        if [ ! -f "$src_cmakelists" ]; then
+            src_cmakelists=$(find "$extract_dir" -maxdepth 3 -name "CMakeLists.txt" | head -n 1 || true)
+            if [ -n "$src_cmakelists" ]; then
+                extract_dir="$(dirname "$src_cmakelists")"
+            fi
+        fi
+    fi
+
+    if [ ! -f "$src_cmakelists" ]; then
+        ui_error "Errore Compilazione" "Nessun file CMakeLists.txt trovato nei sorgenti dell'applicazione."
+        exit 1
+    fi
+
+    select_cpu_optimization
+    configure_cmake_modules "$src_cmakelists"
+
+    local build_dir="$extract_dir/build_install"
+    rm -rf "$build_dir/CMakeCache.txt" "$build_dir/CMakeFiles" 2>/dev/null || true
+    mkdir -p "$build_dir"
+
+    local make_prog=""
+    if command -v make >/dev/null 2>&1; then
+        make_prog=$(command -v make)
+    elif command -v gmake >/dev/null 2>&1; then
+        make_prog=$(command -v gmake)
+    fi
+    local make_flag=()
+    if [ -n "$make_prog" ]; then
+        make_flag=("-DCMAKE_MAKE_PROGRAM=$make_prog")
+    fi
+
+    local build_log="/tmp/${APP_ID}_build.log"
+    rm -f "$build_log"
+
+    if [ "$UI_MODE" = "zenity" ]; then
+        (
+            echo "# Configurazione del progetto con CMake..."
+            cmake -S "$extract_dir" -B "$build_dir" "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" >> "$build_log" 2>&1
+        ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della build..." --pulsate --auto-close 2>/dev/null || true
+    else
+        echo -e "${BLUE}[*] Esecuzione configurazione CMake...${NC}"
+        cmake -S "$extract_dir" -B "$build_dir" "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" 2>&1 | tee -a "$build_log"
+    fi
+
+    if [ ! -f "$build_dir/CMakeCache.txt" ]; then
+        local err_tail
+        err_tail=$(tail -n 25 "$build_log" 2>/dev/null || true)
+        ui_error "Errore Configurazione CMake" "La configurazione di CMake è fallita.\nLog: $build_log\n\n$err_tail"
+        exit 1
+    fi
+
+    local cpu_cores
+    cpu_cores=$(nproc 2>/dev/null || echo "2")
+    local build_target_arg=()
+    if [ -n "$TARGET_EXE" ]; then
+        build_target_arg=(--target "$TARGET_EXE")
+    fi
+
+    local build_ret=0
+    if [ "$UI_MODE" = "zenity" ]; then
+        (
+            echo "# Compilazione in corso con $cpu_cores thread..."
+            cmake --build "$build_dir" --parallel "$cpu_cores" "${build_target_arg[@]}" >> "$build_log" 2>&1
+        ) | zenity --progress --title="Compilazione - $APP_NAME" --text="Compilazione del codice sorgente C++ in corso..." --pulsate --auto-close 2>/dev/null || true
+    else
+        echo -e "${BLUE}[*] Compilazione in corso ($cpu_cores core)...${NC}"
+        cmake --build "$build_dir" --parallel "$cpu_cores" "${build_target_arg[@]}" 2>&1 | tee -a "$build_log" || build_ret=$?
+    fi
+
+    local exe_path=""
+    if [ -n "$TARGET_EXE" ] && [ -f "$build_dir/$TARGET_EXE" ]; then
+        exe_path="$build_dir/$TARGET_EXE"
+    else
+        exe_path=$(find "$build_dir" -maxdepth 2 -type f -executable ! -name "*.sh" ! -name "cmake*" | head -n 1 || true)
+    fi
+
+    if [ "$build_ret" -ne 0 ] || [ -z "$exe_path" ] || [ ! -f "$exe_path" ]; then
+        local err_tail
+        err_tail=$(tail -n 25 "$build_log" 2>/dev/null || true)
+        ui_error "Errore Compilazione" "Compilazione fallita. L'eseguibile non è stato generato.\nFile di log salvato in: $build_log\n\nUltime righe di errore:\n$err_tail"
+        exit 1
+    fi
+
+    local user_bin="$HOME/.local/bin"
+    local user_apps="$HOME/.local/share/applications"
+    local user_icons="$HOME/.local/share/icons/hicolor/scalable/apps"
+    local app_install_dir="$HOME/.local/share/$APP_ID"
+
+    mkdir -p "$user_bin" "$user_apps" "$user_icons" "$app_install_dir"
+
+    local final_exe_name
+    final_exe_name=$(basename "$exe_path")
+    cp -f "$exe_path" "$app_install_dir/$final_exe_name"
+    chmod +x "$app_install_dir/$final_exe_name"
+    ln -sf "$app_install_dir/$final_exe_name" "$user_bin/$APP_ID"
+
+    # Salva una copia dell'installer autonomo per futuri aggiornamenti
+    if [ -f "$0" ]; then
+        cp -f "$0" "$app_install_dir/install.sh" 2>/dev/null || true
+        chmod +x "$app_install_dir/install.sh" 2>/dev/null || true
+    fi
+
+    local found_icon=""
+    if [ -n "$ICON_NAME" ] && [ -f "$extract_dir/$ICON_NAME" ]; then
+        found_icon="$extract_dir/$ICON_NAME"
+    else
+        found_icon=$(find "$extract_dir" -maxdepth 3 \( -name "*.png" -o -name "*.svg" -o -name "*.jpg" \) | head -n 1 || true)
+    fi
+
+    local icon_ext="png"
+    if [ -n "$found_icon" ]; then
+        icon_ext="${found_icon##*.}"
+        cp -f "$found_icon" "$app_install_dir/icon.$icon_ext"
+        mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps" "$HOME/.local/share/icons/hicolor/256x256/apps"
+        cp -f "$found_icon" "$HOME/.local/share/icons/hicolor/scalable/apps/$APP_ID.$icon_ext" 2>/dev/null || true
+        cp -f "$found_icon" "$HOME/.local/share/icons/hicolor/256x256/apps/$APP_ID.$icon_ext" 2>/dev/null || true
+        command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+    fi
+
+    cat <<DESKTOP_EOF > "$user_apps/$APP_ID.desktop"
+[Desktop Entry]
+Type=Application
+Name=$APP_NAME
+Exec=$user_bin/$APP_ID %F
+Icon=$APP_ID
+Terminal=false
+StartupWMClass=$APP_ID
+Categories=${APP_CATEGORY:-Utility};
+DESKTOP_EOF
+    chmod +x "$user_apps/$APP_ID.desktop"
+
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$user_apps" 2>/dev/null || true
+    command -v kbuildsycoca6 >/dev/null 2>&1 && kbuildsycoca6 --noincremental 2>/dev/null || true
+    command -v kbuildsycoca5 >/dev/null 2>&1 && kbuildsycoca5 --noincremental 2>/dev/null || true
+
+    # --------------------------------------------------------------------------
+    # 7. TEST DI VERIFICA FINALE (Librerie dinamiche & Smoke Test)
+    # --------------------------------------------------------------------------
+    local installed_bin="$app_install_dir/$final_exe_name"
+    local test_failed=0
+    local test_err_msg=""
+
+    # A. Verifica se ci sono librerie dinamiche non risolte con ldd
+    if command -v ldd >/dev/null 2>&1; then
+        local missing_so
+        missing_so=$(ldd "$installed_bin" 2>/dev/null | grep -i "not found" || true)
+        if [ -n "$missing_so" ]; then
+            test_failed=1
+            test_err_msg="Librerie dinamiche mancanti riscontrate nel binario:\n$missing_so"
+        fi
+    fi
+
+    # B. Smoke test: Prova a verificare l'eseguibilità del binario
+    if [ "$test_failed" -eq 0 ]; then
+        if ! timeout 2s "$installed_bin" --version >/dev/null 2>&1 && \
+           ! timeout 2s "$installed_bin" --help >/dev/null 2>&1 && \
+           ! timeout 2s "$installed_bin" -h >/dev/null 2>&1; then
+            # Se il programma non ha flag di help/version ma si avvia come GUI, verifichiamo che non dia errori di segmentation fault o illegal instruction
+            local test_out
+            test_out=$(timeout 1s "$installed_bin" 2>&1 || true)
+            if [[ "$test_out" =~ "Illegal instruction" ]] || [[ "$test_out" =~ "Segmentation fault" ]]; then
+                test_failed=1
+                test_err_msg="Errore durante il test di avvio del binario:\n$test_out"
+            fi
+        fi
+    fi
+
+    if [ "$test_failed" -ne 0 ]; then
+        ui_error "Verifica Installazione Fallita" "Il programma è stato compilato ma il test finale ha riscontrato un problema:\n\n$test_err_msg"
+        exit 1
+    fi
+
+    if [ "$IS_UPDATE" -eq 1 ]; then
+        return 0
+    fi
+
+    if ui_ask_yesno "Installazione Riuscita" "$APP_NAME è stato verificato, compilato e installato con successo!\n\nVuoi avviare l'applicazione adesso?"; then
+        "$user_bin/$APP_ID" >/dev/null 2>&1 &
+    fi
+}
+
+main "$@"

@@ -4,6 +4,7 @@
 #include "core/interfaces/i_pdf_viewer.h"
 #include "core/interfaces/i_archive_viewer.h"
 #include "core/interfaces/i_media_viewer.h"
+#include "viewers/media/system_media_viewer.h"
 #include "engine_prompt_card.h"
 #include "build_options_dialog.h"
 #include "office_viewer.h"
@@ -69,6 +70,9 @@
 #include "share_dialog.h"
 #include "share_manager.h"
 #include "filmstrip_widget.h"
+#include "image_inspector_dialog.h"
+#include "image_resize_dialog.h"
+#include "photo_studio_dialog.h"
 #include <QVariantAnimation>
 #include <QPainterPath>
 
@@ -230,8 +234,15 @@ BaseSkin::BaseSkin(QWidget *parent)
     auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
     m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
 
-    auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
-    m_mediaViewer = dynamic_cast<IMediaViewer*>(mv);
+    QSettings initSettings("Bubez", "BubezView");
+    bool mpvEnabled = initSettings.value("modules/mpv_enabled", true).toBool();
+    if (mpvEnabled) {
+        auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
+        m_mediaViewer = dynamic_cast<IMediaViewer*>(mv);
+    }
+    if (!m_mediaViewer) {
+        m_mediaViewer = new SystemMediaViewer(this);
+    }
 
     m_officeViewer = new OfficeViewer(this);
     m_folderViewer = new FolderViewer(this);
@@ -558,23 +569,31 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         m_stackedWidget->setCurrentIndex(3);
         opened = m_archiveViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Media) {
-        if (!m_mediaViewer) {
-            auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
-            m_mediaViewer = dynamic_cast<IMediaViewer*>(mv);
+        QSettings s("Bubez", "BubezView");
+        const bool mpvEnabled = s.value("modules/mpv_enabled", true).toBool();
+        const bool canUseMpv = mpvEnabled && PluginManager::instance().isEngineAvailable(FileCategory::Media);
+        const bool isSystemViewer = (dynamic_cast<SystemMediaViewer*>(m_mediaViewer) != nullptr);
+
+        if (!m_mediaViewer || (canUseMpv && isSystemViewer) || (!canUseMpv && !isSystemViewer)) {
             if (m_mediaViewer) {
-                QWidget *oldW = m_stackedWidget->widget(4);
-                m_stackedWidget->removeWidget(oldW);
-                delete oldW;
-                m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
-                m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
-                    openFile(path);
-                });
+                m_mediaViewer->stop();
             }
-        }
-        if (!m_mediaViewer) {
-            m_enginePromptCard->setTargetFile(FileCategory::Media, m_currentFilePath);
-            m_stackedWidget->setCurrentWidget(m_enginePromptCard);
-            return OpenResult::Success;
+            IMediaViewer *newViewer = nullptr;
+            if (canUseMpv) {
+                auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
+                newViewer = dynamic_cast<IMediaViewer*>(mv);
+            }
+            if (!newViewer) {
+                newViewer = new SystemMediaViewer(this);
+            }
+            QWidget *oldW = m_stackedWidget->widget(4);
+            m_stackedWidget->removeWidget(oldW);
+            delete oldW;
+            m_mediaViewer = newViewer;
+            m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
+            m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
+                openFile(path);
+            });
         }
         m_stackedWidget->setCurrentIndex(4);
         m_mediaViewer->setSiblingFiles(m_siblingFiles);
@@ -873,6 +892,13 @@ void BaseSkin::showFileInfo()
         targetPath = m_currentFilePath;
     }
     if (targetPath.isEmpty()) return;
+
+    if (m_stackedWidget && m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
+        ImageInspectorDialog dlg(targetPath, m_imageViewer->originalImage(), this);
+        dlg.exec();
+        return;
+    }
+
     QFileInfo fi(targetPath);
     QString info = QString(
         "<b>" + tr("Name:") + "</b> %1<br>"
@@ -884,13 +910,9 @@ void BaseSkin::showFileInfo()
           fi.lastModified().toString("dd/MM/yyyy HH:mm:ss"),
           QString::number(fi.permissions(), 8));
 
-    if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
-        const QImage &img = m_imageViewer->originalImage();
-        info += QString("<b>" + tr("Resolution:") + "</b> %1 × %2 px<br><b>" + tr("Color depth:") + "</b> %3 bit<br>")
-            .arg(img.width()).arg(img.height()).arg(img.depth());
-    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+    if (m_stackedWidget && m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
         info += QString("<b>" + tr("Total pages:") + "</b> %1<br>").arg(m_pdfViewer->pageCount());
-    } else if (m_stackedWidget->currentIndex() == 1 && m_textViewer) {
+    } else if (m_stackedWidget && m_stackedWidget->currentIndex() == 1 && m_textViewer) {
         info += QString("<b>" + tr("Text lines:") + "</b> %1<br><b>" + tr("Characters:") + "</b> %2<br>")
             .arg(m_textViewer->lineCount()).arg(m_textViewer->charCount());
     }
@@ -1826,6 +1848,37 @@ void BaseSkin::flipCurrentVertical()
     }
     updateWindowTitle();
     updateStatusBar();
+}
+
+void BaseSkin::openResizeImageDialog()
+{
+    if (!m_imageViewer || m_stackedWidget->currentIndex() != 0) return;
+    const QImage &img = m_imageViewer->originalImage();
+    if (img.isNull()) return;
+
+    ImageResizeDialog dlg(img.width(), img.height(), this);
+    if (dlg.exec() == QDialog::Accepted) {
+        m_imageViewer->resizeImage(dlg.targetWidth(), dlg.targetHeight(), dlg.transformationMode());
+        updateWindowTitle();
+        updateStatusBar();
+    }
+}
+
+void BaseSkin::openAdjustImageDialog()
+{
+    if (!m_imageViewer || m_stackedWidget->currentIndex() != 0) return;
+    const QImage &img = m_imageViewer->originalImage();
+    if (img.isNull()) return;
+
+    PhotoStudioDialog dlg(img, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        QImage res = dlg.resultImage();
+        if (!res.isNull()) {
+            m_imageViewer->applyModifiedImage(res);
+            updateWindowTitle();
+            updateStatusBar();
+        }
+    }
 }
 
 void BaseSkin::togglePdfToc()

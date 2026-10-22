@@ -197,6 +197,12 @@ QString PackageManagerHelper::packageNameForComponent(const QString &componentId
     if (id == "pigz") {
         return "pigz";
     }
+    if (id == "image-formats" || id == "qt6-image-formats-plugins" || id == "qt6-imageformats") {
+        if (fam == DistroFamily::Debian) return "qt6-image-formats-plugins";
+        if (fam == DistroFamily::Fedora || fam == DistroFamily::OpenSuse) return "qt6-imageformats";
+        if (fam == DistroFamily::Gentoo) return "dev-qt/qtimageformats:6";
+        return "qt6-imageformats"; // Arch, Void, Alpine, etc.
+    }
 
     return componentId;
 }
@@ -238,7 +244,8 @@ bool PackageManagerHelper::isCompilableEngine(const QString &componentId)
             id == "office" || id == "librevenge" || id == "engine-office" ||
             id == "media" || id == "mpv" ||
             id == "zstd" || id == "xz" || id == "7zip" || id == "7z" || id == "7zz" ||
-            id == "qpdf" || id == "tesseract" || id == "ocr" || id == "tesseract-ocr");
+            id == "qpdf" || id == "tesseract" || id == "ocr" || id == "tesseract-ocr" ||
+            id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins");
 }
 
 bool PackageManagerHelper::triggerEngineCompilation(const QString &componentId, QWidget *parentWidget)

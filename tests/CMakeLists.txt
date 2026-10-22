@@ -51,12 +51,13 @@ target_link_libraries(test_gpu PRIVATE
 
 add_test(NAME TestGpu COMMAND test_gpu)
 
-# Automated image viewer and transparency test
+# Automated image viewer, adjustments, and transparency test
 add_executable(test_image
     test_image.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/image/image_viewer.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/system/gpu_acceleration_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp
 )
 
 target_include_directories(test_image PRIVATE
@@ -64,6 +65,7 @@ target_include_directories(test_image PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/services
     ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs
     ${CMAKE_SOURCE_DIR}/src/viewers/image
 )
 
@@ -76,6 +78,49 @@ target_link_libraries(test_image PRIVATE
 )
 
 add_test(NAME TestImage COMMAND test_image)
+
+# Automated EXIF metadata and GPS parsing test
+add_executable(test_exif
+    test_exif.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/exif_parser.cpp
+)
+
+target_include_directories(test_exif PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+)
+
+target_link_libraries(test_exif PRIVATE
+    Qt6::Core
+    Qt6::Test
+)
+
+add_test(NAME TestExif COMMAND test_exif)
+
+# Automated native system media playback test
+add_executable(test_media_system
+    test_media_system.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/media/system_media_viewer.cpp
+)
+
+target_include_directories(test_media_system PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/interfaces
+    ${CMAKE_SOURCE_DIR}/src/viewers/media
+)
+
+target_link_libraries(test_media_system PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Multimedia
+    Qt6::MultimediaWidgets
+    Qt6::Test
+)
+
+add_test(NAME TestMediaSystem COMMAND test_media_system)
 
 # Interactive manual test target (excluded from default build and ctest per Rule 2)
 add_executable(test_interactive EXCLUDE_FROM_ALL

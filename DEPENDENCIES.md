@@ -82,3 +82,10 @@ These tools extend functionality for specialized workflows:
 - **Tesseract OCR**: `tesseract-ocr` (extract selectable text from scanned images and snippets).
 - **QPDF**: `qpdf` (linearization, decryption, and stream repair).
 - **7-Zip**: `7zip` / `p7zip` (multi-threaded compression and modern zstd archive support).
+
+### 🖼️ Extended Image Formats (Qt6 Image Plugins)
+- **Debian / Ubuntu**: `qt6-image-formats-plugins`
+- **Arch Linux**: `qt6-imageformats`
+- **Fedora**: `qt6-imageformats`
+- **Source Compilation / Immutable Distros (SteamOS, Silverblue)**: Compilable into `~/.local/lib/qt6/plugins/imageformats/` directly via `./install.sh --build-component image-formats` or the Extensions Settings panel without requiring root or modifying `/usr`.
+- **Purpose**: High-efficiency WebP, TIFF, TGA, and Apple ICNS image codec support.

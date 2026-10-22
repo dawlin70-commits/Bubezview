@@ -503,6 +503,37 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         list.append(m);
     }
 
+    // 11. Extended Image Formats (Qt6 Plugins)
+    {
+        ExtensionModuleInfo m;
+        m.id = "image-formats";
+        m.displayName = tr("Extended Graphic Formats (WebP, TIFF, TGA, ICNS)");
+        m.systemPackage = PackageManagerHelper::packageNameForComponent("image-formats");
+        m.category = "Image";
+        m.summary = tr("Enables reading and writing next-gen WebP, TIFF, TGA, and Apple ICNS files via Qt plugins.");
+        m.canCompile = true;
+        m.isStaticCompiled = BuildConfig::hasSourceBinary("image-formats");
+        m.diagnosticCommand = "pkg-config --modversion Qt6Gui 2>/dev/null || echo 'Qt6 GUI ready'";
+        m.features = {
+            {
+                tr("Next-Gen JPEG XL (JXL) Support"),
+                tr("High-efficiency next-generation image codec supporting lossless compression and high dynamic range."),
+                "QImageReader::supportedImageFormats()",
+                tr("Image Viewer Core"),
+                true
+            },
+            {
+                tr("Photoshop PSD & HDR Formats"),
+                tr("Direct reading of Adobe Photoshop (.psd), Radiance (.hdr), OpenEXR (.exr), and TGA texture files."),
+                "QImageReader::supportedImageFormats()",
+                tr("Image Viewer Core"),
+                true
+            }
+        };
+        refreshModuleStatus(m);
+        list.append(m);
+    }
+
     return list;
 }
 
@@ -605,6 +636,8 @@ void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
         module.isInstalled = BuildConfig::isPkgInstalled("fftw3") || BuildConfig::isPkgInstalled("libfftw3-3");
     } else if (module.id == "taglib") {
         module.isInstalled = BuildConfig::isPkgInstalled("taglib") || BuildConfig::isPkgInstalled("libtag1v5");
+    } else if (module.id == "image-formats") {
+        module.isInstalled = BuildConfig::isImageFormatsInstalled();
     } else {
         module.isInstalled = PackageManagerHelper::isComponentInstalled(module.id);
     }

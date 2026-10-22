@@ -9,8 +9,6 @@
 #include "theme_manager.h"
 #include "vector_icons.h"
 #include "cpu_info.h"
-#include "compiler_wizard_dialog.h"
-#include "build_options_dialog.h"
 #include "build_console_dialog.h"
 #include "package_manager_helper.h"
 #include "settings_dialog.h"
@@ -22,18 +20,17 @@
 #include <QFileInfo>
 #include <QGroupBox>
 #include <QHBoxLayout>
-#include <QScrollArea>
-#include <QFormLayout>
-#include <QStyle>
+#include <QFrame>
+#include <QPushButton>
+#include <QRegularExpression>
 #include <QApplication>
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
 #include <QDialog>
 #include <QKeyEvent>
 #include <QTimer>
 #include <QScreen>
 #include <QGuiApplication>
 #include <QGridLayout>
+#include <QSize>
 
 #ifndef BUBEZ_OPT_LEVEL
 #define BUBEZ_OPT_LEVEL "O2"
@@ -119,14 +116,14 @@ FirstRunWizard::FirstRunWizard(QWidget *parent)
     setWindowTitle(tr("BubezView Setup Wizard"));
     setWizardStyle(QWizard::ModernStyle);
 
-    // Compact minimum size to guarantee bottom navigation buttons remain visible on 800x600 / 768p VMs
-    setMinimumSize(580, 380);
-    int targetW = 680;
-    int targetH = 445;
+    // Spacious and responsive size for standard screens and high-DPI displays
+    setMinimumSize(660, 480);
+    int targetW = 750;
+    int targetH = 530;
     if (QScreen *screen = QGuiApplication::primaryScreen()) {
         const QRect avail = screen->availableGeometry();
-        targetW = qMin(targetW, qMax(580, avail.width() - 40));
-        targetH = qMin(targetH, qMax(380, avail.height() - 60));
+        targetW = qMin(targetW, qMax(660, avail.width() - 40));
+        targetH = qMin(targetH, qMax(480, avail.height() - 60));
     }
     resize(targetW, targetH);
 
@@ -374,210 +371,147 @@ QWizardPage *FirstRunWizard::createModulesPage()
 {
     auto *page = new QWizardPage(this);
     page->setTitle(tr("Engines & Functional Modules"));
-    page->setSubTitle(tr("Select which document readers, media players, and preview engines you want to enable."));
+    page->setSubTitle(tr("Choose which document readers, media players, and preview suites to activate."));
 
     auto *pageLayout = new QVBoxLayout(page);
-    pageLayout->setContentsMargins(4, 2, 4, 2);
-    pageLayout->setSpacing(6);
+    pageLayout->setContentsMargins(10, 6, 10, 6);
+    pageLayout->setSpacing(10);
 
-    // 1. Compact Module Setup Presets (2-column grid + dynamic description label)
-    auto *groupPresets = new QGroupBox(tr("Module Setup Presets"), page);
-    auto *presetsLayout = new QVBoxLayout(groupPresets);
-    presetsLayout->setContentsMargins(10, 6, 10, 6);
-    presetsLayout->setSpacing(4);
+    // 1. Single Unified Box: Presets & Module Selection
+    auto *groupModules = new QGroupBox(tr("Module Setup && Presets"), page);
+    auto *modulesLayout = new QVBoxLayout(groupModules);
+    modulesLayout->setContentsMargins(14, 8, 14, 8);
+    modulesLayout->setSpacing(6);
 
-    auto *presetsGrid = new QGridLayout();
-    presetsGrid->setHorizontalSpacing(12);
-    presetsGrid->setVerticalSpacing(2);
+    // Top: Presets (Complete Suite, Minimal Core, Custom)
+    auto *presetsGrid = new QHBoxLayout();
+    presetsGrid->setSpacing(20);
 
-    m_radioPresetFull = new QRadioButton(groupPresets);
-    m_radioPresetDocs = new QRadioButton(groupPresets);
-    m_radioPresetMedia = new QRadioButton(groupPresets);
-    m_radioPresetMinimal = new QRadioButton(groupPresets);
-    m_radioPresetCustom = new QRadioButton(tr("⚙️ Custom Configuration"), groupPresets);
+    m_radioPresetFull = new QRadioButton(groupModules);
+    m_radioPresetFull->setCursor(Qt::PointingHandCursor);
+    m_radioPresetFull->setToolTip(tr("Enable all viewer engines and all present and future extension packages."));
 
-    presetsGrid->addWidget(m_radioPresetFull, 0, 0);
-    presetsGrid->addWidget(m_radioPresetDocs, 0, 1);
-    presetsGrid->addWidget(m_radioPresetMedia, 1, 0);
-    presetsGrid->addWidget(m_radioPresetMinimal, 1, 1);
-    presetsGrid->addWidget(m_radioPresetCustom, 2, 0, 1, 2);
+    m_radioPresetMinimal = new QRadioButton(groupModules);
+    m_radioPresetMinimal->setCursor(Qt::PointingHandCursor);
+    m_radioPresetMinimal->setToolTip(tr("Enable only the lightweight core engines with zero heavy background packages."));
 
-    presetsLayout->addLayout(presetsGrid);
+    m_radioPresetCustom = new QRadioButton(tr("Custom Selection"), groupModules);
+    m_radioPresetCustom->setCursor(Qt::PointingHandCursor);
+    m_radioPresetCustom->setToolTip(tr("Choose specific categories below to receive full extension suites."));
 
-    m_lblPresetDesc = new QLabel(groupPresets);
-    m_lblPresetDesc->setWordWrap(true);
-    m_lblPresetDesc->setStyleSheet("color: #64748b; font-size: 11px; margin-top: 2px;");
-    presetsLayout->addWidget(m_lblPresetDesc);
+    presetsGrid->addWidget(m_radioPresetFull);
+    presetsGrid->addWidget(m_radioPresetMinimal);
+    presetsGrid->addWidget(m_radioPresetCustom);
+    presetsGrid->addStretch(1);
 
-    pageLayout->addWidget(groupPresets);
+    modulesLayout->addLayout(presetsGrid);
 
-    // 2. Scrollable Granular Components & Capabilities
-    auto *groupComponents = new QGroupBox(tr("Active Components && Capabilities"), page);
-    auto *groupCompOuterLayout = new QVBoxLayout(groupComponents);
-    groupCompOuterLayout->setContentsMargins(4, 4, 4, 4);
+    // Subtle horizontal divider line
+    auto *sep = new QFrame(groupModules);
+    sep->setFrameShape(QFrame::HLine);
+    sep->setFrameShadow(QFrame::Sunken);
+    sep->setStyleSheet("color: rgba(148, 163, 184, 0.25); margin: 2px 0;");
+    modulesLayout->addWidget(sep);
 
-    auto *scrollArea = new QScrollArea(groupComponents);
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setFrameShape(QFrame::NoFrame);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // Category Checkboxes arranged in a clean, spacious 2-column grid with native VectorIcons
+    auto *gridCategories = new QGridLayout();
+    gridCategories->setHorizontalSpacing(24);
+    gridCategories->setVerticalSpacing(6);
+    gridCategories->setContentsMargins(4, 2, 4, 2);
 
-    auto *container = new QWidget(scrollArea);
-    auto *compLayout = new QVBoxLayout(container);
-    compLayout->setContentsMargins(6, 2, 6, 2);
-    compLayout->setSpacing(4);
-
-    auto addCategoryHeader = [compLayout, container](const QString &headerTitle) {
-        auto *lblCat = new QLabel(headerTitle, container);
-        lblCat->setStyleSheet(
-            "font-size: 11px; font-weight: bold; color: #0284c7; "
-            "margin-top: 4px; margin-bottom: 1px; text-transform: uppercase; letter-spacing: 0.5px;"
-        );
-        compLayout->addWidget(lblCat);
+    auto makeCheckBox = [groupModules](VectorIcons::Type iconType, const QString &text, const QString &tooltip) {
+        QString safeText = text;
+        safeText.replace(QRegularExpression("(?<!&)&(?!&)"), "&&");
+        auto *chk = new QCheckBox(safeText, groupModules);
+        chk->setIcon(VectorIcons::createIcon(iconType));
+        chk->setIconSize(QSize(18, 18));
+        chk->setToolTip(tooltip);
+        chk->setStyleSheet("font-weight: 600; font-size: 11px;");
+        chk->setCursor(Qt::PointingHandCursor);
+        return chk;
     };
 
-    auto addModuleRow = [compLayout, container](
-        QCheckBox *&chk, QLabel *&badge,
-        const QString &title, const QString &desc
-    ) {
-        auto *rowWidget = new QWidget(container);
-        auto *rowLayout = new QHBoxLayout(rowWidget);
-        rowLayout->setContentsMargins(0, 1, 0, 1);
-        rowLayout->setSpacing(6);
-
-        auto *colText = new QVBoxLayout();
-        colText->setSpacing(0);
-
-        // Escape single '&' into '&&' for QCheckBox so Qt does not hide it as an Alt accelerator
-        QString safeTitle = title;
-        safeTitle.replace(QRegularExpression("(?<!&)&(?!&)"), "&&");
-
-        chk = new QCheckBox(safeTitle, rowWidget);
-        chk->setStyleSheet("font-weight: 600; font-size: 12px;");
-        colText->addWidget(chk);
-
-        auto *lblDesc = new QLabel(desc, rowWidget);
-        lblDesc->setStyleSheet("color: #64748b; font-size: 10px; margin-left: 20px;");
-        lblDesc->setWordWrap(true);
-        colText->addWidget(lblDesc);
-
-        badge = new QLabel(rowWidget);
-        badge->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        badge->setTextFormat(Qt::RichText);
-
-        rowLayout->addLayout(colText, 1);
-        rowLayout->addWidget(badge, 0, Qt::AlignRight | Qt::AlignVCenter);
-
-        compLayout->addWidget(rowWidget);
-    };
-
-    auto addSubModuleRow = [compLayout, container](
-        QCheckBox *&chk, QLabel *&badge,
-        const QString &title, const QString &desc
-    ) {
-        auto *rowWidget = new QWidget(container);
-        auto *rowLayout = new QHBoxLayout(rowWidget);
-        rowLayout->setContentsMargins(20, 1, 0, 1);
-        rowLayout->setSpacing(6);
-
-        auto *colText = new QVBoxLayout();
-        colText->setSpacing(0);
-
-        QString safeTitle = title;
-        safeTitle.replace(QRegularExpression("(?<!&)&(?!&)"), "&&");
-
-        chk = new QCheckBox(safeTitle, rowWidget);
-        // Inherit native theme text color so it is clearly legible on both Light and Dark themes
-        chk->setStyleSheet("font-weight: 500; font-size: 11px;");
-        colText->addWidget(chk);
-
-        auto *lblDesc = new QLabel(desc, rowWidget);
-        lblDesc->setStyleSheet("color: #64748b; font-size: 10px; margin-left: 20px;");
-        lblDesc->setWordWrap(true);
-        colText->addWidget(lblDesc);
-
-        badge = new QLabel(rowWidget);
-        badge->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        badge->setTextFormat(Qt::RichText);
-
-        rowLayout->addLayout(colText, 1);
-        rowLayout->addWidget(badge, 0, Qt::AlignRight | Qt::AlignVCenter);
-
-        compLayout->addWidget(rowWidget);
-    };
-
-    // Category 1: Documents & Office
-    addCategoryHeader(tr("📄 Documents & Office"));
-    addModuleRow(
-        m_chkModulePdf, m_badgePdf,
-        tr("PDF Documents & Digital Signatures"),
-        tr("Vector rendering pipeline (Poppler) and cryptographic signature validation (OpenSSL).")
+    m_chkCatDocs = makeCheckBox(
+        VectorIcons::Type::Pdf,
+        tr("Documents && Office (LibreOffice, OCR, QPDF, Signatures)"),
+        tr("Includes LibreOffice document conversion, Tesseract OCR text extraction, QPDF structural repair, and PAdES digital signatures.")
     );
-    addSubModuleRow(
-        m_chkSubOcr, m_badgeOcr,
-        tr("Optical Character Recognition (Tesseract OCR)"),
-        tr("Extract selectable UTF-8 text from scanned pages and visual screen snippets.")
+    m_chkCatArchives = makeCheckBox(
+        VectorIcons::Type::Zip,
+        tr("Archives && Disk Images (7-Zip, Multi-Core, ISO)"),
+        tr("Includes 7-Zip multi-core compression, encrypted archive creation, and bootable ISO/IMG disk image tools.")
     );
-    addSubModuleRow(
-        m_chkSubQpdf, m_badgeQpdf,
-        tr("PDF Repair & Advanced Tools (QPDF / pdfimages)"),
-        tr("Fix corrupted PDF streams, linearize for instant loading, and extract embedded lossless images.")
+    m_chkCatImages = makeCheckBox(
+        VectorIcons::Type::Image,
+        tr("Images && Graphics (Extended Codecs: WebP, TIFF, etc.)"),
+        tr("Includes extended Qt6 image decoders for WebP, TIFF, TGA, Apple ICNS, PSD, and JPEG-XL formats.")
     );
-    addModuleRow(
-        m_chkModuleOffice, m_badgeOffice,
-        tr("Office Document Preview"),
-        tr("Preview Microsoft Office (.docx, .xlsx, .pptx) and OpenDocument files via LibreOffice.")
+    m_chkCatVideo = makeCheckBox(
+        VectorIcons::Type::FolderVideos,
+        tr("Video && Movies (MPV GPU Acceleration)"),
+        tr("Includes high-performance libmpv video player with hardware GPU decoding and subtitle track controls. When unchecked, videos play via native OS codecs.")
+    );
+    m_chkCatAudio = makeCheckBox(
+        VectorIcons::Type::Media,
+        tr("Music && Audio (10-Band Equalizer, TagLib Editor)"),
+        tr("Includes FFTW3 real-time spectrum analyzer, 10-band parametric equalizer, and TagLib ID3/FLAC metadata editor.")
     );
 
-    // Category 2: Multimedia & Audio
-    addCategoryHeader(tr("🎬 Multimedia & Audio"));
-    addModuleRow(
-        m_chkModuleMedia, m_badgeMedia,
-        tr("Multimedia Video & Audio Player (MPV)"),
-        tr("Hardware GPU video decoding (VA-API/NVDEC) and high-fidelity bit-perfect audio streaming.")
-    );
-    addSubModuleRow(
-        m_chkSubEqualizer, m_badgeEqualizer,
-        tr("10-Band Equalizer & Visualizer (FFTW3)"),
-        tr("Real-time stereo spectrum visualizer and studio sound equalization.")
-    );
+    gridCategories->addWidget(m_chkCatDocs, 0, 0);
+    gridCategories->addWidget(m_chkCatVideo, 0, 1);
 
-    // Category 3: Compressed Archives
-    addCategoryHeader(tr("📦 Compressed Archives"));
-    addModuleRow(
-        m_chkModuleArchive, m_badgeArchive,
-        tr("Archive Manager (LibArchive)"),
-        tr("Universal archive browsing, cataloging, and direct extraction for ZIP, TAR, 7Z, and ISO.")
-    );
-    addSubModuleRow(
-        m_chkSubSevenZip, m_badgeSevenZip,
-        tr("Multi-Core 7-Zip & zstd Compression"),
-        tr("Parallel multi-threaded compression across all CPU cores for ZIP, 7Z, and modern zstd archives.")
-    );
+    gridCategories->addWidget(m_chkCatArchives, 1, 0);
+    gridCategories->addWidget(m_chkCatAudio, 1, 1);
 
-    scrollArea->setWidget(container);
-    groupCompOuterLayout->addWidget(scrollArea);
-    pageLayout->addWidget(groupComponents, 1);
+    gridCategories->addWidget(m_chkCatImages, 2, 0);
 
-    // 3. Fixed Bottom Bar outside ScrollArea so "Advanced Settings..." is always visible
+    modulesLayout->addLayout(gridCategories);
+    pageLayout->addWidget(groupModules);
+
+    // 2. Large Spacious Dynamic Live Configuration Summary Card
+    auto *groupSummaryCard = new QGroupBox(tr("Live Configuration Summary"), page);
+    auto *summaryCardLayout = new QVBoxLayout(groupSummaryCard);
+    summaryCardLayout->setContentsMargins(14, 8, 14, 8);
+    summaryCardLayout->setSpacing(6);
+
+    m_lblDynamicSummary = new QLabel(groupSummaryCard);
+    m_lblDynamicSummary->setWordWrap(true);
+    m_lblDynamicSummary->setTextFormat(Qt::RichText);
+    m_lblDynamicSummary->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    m_lblDynamicSummary->setStyleSheet("font-size: 11px;");
+    summaryCardLayout->addWidget(m_lblDynamicSummary, 1);
+
+    auto *lblTip = new QLabel(
+        tr("💡 <b>Tip:</b> You can also enable, disable, or install individual extensions at any time via menu "
+           "<b>View → Show Uninstalled Features</b>, or in <b>Settings → Extensions</b>."),
+        groupSummaryCard
+    );
+    lblTip->setWordWrap(true);
+    lblTip->setTextFormat(Qt::RichText);
+    lblTip->setStyleSheet(
+        "color: #0284c7; font-size: 11px; padding: 5px 8px; "
+        "background-color: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); "
+        "border-radius: 5px;"
+    );
+    summaryCardLayout->addWidget(lblTip);
+
+    pageLayout->addWidget(groupSummaryCard, 1);
+
+    // 3. Bottom Row with Advanced Settings
     auto *bottomRow = new QHBoxLayout();
     bottomRow->setContentsMargins(2, 0, 2, 0);
-    m_lblModulesHint = new QLabel(
-        tr("ℹ️ Settings can be customized or recompiled at any time from Settings → Extensions."),
-        page
-    );
-    m_lblModulesHint->setStyleSheet("color: #64748b; font-size: 11px;");
-    m_lblModulesHint->setWordWrap(true);
-    bottomRow->addWidget(m_lblModulesHint, 1);
+    bottomRow->addStretch(1);
 
-    m_btnConfigureExtensions = new QPushButton(tr("⚙️ Advanced Settings..."), page);
+    m_btnConfigureExtensions = new QPushButton(tr("⚙️ Advanced Settings (Individual Extensions)..."), page);
     m_btnConfigureExtensions->setCursor(Qt::PointingHandCursor);
+    m_btnConfigureExtensions->setToolTip(tr("Open granular extension settings to inspect or configure individual packages."));
     bottomRow->addWidget(m_btnConfigureExtensions);
     pageLayout->addLayout(bottomRow);
 
     connect(m_btnConfigureExtensions, &QPushButton::clicked, this, [this]() {
         SettingsDialog dlg(this, SettingsDialog::TabIndex::Extensions);
         dlg.exec();
-        updateModuleStatusBadges();
+        updateDynamicSummary();
     });
 
     // Wire preset radio buttons to applyPreset
@@ -587,61 +521,50 @@ QWizardPage *FirstRunWizard::createModulesPage()
             updateModuleOptionTexts();
         }
     });
-    connect(m_radioPresetDocs, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            applyPreset(1);
-            updateModuleOptionTexts();
-        }
-    });
-    connect(m_radioPresetMedia, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            applyPreset(2);
-            updateModuleOptionTexts();
-        }
-    });
     connect(m_radioPresetMinimal, &QRadioButton::toggled, this, [this](bool checked) {
         if (checked) {
-            applyPreset(3);
+            applyPreset(1);
             updateModuleOptionTexts();
         }
     });
     connect(m_radioPresetCustom, &QRadioButton::toggled, this, [this](bool checked) {
         if (checked) {
             updateModuleOptionTexts();
+            updateDynamicSummary();
         }
     });
 
-    // Sub-feature enabling linked to parent checkbox
-    connect(m_chkModulePdf, &QCheckBox::toggled, this, [this](bool checked) {
-        if (m_chkSubOcr) m_chkSubOcr->setEnabled(checked);
-        if (m_chkSubQpdf) m_chkSubQpdf->setEnabled(checked);
-    });
-    connect(m_chkModuleMedia, &QCheckBox::toggled, this, [this](bool checked) {
-        if (m_chkSubEqualizer) m_chkSubEqualizer->setEnabled(checked);
-    });
-    connect(m_chkModuleArchive, &QCheckBox::toggled, this, [this](bool checked) {
-        if (m_chkSubSevenZip) m_chkSubSevenZip->setEnabled(checked);
-    });
-
-    // Wire checkboxes to evaluatePresetFromCheckboxes
+    // Wire category checkboxes to evaluatePresetFromCheckboxes
     auto onCheckChanged = [this](bool) {
         evaluatePresetFromCheckboxes();
         updateModuleOptionTexts();
     };
-    connect(m_chkModulePdf, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkSubOcr, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkSubQpdf, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkModuleOffice, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkModuleMedia, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkSubEqualizer, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkModuleArchive, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkSubSevenZip, &QCheckBox::toggled, this, onCheckChanged);
+    connect(m_chkCatDocs, &QCheckBox::toggled, this, onCheckChanged);
+    connect(m_chkCatArchives, &QCheckBox::toggled, this, onCheckChanged);
+    connect(m_chkCatImages, &QCheckBox::toggled, this, onCheckChanged);
+    connect(m_chkCatVideo, &QCheckBox::toggled, this, onCheckChanged);
+    connect(m_chkCatAudio, &QCheckBox::toggled, this, onCheckChanged);
 
-    // Initial state: populate labels, badges, and activate Complete Suite by default
-    m_radioPresetFull->setChecked(true);
-    applyPreset(0);
+    // Restore previously saved state if wizard is re-run, or default to Complete Suite on first run
+    QSettings settings("Bubez", "BubezView");
+    const QString savedPreset = settings.value("modules/preset", QStringLiteral("full")).toString();
+    if (savedPreset == QLatin1String("minimal")) {
+        m_radioPresetMinimal->setChecked(true);
+        applyPreset(1);
+    } else if (savedPreset == QLatin1String("custom")) {
+        m_syncingModules = true;
+        m_chkCatDocs->setChecked(settings.value("modules/category_documents_all", true).toBool());
+        m_chkCatArchives->setChecked(settings.value("modules/category_archives_all", true).toBool());
+        m_chkCatImages->setChecked(settings.value("modules/category_images_all", true).toBool());
+        m_chkCatVideo->setChecked(settings.value("modules/category_video_all", true).toBool());
+        m_chkCatAudio->setChecked(settings.value("modules/category_audio_all", true).toBool());
+        m_syncingModules = false;
+        evaluatePresetFromCheckboxes();
+    } else {
+        m_radioPresetFull->setChecked(true);
+        applyPreset(0);
+    }
     updateModuleOptionTexts();
-    updateModuleStatusBadges();
 
     return page;
 }
@@ -894,120 +817,115 @@ void FirstRunWizard::applyPreset(int presetIndex)
 {
     m_syncingModules = true;
     switch (presetIndex) {
-        case 0: // Complete Suite
-            if (m_chkModulePdf) m_chkModulePdf->setChecked(true);
-            if (m_chkSubOcr) m_chkSubOcr->setChecked(true);
-            if (m_chkSubQpdf) m_chkSubQpdf->setChecked(true);
-            if (m_chkModuleOffice) m_chkModuleOffice->setChecked(true);
-            if (m_chkModuleMedia) m_chkModuleMedia->setChecked(true);
-            if (m_chkSubEqualizer) m_chkSubEqualizer->setChecked(true);
-            if (m_chkModuleArchive) m_chkModuleArchive->setChecked(true);
-            if (m_chkSubSevenZip) m_chkSubSevenZip->setChecked(true);
+        case 0: // Complete Suite (All categories with full extension suites)
+            if (m_chkCatDocs) m_chkCatDocs->setChecked(true);
+            if (m_chkCatImages) m_chkCatImages->setChecked(true);
+            if (m_chkCatVideo) m_chkCatVideo->setChecked(true);
+            if (m_chkCatAudio) m_chkCatAudio->setChecked(true);
+            if (m_chkCatArchives) m_chkCatArchives->setChecked(true);
             break;
-        case 1: // Documents & Office
-            if (m_chkModulePdf) m_chkModulePdf->setChecked(true);
-            if (m_chkSubOcr) m_chkSubOcr->setChecked(true);
-            if (m_chkSubQpdf) m_chkSubQpdf->setChecked(true);
-            if (m_chkModuleOffice) m_chkModuleOffice->setChecked(true);
-            if (m_chkModuleMedia) m_chkModuleMedia->setChecked(false);
-            if (m_chkSubEqualizer) m_chkSubEqualizer->setChecked(false);
-            if (m_chkModuleArchive) m_chkModuleArchive->setChecked(true);
-            if (m_chkSubSevenZip) m_chkSubSevenZip->setChecked(true);
+
+        case 1: // Minimal Core (Only base lightweight visualizers, zero heavy packages)
+            if (m_chkCatDocs) m_chkCatDocs->setChecked(false);
+            if (m_chkCatImages) m_chkCatImages->setChecked(false);
+            if (m_chkCatVideo) m_chkCatVideo->setChecked(false);
+            if (m_chkCatAudio) m_chkCatAudio->setChecked(false);
+            if (m_chkCatArchives) m_chkCatArchives->setChecked(false);
             break;
-        case 2: // Media & Entertainment
-            if (m_chkModulePdf) m_chkModulePdf->setChecked(false);
-            if (m_chkSubOcr) m_chkSubOcr->setChecked(false);
-            if (m_chkSubQpdf) m_chkSubQpdf->setChecked(false);
-            if (m_chkModuleOffice) m_chkModuleOffice->setChecked(false);
-            if (m_chkModuleMedia) m_chkModuleMedia->setChecked(true);
-            if (m_chkSubEqualizer) m_chkSubEqualizer->setChecked(true);
-            if (m_chkModuleArchive) m_chkModuleArchive->setChecked(true);
-            if (m_chkSubSevenZip) m_chkSubSevenZip->setChecked(true);
-            break;
-        case 3: // Minimal Core (Zero Extra Dependencies: only core image, text, code & folder viewers)
-            if (m_chkModulePdf) m_chkModulePdf->setChecked(false);
-            if (m_chkSubOcr) m_chkSubOcr->setChecked(false);
-            if (m_chkSubQpdf) m_chkSubQpdf->setChecked(false);
-            if (m_chkModuleOffice) m_chkModuleOffice->setChecked(false);
-            if (m_chkModuleMedia) m_chkModuleMedia->setChecked(false);
-            if (m_chkSubEqualizer) m_chkSubEqualizer->setChecked(false);
-            if (m_chkModuleArchive) m_chkModuleArchive->setChecked(false);
-            if (m_chkSubSevenZip) m_chkSubSevenZip->setChecked(false);
-            break;
+
         default:
             break;
     }
     m_syncingModules = false;
+    updateDynamicSummary();
 }
 
 void FirstRunWizard::evaluatePresetFromCheckboxes()
 {
     if (m_syncingModules) return;
 
-    bool pdf = m_chkModulePdf && m_chkModulePdf->isChecked();
-    bool ocr = m_chkSubOcr && m_chkSubOcr->isChecked();
-    bool qpdf = m_chkSubQpdf && m_chkSubQpdf->isChecked();
-    bool off = m_chkModuleOffice && m_chkModuleOffice->isChecked();
-    bool med = m_chkModuleMedia && m_chkModuleMedia->isChecked();
-    bool eq = m_chkSubEqualizer && m_chkSubEqualizer->isChecked();
-    bool arc = m_chkModuleArchive && m_chkModuleArchive->isChecked();
-    bool sz = m_chkSubSevenZip && m_chkSubSevenZip->isChecked();
+    bool allChecked = (m_chkCatDocs && m_chkCatDocs->isChecked()) &&
+                      (m_chkCatImages && m_chkCatImages->isChecked()) &&
+                      (m_chkCatVideo && m_chkCatVideo->isChecked()) &&
+                      (m_chkCatAudio && m_chkCatAudio->isChecked()) &&
+                      (m_chkCatArchives && m_chkCatArchives->isChecked());
+
+    bool allUnchecked = (!m_chkCatDocs || !m_chkCatDocs->isChecked()) &&
+                        (!m_chkCatImages || !m_chkCatImages->isChecked()) &&
+                        (!m_chkCatVideo || !m_chkCatVideo->isChecked()) &&
+                        (!m_chkCatAudio || !m_chkCatAudio->isChecked()) &&
+                        (!m_chkCatArchives || !m_chkCatArchives->isChecked());
 
     m_syncingModules = true;
-    if (pdf && ocr && qpdf && off && med && eq && arc && sz) {
+    if (allChecked) {
         if (m_radioPresetFull) m_radioPresetFull->setChecked(true);
-    } else if (pdf && ocr && qpdf && off && !med && !eq && arc && sz) {
-        if (m_radioPresetDocs) m_radioPresetDocs->setChecked(true);
-    } else if (!pdf && !ocr && !qpdf && !off && med && eq && arc && sz) {
-        if (m_radioPresetMedia) m_radioPresetMedia->setChecked(true);
-    } else if (!pdf && !ocr && !qpdf && !off && !med && !eq && !arc && !sz) {
+    } else if (allUnchecked) {
         if (m_radioPresetMinimal) m_radioPresetMinimal->setChecked(true);
     } else {
         if (m_radioPresetCustom) m_radioPresetCustom->setChecked(true);
     }
     m_syncingModules = false;
+    updateDynamicSummary();
 }
 
-void FirstRunWizard::updateModuleStatusBadges()
+void FirstRunWizard::updateDynamicSummary()
 {
-    if (m_badgePdf) {
-        bool ready = BuildConfig::isPkgInstalled("poppler-qt6") || !BuildConfig::pdfimagesExecutable().isEmpty() || BuildConfig::instance().staticPdf();
-        m_badgePdf->setText(ready ? tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>")
-                                  : tr("<span style='color: #f59e0b;'>○ Available</span>"));
+    if (!m_lblDynamicSummary) return;
+
+    QString profileTitle;
+    QString extText;
+    QString futureText;
+
+    if (m_radioPresetFull && m_radioPresetFull->isChecked()) {
+        profileTitle = tr("<span style='color: #0284c7; font-weight: bold;'>🚀 Complete Suite</span>");
+        extText = tr("<b>All extension packages active:</b> LibreOffice document converter, Tesseract OCR, QPDF repair, Digital signatures (PAdES), MPV GPU acceleration, 10-Band Equalizer, TagLib editor, Extended codecs (WebP, TIFF, etc.), 7-Zip Multi-Core.");
+        futureText = tr("All newly added extensions in every category will be <b>automatically included and activated</b>.");
+    } else if (m_radioPresetMinimal && m_radioPresetMinimal->isChecked()) {
+        profileTitle = tr("<span style='color: #10b981; font-weight: bold;'>⚡ Minimal Core</span>");
+        extText = tr("<b>None (Zero heavy background packages):</b> Pure lightweight visualizers using native system decoders (No MPV, No LibreOffice, No OCR, No 7-Zip).");
+        futureText = tr("Only base lightweight viewer engines will be updated. No heavy extension packages will ever be installed without your consent.");
+    } else {
+        profileTitle = tr("<span style='color: #8b5cf6; font-weight: bold;'>⚙️ Custom Selection</span>");
+
+        QStringList selectedCats;
+        if (m_chkCatDocs && m_chkCatDocs->isChecked()) selectedCats << tr("Documents & Office (LibreOffice, OCR, QPDF, Signatures)");
+        if (m_chkCatArchives && m_chkCatArchives->isChecked()) selectedCats << tr("Archives & ISO (7-Zip, Multi-Core, ISO Tools)");
+        if (m_chkCatVideo && m_chkCatVideo->isChecked()) selectedCats << tr("Video & Movies (MPV GPU Acceleration)");
+        if (m_chkCatAudio && m_chkCatAudio->isChecked()) selectedCats << tr("Music & Audio (Equalizer, TagLib)");
+        if (m_chkCatImages && m_chkCatImages->isChecked()) selectedCats << tr("Images & Graphics (Extended Codecs)");
+
+        if (selectedCats.isEmpty()) {
+            extText = tr("No category extensions selected. All categories will run in lightweight Minimal Core mode.");
+            futureText = tr("No heavy extension packages will be added.");
+        } else {
+            extText = tr("Full extensions active <b>only for selected categories:</b><br>• %1<br>Remaining categories run in lightweight Minimal Core mode.").arg(selectedCats.join("<br>• "));
+            futureText = tr("Newly added extensions in the future will be <b>automatically added only to your selected categories</b>.");
+        }
     }
-    if (m_badgeOcr) {
-        bool ready = BuildConfig::isTesseractAvailable();
-        m_badgeOcr->setText(ready ? tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>")
-                                  : tr("<span style='color: #64748b;'>○ Optional</span>"));
-    }
-    if (m_badgeQpdf) {
-        bool ready = BuildConfig::isQpdfAvailable();
-        m_badgeQpdf->setText(ready ? tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>")
-                                   : tr("<span style='color: #64748b;'>○ Optional</span>"));
-    }
-    if (m_badgeOffice) {
-        bool ready = !QStandardPaths::findExecutable("libreoffice").isEmpty();
-        m_badgeOffice->setText(ready ? tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>")
-                                     : tr("<span style='color: #64748b;'>○ Optional: libreoffice</span>"));
-    }
-    if (m_badgeMedia) {
-        bool ready = BuildConfig::isPkgInstalled("mpv") || !QStandardPaths::findExecutable("mpv").isEmpty();
-        m_badgeMedia->setText(ready ? tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>")
-                                    : tr("<span style='color: #64748b;'>○ Available</span>"));
-    }
-    if (m_badgeEqualizer) {
-        m_badgeEqualizer->setText(tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>"));
-    }
-    if (m_badgeArchive) {
-        bool ready = BuildConfig::isPkgInstalled("libarchive");
-        m_badgeArchive->setText(ready ? tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>")
-                                      : tr("<span style='color: #64748b;'>○ Available</span>"));
-    }
-    if (m_badgeSevenZip) {
-        bool ready = BuildConfig::isSevenZipAvailable();
-        m_badgeSevenZip->setText(ready ? tr("<span style='color: #10b981; font-weight: 600;'>● Ready</span>")
-                                       : tr("<span style='color: #64748b;'>○ Optional: 7zip</span>"));
-    }
+
+    QString html = QString(
+        "<table width='100%' cellpadding='3' cellspacing='0' style='font-size: 11px;'>"
+        "  <tr><td width='22%' valign='top' style='color: #64748b; font-weight: bold;'>%1:</td>"
+        "      <td valign='top'>%2</td></tr>"
+        "  <tr><td valign='top' style='color: #64748b; font-weight: bold;'>%3:</td>"
+        "      <td valign='top'><span style='color: #10b981; font-weight: 600;'>● Always Active:</span> %4</td></tr>"
+        "  <tr><td valign='top' style='color: #64748b; font-weight: bold;'>%5:</td>"
+        "      <td valign='top'>%6</td></tr>"
+        "  <tr><td valign='top' style='color: #64748b; font-weight: bold;'>%7:</td>"
+        "      <td valign='top'>%8</td></tr>"
+        "</table>"
+    ).arg(
+        tr("Active Profile"),
+        profileTitle,
+        tr("Core Engines"),
+        tr("PDF, Images, Video (System), Audio (System), Archives & ISO"),
+        tr("Extension Suites"),
+        extText,
+        tr("Future Updates"),
+        futureText
+    );
+
+    m_lblDynamicSummary->setText(html);
 }
 
 void FirstRunWizard::updateSummaryText()
@@ -1023,38 +941,27 @@ void FirstRunWizard::updateSummaryText()
 
     QString modulesPresetText = tr("Custom Configuration");
     if (m_radioPresetFull && m_radioPresetFull->isChecked()) {
-        modulesPresetText = tr("Complete Suite (All modules enabled)");
-    } else if (m_radioPresetDocs && m_radioPresetDocs->isChecked()) {
-        modulesPresetText = tr("Documents & Office");
-    } else if (m_radioPresetMedia && m_radioPresetMedia->isChecked()) {
-        modulesPresetText = tr("Media & Entertainment");
+        modulesPresetText = tr("Complete Suite (All viewers & extensions active)");
     } else if (m_radioPresetMinimal && m_radioPresetMinimal->isChecked()) {
-        modulesPresetText = tr("Minimal Core");
+        modulesPresetText = tr("Minimal Core (Zero heavy background packages)");
     }
 
-    QStringList activeModulesList;
-    if (m_chkModulePdf && m_chkModulePdf->isChecked()) {
-        QString pdfStr = tr("PDF");
-        QStringList pdfExtras;
-        if (m_chkSubOcr && m_chkSubOcr->isChecked()) pdfExtras << "OCR";
-        if (m_chkSubQpdf && m_chkSubQpdf->isChecked()) pdfExtras << "QPDF";
-        if (!pdfExtras.isEmpty()) {
-            pdfStr += QString(" (%1)").arg(pdfExtras.join("+"));
-        }
-        activeModulesList << pdfStr;
+    QStringList activeCategories;
+    if (m_radioPresetFull && m_radioPresetFull->isChecked()) {
+        activeCategories << tr("All Categories (Full Extensions)");
+    } else if (m_radioPresetMinimal && m_radioPresetMinimal->isChecked()) {
+        activeCategories << tr("None (Essential Core Viewers Only)");
+    } else {
+        if (m_chkCatDocs && m_chkCatDocs->isChecked()) activeCategories << tr("Documents & Office");
+        if (m_chkCatImages && m_chkCatImages->isChecked()) activeCategories << tr("Images & Graphics");
+        if (m_chkCatVideo && m_chkCatVideo->isChecked()) activeCategories << tr("Video & Movies");
+        if (m_chkCatAudio && m_chkCatAudio->isChecked()) activeCategories << tr("Music & Audio");
+        if (m_chkCatArchives && m_chkCatArchives->isChecked()) activeCategories << tr("Archives & Disk Images");
+        if (activeCategories.isEmpty()) activeCategories << tr("None (Essential Core Viewers Only)");
     }
-    if (m_chkModuleOffice && m_chkModuleOffice->isChecked()) activeModulesList << tr("Office Preview");
-    if (m_chkModuleMedia && m_chkModuleMedia->isChecked()) {
-        QString medStr = tr("Media");
-        if (m_chkSubEqualizer && m_chkSubEqualizer->isChecked()) medStr += tr(" (+Equalizer)");
-        activeModulesList << medStr;
-    }
-    if (m_chkModuleArchive && m_chkModuleArchive->isChecked()) {
-        QString arcStr = tr("Archives");
-        if (m_chkSubSevenZip && m_chkSubSevenZip->isChecked()) arcStr += tr(" (+7-Zip)");
-        activeModulesList << arcStr;
-    }
-    QString activeModulesStr = activeModulesList.isEmpty() ? tr("None (Core Viewers Only)") : activeModulesList.join(", ");
+
+    QString activeCategoriesStr = activeCategories.join(", ");
+    QString viewersStr = tr("PDF, Images, Video, Audio, Archives & ISO");
 
     QString themeText = m_comboTheme ? m_comboTheme->currentText() : tr("Native");
     QString filmstripText = (m_chkFilmstrip && m_chkFilmstrip->isChecked()) ? tr("Enabled") : tr("Disabled");
@@ -1074,8 +981,9 @@ void FirstRunWizard::updateSummaryText()
     QString rows;
     rows += makeRow(tr("Primary Shortcut"), shortcutText);
     rows += makeRow(tr("Hardware Performance Profile"), cpuText);
-    rows += makeRow(tr("Modules Preset"), modulesPresetText);
-    rows += makeRow(tr("Enabled Modules"), activeModulesStr);
+    rows += makeRow(tr("Configuration Preset"), modulesPresetText);
+    rows += makeRow(tr("Core Viewers"), viewersStr);
+    rows += makeRow(tr("Full Extension Suites"), activeCategoriesStr);
     rows += makeRow(tr("Theme"), themeText);
     rows += makeRow(tr("Thumbnail Filmstrip"), filmstripText);
     rows += makeRow(tr("Quick Dismissal Key"), escText);
@@ -1096,44 +1004,17 @@ void FirstRunWizard::updateSummaryText()
 
 void FirstRunWizard::updateModuleOptionTexts()
 {
-    if (!m_radioPresetFull || !m_radioPresetDocs || !m_radioPresetMedia || !m_radioPresetMinimal) return;
+    if (!m_radioPresetFull || !m_radioPresetMinimal || !m_radioPresetCustom) return;
 
     bool isHighPerformance = (m_radioCpuDesktop && m_radioCpuDesktop->isChecked());
 
-    // Keep radio button labels concise on a single line (double '&&' so Qt renders literal '&')
     if (isHighPerformance) {
         m_radioPresetFull->setText(tr("🚀 Complete Suite (Host Compiled)"));
-        m_radioPresetDocs->setText(tr("📄 Documents && Office (Host Compiled)"));
     } else {
         m_radioPresetFull->setText(tr("🚀 Complete Suite (System Packages)"));
-        m_radioPresetDocs->setText(tr("📄 Documents && Office (System Packages)"));
     }
-    m_radioPresetMedia->setText(tr("🎬 Media && Entertainment"));
-    m_radioPresetMinimal->setText(tr("🪶 Minimal Core (Zero Extra Deps)"));
-
-    if (!m_lblPresetDesc) return;
-
-    if (m_radioPresetFull->isChecked()) {
-        m_lblPresetDesc->setText(isHighPerformance
-            ? tr("All features compiled from source with aggressive CPU optimizations (-O3, -march=native).")
-            : tr("All features using distribution precompiled packages with zero compile wait time."));
-    } else if (m_radioPresetDocs->isChecked()) {
-        m_lblPresetDesc->setText(isHighPerformance
-            ? tr("Optimized PDF vector rendering, LibreOffice preview, OCR, and digital signatures.")
-            : tr("PDF viewing, LibreOffice integration, OCR, and cryptographic signatures."));
-    } else if (m_radioPresetMedia->isChecked()) {
-        m_lblPresetDesc->setText(
-            tr("Hardware GPU video playback, 10-band audio equalizer, and archive management.")
-        );
-    } else if (m_radioPresetMinimal->isChecked()) {
-        m_lblPresetDesc->setText(
-            tr("Fast native image, code, and folder preview with instant cold startup and zero extra dependencies.")
-        );
-    } else {
-        m_lblPresetDesc->setText(
-            tr("Choose each component and engine manually using the checkboxes below.")
-        );
-    }
+    m_radioPresetMinimal->setText(tr("⚡ Minimal Core (Zero Extra Deps)"));
+    m_radioPresetCustom->setText(tr("⚙️ Custom Selection"));
 }
 
 void FirstRunWizard::accept()
@@ -1152,24 +1033,57 @@ void FirstRunWizard::accept()
         cfg.applyHardwareProfile(BuildConfig::HardwareProfile::Balanced);
     }
 
-    // 3. Execution of Compilation / Package Installation based on chosen modules
-    bool enablePdf = m_chkModulePdf && m_chkModulePdf->isChecked();
-    bool enableOcr = m_chkSubOcr && m_chkSubOcr->isChecked();
-    bool enableQpdf = m_chkSubQpdf && m_chkSubQpdf->isChecked();
-    bool enableOffice = m_chkModuleOffice && m_chkModuleOffice->isChecked();
-    bool enableMedia = m_chkModuleMedia && m_chkModuleMedia->isChecked();
-    bool enableEqualizer = m_chkSubEqualizer && m_chkSubEqualizer->isChecked();
-    bool enableArchive = m_chkModuleArchive && m_chkModuleArchive->isChecked();
-    bool enableSevenZip = m_chkSubSevenZip && m_chkSubSevenZip->isChecked();
+    // 3. Execution of Compilation / Package Installation based on chosen categories
+    bool isFull = m_radioPresetFull && m_radioPresetFull->isChecked();
+    bool isMinimal = m_radioPresetMinimal && m_radioPresetMinimal->isChecked();
+
+    bool enableDocsExt = isFull || (!isMinimal && m_chkCatDocs && m_chkCatDocs->isChecked());
+    bool enableImagesExt = isFull || (!isMinimal && m_chkCatImages && m_chkCatImages->isChecked());
+    bool enableVideoExt = isFull || (!isMinimal && m_chkCatVideo && m_chkCatVideo->isChecked());
+    bool enableAudioExt = isFull || (!isMinimal && m_chkCatAudio && m_chkCatAudio->isChecked());
+    bool enableArchivesExt = isFull || (!isMinimal && m_chkCatArchives && m_chkCatArchives->isChecked());
+
+    // Core viewer engines are always available
+    bool enablePdf = true;
+    bool enableImage = true;
+    bool enableVideo = true;
+    bool enableAudio = true;
+    bool enableArchive = true;
+
+    // Granular extension flags mapped from category choices
+    bool enableOffice = enableDocsExt;
+    bool enableOcr = enableDocsExt;
+    bool enableQpdf = enableDocsExt;
+    bool enableOpenSsl = enableDocsExt;
+    bool enableImageFormats = enableImagesExt;
+    bool enableMpv = enableVideoExt;
+    bool enableEqualizer = enableAudioExt;
+    bool enableTagLib = enableAudioExt;
+    bool enableSevenZip = enableArchivesExt;
 
     settings.setValue("modules/pdf_enabled", enablePdf);
     settings.setValue("modules/ocr_enabled", enableOcr);
     settings.setValue("modules/qpdf_enabled", enableQpdf);
+    settings.setValue("modules/openssl_enabled", enableOpenSsl);
     settings.setValue("modules/office_enabled", enableOffice);
-    settings.setValue("modules/media_enabled", enableMedia);
+    settings.setValue("modules/image_enabled", enableImage);
+    settings.setValue("modules/image_formats_enabled", enableImageFormats);
+    settings.setValue("modules/video_enabled", enableVideo);
+    settings.setValue("modules/mpv_enabled", enableMpv);
+    settings.setValue("modules/audio_enabled", enableAudio);
     settings.setValue("modules/equalizer_enabled", enableEqualizer);
+    settings.setValue("modules/taglib_enabled", enableTagLib);
     settings.setValue("modules/archive_enabled", enableArchive);
     settings.setValue("modules/sevenzip_enabled", enableSevenZip);
+    settings.setValue("modules/media_enabled", true);
+
+    // Save category-level selection for future extension auto-expansion
+    settings.setValue("modules/category_documents_all", enableDocsExt);
+    settings.setValue("modules/category_images_all", enableImagesExt);
+    settings.setValue("modules/category_video_all", enableVideoExt);
+    settings.setValue("modules/category_audio_all", enableAudioExt);
+    settings.setValue("modules/category_archives_all", enableArchivesExt);
+    settings.setValue("modules/preset", isMinimal ? "minimal" : (isFull ? "full" : "custom"));
 
     cfg.setEnableInternalOffice(enableOffice);
     settings.setValue("office_use_libreoffice", enableOffice);
@@ -1177,14 +1091,14 @@ void FirstRunWizard::accept()
     if (isHighPerformance) {
         // High Performance Profile: only trigger recompile if current binary is not already built with -O3
         const bool alreadyO3 = (QStringLiteral(BUBEZ_OPT_LEVEL) == QLatin1String("O3"));
-        if (!alreadyO3 && (enablePdf || enableArchive || enableMedia)) {
+        if (!alreadyO3 && (enablePdf || enableArchive || enableMpv)) {
             BuildConsoleDialog console(this);
             console.setWindowTitle(tr("Compiling BubezView — High Performance Profile"));
             console.startBuild();
             console.exec();
         }
 
-        // For advanced tools, verify optional system tools (QPDF, Tesseract OCR, 7-Zip)
+        // For advanced tools, verify optional system tools (QPDF, Tesseract OCR, 7-Zip, MPV)
         QStringList missingExts;
         if (enableOcr && !PackageManagerHelper::isComponentInstalled("tesseract")) {
             missingExts << PackageManagerHelper::packageNameForComponent("tesseract");
@@ -1194,6 +1108,9 @@ void FirstRunWizard::accept()
         }
         if (enableSevenZip && !PackageManagerHelper::isComponentInstalled("7zip")) {
             missingExts << PackageManagerHelper::packageNameForComponent("7zip");
+        }
+        if (enableMpv && !PackageManagerHelper::isComponentInstalled("mpv")) {
+            missingExts << PackageManagerHelper::packageNameForComponent("mpv");
         }
         if (!missingExts.isEmpty()) {
             PackageManagerHelper::runPrivilegedInstall(missingExts, this);
@@ -1206,7 +1123,8 @@ void FirstRunWizard::accept()
         if (enableOcr) componentsToCheck << "tesseract";
         if (enableQpdf) componentsToCheck << "qpdf";
         if (enableSevenZip) componentsToCheck << "7zip";
-        if (enableMedia) componentsToCheck << "mpv";
+        // Only verify/install MPV package if user specifically enabled MPV GPU acceleration
+        if (enableMpv) componentsToCheck << "mpv";
 
         QStringList missingPackages;
         for (const QString &cid : componentsToCheck) {

@@ -20,8 +20,14 @@
 #include <QImage>
 
 const QStringList PluginManager::s_imageExtensions = {
+    // Standard & Web Formats
     "png", "jpg", "jpeg", "webp", "svg", "bmp", "gif", "ico", "tiff", "tif",
-    "avif", "heic", "heif", "pbm", "pgm", "ppm", "xbm", "xpm"
+    "avif", "heic", "heif", "pbm", "pgm", "ppm", "xbm", "xpm",
+    // Digital Camera RAW Formats
+    "raw", "dng", "cr2", "cr3", "nef", "nrw", "arw", "srf", "sr2",
+    "raf", "orf", "rw2", "pef", "ptx", "kdc", "dcr",
+    // Next-Gen, Graphics & Production Formats
+    "jxl", "psd", "xcf", "hdr", "exr", "tga", "dds", "qoi", "cur", "svgz"
 };
 
 const QStringList PluginManager::s_textExtensions = {
@@ -122,10 +128,10 @@ bool PluginManager::isNativeSupported(const QString &filePath)
 {
     FileCategory cat = categorizeFile(filePath);
     if (cat == FileCategory::Unknown) return false;
-    if (cat == FileCategory::Image || cat == FileCategory::Text || cat == FileCategory::Folder || cat == FileCategory::Office) {
+    if (cat == FileCategory::Image || cat == FileCategory::Text || cat == FileCategory::Folder || cat == FileCategory::Office || cat == FileCategory::Media) {
         return true;
     }
-    // For modular categories (Pdf, Archive, Media), check if engine plugin is available
+    // For modular categories (Pdf, Archive), check if engine plugin is available
     return instance().isEngineAvailable(cat);
 }
 

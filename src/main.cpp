@@ -115,6 +115,22 @@ int main(int argc, char *argv[])
     // Initialize GPU acceleration detection and driver capabilities
     GpuAccelerationManager::instance().initialize();
 
+    // Ensure Qt discovers image and multimedia plugins in user-local directories (~/.local)
+    // especially critical on immutable distributions (SteamOS, Fedora Silverblue, Bazzite)
+    const QString userHome = QDir::homePath();
+    const QStringList extraPluginDirs = {
+        userHome + "/.local/lib/qt6/plugins",
+        userHome + "/.local/lib/x86_64-linux-gnu/qt6/plugins",
+        userHome + "/.local/lib64/qt6/plugins",
+        userHome + "/.local/plugins",
+        QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/bubezview/plugins"
+    };
+    for (const QString &pluginDir : extraPluginDirs) {
+        if (QDir(pluginDir).exists()) {
+            QCoreApplication::addLibraryPath(pluginDir);
+        }
+    }
+
     // Ensure Distrobox/container environments can locate host system icons (e.g. Breeze)
     QStringList iconSearchPaths = QIcon::themeSearchPaths();
     if (QDir("/run/host/usr/share/icons").exists()) {

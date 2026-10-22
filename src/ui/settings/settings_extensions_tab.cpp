@@ -80,11 +80,15 @@ void SettingsExtensionsTab::setupUi()
 
     QWidget *dummyMedia = new QWidget();
     dummyMedia->setProperty("catFilter", "Media");
-    m_catTabs->addTab(dummyMedia, tr("Audio & Video"));
+    m_catTabs->addTab(dummyMedia, tr("Audio && Video"));
 
     QWidget *dummyOffice = new QWidget();
     dummyOffice->setProperty("catFilter", "Office");
     m_catTabs->addTab(dummyOffice, tr("Office"));
+
+    QWidget *dummyImage = new QWidget();
+    dummyImage->setProperty("catFilter", "Image");
+    m_catTabs->addTab(dummyImage, tr("Images && Photos"));
 
     connect(m_catTabs, &QTabWidget::currentChanged, this, [this](int index) {
         if (index > 0) {
@@ -138,6 +142,7 @@ QWidget *SettingsExtensionsTab::createCategoryPage(const QString &catFilter)
             else if (catTitle == "Archive") catTitle = tr("Archives");
             else if (catTitle == "Office") catTitle = tr("Office Documents");
             else if (catTitle == "Media") catTitle = tr("Audio & Video");
+            else if (catTitle == "Image") catTitle = tr("Images & Photos");
 
             QLabel *lblCat = new QLabel(QString("— %1 —").arg(catTitle), sepFrame);
             lblCat->setStyleSheet("font-size: 11px; font-weight: bold; color: #64748b;");

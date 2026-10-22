@@ -198,9 +198,21 @@ build_source_component() {
             repo_url="https://github.com/ip7z/7zip.git"
             repo_tag="24.08"
             ;;
+        image-formats|qtimageformats|qt6-imageformats|qt6-image-formats-plugins)
+            comp="qtimageformats"
+            repo_url="https://github.com/qt/qtimageformats.git"
+            local qt_sys_ver
+            qt_sys_ver=$(pkg-config --modversion Qt6Core 2>/dev/null || qmake6 -query QT_VERSION 2>/dev/null || echo "")
+            if [ -n "$qt_sys_ver" ]; then
+                repo_tag="v${qt_sys_ver}"
+            else
+                repo_tag="v6.8.0"
+            fi
+            cmake_flags+=("-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
         *)
             echo -e "${RED}${BOLD}[!] Error: Component '${comp}' does not have a source build recipe in install.sh.${NC}"
-            echo -e "${RED}    Supported compilable source components are: poppler, engine-poppler, libarchive, engine-libarchive, 7zip, qpdf, tesseract.${NC}"
+            echo -e "${RED}    Supported compilable source components are: poppler, engine-poppler, libarchive, engine-libarchive, 7zip, qpdf, tesseract, image-formats.${NC}"
             exit 1
             ;;
     esac
@@ -227,7 +239,10 @@ build_source_component() {
     local COMP_BUILD="${SCRIPT_DIR}/build_deps/${comp}_build"
     mkdir -p "${SCRIPT_DIR}/build_deps"
     if [ ! -d "$COMP_SRC/.git" ]; then
-        git clone --depth 1 -b "$repo_tag" "$repo_url" "$COMP_SRC"
+        if ! git clone --depth 1 -b "$repo_tag" "$repo_url" "$COMP_SRC" 2>/dev/null; then
+            echo -e "${YELLOW}[!] Tag '${repo_tag}' not found, falling back to 6.8 branch or default HEAD...${NC}"
+            git clone --depth 1 -b "6.8" "$repo_url" "$COMP_SRC" 2>/dev/null || git clone --depth 1 "$repo_url" "$COMP_SRC"
+        fi
     else
         # Ensure we checkout the correct repo tag if it differs from current HEAD
         (cd "$COMP_SRC" && git fetch --depth 1 origin "$repo_tag" 2>/dev/null || true && git checkout "$repo_tag" 2>/dev/null || true)

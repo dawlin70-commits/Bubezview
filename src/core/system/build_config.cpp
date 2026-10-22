@@ -14,6 +14,7 @@
 #include <QJsonObject>
 #include <QProcess>
 #include <QSettings>
+#include <QImageReader>
 
 BuildConfig &BuildConfig::instance()
 {
@@ -190,6 +191,10 @@ CustomSourceConfig BuildConfig::defaultSourceConfig(const QString &componentId)
     } else if (id == "librevenge" || id == "office" || id == "engine-office") {
         cfg.gitUrl = "https://git.code.sf.net/p/librevenge/git";
         cfg.branchTag = "master";
+    } else if (id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins") {
+        cfg.gitUrl = "https://github.com/qt/qtimageformats.git";
+        cfg.branchTag = "v6.8.0";
+        cfg.buildFlags = "-DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -flto=auto -pipe\"";
     } else {
         // Safe default: leave URL empty so invalid components do not falsely inherit tesseract-ocr
         cfg.gitUrl = QString();
@@ -482,6 +487,31 @@ bool BuildConfig::isPopplerDataInstalled()
            QDir("/usr/local/share/poppler/cMap").exists();
 }
 
+bool BuildConfig::isImageFormatsInstalled()
+{
+    const QString home = QDir::homePath();
+    const QStringList pluginPaths = {
+        home + "/.local/lib/qt6/plugins/imageformats/libqtga.so",
+        home + "/.local/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqtga.so",
+        home + "/.local/lib64/qt6/plugins/imageformats/libqtga.so",
+        home + "/.local/plugins/imageformats/libqtga.so",
+        home + "/.local/lib/qt6/plugins/imageformats/libqwebp.so",
+        home + "/.local/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqwebp.so",
+        home + "/.local/lib64/qt6/plugins/imageformats/libqwebp.so",
+        home + "/.local/plugins/imageformats/libqwebp.so",
+        "/usr/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqtga.so",
+        "/usr/lib/qt6/plugins/imageformats/libqtga.so",
+        "/usr/lib64/qt6/plugins/imageformats/libqtga.so",
+        "/usr/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqtiff.so",
+        "/usr/lib/qt6/plugins/imageformats/libqtiff.so"
+    };
+    for (const auto &p : pluginPaths) {
+        if (QFile::exists(p)) return true;
+    }
+    const auto formats = QImageReader::supportedImageFormats();
+    return formats.contains("tga") || formats.contains("tiff") || formats.contains("webp") || formats.contains("psd") || formats.contains("jxl");
+}
+
 QString BuildConfig::projectDevRoot()
 {
     const QString envRoot = qEnvironmentVariable("BUBEZVIEW_DEV_ROOT");
@@ -549,6 +579,9 @@ bool BuildConfig::hasSystemBinary(const QString &componentId)
     if (id == "poppler-data") {
         return isPopplerDataInstalled();
     }
+    if (id == "image-formats" || id == "qt6-image-formats-plugins" || id == "qt6-imageformats") {
+        return isImageFormatsInstalled();
+    }
 
     return isExecutableAvailable(id) || isPkgInstalled(id);
 }
@@ -556,6 +589,28 @@ bool BuildConfig::hasSystemBinary(const QString &componentId)
 bool BuildConfig::hasSourceBinary(const QString &componentId)
 {
     QString id = componentId.trimmed().toLower();
+    if (id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins") {
+        const QString home = QDir::homePath();
+        const QStringList localPlugins = {
+            home + "/.local/lib/qt6/plugins/imageformats/libqwebp.so",
+            home + "/.local/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqwebp.so",
+            home + "/.local/lib64/qt6/plugins/imageformats/libqwebp.so",
+            home + "/.local/plugins/imageformats/libqwebp.so",
+            home + "/.local/lib/qt6/plugins/imageformats/libqtga.so",
+            home + "/.local/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqtga.so",
+            home + "/.local/lib64/qt6/plugins/imageformats/libqtga.so",
+            home + "/.local/plugins/imageformats/libqtga.so",
+            home + "/.local/lib/qt6/plugins/imageformats/libqtiff.so",
+            home + "/.local/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqtiff.so",
+            home + "/.local/lib64/qt6/plugins/imageformats/libqtiff.so",
+            home + "/.local/plugins/imageformats/libqtiff.so"
+        };
+        for (const QString &lp : localPlugins) {
+            if (QFile::exists(lp)) return true;
+        }
+        return false;
+    }
+
     QString exe;
     if (id == "pdfimages" || id == "engine-poppler" || id == "poppler") exe = "pdfimages";
     else if (id == "qpdf") exe = "qpdf";
@@ -644,6 +699,36 @@ void BuildConfig::setComponentSourceMode(const QString &componentId, ComponentSo
 bool BuildConfig::removeLocalSourceBuild(const QString &componentId)
 {
     QString id = componentId.trimmed().toLower();
+    if (id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins") {
+        const QString home = QDir::homePath();
+        const QStringList localDirs = {
+            home + "/.local/lib/qt6/plugins/imageformats",
+            home + "/.local/lib/x86_64-linux-gnu/qt6/plugins/imageformats",
+            home + "/.local/lib64/qt6/plugins/imageformats",
+            home + "/.local/plugins/imageformats"
+        };
+        for (const QString &dirPath : localDirs) {
+            QDir dir(dirPath);
+            if (dir.exists()) {
+                const auto files = dir.entryList({"libq*.so"}, QDir::Files);
+                for (const QString &f : files) {
+                    dir.remove(f);
+                }
+            }
+        }
+        // Clean build directories in build_deps if present
+        const QString projectRoot = projectDevRoot();
+        if (!projectRoot.isEmpty()) {
+            QDir depDir(projectRoot + "/build_deps/qtimageformats");
+            if (depDir.exists()) depDir.removeRecursively();
+            QDir bldDir(projectRoot + "/build_deps/qtimageformats_build");
+            if (bldDir.exists()) bldDir.removeRecursively();
+        }
+        QSettings settings("Bubez", "BubezView");
+        settings.setValue("component_mode_" + id, "system");
+        return true;
+    }
+
     QString exe;
     if (id == "pdfimages" || id == "engine-poppler" || id == "poppler") exe = "pdfimages";
     else if (id == "qpdf") exe = "qpdf";

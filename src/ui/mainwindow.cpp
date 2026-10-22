@@ -112,6 +112,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_actAudioExtract(nullptr)
     , m_actMergePdf(nullptr)
     , m_actImageCrop(nullptr)
+    , m_actImageResize(nullptr)
+    , m_actImageAdjust(nullptr)
     , m_actFlattenImage(nullptr)
     , m_menuTransparency(nullptr)
     , m_grpTransparency(nullptr)
@@ -367,6 +369,12 @@ void MainWindow::setupUi()
     m_actImageCrop->setShortcut(QKeySequence("C"));
     m_actImageCrop->setCheckable(true);
 
+    m_actImageResize = m_menuEdit->addAction(QIcon::fromTheme("transform-scale"), tr("📐 Resize Image..."), this, &BaseSkin::openResizeImageDialog);
+    m_actImageResize->setShortcut(QKeySequence("Ctrl+R"));
+
+    m_actImageAdjust = m_menuEdit->addAction(QIcon::fromTheme("adjustlevels"), tr("🎨 Photo Studio & Filters..."), this, &BaseSkin::openAdjustImageDialog);
+    m_actImageAdjust->setShortcut(QKeySequence("Ctrl+B"));
+
     m_actFlattenImage = m_menuEdit->addAction(QIcon::fromTheme("fill-color"), tr("✨ Flatten Image (Remove Transparency)..."), this, [this]() {
         if (m_imageViewer && m_imageViewer->originalImage().hasAlphaChannel()) {
             m_imageViewer->removeTransparency(Qt::white);
@@ -520,7 +528,7 @@ void MainWindow::setupUi()
     m_actSlideshow->setShortcut(QKeySequence("F5"));
 
     m_actInspector = m_menuView->addAction(QIcon::fromTheme("document-properties"), tr("Inspector / Properties"), this, &BaseSkin::showFileInfo);
-    m_actInspector->setShortcut(QKeySequence("Ctrl+I"));
+    m_actInspector->setShortcuts({QKeySequence("Alt+Return"), QKeySequence("Ctrl+I")});
 
     // PDF page navigation actions (for toolbar / shortcuts)
     m_actPdfPrevPage = new QAction(QIcon::fromTheme("go-up"), tr("▲ Prev Page"), this);
@@ -1259,6 +1267,16 @@ void MainWindow::updateContextualMenuStates()
         m_actImageCrop->setVisible(isImageDoc);
         m_actImageCrop->setEnabled(isImageDoc && hasFile);
         m_actImageCrop->setChecked(m_imageViewer && m_imageViewer->isCropModeActive());
+    }
+
+    if (m_actImageResize) {
+        m_actImageResize->setVisible(isImageDoc);
+        m_actImageResize->setEnabled(isImageDoc && hasFile);
+    }
+
+    if (m_actImageAdjust) {
+        m_actImageAdjust->setVisible(isImageDoc);
+        m_actImageAdjust->setEnabled(isImageDoc && hasFile);
     }
 
     if (m_actFlattenImage) {

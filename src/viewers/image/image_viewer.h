@@ -128,6 +128,35 @@ public:
 
     // Geometric cropping & visual tools
     /**
+     * @brief Rescales the original image to target dimensions with full Undo/Redo tracking.
+     * @param newWidth Target width in pixels.
+     * @param newHeight Target height in pixels.
+     * @param mode Resampling interpolation quality (SmoothTransformation or FastTransformation).
+     */
+    void resizeImage(int newWidth, int newHeight, Qt::TransformationMode mode = Qt::SmoothTransformation);
+
+    /**
+     * @brief Replaces the current image with a modified version (e.g. from Photo Studio) with full Undo/Redo tracking.
+     * @param newImage The modified image.
+     */
+    void applyModifiedImage(const QImage &newImage);
+
+    /**
+     * @brief Applies Light, Contrast, Saturation, Hue, Temperature, and RGB adjustments with Undo/Redo tracking.
+     * @param brightness Level in range [-100, 100].
+     * @param contrast Level in range [-100, 100].
+     * @param saturation Level in range [-100, 100].
+     * @param hue Hue angle shift in degrees in range [-180, 180].
+     * @param temperature Color temperature in range [-100, 100].
+     * @param red Red channel adjustment in range [-100, 100].
+     * @param green Green channel adjustment in range [-100, 100].
+     * @param blue Blue channel adjustment in range [-100, 100].
+     */
+    void adjustImage(int brightness, int contrast, int saturation,
+                     int hue = 0, int temperature = 0,
+                     int red = 0, int green = 0, int blue = 0);
+
+    /**
      * @brief Crops the original image to the specified rectangle.
      * @param cropRect Bounding rectangle in original image coordinates.
      */

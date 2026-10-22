@@ -8,6 +8,8 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/cpu_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/dbus_previewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/desktop_integrator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/services/exif_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/services/image_processor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/gpu_acceleration_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/ocr_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/package_manager_helper.cpp
@@ -31,6 +33,9 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/first_run_wizard.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/flippable_toolbar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/goto_folder_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/photo_studio_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/image_inspector_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/image_resize_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/mainwindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ocr/ocr_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ocr/ocr_language_dialog.cpp
@@ -55,6 +60,7 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/line_number_area.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/syntax_highlighter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/text_viewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media/system_media_viewer.cpp
     CACHE INTERNAL "BubezView core application source files"
 )
 
@@ -77,6 +83,7 @@ set(APP_COMMON_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/office
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/folder
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media
     ${LIBARCHIVE_INCLUDE_DIRS}
     ${LIBREVENGE_INCLUDE_DIRS}
     ${LIBQRENCODE_INCLUDE_DIRS}
@@ -105,6 +112,8 @@ target_link_libraries(bubezview PRIVATE
     Qt6::PrintSupport
     Qt6::Network
     Qt6::Svg
+    Qt6::Multimedia
+    Qt6::MultimediaWidgets
     ${LIBARCHIVE_LIBRARIES}
     ${LIBREVENGE_LIBRARIES}
     ${LIBQRENCODE_LIBRARIES}

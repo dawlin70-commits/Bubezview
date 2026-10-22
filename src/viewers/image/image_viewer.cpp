@@ -1,6 +1,7 @@
 #include "image_viewer.h"
 #include "theme_manager.h"
 #include "gpu_acceleration_manager.h"
+#include "core/services/image_processor.h"
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -885,6 +886,56 @@ void ImageViewer::redo()
     emit undoAvailabilityChanged(canUndo(), canRedo());
 }
 
+
+void ImageViewer::resizeImage(int newWidth, int newHeight, Qt::TransformationMode mode)
+{
+    if (m_originalImage.isNull() || newWidth <= 0 || newHeight <= 0) return;
+    if (m_originalImage.width() == newWidth && m_originalImage.height() == newHeight) return;
+
+    pushUndoState();
+    m_originalImage = m_originalImage.scaled(newWidth, newHeight, Qt::IgnoreAspectRatio, mode);
+    m_sourcePixmap = QPixmap();
+    m_scaledPixmap = QPixmap();
+
+    // Reset fit-to-window and switch to 100% (1:1) zoom so user immediately perceives the actual size change
+    m_fitToWindow = false;
+    m_zoomFactor = 1.0;
+
+    setModified(true);
+    updateScaledPixmap();
+    emit zoomChanged(m_zoomFactor);
+}
+
+void ImageViewer::applyModifiedImage(const QImage &newImage)
+{
+    if (newImage.isNull()) return;
+
+    pushUndoState();
+    m_originalImage = newImage;
+    m_sourcePixmap = QPixmap();
+    m_scaledPixmap = QPixmap();
+    setModified(true);
+    updateScaledPixmap();
+}
+
+void ImageViewer::adjustImage(int brightness, int contrast, int saturation,
+                             int hue, int temperature,
+                             int red, int green, int blue)
+{
+    if (m_originalImage.isNull()) return;
+    if (brightness == 0 && contrast == 0 && saturation == 0 &&
+        hue == 0 && temperature == 0 && red == 0 && green == 0 && blue == 0) {
+        return;
+    }
+
+    pushUndoState();
+    m_originalImage = ImageProcessor::adjust(m_originalImage, brightness, contrast, saturation,
+                                            hue, temperature, red, green, blue);
+    m_sourcePixmap = QPixmap();
+    m_scaledPixmap = QPixmap();
+    setModified(true);
+    updateScaledPixmap();
+}
 
 void ImageViewer::applyCrop(const QRect &cropRect)
 {

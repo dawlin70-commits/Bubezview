@@ -303,6 +303,33 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         rotRight.category = "transform";
         rotRight.trigger = [skin]() { skin->rotateCurrentRight(); };
         actions.append(rotRight);
+
+        UIActionItem resizeAct;
+        resizeAct.id = "image_resize";
+        resizeAct.label = QObject::tr("📐 Resize Image");
+        resizeAct.iconName = "transform-scale";
+        resizeAct.shortcut = QKeySequence("Ctrl+R");
+        resizeAct.category = "edit";
+        resizeAct.trigger = [skin]() { skin->openResizeImageDialog(); };
+        actions.append(resizeAct);
+
+        UIActionItem adjustAct;
+        adjustAct.id = "image_adjust";
+        adjustAct.label = QObject::tr("🎨 Photo Studio & Filters");
+        adjustAct.iconName = "adjustlevels";
+        adjustAct.shortcut = QKeySequence("Ctrl+B");
+        adjustAct.category = "edit";
+        adjustAct.trigger = [skin]() { skin->openAdjustImageDialog(); };
+        actions.append(adjustAct);
+
+        UIActionItem inspectorAct;
+        inspectorAct.id = "image_inspector";
+        inspectorAct.label = QObject::tr("ℹ️ Properties & EXIF");
+        inspectorAct.iconName = "document-properties";
+        inspectorAct.shortcut = QKeySequence("Alt+Return");
+        inspectorAct.category = "tools";
+        inspectorAct.trigger = [skin]() { skin->showFileInfo(); };
+        actions.append(inspectorAct);
         break;
     }
 
