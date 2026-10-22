@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.16)
 # BubezView — Modern Modular Document & Media Viewer
 # Root Build System Configuration
 # ==============================================================================
-project(bubezview VERSION 0.4.7.2 LANGUAGES CXX)
-set(BUBEZVIEW_VERSION_STRING "0.4.7.2")
+project(bubezview VERSION 0.4.7.3 LANGUAGES CXX)
+set(BUBEZVIEW_VERSION_STRING "0.4.7.3")
 add_compile_definitions(BUBEZVIEW_VERSION="${BUBEZVIEW_VERSION_STRING}")
 
 set(CMAKE_CXX_STANDARD 17)
