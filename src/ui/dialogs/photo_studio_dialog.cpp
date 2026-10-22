@@ -1046,19 +1046,19 @@ void PhotoStudioDialog::setupUi()
     };
 
     m_chkProtectHighlights = addTuningCheck(tr("Protect Highlights"),
-                                            tr("Excludes bright light fixtures and applies smooth compression so blown lights never clip"), true, 0, 0);
+                                            tr("Excludes bright light fixtures and applies smooth compression so blown lights never clip"), false, 0, 0);
     m_chkProtectSkin       = addTuningCheck(tr("Protect Skin Tones"),
-                                            tr("Ensures human skin retains healthy peach vitality without turning cold or cyan"), true, 0, 1);
+                                            tr("Ensures human skin retains healthy peach vitality without turning cold or cyan"), false, 0, 1);
 
     m_chkRecoverShadows    = addTuningCheck(tr("Adaptive Shadows"),
-                                            tr("Recovers shadow details for backlit portraits and dark scenes"), true, 1, 0);
+                                            tr("Recovers shadow details for backlit portraits and dark scenes"), false, 1, 0);
     m_chkDenoiseShadows    = addTuningCheck(tr("Clean Shadow Noise"),
-                                            tr("Subtle noise reduction in deep lifted dark areas"), true, 1, 1);
+                                            tr("Subtle noise reduction in deep lifted dark areas"), false, 1, 1);
 
     m_chkNeutralizeWb      = addTuningCheck(tr("Neutralize Casts"),
-                                            tr("Neutralizes tungsten, yellow, or cold color casts"), true, 2, 0);
+                                            tr("Neutralizes tungsten, yellow, or cold color casts"), false, 2, 0);
     m_chkCenterWeighted    = addTuningCheck(tr("Center-Weighted"),
-                                            tr("Gives higher exposure priority to the center subject"), true, 2, 1);
+                                            tr("Gives higher exposure priority to the center subject"), false, 2, 1);
 
     autoLayout->addWidget(boxTuning);
 
@@ -1601,12 +1601,12 @@ void PhotoStudioDialog::onResetAllClicked()
     if (m_sliderAutoIntensity) m_sliderAutoIntensity->setValue(100);
     if (m_lblAutoIntensity) m_lblAutoIntensity->setText("100%");
     if (m_comboAutoProfile) m_comboAutoProfile->setCurrentIndex(0);
-    if (m_chkProtectHighlights) m_chkProtectHighlights->setChecked(true);
-    if (m_chkRecoverShadows) m_chkRecoverShadows->setChecked(true);
-    if (m_chkNeutralizeWb) m_chkNeutralizeWb->setChecked(true);
-    if (m_chkProtectSkin) m_chkProtectSkin->setChecked(true);
-    if (m_chkDenoiseShadows) m_chkDenoiseShadows->setChecked(true);
-    if (m_chkCenterWeighted) m_chkCenterWeighted->setChecked(true);
+    if (m_chkProtectHighlights) m_chkProtectHighlights->setChecked(false);
+    if (m_chkRecoverShadows) m_chkRecoverShadows->setChecked(false);
+    if (m_chkNeutralizeWb) m_chkNeutralizeWb->setChecked(false);
+    if (m_chkProtectSkin) m_chkProtectSkin->setChecked(false);
+    if (m_chkDenoiseShadows) m_chkDenoiseShadows->setChecked(false);
+    if (m_chkCenterWeighted) m_chkCenterWeighted->setChecked(false);
     m_neutralSamplePoint = QPoint(-1, -1);
     if (m_btnEyedropper) m_btnEyedropper->setChecked(false);
     if (m_btnFourWay) m_btnFourWay->setChecked(false);
