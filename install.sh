@@ -124,6 +124,7 @@ check_dependencies() {
             command -v pkg-config >/dev/null 2>&1 || missing_pkgs+=("pkgconf")
             pacman -Q qt6-base >/dev/null 2>&1 || missing_pkgs+=("qt6-base")
             pacman -Q qt6-svg >/dev/null 2>&1 || missing_pkgs+=("qt6-svg")
+            pacman -Q qt6-multimedia >/dev/null 2>&1 || missing_pkgs+=("qt6-multimedia")
             pacman -Q qrencode >/dev/null 2>&1 || missing_pkgs+=("qrencode")
             ;;
         apt)
@@ -138,6 +139,7 @@ check_dependencies() {
                     missing_pkgs+=("libqt6svg6-dev")
                 fi
             fi
+            dpkg -s qt6-multimedia-dev >/dev/null 2>&1 || missing_pkgs+=("qt6-multimedia-dev")
             dpkg -s libqrencode-dev >/dev/null 2>&1 || missing_pkgs+=("libqrencode-dev")
             ;;
         dnf)
@@ -146,6 +148,7 @@ check_dependencies() {
             command -v pkg-config >/dev/null 2>&1 || missing_pkgs+=("pkgconf-pkg-config")
             rpm -q qt6-qtbase-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtbase-devel")
             rpm -q qt6-qtsvg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtsvg-devel")
+            rpm -q qt6-qtmultimedia-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtmultimedia-devel")
             rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
             ;;
         zypper)
@@ -154,6 +157,7 @@ check_dependencies() {
             command -v pkg-config >/dev/null 2>&1 || missing_pkgs+=("pkg-config")
             rpm -q qt6-base-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-base-devel")
             rpm -q qt6-svg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-svg-devel")
+            rpm -q qt6-multimedia-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-multimedia-devel")
             rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
             ;;
     esac

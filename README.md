@@ -90,7 +90,7 @@ Unlike monolithic preview tools, BubezView features a **modular dynamic plugin a
 | :--- | :--- | :--- |
 | **Compiler** | C++17 (GCC 9+ / Clang 10+) | Modern C++ standard compliance |
 | **Build System** | CMake 3.16+ | Configuration and build pipeline |
-| **GUI Framework** | Qt 6.4+ | Core, Gui, Widgets, Network, Svg |
+| **GUI Framework** | Qt 6.4+ | Core, Gui, Widgets, Network, Svg, Multimedia |
 
 ### Optional Engine Dependencies (Soft Dependencies)
 BubezView runs seamlessly without these packages, but installing them unlocks specialized modules:

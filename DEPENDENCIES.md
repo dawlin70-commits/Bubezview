@@ -16,6 +16,7 @@ sudo pacman -S --needed \
     pkgconf \
     qt6-base \
     qt6-svg \
+    qt6-multimedia \
     qrencode
 ```
 
@@ -28,6 +29,7 @@ sudo apt update && sudo apt install -y \
     qt6-base-dev \
     libqt6opengl6-dev \
     libqt6svg6-dev \
+    qt6-multimedia-dev \
     libqrencode-dev
 ```
 
@@ -39,6 +41,7 @@ sudo dnf install -y \
     pkgconf-pkg-config \
     qt6-qtbase-devel \
     qt6-qtsvg-devel \
+    qt6-qtmultimedia-devel \
     qrencode-devel
 ```
 
