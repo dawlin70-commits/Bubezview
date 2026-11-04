@@ -36,8 +36,57 @@ class AudioTagDialog : public QDialog {
 public:
     explicit AudioTagDialog(const QString &currentFilePath,
                             const QStringList &siblingFiles = QStringList(),
-                            QWidget *parent = nullptr);
+                            QWidget *parent = nullptr,
+                            bool isEmbedded = false);
     ~AudioTagDialog() override;
+
+    /**
+     * @brief Loads or reloads the current track and its album sibling files into the editor.
+     * @param currentFilePath Primary track path.
+     * @param siblingFiles All sibling files in the directory.
+     */
+    void loadFiles(const QString &currentFilePath, const QStringList &siblingFiles = QStringList());
+
+    /**
+     * @brief Returns the primary file path currently loaded.
+     */
+    QString currentFilePath() const { return m_initialFilePath; }
+
+    /**
+     * @brief Refreshes theme styling when the application theme changes.
+     */
+    void refreshTheme();
+
+    /**
+     * @brief Saves or copies an image file directly into the album folder as cover.jpg (or original format).
+     * @param sourcePath Absolute path of the downloaded or chosen source image.
+     * @return Absolute path to the saved cover image inside the album directory.
+     */
+    QString saveCoverToAlbumFolder(const QString &sourcePath);
+
+    /**
+     * @brief Checks if any tag field, title, or album cover has unsaved modifications.
+     * @return True if modified.
+     */
+    bool hasModifiedTags() const;
+
+signals:
+    /**
+     * @brief Emitted when album cover artwork is saved or updated in the album folder.
+     * @param coverPath Absolute path of the saved cover art image file.
+     */
+    void coverArtChanged(const QString &coverPath);
+
+    /**
+     * @brief Emitted when tags have been written to disk so the main player can refresh metadata.
+     */
+    void tagsSaved();
+
+    /**
+     * @brief Emitted when unsaved changes state changes.
+     * @param modified True if any tag or cover has been modified.
+     */
+    void tagsModified(bool modified);
 
 private slots:
     void onChangeCoverClicked();
@@ -51,6 +100,7 @@ private slots:
     void onTitleCaseClicked();
     void onSaveClicked();
     void onTableRowSelected(int row);
+    void checkIfModified();
 
 private:
     void setupUi();
@@ -64,6 +114,7 @@ private:
     QStringList m_candidateFiles;
     QList<AudioTrackItem> m_tracks;
     int m_currentTrackIdx;
+    bool m_isEmbedded = false;
 
     // Initial snapshot of common fields
     QString m_initialArtist;

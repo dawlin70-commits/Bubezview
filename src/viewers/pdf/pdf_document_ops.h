@@ -35,7 +35,22 @@ public:
                                int totalPages,
                                int targetIndex,
                                QString &outFilePath,
-                               QString &errorMessage);    /**
+                               QString &errorMessage);
+
+    /**
+     * @brief Deletes a specific 0-based page index from source PDF using QPDF.
+     * @param sourceFilePath Path to the source PDF.
+     * @param totalPages Document page count.
+     * @param pageIndex 0-based index of the page to delete.
+     * @param outFilePath Output destination.
+     * @param errorMessage Output error string if the operation fails.
+     * @return True on success; false on failure.
+     */
+    static bool deletePage(const QString &sourceFilePath,
+                           int totalPages,
+                           int pageIndex,
+                           QString &outFilePath,
+                           QString &errorMessage);    /**
      * @brief Exports a single Poppler page to text or image formats (png, jpg, webp, bmp, tiff).
      * @param page Poppler page to export.
      * @param format Destination format string ("png", "jpg", "txt", etc.).
@@ -49,6 +64,19 @@ public:
                           const QString &outputPath,
                           int dpi,
                           int rotationDegrees);
+
+    /**
+     * @brief Extracts a single 0-based page index to an independent single-page PDF document.
+     * @param sourceFilePath Path to source multi-page PDF.
+     * @param pageIndex0Based 0-based index of page to extract.
+     * @param outFilePath Output file path.
+     * @param errorMessage Detailed failure reason on error.
+     * @return True on success; false on failure.
+     */
+    static bool extractSinglePageToPdf(const QString &sourceFilePath,
+                                      int pageIndex0Based,
+                                      const QString &outFilePath,
+                                      QString &errorMessage);
 
     /**
      * @brief Extracts embedded raster images using the system's pdfimages utility.

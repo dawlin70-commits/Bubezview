@@ -129,6 +129,14 @@ public:
     static QPixmap extractCoverArt(const QString &filePath, int maxDimension = 300);
 
     /**
+     * @brief Extracts secondary vinyl disc label or CD artwork from adjacent folders, falling back to primary cover art.
+     * @param filePath Absolute path to audio file.
+     * @param maxDimension Maximum width/height for the returned pixmap.
+     * @return Scaled QPixmap for the center vinyl record label; null QPixmap if no artwork exists.
+     */
+    static QPixmap extractVinylLabelArt(const QString &filePath, int maxDimension = 160);
+
+    /**
      * @brief Generates normalized amplitude peaks (0.0 to 1.0) for fast waveform display.
      * @param filePath Absolute path to audio file.
      * @param numSamples Number of waveform bar peaks to produce (e.g. 200).

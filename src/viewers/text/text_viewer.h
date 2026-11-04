@@ -74,8 +74,14 @@ public:
     void setEditable(bool editable);
 
     /**
-     * @brief Checks if document is editable; if read-only, prompts user to activate editing mode.
-     * @return True if edit mode is confirmed and active; false if user declined or cancelled.
+     * @brief Toggles editing mode (uniform viewer mode management).
+     */
+    void setEditMode(bool editMode) { setEditable(editMode); }
+    bool isEditMode() const { return isEditable(); }
+
+    /**
+     * @brief Checks if document is editable.
+     * @return True if document is currently in edit mode, false if read-only.
      */
     bool ensureEditable();
 

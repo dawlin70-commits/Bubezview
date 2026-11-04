@@ -152,27 +152,100 @@ AudioMetadata AudioProcessor::readMetadata(const QString &filePath)
     return meta;
 }
 
+static QPixmap tryLoadScaledCover(const QString &path, int maxDimension)
+{
+    if (path.isEmpty() || !QFileInfo::exists(path)) return QPixmap();
+    QPixmap pix(path);
+    if (!pix.isNull()) {
+        return pix.scaled(maxDimension, maxDimension, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+    return QPixmap();
+}
+
+static QString findBestCoverInDir(const QDir &dir)
+{
+    if (!dir.exists()) return QString();
+
+    const QStringList imgFilters = {"*.jpg", "*.jpeg", "*.png", "*.webp"};
+    const QFileInfoList files = dir.entryInfoList(imgFilters, QDir::Files, QDir::Name);
+    if (files.isEmpty()) return QString();
+
+    // Priority 1: Exact matches like cover.jpg, front.jpg, folder.jpg, album.jpg
+    const QStringList exactNames = {"cover", "front", "folder", "album"};
+    for (const QFileInfo &fi : files) {
+        if (exactNames.contains(fi.baseName().toLower())) {
+            return fi.absoluteFilePath();
+        }
+    }
+
+    // Priority 2: Front sleeve / primary cover keywords (e.g. darkquad_f.jpg, front_cover.jpg)
+    for (const QFileInfo &fi : files) {
+        const QString lower = fi.baseName().toLower();
+        if (lower.contains("front") || lower.endsWith("_f") || lower.contains("_front") ||
+            lower.contains("cover") || lower.contains("folder") || lower.contains("frontcover") ||
+            lower.startsWith("front")) {
+            return fi.absoluteFilePath();
+        }
+    }
+
+    // Priority 3: Disc 1 / Side A labels (e.g. darkquad_1.jpg, disc_1.jpg)
+    for (const QFileInfo &fi : files) {
+        const QString lower = fi.baseName().toLower();
+        if (lower.endsWith("_1") || lower.endsWith("_a") || lower.endsWith("-1")) {
+            return fi.absoluteFilePath();
+        }
+    }
+
+    // Priority 4: First valid image file
+    return files.first().absoluteFilePath();
+}
+
 QPixmap AudioProcessor::extractCoverArt(const QString &filePath, int maxDimension)
 {
     if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         return QPixmap();
     }
 
-    // 1. First, check adjacent folder cover files (fastest, no process execution)
     QFileInfo fi(filePath);
     QDir dir = fi.dir();
-    QStringList candidates = {"cover.jpg", "cover.png", "folder.jpg", "folder.png", "front.jpg", "front.png", "album.jpg", "album.png"};
-    for (const QString &cand : candidates) {
-        QString candidatePath = dir.filePath(cand);
-        if (QFileInfo::exists(candidatePath)) {
-            QPixmap pix(candidatePath);
-            if (!pix.isNull()) {
-                return pix.scaled(maxDimension, maxDimension, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    // 1. Search in current directory (fastest, no process execution)
+    QString coverPath = findBestCoverInDir(dir);
+    if (!coverPath.isEmpty()) {
+        QPixmap pix = tryLoadScaledCover(coverPath, maxDimension);
+        if (!pix.isNull()) return pix;
+    }
+
+    // 2. Search in dedicated artwork / scans / covers subdirectories
+    const QStringList subDirNames = {
+        "_artwork", "artwork", "Artwork", "covers", "Covers", "Cover", "cover",
+        "Cover Art", "cover art", "scans", "Scans", "scan", "info+covers", "INFO+COVERS"
+    };
+    for (const QString &subName : subDirNames) {
+        QDir subDir(dir.filePath(subName));
+        if (subDir.exists()) {
+            QString subCover = findBestCoverInDir(subDir);
+            if (!subCover.isEmpty()) {
+                QPixmap pix = tryLoadScaledCover(subCover, maxDimension);
+                if (!pix.isNull()) return pix;
             }
         }
     }
 
-    // 2. Extract embedded cover from stream with ffmpeg
+    // 3. If in a disc subfolder (e.g. CD1, Disc 1), check parent folder
+    QString dirName = dir.dirName().toLower();
+    if (dirName.startsWith("cd") || dirName.startsWith("disc") || dirName.startsWith("disk")) {
+        QDir parentDir = dir;
+        if (parentDir.cdUp()) {
+            QString parentCover = findBestCoverInDir(parentDir);
+            if (!parentCover.isEmpty()) {
+                QPixmap pix = tryLoadScaledCover(parentCover, maxDimension);
+                if (!pix.isNull()) return pix;
+            }
+        }
+    }
+
+    // 4. Extract embedded cover from stream with ffmpeg
     QTemporaryFile tempFile(QDir::tempPath() + "/bubez_cover_XXXXXX.jpg");
     tempFile.setAutoRemove(false);
     if (!tempFile.open()) {
@@ -186,20 +259,84 @@ QPixmap AudioProcessor::extractCoverArt(const QString &filePath, int maxDimensio
     args << "-y"
          << "-v" << "quiet"
          << "-i" << filePath
-         << "-an"
-         << "-vcodec" << "copy"
+         << "-map" << "0:v:0?"
+         << "-frames:v" << "1"
+         << "-f" << "image2"
          << tempPath;
 
     proc.start("ffmpeg", args);
-    if (proc.waitForFinished(2000) && proc.exitCode() == 0 && QFileInfo::exists(tempPath)) {
-        QPixmap pix(tempPath);
+    if (proc.waitForFinished(2500) && proc.exitCode() == 0 && QFileInfo::exists(tempPath)) {
+        QPixmap pix = tryLoadScaledCover(tempPath, maxDimension);
         QFile::remove(tempPath);
         if (!pix.isNull()) {
-            return pix.scaled(maxDimension, maxDimension, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            return pix;
         }
     }
     QFile::remove(tempPath);
     return QPixmap();
+}
+
+static QString findVinylLabelInDir(const QDir &dir, const QString &primaryCoverPath)
+{
+    if (!dir.exists()) return QString();
+
+    const QStringList imgFilters = {"*.jpg", "*.jpeg", "*.png", "*.webp"};
+    const QFileInfoList files = dir.entryInfoList(imgFilters, QDir::Files, QDir::Name);
+    if (files.isEmpty()) return QString();
+
+    // Priority 1: Disc / Side A / Vinyl label naming patterns (e.g. darkquad_1.jpg, disc_1.jpg, label.jpg)
+    for (const QFileInfo &fi : files) {
+        if (fi.absoluteFilePath() == primaryCoverPath) continue;
+        const QString lower = fi.baseName().toLower();
+        if (lower.endsWith("_1") || lower.endsWith("_a") || lower.endsWith("-1") ||
+            lower.contains("label") || lower.contains("vinyl") || lower.contains("disc") ||
+            lower.contains("disk") || lower.contains("cd") || lower.contains("side_a") ||
+            lower.contains("sidea")) {
+            return fi.absoluteFilePath();
+        }
+    }
+
+    return QString();
+}
+
+QPixmap AudioProcessor::extractVinylLabelArt(const QString &filePath, int maxDimension)
+{
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
+        return QPixmap();
+    }
+
+    QFileInfo fi(filePath);
+    QDir dir = fi.dir();
+
+    // Determine primary sleeve cover path so we prefer a distinct disc/label image if available
+    QString primaryCover = findBestCoverInDir(dir);
+
+    // 1. Check current directory for dedicated disc/label art
+    QString labelPath = findVinylLabelInDir(dir, primaryCover);
+    if (!labelPath.isEmpty()) {
+        QPixmap pix = tryLoadScaledCover(labelPath, maxDimension);
+        if (!pix.isNull()) return pix;
+    }
+
+    // 2. Check artwork subdirectories (_artwork, artwork, covers, scans, etc.)
+    const QStringList subDirNames = {
+        "_artwork", "artwork", "Artwork", "covers", "Covers", "Cover", "cover",
+        "Cover Art", "cover art", "scans", "Scans", "scan", "info+covers", "INFO+COVERS"
+    };
+    for (const QString &subName : subDirNames) {
+        QDir subDir(dir.filePath(subName));
+        if (subDir.exists()) {
+            QString subPrimary = findBestCoverInDir(subDir);
+            QString subLabel = findVinylLabelInDir(subDir, subPrimary);
+            if (!subLabel.isEmpty()) {
+                QPixmap pix = tryLoadScaledCover(subLabel, maxDimension);
+                if (!pix.isNull()) return pix;
+            }
+        }
+    }
+
+    // 3. Fallback to primary cover art so the vinyl label always displays album artwork
+    return extractCoverArt(filePath, maxDimension);
 }
 
 QVector<float> AudioProcessor::generateWaveformPeaks(const QString &filePath, int numSamples)
@@ -232,7 +369,10 @@ QVector<float> AudioProcessor::generateWaveformPeaks(const QString &filePath, in
         rawData.append(proc.readAllStandardOutput());
     }
     rawData.append(proc.readAllStandardOutput());
-    proc.waitForFinished(1000);
+    if (!proc.waitForFinished(1000) && proc.state() != QProcess::NotRunning) {
+        proc.kill();
+        proc.waitForFinished(200);
+    }
 
     if (rawData.isEmpty()) {
         return peaks;
@@ -296,7 +436,10 @@ QPair<QVector<float>, QVector<float>> AudioProcessor::generateStereoWaveformPeak
         rawData.append(proc.readAllStandardOutput());
     }
     rawData.append(proc.readAllStandardOutput());
-    proc.waitForFinished(1000);
+    if (!proc.waitForFinished(1000) && proc.state() != QProcess::NotRunning) {
+        proc.kill();
+        proc.waitForFinished(200);
+    }
 
     if (rawData.isEmpty()) {
         return qMakePair(peaksL, peaksR);
@@ -628,17 +771,39 @@ bool AudioProcessor::trimAudio(const QString &inputPath,
         }
     }
 
-    args << outputPath;
+    QFileInfo inFi(inputPath);
+    QFileInfo outFi(outputPath);
+    const bool isSameFile = (!inFi.canonicalFilePath().isEmpty() &&
+                             inFi.canonicalFilePath() == outFi.canonicalFilePath()) ||
+                            (inFi.absoluteFilePath() == outFi.absoluteFilePath());
+    const QString actualOutPath = isSameFile
+        ? outFi.dir().filePath(QString(".bubez_trim_%1.%2").arg(outFi.completeBaseName(), outFi.suffix()))
+        : outputPath;
+
+    args << actualOutPath;
 
     if (progressCallback) progressCallback(10);
     proc.start("ffmpeg", args);
     if (!proc.waitForFinished(60000)) {
         proc.kill();
+        if (isSameFile) QFile::remove(actualOutPath);
         return false;
     }
     if (progressCallback) progressCallback(100);
 
-    return (proc.exitCode() == 0 && QFileInfo::exists(outputPath));
+    if (proc.exitCode() != 0 || !QFileInfo::exists(actualOutPath)) {
+        if (isSameFile) QFile::remove(actualOutPath);
+        return false;
+    }
+
+    if (isSameFile) {
+        if (!QFile::remove(outputPath) || !QFile::rename(actualOutPath, outputPath)) {
+            QFile::remove(actualOutPath);
+            return false;
+        }
+    }
+
+    return QFileInfo::exists(outputPath);
 }
 
 bool AudioProcessor::extractAudioFromVideo(const QString &videoPath,
@@ -695,7 +860,19 @@ bool AudioProcessor::writeMetadata(const QString &filePath,
 
     QFileInfo fi(filePath);
     QString ext = fi.suffix();
-    QString tempOut = QDir::tempPath() + QString("/bubez_meta_%1.%2").arg(QFileInfo(filePath).baseName(), ext);
+    // Place the temporary file in the same directory on disk as the target file
+    // (avoids filling /tmp RAM tmpfs on large files and allows atomic same-filesystem rename).
+    QDir targetDir = fi.dir();
+    QString tempOut = targetDir.filePath(QString(".bubez_meta_%1.%2").arg(fi.completeBaseName(), ext));
+    {
+        QFile testWrite(tempOut);
+        if (!testWrite.open(QIODevice::WriteOnly)) {
+            tempOut = QDir::tempPath() + QString("/bubez_meta_%1.%2").arg(fi.baseName(), ext);
+        } else {
+            testWrite.close();
+            testWrite.remove();
+        }
+    }
 
     QProcess proc;
     QStringList args;

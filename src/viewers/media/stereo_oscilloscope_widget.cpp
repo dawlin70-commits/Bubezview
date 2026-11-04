@@ -26,13 +26,18 @@ StereoOscilloscopeWidget::StereoOscilloscopeWidget(QWidget *parent)
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setFixedHeight(115);
-    setMinimumWidth(500);
+    setMinimumWidth(200);
     setMouseTracking(true);
 
     connect(m_timer, &QTimer::timeout, this, &StereoOscilloscopeWidget::onAnimationTick);
 }
 
-StereoOscilloscopeWidget::~StereoOscilloscopeWidget() = default;
+StereoOscilloscopeWidget::~StereoOscilloscopeWidget()
+{
+    if (m_timer) {
+        m_timer->stop();
+    }
+}
 
 void StereoOscilloscopeWidget::loadAudioWaveform(const QString &filePath)
 {
@@ -66,6 +71,10 @@ void StereoOscilloscopeWidget::setPlaying(bool playing)
     if (m_isPlaying) {
         if (!m_timer->isActive()) {
             m_timer->start(30); // ~33 fps
+        }
+    } else {
+        if (m_timer->isActive()) {
+            m_timer->stop();
         }
     }
 }

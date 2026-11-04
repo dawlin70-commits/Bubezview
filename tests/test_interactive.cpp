@@ -3,7 +3,9 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QClipboard>
+#include <QScrollBar>
 #include "mainwindow.h"
+#include "minimal_header_bar.h"
 #include "settings_dialog.h"
 #include "folder_viewer.h"
 #include "vector_icons.h"
@@ -28,6 +30,8 @@
 #include "archive_viewer.h"
 #include "media_viewer.h"
 #include "audio_processor.h"
+#include "audio_tag_dialog.h"
+#include "audio_trim_dialog.h"
 #include "pdf_merge_dialog.h"
 #include "pdf_repair_dialog.h"
 #include "pdf_page_organizer_dialog.h"
@@ -87,6 +91,14 @@ private slots:
     void testModuleCompilationAndFallbackPlan();
     void testTextEditingModeAndPersistence();
     void testNativeImageEnhancementsAndCrop();
+    void testQuickLookInterfaceCaptures();
+    void testPreviewModeZeroModificationLockdown();
+    void testFramelessWindowAndDraggingRules();
+    void testWindowGeometrySaveAndRestore();
+    void testAudioCoverDirectSaveToFolder();
+    void testMinimalHeaderBarSnapshots();
+    void testPreEditGeometryRestorationAndAudioSizing();
+    void testTriestePdfEditing();
 
 private:
     QString m_testDirPath;
@@ -102,6 +114,9 @@ void TestInteractive::initTestCase()
     QDir repoTestDir(QString(PROJECT_ROOT_DIR) + "/test");
     QVERIFY2(repoTestDir.exists(), "La directory test/ del repository deve esistere");
     m_testDirPath = repoTestDir.canonicalPath();
+
+    QSettings settings("BubezView", "bubezview");
+    settings.remove("Gallery/ShowFolders");
 }
 
 void TestInteractive::testFolderLoadingAndRules()
@@ -123,14 +138,20 @@ void TestInteractive::testFolderLoadingAndRules()
     // Wait a brief moment for async thumbnails
     QTest::qWait(250);
 
-    // Verify rules from bubez py:
-    // 1. Hidden items (starting with dot) are excluded
+    // Verify rules:
+    // 1. In pure file mode, only files are shown in the Quick Look gallery
+    fv->setShowFolders(false);
+    QVERIFY(!fv->showFolders());
     for (int i = 0; i < fv->listWidget()->count(); ++i) {
+        bool isDir = fv->listWidget()->item(i)->data(Qt::UserRole + 1).toBool();
+        QVERIFY2(!isDir, "Nella modalità predefinita devono comparire solo file");
         QString text = fv->listWidget()->item(i)->text();
         QVERIFY2(!text.startsWith("."), qPrintable(QString("File nascosto trovato nella lista: %1").arg(text)));
     }
 
-    // 2. Subdirectories appear before files
+    // 2. When showFolders is enabled, subdirectories appear before files
+    fv->setShowFolders(true);
+    QVERIFY(fv->showFolders());
     bool seenFile = false;
     for (int i = 0; i < fv->listWidget()->count(); ++i) {
         bool isDir = fv->listWidget()->item(i)->data(Qt::UserRole + 1).toBool();
@@ -167,6 +188,7 @@ void TestInteractive::testSubfolderNavigationAndReturn()
     window.openFile(m_testDirPath);
     FolderViewer *fv = window.folderViewer();
     QVERIFY(fv != nullptr);
+    fv->setShowFolders(true);
     QTest::qWait(150);
 
     // Find first subfolder in test/ (e.g. ICONE or office_samples or pdf)
@@ -215,14 +237,16 @@ void TestInteractive::testRapidNavigationStress()
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
 
+    window.openFile(m_testDirPath);
     FolderViewer *fv = window.folderViewer();
+    QVERIFY(fv != nullptr);
 
     for (int cycle = 0; cycle < 5; ++cycle) {
         window.openFile(m_testDirPath);
         QTest::qWait(30);
 
         // Double click first item if it's a dir
-        if (fv->listWidget()->count() > 0 && fv->listWidget()->item(0)->data(Qt::UserRole + 1).toBool()) {
+        if (fv && fv->listWidget()->count() > 0 && fv->listWidget()->item(0)->data(Qt::UserRole + 1).toBool()) {
             emit fv->listWidget()->itemDoubleClicked(fv->listWidget()->item(0));
             QTest::qWait(30);
             QTest::keyClick(&window, Qt::Key_Backspace);
@@ -249,27 +273,27 @@ void TestInteractive::testThemeSwitching()
 
     // Capture light mode preview
     QPixmap pixLight = window.grab();
-    pixLight.save("/home/davide/.gemini/antigravity/brain/9744b1b3-031c-48d3-846e-066fa96ecbdf/folderviewer_preview.png");
+    pixLight.save("/home/davide/.gemini/antigravity/brain/db0875de-21e6-4705-af7b-91c29c95085b/gallery_preview_modern_light.png");
 
     // Switch to DarkSlate interactively
     ThemeManager::setPreset(ThemePreset::DarkSlate);
     window.applyCurrentTheme();
     QTest::qWait(100);
     QPixmap pixDark = window.grab();
-    pixDark.save("/home/davide/.gemini/antigravity/brain/9744b1b3-031c-48d3-846e-066fa96ecbdf/folderviewer_dark_preview.png");
+    pixDark.save("/home/davide/.gemini/antigravity/brain/db0875de-21e6-4705-af7b-91c29c95085b/gallery_preview_dark_slate.png");
 
-    ThemeManager::setPreset(ThemePreset::BreezeDark);
-    SettingsDialog dlg(&window, SettingsDialog::TabIndex::Appearance);
-    QTest::qWait(50);
-
-    QPixmap pixSettings = dlg.grab();
-    pixSettings.save("/home/davide/.gemini/antigravity/brain/c8aaa138-5782-4f22-ba66-d5f04036bb68/settings_office_toggle.png");
-
-    ThemeManager::setPreset(ThemePreset::SystemNative);
+    ThemeManager::setPreset(ThemePreset::DarkSlate);
     window.applyCurrentTheme();
-    QCOMPARE(ThemeManager::currentPreset(), ThemePreset::SystemNative);
-    window.applyCurrentTheme();
+    SettingsDialog dlgDark(&window, SettingsDialog::TabIndex::Appearance);
     QTest::qWait(50);
+    dlgDark.grab().save("/home/davide/.gemini/antigravity/brain/db0875de-21e6-4705-af7b-91c29c95085b/settings_dark_slate.png");
+
+    ThemeManager::setPreset(ThemePreset::ModernLight);
+    window.applyCurrentTheme();
+    QCOMPARE(ThemeManager::currentPreset(), ThemePreset::ModernLight);
+    SettingsDialog dlgLight(&window, SettingsDialog::TabIndex::Appearance);
+    QTest::qWait(50);
+    dlgLight.grab().save("/home/davide/.gemini/antigravity/brain/db0875de-21e6-4705-af7b-91c29c95085b/settings_modern_light.png");
 }
 
 void TestInteractive::testFilePreviewFromFolder()
@@ -282,6 +306,7 @@ void TestInteractive::testFilePreviewFromFolder()
     window.openFile(m_testDirPath);
     FolderViewer *fv = window.folderViewer();
     QVERIFY(fv != nullptr);
+    fv->setShowFolders(true);
     QTest::qWait(150);
 
     // Find first file in the directory
@@ -298,6 +323,10 @@ void TestInteractive::testFilePreviewFromFolder()
 
     QVERIFY2(fileRow != -1, "Deve esistere almeno un file in test/");
 
+    // Set scroll position to test position retention
+    fv->listWidget()->verticalScrollBar()->setValue(60);
+    int expectedScroll = fv->listWidget()->verticalScrollBar()->value();
+
     // Simulate double click on file
     emit fv->listWidget()->itemDoubleClicked(fv->listWidget()->item(fileRow));
     QTest::qWait(200);
@@ -305,6 +334,13 @@ void TestInteractive::testFilePreviewFromFolder()
     // Should have transitioned away from FolderViewer (index 6) to file viewer
     QVERIFY2(window.currentViewerIndex() != 6, "Facendo doppio clic sul file dovrebbe aprirsi l'anteprima del file");
     QCOMPARE(window.currentFilePath(), targetFilePath);
+
+    // Return to folder gallery
+    window.openCurrentFolderInGallery();
+    QTest::qWait(200);
+    QCOMPARE(window.currentViewerIndex(), 6);
+    QCOMPARE(fv->listWidget()->verticalScrollBar()->value(), expectedScroll);
+    QCOMPARE(fv->selectedFilePath(), targetFilePath);
 }
 
 #if 0
@@ -921,7 +957,7 @@ void TestInteractive::testArchiveViewerFeatures()
     // 1. Test Theme Palette changes
     ThemeManager::setPreset(ThemePreset::DarkSlate);
     viewer.updateTheme();
-    ThemeManager::setPreset(ThemePreset::SystemNative);
+    ThemeManager::setPreset(ThemePreset::ModernLight);
     viewer.updateTheme();
 
     // 2. Test opening test archive if available
@@ -1036,6 +1072,137 @@ void TestInteractive::testAudioPlaybackAndControls()
         QVERIFY(mv->isAudioOnly());
     }
 
+    // 11. Test integrated Audio Studio workspaces, header capsule pills, and tracklist drawer
+    window.setEditMode(true);
+    QVERIFY(window.isEditMode());
+    QVERIFY(mv->isEditMode());
+    QCOMPARE(mv->audioWorkspaceIndex(), 1); // Default Edit Mode workspace: 1 (Trim)
+    if (window.minimalHeaderBar()) {
+        QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 1);
+    }
+
+    // Test toggleEqualizerDialog (Workspace 4)
+    mv->toggleEqualizerDialog();
+    QVERIFY(mv->isAudioStudioActive());
+    QCOMPARE(mv->audioWorkspaceIndex(), 4);
+    mv->toggleEqualizerDialog();
+    QVERIFY(!mv->isAudioStudioActive()); // Toggled off to Player (0)
+    mv->toggleEqualizerDialog();
+    QVERIFY(mv->isAudioStudioActive());  // Toggled back on to Equalizer (4)
+
+    // Test toggle to Tags tab (Workspace 5)
+    mv->openAudioTagDialog();
+    QVERIFY(mv->isAudioStudioActive());
+    QCOMPARE(mv->audioWorkspaceIndex(), 5);
+
+    // Test toggle to Trim tab (Workspace 1)
+    mv->openAudioTrimDialog();
+    QVERIFY(mv->isAudioStudioActive());
+    QCOMPARE(mv->audioWorkspaceIndex(), 1);
+
+    // Closing studio panel (Workspace 0)
+    mv->toggleAudioStudio();
+    QVERIFY(!mv->isAudioStudioActive());
+    QCOMPARE(mv->audioWorkspaceIndex(), 0);
+
+    // Test workspace switching: 0=Player, 1=Trim, 2=Filters, 3=Pitch & Ch., 4=Equalizer, 5=Tags
+    mv->switchAudioWorkspace(1);
+    QCOMPARE(mv->audioWorkspaceIndex(), 1);
+    QVERIFY(mv->isAudioStudioActive());
+    if (window.minimalHeaderBar()) {
+        QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 1);
+    }
+
+    mv->switchAudioWorkspace(2);
+    QCOMPARE(mv->audioWorkspaceIndex(), 2);
+    if (window.minimalHeaderBar()) {
+        QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 2);
+    }
+
+    mv->switchAudioWorkspace(3);
+    QCOMPARE(mv->audioWorkspaceIndex(), 3);
+    if (window.minimalHeaderBar()) {
+        QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 3);
+    }
+
+    // Regression check (Bug #1): Window minimum height must remain compact (<= 580px) even on tall Trim/Restore pages
+    QVERIFY2(window.minimumSizeHint().height() <= 580,
+             qPrintable(QString("Window minimumSizeHint height too large: %1").arg(window.minimumSizeHint().height())));
+
+    // Regression check (Bug #3): Loading another audio file while in Edit Mode preserves the active workspace & header pill
+    if (QFile::exists(oggPath)) {
+        QCOMPARE(window.openFile(oggPath), MainWindow::OpenResult::Success);
+        QTest::qWait(250);
+        QCOMPARE(mv->audioWorkspaceIndex(), 3);
+        if (window.minimalHeaderBar()) {
+            QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 3);
+        }
+        QCOMPARE(window.openFile(wavPath), MainWindow::OpenResult::Success);
+        QTest::qWait(250);
+        QCOMPARE(mv->audioWorkspaceIndex(), 3);
+    }
+
+    mv->switchAudioWorkspace(4);
+    QCOMPARE(mv->audioWorkspaceIndex(), 4);
+    if (window.minimalHeaderBar()) {
+        QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 4);
+    }
+
+    mv->switchAudioWorkspace(5);
+    QCOMPARE(mv->audioWorkspaceIndex(), 5);
+    if (window.minimalHeaderBar()) {
+        QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 5);
+    }
+
+    mv->switchAudioWorkspace(0);
+    QCOMPARE(mv->audioWorkspaceIndex(), 0);
+    QVERIFY(!mv->isAudioStudioActive());
+    if (window.minimalHeaderBar()) {
+        QCOMPARE(window.minimalHeaderBar()->activeAudioWorkspace(), 0);
+    }
+
+    // Capture visual snapshots of full-width in-place workspace pages (wait 220ms so 160ms cross-dissolve finishes)
+    QString artifactDir = "/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7";
+    window.resize(1100, 720);
+
+    window.setEditMode(false);
+    QTest::qWait(220);
+    window.grab().save(artifactDir + "/audio_workspace_0_player.png");
+
+    window.setEditMode(true);
+    mv->switchAudioWorkspace(1);
+    QTest::qWait(220);
+    window.grab().save(artifactDir + "/audio_workspace_1_trim.png");
+
+    mv->switchAudioWorkspace(2);
+    QTest::qWait(220);
+    window.grab().save(artifactDir + "/audio_workspace_2_filters.png");
+
+    mv->switchAudioWorkspace(3);
+    QTest::qWait(220);
+    window.grab().save(artifactDir + "/audio_workspace_3_pitch.png");
+
+    mv->switchAudioWorkspace(4);
+    QTest::qWait(220);
+    window.grab().save(artifactDir + "/audio_workspace_4_equalizer.png");
+
+    mv->switchAudioWorkspace(5);
+    QTest::qWait(220);
+    window.grab().save(artifactDir + "/audio_workspace_5_tags.png");
+
+    mv->switchAudioWorkspace(6);
+    QTest::qWait(220);
+    window.grab().save(artifactDir + "/audio_workspace_6_summary.png");
+
+    // Test tracklist drawer toggle
+    mv->toggleTracklistDrawer();
+    mv->toggleTracklistDrawer();
+
+    window.setEditMode(false);
+    QVERIFY(!window.isEditMode());
+    QVERIFY(!mv->isEditMode());
+    QCOMPARE(mv->audioWorkspaceIndex(), 0);
+
     mv->stop();
 }
 
@@ -1104,6 +1271,26 @@ void TestInteractive::testAudioTrimOptionsAndFilters()
             }
         }
         QVERIFY(hasNonZeroEnergy);
+
+        // 7. Verify dynamic format bitrate and summary in AudioTrimDialog
+        AudioTrimDialog trimDlg(audioPath);
+        trimDlg.resize(900, 650);
+        QCOMPARE(trimDlg.currentTabIndex(), 0);
+
+        // Default: Original format -> lossless copy ready, no active filters
+        QVERIFY(!trimDlg.hasActiveTrim());
+        QVERIFY(!trimDlg.hasActiveFilters());
+        QVERIFY(!trimDlg.hasActiveDsp());
+        QVERIFY(!trimDlg.hasActiveEq());
+
+        // Switch to Summary Tab (Index 4)
+        trimDlg.setCurrentTabIndex(4);
+        QCOMPARE(trimDlg.currentTabIndex(), 4);
+
+        // Modify trim and test reset
+        trimDlg.resetAll();
+        QVERIFY(!trimDlg.hasActiveTrim());
+        QVERIFY(!trimDlg.hasActiveFilters());
     }
 }
 
@@ -1191,18 +1378,158 @@ void TestInteractive::testPdfRepairAndPageOrganizer()
     QPixmap repairPix = repairDlg.grab();
     repairPix.save("/home/davide/.gemini/antigravity/brain/5c92b339-02a1-4ab5-be7c-a0935a9f57d6/pdf_repair_dialog.png");
 
-    // 2. Test PdfPageOrganizerDialog initialization, loading and UI items
-    PdfPageOrganizerDialog orgDlg(samplePdf);
+    // 2. Test PdfPageOrganizerDialog initialization, loading and interactive page scaling
+    QString testPdf = QFile::exists(m_testDirPath + "/multipage_sample.pdf")
+        ? (m_testDirPath + "/multipage_sample.pdf")
+        : samplePdf;
+
+    PdfPageOrganizerDialog orgDlg(testPdf);
     QVERIFY(!orgDlg.windowTitle().isEmpty());
     QVERIFY(orgDlg.outputFilePath().isEmpty());
     orgDlg.show();
     orgDlg.resize(920, 640);
+
+    auto *listWidget = orgDlg.findChild<QListWidget*>();
+    QVERIFY(listWidget != nullptr);
+    int initialCount = listWidget->count();
+    QVERIFY(initialCount > 0);
+
+    // Verify initial sequential order badges
+    QVERIFY(listWidget->item(0)->text().contains("#1"));
+    if (initialCount >= 3) {
+        QVERIFY(listWidget->item(1)->text().contains("#2"));
+        QVERIFY(listWidget->item(2)->text().contains("#3"));
+
+        auto *organizerList = qobject_cast<PdfOrganizerListWidget*>(listWidget);
+        QVERIFY(organizerList != nullptr);
+
+        // Test moving item at row 2 (Page 3) to row 1 (Page 2 position)
+        listWidget->clearSelection();
+        listWidget->item(2)->setSelected(true);
+        organizerList->moveSelectedItemsTo(1);
+
+        // Item 2 moved to row 1, shifting previous row 1 (Page 2) down to row 2
+        QVERIFY(listWidget->item(1)->text().contains("#2"));
+        QVERIFY(listWidget->item(1)->text().contains("Page 3"));
+        QVERIFY(listWidget->item(2)->text().contains("#3"));
+        QVERIFY(listWidget->item(2)->text().contains("Page 2"));
+
+        // Test moving item back to row 2
+        listWidget->clearSelection();
+        listWidget->item(1)->setSelected(true);
+        organizerList->moveSelectedItemsTo(3);
+        QVERIFY(listWidget->item(2)->text().contains("#3"));
+        QVERIFY(listWidget->item(2)->text().contains("Page 3"));
+
+        // Test reordering with automatic chain shifting (Move Page 3 to Page 1 position at index 0)
+        listWidget->clearSelection();
+        listWidget->item(2)->setSelected(true);
+        organizerList->moveSelectedItemsTo(0);
+
+        // Page 3 is now at row 0 (#1), Page 1 shifted to row 1 (#2), Page 2 shifted to row 2 (#3)
+        QVERIFY(listWidget->item(0)->text().contains("#1"));
+        QVERIFY(listWidget->item(0)->text().contains("Page 3"));
+        QVERIFY(listWidget->item(1)->text().contains("#2"));
+        QVERIFY(listWidget->item(1)->text().contains("Page 1"));
+        QVERIFY(listWidget->item(2)->text().contains("#3"));
+        QVERIFY(listWidget->item(2)->text().contains("Page 2"));
+
+        // Test simulated drag and drop events: Drag row 2 (Page 2) onto row 0 (Page 3)
+        QMimeData mime;
+        mime.setData("application/x-bubez-pdf-page", "page_drag");
+        QPoint dropPos = organizerList->visualItemRect(listWidget->item(0)).center();
+
+        QDragEnterEvent enterEv(dropPos, Qt::MoveAction, &mime, Qt::LeftButton, Qt::NoModifier);
+        QApplication::sendEvent(organizerList->viewport(), &enterEv);
+        QVERIFY(enterEv.isAccepted());
+
+        QDragMoveEvent moveEv(dropPos, Qt::MoveAction, &mime, Qt::LeftButton, Qt::NoModifier);
+        QApplication::sendEvent(organizerList->viewport(), &moveEv);
+        QVERIFY(moveEv.isAccepted());
+
+        listWidget->clearSelection();
+        listWidget->item(2)->setSelected(true);
+        QDropEvent dropEv(dropPos, Qt::MoveAction, &mime, Qt::LeftButton, Qt::NoModifier);
+        QApplication::sendEvent(organizerList->viewport(), &dropEv);
+        QVERIFY(dropEv.isAccepted());
+
+        // Row 0 should now be Page 2 (#1), Row 1 Page 3 (#2), Row 2 Page 1 (#3)
+        QVERIFY(listWidget->item(0)->text().contains("#1"));
+        QVERIFY(listWidget->item(0)->text().contains("Page 2"));
+        QVERIFY(listWidget->item(1)->text().contains("#2"));
+        QVERIFY(listWidget->item(1)->text().contains("Page 3"));
+        QVERIFY(listWidget->item(2)->text().contains("#3"));
+        QVERIFY(listWidget->item(2)->text().contains("Page 1"));
+    }
+
+    // Locate and trigger the Blank Page button
+    QPushButton *btnBlank = nullptr;
+    for (QPushButton *btn : orgDlg.findChildren<QPushButton*>()) {
+        if (btn->text().contains(QStringLiteral("Blank Page")) || btn->text().contains(QStringLiteral("Pagina"))) {
+            btnBlank = btn;
+            break;
+        }
+    }
+    QVERIFY(btnBlank != nullptr);
+    btnBlank->click();
+    QCOMPARE(listWidget->count(), initialCount + 1);
+
+    QApplication::processEvents();
     QPixmap orgPix = orgDlg.grab();
-    orgPix.save("/home/davide/.gemini/antigravity/brain/5c92b339-02a1-4ab5-be7c-a0935a9f57d6/pdf_organizer_dialog.png");
+    orgPix.save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/pdf_page_organizer_hub.png");
+
+    // 2b. Test integrated in-window Page Grid Organizer in PdfViewer (Option 1)
+    PdfViewer viewer;
+    viewer.resize(1000, 700);
+    viewer.loadFile(testPdf);
+    viewer.show();
+    QCOMPARE(viewer.isPageGridOrganizerActive(), false);
+
+    viewer.showPageGridOrganizer();
+    QCOMPARE(viewer.isPageGridOrganizerActive(), true);
+
+    auto *inWindowList = viewer.findChild<PdfOrganizerListWidget*>();
+    QVERIFY(inWindowList != nullptr);
+    QCOMPARE(inWindowList->count(), initialCount);
+
+    // Capture screenshot of the integrated in-window page grid view
+    QApplication::processEvents();
+    QPixmap inWindowPix = viewer.grab();
+    inWindowPix.save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/pdf_in_window_page_organizer.png");
+
+    // Close organizer via hidePageGridOrganizer() and verify return to normal view
+    viewer.hidePageGridOrganizer();
+    QCOMPARE(viewer.isPageGridOrganizerActive(), false);
+
+    // 2c. Real-world simulation on multi-page PDF in MainWindow
+    if (QFile::exists("/home/davide/Progetti/BubezView/421_Guida turistica di Trieste.pdf")) {
+        MainWindow realWin;
+        realWin.resize(1400, 820);
+        realWin.openFile("/home/davide/Progetti/BubezView/421_Guida turistica di Trieste.pdf");
+        realWin.show();
+        QApplication::processEvents();
+        bool fileOrganizedTriggered = false;
+        if (realWin.pdfViewer()) {
+            realWin.pdfViewer()->setOnFileOrganized([&fileOrganizedTriggered](const QString&) {
+                fileOrganizedTriggered = true;
+            });
+        }
+        realWin.enterPageOrganizerMode();
+        QApplication::processEvents();
+        QTest::qWait(100);
+        QPixmap realPix = realWin.grab();
+        realPix.save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/user_screen_view.png");
+        realWin.exitPageOrganizerMode();
+        QApplication::processEvents();
+        QCOMPARE(fileOrganizedTriggered, false);
+        if (realWin.pdfViewer()) {
+            QCOMPARE(realWin.pdfViewer()->isPageGridOrganizerActive(), false);
+        }
+    }
 
     // 3. Test MainWindow menu bar default visibility and contextual tool states
     QSettings settings;
-    bool showMenuBar = settings.value("ui/show_menubar", true).toBool();
+    bool showMenuBar = settings.value("ui/show_menubar", false).toBool();
     MainWindow window;
     window.resize(1000, 700);
     window.openFile(samplePdf);
@@ -1234,13 +1561,17 @@ void TestInteractive::testPdfRepairAndPageOrganizer()
 void TestInteractive::testHighContrastScrollbarsAndZoomPan()
 {
     // 1. Verify high-contrast scrollbar stylesheets across all themes
-    QString nativeCss = ThemeManager::scrollBarStyleSheet(ThemePreset::SystemNative);
-    QVERIFY(!nativeCss.isEmpty());
-    QVERIFY(nativeCss.contains("QScrollBar:vertical"));
-    QVERIFY(nativeCss.contains("QScrollBar:horizontal"));
-    // Light mode: track is light (#e6e9ed), thumb is darker (#7b8694)
-    QVERIFY(nativeCss.contains("#e6e9ed"));
-    QVERIFY(nativeCss.contains("#7b8694"));
+    QString modernLightCss = ThemeManager::scrollBarStyleSheet(ThemePreset::ModernLight);
+    QVERIFY(!modernLightCss.isEmpty());
+    QVERIFY(modernLightCss.contains("QScrollBar:vertical"));
+    QVERIFY(modernLightCss.contains("QScrollBar:horizontal"));
+    QVERIFY(modernLightCss.contains("#f0f0f2"));
+    QVERIFY(modernLightCss.contains("#9e9ea7"));
+
+    QString breezeLightCss = ThemeManager::scrollBarStyleSheet(ThemePreset::BreezeLight);
+    QVERIFY(!breezeLightCss.isEmpty());
+    QVERIFY(breezeLightCss.contains("#eff0f1"));
+    QVERIFY(breezeLightCss.contains("#a5adb5"));
 
     QString darkSlateCss = ThemeManager::scrollBarStyleSheet(ThemePreset::DarkSlate);
     QVERIFY(!darkSlateCss.isEmpty());
@@ -1623,6 +1954,30 @@ void TestInteractive::testPdfAnnotationsAndTools()
             PdfCanvasTools::drawRubberBand(p, QRect(20, 20, 100, 100), 4, 0, 0, 3, 2, Qt::blue, Qt::transparent, QPoint(20, 100), QPoint(100, 20));
         }
 
+        // Verify mathematical vector distance and hit-testing
+        double distOnSegment = PdfCanvasTools::pointToLineSegmentDistance(QPointF(50, 50), QPointF(0, 0), QPointF(100, 100));
+        QVERIFY(std::abs(distOnSegment) < 0.001);
+        double distOffSegment = PdfCanvasTools::pointToLineSegmentDistance(QPointF(0, 100), QPointF(0, 0), QPointF(100, 0));
+        QVERIFY(std::abs(distOffSegment - 100.0) < 0.001);
+
+        // Vector line hit-testing: hits near line (within tolerance) but misses empty space
+        QRect lineRect(10, 10, 180, 180);
+        QVERIFY(PdfCanvasTools::hitTestShape(3, lineRect, QPoint(0, 0), QPoint(180, 180), 2, Qt::transparent, QPoint(100, 100), 6));
+        QVERIFY(!PdfCanvasTools::hitTestShape(3, lineRect, QPoint(0, 0), QPoint(180, 180), 2, Qt::transparent, QPoint(180, 20), 6));
+
+        // Hollow rectangle hit-testing: hits on edge, but misses hollow center
+        QRect hollowRect(50, 50, 100, 100);
+        QVERIFY(PdfCanvasTools::hitTestShape(0, hollowRect, QPoint(-1, -1), QPoint(-1, -1), 2, Qt::transparent, QPoint(50, 80), 6));
+        QVERIFY(!PdfCanvasTools::hitTestShape(0, hollowRect, QPoint(-1, -1), QPoint(-1, -1), 2, Qt::transparent, QPoint(100, 100), 6));
+
+        // Filled rectangle hit-testing: hits center when filled
+        QVERIFY(PdfCanvasTools::hitTestShape(0, hollowRect, QPoint(-1, -1), QPoint(-1, -1), 2, QColor(255, 0, 0, 100), QPoint(100, 100), 6));
+
+        // Hollow ellipse hit-testing: hits perimeter, misses center
+        QRect ellipseRect(50, 50, 100, 100);
+        QVERIFY(PdfCanvasTools::hitTestShape(1, ellipseRect, QPoint(-1, -1), QPoint(-1, -1), 2, Qt::transparent, QPoint(50, 100), 6));
+        QVERIFY(!PdfCanvasTools::hitTestShape(1, ellipseRect, QPoint(-1, -1), QPoint(-1, -1), 2, Qt::transparent, QPoint(100, 100), 6));
+
         flippableBar.flipToMain();
         QCOMPARE(flippableBar.targetMode(), FlippableToolbarMode::Main);
         QTRY_COMPARE_WITH_TIMEOUT(flippableBar.currentMode(), FlippableToolbarMode::Main, 1000);
@@ -1651,7 +2006,7 @@ void TestInteractive::testToolbarCustomizationAndPdfWheelScroll()
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
 
-    QStringList expectedDefaults = {"prev_file", "next_file", "folder_view", "separator", "zoom_tool", "zoom_reset", "separator", "fullscreen"};
+    QStringList expectedDefaults = {"zoom_tool", "zoom_reset", "zoom_fit", "separator", "filmstrip"};
     QCOMPARE(window.defaultToolbarActions(), expectedDefaults);
     QCOMPARE(window.isFilmstripVisible(), false);
 
@@ -1664,6 +2019,8 @@ void TestInteractive::testToolbarCustomizationAndPdfWheelScroll()
     ToolbarActionInfo a3{"zoom_in", "Zoom In", QIcon(), "Zoom In"};
     ToolbarActionInfo a4{"zoom_out", "Zoom Out", QIcon(), "Zoom Out"};
     ToolbarActionInfo a5{"zoom_reset", "Zoom 100%", QIcon(), "Zoom 100%"};
+    ToolbarActionInfo a_zf{"zoom_fit", "Fit to Window", QIcon(), "Fit to Window"};
+    ToolbarActionInfo a_fs{"filmstrip", "Thumbnail Strip", QIcon(), "Thumbnail Strip"};
     ToolbarActionInfo a6{"fullscreen", "Fullscreen", QIcon(), "Fullscreen"};
     mockActions["prev_file"] = a1;
     mockActions["next_file"] = a2;
@@ -1672,6 +2029,8 @@ void TestInteractive::testToolbarCustomizationAndPdfWheelScroll()
     mockActions["zoom_in"] = a3;
     mockActions["zoom_out"] = a4;
     mockActions["zoom_reset"] = a5;
+    mockActions["zoom_fit"] = a_zf;
+    mockActions["filmstrip"] = a_fs;
     mockActions["fullscreen"] = a6;
 
     QStringList currentIds = {"prev_file", "next_file"};
@@ -1741,6 +2100,8 @@ void TestInteractive::testFolderInspectorAndTextThumbnail()
     window.openFile(m_testDirPath);
     FolderViewer *fv = window.folderViewer();
     QVERIFY(fv != nullptr);
+    fv->setShowFolders(true);
+    fv->toggleInspector();
     QTest::qWait(200);
 
     QPlainTextEdit *textEdit = fv->findChild<QPlainTextEdit*>();
@@ -2018,7 +2379,7 @@ void TestInteractive::testNativeImageEnhancementsAndCrop()
     // 7. Capture visual preview of on-canvas crop mode
     viewer.resize(900, 700);
     viewer.show();
-    QTest::qWaitForWindowExposed(&viewer);
+    (void)QTest::qWaitForWindowExposed(&viewer);
     viewer.fitToWindow();
     viewer.setCropModeActive(true);
     QWidget *canvas = viewer.canvasWidget();
@@ -2038,13 +2399,14 @@ void TestInteractive::testNativeImageEnhancementsAndCrop()
     MainWindow win;
     win.resize(1000, 700);
     win.show();
-    QTest::qWaitForWindowExposed(&win);
+    (void)QTest::qWaitForWindowExposed(&win);
     win.openFile(sampleImg);
     QTest::qWait(200);
     QPixmap pixMain = win.grab();
     pixMain.save("/home/davide/.gemini/antigravity/brain/9744b1b3-031c-48d3-846e-066fa96ecbdf/native_image_viewer_preview.png");
 
     // 9. Verify Save As resets modified state so no prompt appears on close/navigation
+    win.setEditMode(true);
     win.imageViewer()->rotateClockwise();
     QVERIFY(win.imageViewer()->isModified());
     QString copyTarget = m_testDirPath + "/img/test_save_as_copy.jpg";
@@ -2053,6 +2415,824 @@ void TestInteractive::testNativeImageEnhancementsAndCrop()
     QCOMPARE(win.imageViewer()->isModified(), false);
     QVERIFY(win.close());
     QFile::remove(copyTarget);
+}
+
+void TestInteractive::testQuickLookInterfaceCaptures()
+{
+    QString sampleImg = m_testDirPath + "/2_inspector_flyout_card.jpg";
+    if (!QFile::exists(sampleImg)) {
+        QSKIP("Sample image not found for Quick Look captures");
+    }
+
+    const QString artifactDir = "/home/davide/.gemini/antigravity/brain/db0875de-21e6-4705-af7b-91c29c95085b";
+
+    // 1. Capture Modern Light - Preview Mode
+    {
+        ThemeManager::setPreset(ThemePreset::ModernLight);
+        MainWindow winLight;
+        winLight.applyCurrentTheme();
+        winLight.resize(1000, 680);
+        winLight.openFile(sampleImg);
+        winLight.show();
+        (void)QTest::qWaitForWindowExposed(&winLight);
+        QTest::qWait(200);
+
+        QVERIFY(!winLight.isEditMode());
+        QVERIFY(winLight.minimalHeaderBar() != nullptr);
+        QVERIFY(winLight.minimalHeaderBar()->isVisible());
+
+        QPixmap pixLightPrev = winLight.grab();
+        pixLightPrev.save(artifactDir + "/quicklook_preview_modern_light.png");
+
+        // 2. Capture Modern Light - Edit Mode
+        winLight.setEditMode(true);
+        QVERIFY(winLight.isEditMode());
+        QTest::qWait(200);
+
+        QPixmap pixLightEdit = winLight.grab();
+        pixLightEdit.save(artifactDir + "/quicklook_edit_mode_modern_light.png");
+        winLight.close();
+    }
+
+    // 3. Capture Dark Slate - Preview Mode
+    {
+        ThemeManager::setPreset(ThemePreset::DarkSlate);
+        MainWindow winDark;
+        winDark.applyCurrentTheme();
+        winDark.resize(1000, 680);
+        winDark.openFile(sampleImg);
+        winDark.show();
+        (void)QTest::qWaitForWindowExposed(&winDark);
+        QTest::qWait(200);
+
+        QVERIFY(!winDark.isEditMode());
+        QVERIFY(winDark.minimalHeaderBar() != nullptr);
+        QVERIFY(winDark.minimalHeaderBar()->isVisible());
+
+        QPixmap pixDarkPrev = winDark.grab();
+        pixDarkPrev.save(artifactDir + "/quicklook_preview_dark_slate.png");
+
+        // 4. Capture Dark Slate - Edit Mode
+        winDark.setEditMode(true);
+        QVERIFY(winDark.isEditMode());
+        QTest::qWait(200);
+
+        QPixmap pixDarkEdit = winDark.grab();
+        pixDarkEdit.save(artifactDir + "/quicklook_edit_mode_dark_slate.png");
+        winDark.close();
+    }
+
+    // 5. Capture Proposta 4 Live Audio Preview (780x540) with Pink Floyd Vinyl FLAC if present
+    const QString pinkFloydTrack = "/home/davide/Musica/Pink Floyd - The Dark Side of the Moon (1973) [24 bit FLAC] vinyl/01 - Speak To Me.flac";
+    if (QFile::exists(pinkFloydTrack)) {
+        QPixmap sleeve = AudioProcessor::extractCoverArt(pinkFloydTrack, 220);
+        QPixmap label = AudioProcessor::extractVinylLabelArt(pinkFloydTrack, 160);
+        QVERIFY(!sleeve.isNull());
+        QVERIFY(!label.isNull());
+
+        ThemeManager::setPreset(ThemePreset::DarkSlate);
+        MainWindow winAudio;
+        winAudio.applyCurrentTheme();
+        winAudio.resize(780, 540);
+        winAudio.openFile(pinkFloydTrack);
+        winAudio.show();
+        (void)QTest::qWaitForWindowExposed(&winAudio);
+        // Wait for async waveform peak computation and mpv duration load
+        QTest::qWait(1400);
+
+        auto *scrubber = winAudio.findChild<SmoothWaveformScrubber *>();
+        if (scrubber) {
+            QTest::mouseClick(scrubber, Qt::LeftButton, Qt::NoModifier,
+                              QPoint(scrubber->width() * 34 / 100, scrubber->height() / 2));
+            QTest::qWait(300);
+        }
+
+        QPixmap pixAudioLive = winAudio.grab();
+        pixAudioLive.save(artifactDir + "/proposta_4_live_capture.png");
+        winAudio.close();
+    }
+}
+
+void TestInteractive::testPreviewModeZeroModificationLockdown()
+{
+    MainWindow window;
+    window.resize(900, 600);
+    window.show();
+    (void)QTest::qWaitForWindowExposed(&window);
+
+    // Initial state: Preview Mode
+    QVERIFY(!window.isEditMode());
+
+    // 1. Image lockdown in Preview Mode
+    QString sampleImg = m_testDirPath + "/image_samples/portrait.jpg";
+    if (QFile::exists(sampleImg)) {
+        window.openFile(sampleImg);
+        QVERIFY(!window.isEditMode());
+
+        auto *imgViewer = window.findChild<ImageViewer*>();
+        QVERIFY(imgViewer != nullptr);
+        QCOMPARE(imgViewer->isEditMode(), false);
+
+        // Crop mode cannot be activated in Preview Mode
+        imgViewer->setCropModeActive(true);
+        QCOMPARE(imgViewer->isCropModeActive(), false);
+
+        // Rotation & flip do not modify the image in preview mode
+        imgViewer->rotateClockwise();
+        QCOMPARE(imgViewer->isModified(), false);
+        imgViewer->flipHorizontal();
+        QCOMPARE(imgViewer->isModified(), false);
+
+        // Direct crop attempt is rejected
+        imgViewer->applyCrop(QRect(10, 10, 50, 50));
+        QCOMPARE(imgViewer->isModified(), false);
+
+        // Switch to Edit Mode -> operations now succeed
+        window.setEditMode(true);
+        QVERIFY(window.isEditMode());
+        QCOMPARE(imgViewer->isEditMode(), true);
+
+        imgViewer->setCropModeActive(true);
+        QCOMPARE(imgViewer->isCropModeActive(), true);
+
+        // Switch back to Preview Mode -> crop immediately dismissed and locked
+        window.setEditMode(false);
+        QVERIFY(!window.isEditMode());
+        QCOMPARE(imgViewer->isCropModeActive(), false);
+        QCOMPARE(imgViewer->isEditMode(), false);
+    }
+
+    // 2. Text lockdown in Preview Mode
+    QString sampleText = m_testDirPath + "/code_samples/sample_python.py";
+    if (QFile::exists(sampleText)) {
+        window.openFile(sampleText);
+        QVERIFY(!window.isEditMode());
+
+        auto *txtViewer = window.findChild<TextViewer*>();
+        QVERIFY(txtViewer != nullptr);
+        QCOMPARE(txtViewer->isEditable(), false);
+        QCOMPARE(txtViewer->isReadOnly(), true);
+
+        // Switch to Edit Mode
+        window.setEditMode(true);
+        QCOMPARE(txtViewer->isEditable(), true);
+        QCOMPARE(txtViewer->isReadOnly(), false);
+
+        // Switch back to Preview Mode
+        window.setEditMode(false);
+        QCOMPARE(txtViewer->isEditable(), false);
+        QCOMPARE(txtViewer->isReadOnly(), true);
+    }
+
+    // 3. Archive lockdown in Preview Mode
+    QString zipPath = m_testDirPath + "/__pycache__.zip";
+    if (QFile::exists(zipPath)) {
+        window.openFile(zipPath);
+        QVERIFY(!window.isEditMode());
+
+        auto *archViewer = window.findChild<ArchiveViewer*>();
+        if (archViewer) {
+            QCOMPARE(archViewer->isEditMode(), false);
+            // Verify modify actions return safely without error
+            archViewer->addFilesToArchive();
+            archViewer->addFolderToArchive();
+            archViewer->removeSelectedFromArchive();
+            QVERIFY(!archViewer->isEditMode());
+        }
+    }
+
+    // 4. PDF lockdown in Preview Mode
+    QString pdfPath = m_testDirPath + "/document_samples/multipage_sample.pdf";
+    if (QFile::exists(pdfPath)) {
+        window.openFile(pdfPath);
+        QVERIFY(!window.isEditMode());
+
+        auto *pageWidget = window.findChild<PdfPageWidget*>();
+        if (pageWidget) {
+            QCOMPARE(pageWidget->isEditMode(), false);
+
+            // Attempt to activate continuous annotation tools in preview mode
+            pageWidget->setToolMode(PdfToolMode::Highlight);
+            QCOMPARE(pageWidget->toolMode(), PdfToolMode::SelectText);
+
+            pageWidget->setToolMode(PdfToolMode::Shape);
+            QCOMPARE(pageWidget->toolMode(), PdfToolMode::SelectText);
+
+            pageWidget->setToolMode(PdfToolMode::Redaction);
+            QCOMPARE(pageWidget->toolMode(), PdfToolMode::SelectText);
+        }
+    }
+
+    window.close();
+}
+
+void TestInteractive::testFramelessWindowAndDraggingRules()
+{
+    MainWindow window;
+    window.showNormal();
+    window.resize(900, 600);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    // 1. Frameless mode is active by default
+    QVERIFY(window.isFrameless());
+    QVERIFY(window.windowFlags() & Qt::FramelessWindowHint);
+
+    // 2. MinimalHeaderBar is present with Close button, Prev/Next navigation, Gallery, Search, and Inspector buttons
+    auto *header = window.minimalHeaderBar();
+    QVERIFY(header != nullptr);
+    QVERIFY(header->areWindowControlsVisible());
+    QVERIFY(header->prevButton() != nullptr);
+    QVERIFY(header->nextButton() != nullptr);
+    QVERIFY(header->galleryButton() != nullptr);
+    QVERIFY(header->searchButton() != nullptr);
+    QVERIFY(header->inspectorButton() != nullptr);
+
+    // 3. Title and Badge labels have WA_TransparentForMouseEvents set
+    auto *lblTitle = header->findChild<QLabel*>();
+    QVERIFY(lblTitle != nullptr);
+    QVERIFY(lblTitle->testAttribute(Qt::WA_TransparentForMouseEvents));
+
+    auto *lblBadge = header->findChild<QLabel*>("HeaderIndexBadge");
+    if (lblBadge) {
+        QVERIFY(lblBadge->testAttribute(Qt::WA_TransparentForMouseEvents));
+    }
+
+    // 4. Edge calculation for border resizing
+    // Left edge
+    QPoint leftPoint = window.mapToGlobal(QPoint(3, 300));
+    QCOMPARE(window.calculateResizeEdges(leftPoint), Qt::Edges(Qt::LeftEdge));
+
+    // Right edge
+    QPoint rightPoint = window.mapToGlobal(QPoint(window.width() - 3, 300));
+    QCOMPARE(window.calculateResizeEdges(rightPoint), Qt::Edges(Qt::RightEdge));
+
+    // Top edge
+    QPoint topPoint = window.mapToGlobal(QPoint(450, 3));
+    QCOMPARE(window.calculateResizeEdges(topPoint), Qt::Edges(Qt::TopEdge));
+
+    // Bottom edge
+    QPoint bottomPoint = window.mapToGlobal(QPoint(450, window.height() - 3));
+    QCOMPARE(window.calculateResizeEdges(bottomPoint), Qt::Edges(Qt::BottomEdge));
+
+    // Top-Left corner
+    QPoint topLeftPoint = window.mapToGlobal(QPoint(3, 3));
+    QCOMPARE(window.calculateResizeEdges(topLeftPoint), Qt::Edges(Qt::TopEdge | Qt::LeftEdge));
+
+    // Top-Right corner
+    QPoint topRightPoint = window.mapToGlobal(QPoint(window.width() - 3, 3));
+    QCOMPARE(window.calculateResizeEdges(topRightPoint), Qt::Edges(Qt::TopEdge | Qt::RightEdge));
+
+    // Bottom-Left corner
+    QPoint bottomLeftPoint = window.mapToGlobal(QPoint(3, window.height() - 3));
+    QCOMPARE(window.calculateResizeEdges(bottomLeftPoint), Qt::Edges(Qt::BottomEdge | Qt::LeftEdge));
+
+    // Bottom-Right corner
+    QPoint bottomRightPoint = window.mapToGlobal(QPoint(window.width() - 3, window.height() - 3));
+    QCOMPARE(window.calculateResizeEdges(bottomRightPoint), Qt::Edges(Qt::BottomEdge | Qt::RightEdge));
+
+    // Interior point (no edges)
+    QPoint centerPoint = window.mapToGlobal(QPoint(450, 300));
+    QCOMPARE(window.calculateResizeEdges(centerPoint), Qt::Edges());
+
+    // 5. Cursor updates
+    window.updateResizeCursor(Qt::LeftEdge);
+    QVERIFY(QGuiApplication::overrideCursor() != nullptr);
+    QCOMPARE(QGuiApplication::overrideCursor()->shape(), Qt::SizeHorCursor);
+
+    window.updateResizeCursor(Qt::TopEdge);
+    QCOMPARE(QGuiApplication::overrideCursor()->shape(), Qt::SizeVerCursor);
+
+    window.updateResizeCursor(Qt::TopEdge | Qt::LeftEdge);
+    QCOMPARE(QGuiApplication::overrideCursor()->shape(), Qt::SizeFDiagCursor);
+
+    window.updateResizeCursor(Qt::TopEdge | Qt::RightEdge);
+    QCOMPARE(QGuiApplication::overrideCursor()->shape(), Qt::SizeBDiagCursor);
+
+    window.updateResizeCursor(Qt::Edges());
+    QVERIFY(QGuiApplication::overrideCursor() == nullptr);
+
+    // 6. Header dragging: simulate mouse press and move
+    QPoint clickPoint(150, 18);
+    QMouseEvent pressEv(QEvent::MouseButtonPress, clickPoint, header->mapToGlobal(clickPoint),
+                         Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(header, &pressEv);
+
+    QPoint targetPoint(190, 38);
+    QMouseEvent moveEv(QEvent::MouseMove, targetPoint, header->mapToGlobal(targetPoint),
+                        Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(header, &moveEv);
+
+    QMouseEvent releaseEv(QEvent::MouseButtonRelease, targetPoint, header->mapToGlobal(targetPoint),
+                           Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(header, &releaseEv);
+
+    // 7. Maximize / Restore toggles
+    window.showMaximized();
+    QVERIFY(window.isMaximized());
+    // In maximized mode, border resize edges are disabled
+    QCOMPARE(window.calculateResizeEdges(leftPoint), Qt::Edges());
+
+    window.showNormal();
+    QVERIFY(!window.isMaximized());
+
+    window.close();
+}
+
+void TestInteractive::testWindowGeometrySaveAndRestore()
+{
+    // Clean any prior saved geometry
+    QSettings settings("Bubez", "BubezView");
+    settings.remove("window/geometry");
+    settings.remove("window/width");
+    settings.remove("window/height");
+    settings.setValue("remember_geometry", true);
+    settings.sync();
+
+    // 1. New window without saved geometry should default to 780x540
+    {
+        MainWindow win1;
+        QCOMPARE(win1.size(), QSize(780, 540));
+
+        // Resize window to custom dimensions (fits comfortably within offscreen 800x600 virtual screen)
+        win1.resize(750, 500);
+        QCOMPARE(win1.size(), QSize(750, 500));
+
+        // Close window, which should trigger saveWindowGeometry()
+        win1.close();
+    }
+
+    // Verify settings were saved
+    QVERIFY(settings.contains("window/geometry") || (settings.contains("window/width") && settings.contains("window/height")));
+    QCOMPARE(settings.value("window/width").toInt(), 750);
+    QCOMPARE(settings.value("window/height").toInt(), 500);
+
+    // 2. New window should now restore the saved dimensions (750x500)
+    {
+        MainWindow win2;
+        QCOMPARE(win2.width(), 750);
+        QCOMPARE(win2.height(), 500);
+        win2.close();
+    }
+
+    // 3. Screen boundary safety clamping: if saved size exceeds screen size, it must be clamped
+    QScreen *primary = QGuiApplication::primaryScreen();
+    if (primary) {
+        int screenW = primary->availableGeometry().width();
+        int screenH = primary->availableGeometry().height();
+        settings.setValue("window/width", screenW + 300);
+        settings.setValue("window/height", screenH + 200);
+        settings.sync();
+
+        MainWindow winClamp;
+        QVERIFY(winClamp.width() <= screenW);
+        QVERIFY(winClamp.height() <= screenH);
+        winClamp.close();
+    }
+
+    // 4. Test when remember_geometry is disabled
+    settings.setValue("remember_geometry", false);
+    settings.sync();
+    {
+        MainWindow win3;
+        // Should fall back to default size 780x540
+        QCOMPARE(win3.size(), QSize(780, 540));
+        win3.close();
+    }
+
+    // Restore remember_geometry to true and cleanup
+    settings.setValue("remember_geometry", true);
+    settings.remove("window/geometry");
+    settings.remove("window/width");
+    settings.remove("window/height");
+    settings.sync();
+}
+
+void TestInteractive::testAudioCoverDirectSaveToFolder()
+{
+    QTemporaryDir tempAlbumDir;
+    QVERIFY(tempAlbumDir.isValid());
+
+    // Create a dummy audio file in the temporary album directory
+    QString fakeAudioPath = tempAlbumDir.path() + "/01_track.mp3";
+    {
+        QFile f(fakeAudioPath);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write("ID3dummy_audio_bytes");
+        f.close();
+    }
+
+    // Create a sample image outside the album folder (e.g. in /tmp)
+    QString externalCover = QDir::tempPath() + "/sample_external_cover.jpg";
+    {
+        QImage img(200, 200, QImage::Format_RGB32);
+        img.fill(Qt::cyan);
+        QVERIFY(img.save(externalCover, "JPG"));
+    }
+
+    // Verify album folder does NOT have cover.jpg initially
+    QString expectedCover = tempAlbumDir.path() + "/cover.jpg";
+    QVERIFY(!QFile::exists(expectedCover));
+
+    // Open AudioTagDialog and trigger saveCoverToAlbumFolder
+    AudioTagDialog dlg(fakeAudioPath);
+    QString savedPath = dlg.saveCoverToAlbumFolder(externalCover);
+    QCOMPARE(savedPath, expectedCover);
+    QVERIFY(QFile::exists(expectedCover));
+
+    // Verify extractCoverArt now immediately finds the saved cover.jpg
+    QPixmap cov = AudioProcessor::extractCoverArt(fakeAudioPath, 150);
+    QVERIFY(!cov.isNull());
+    QCOMPARE(cov.size(), QSize(150, 150));
+
+    // Cleanup external temp file
+    QFile::remove(externalCover);
+}
+
+void TestInteractive::testMinimalHeaderBarSnapshots()
+{
+    MainWindow win;
+    win.resize(1100, 600);
+    win.show();
+    Q_UNUSED(QTest::qWaitForWindowExposed(&win));
+
+    auto *header = win.minimalHeaderBar();
+    QVERIFY(header != nullptr);
+
+    QString artDir = QStringLiteral("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7");
+
+    // 1. Normal state (Dark preset)
+    header->applyThemePreset(ThemePreset::DarkSlate);
+    header->setTitle(QStringLiteral("sample_document.png"));
+    header->setIndexBadge(QStringLiteral("3 / 15"));
+    header->setEditMode(false);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_normal_dark.png");
+
+    // 2. Normal state (Light preset)
+    header->applyThemePreset(ThemePreset::ModernLight);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_normal_light.png");
+
+    // 3. Image Edit Mode (Dark preset)
+    header->applyThemePreset(ThemePreset::DarkSlate);
+    header->setCategory(FileCategory::Image);
+    header->setEditMode(true);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_image_edit_dark.png");
+
+    // 4. Image Edit Mode (Light preset)
+    header->applyThemePreset(ThemePreset::ModernLight);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_image_edit_light.png");
+
+    // 5. PDF Edit Mode (Dark preset)
+    header->applyThemePreset(ThemePreset::DarkSlate);
+    header->setCategory(FileCategory::Pdf);
+    header->setEditMode(true);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_edit_dark.png");
+
+    // 6. PDF Edit Mode (Light preset)
+    header->applyThemePreset(ThemePreset::ModernLight);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_edit_light.png");
+
+    // 6b. PDF Edit Mode with Contextual Text Bar (Dark preset)
+    header->applyThemePreset(ThemePreset::DarkSlate);
+    header->showContextualTextBar();
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_edit_text_dark.png");
+
+    // 6c. PDF Edit Mode with Contextual Text Bar (Light preset)
+    header->applyThemePreset(ThemePreset::ModernLight);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_edit_text_light.png");
+
+    // 6d. PDF Edit Mode with Contextual Highlight Bar (Dark preset)
+    header->applyThemePreset(ThemePreset::DarkSlate);
+    header->showContextualHighlightBar();
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_highlight_bar.png");
+
+    // 6e. PDF Edit Mode with Contextual Shapes Bar (Dark preset)
+    header->showContextualShapesBar(0);
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_shapes_bar.png");
+
+    // 6f. PDF Edit Mode with Contextual Redaction Bar (Dark preset)
+    header->showContextualRedactBar();
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_redact_bar.png");
+
+    // 6g. PDF Edit Mode with Contextual Rubber Stamp Bar (Dark preset)
+    header->showContextualStampBar();
+    QTest::qWait(80);
+    header->grab().save(artDir + "/header_bar_pdf_stamp_bar.png");
+    header->hideContextualBar();
+
+    // 7. Full Window: Image loaded
+    QString imgPath = m_testDirPath + "/2_inspector_flyout_card.jpg";
+    win.openFile(imgPath);
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_image.png");
+
+    // 8. Full Window: Image Edit Mode
+    win.setEditMode(true);
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_image_edit.png");
+    win.setEditMode(false);
+
+    // 9. Full Window: PDF loaded
+    QString pdfPath = m_testDirPath + "/ciao.pdf";
+    win.openFile(pdfPath);
+    win.resize(1100, 600);
+    QApplication::processEvents();
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_pdf.png");
+
+    // 10. Full Window: PDF Edit Mode
+    win.setEditMode(true);
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_pdf_edit.png");
+
+    // 10a. Full Window: PDF Edit Mode with Contextual Text Bar active
+    header->showContextualTextBar();
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_pdf_edit_text.png");
+
+    // 10b. Full Window: PDF Edit Mode with Contextual Highlight Bar active
+    header->showContextualHighlightBar();
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_pdf_edit_highlight.png");
+    header->hideContextualBar();
+
+    // 10b. Verify that opening PDF Studio Panel resizes the PDF without overlapping
+    auto *pv = win.pdfViewer();
+    if (pv) {
+        pv->openStudioPanel(0);
+        QTest::qWait(120);
+        win.grab().save(artDir + "/full_window_pdf_studio_open.png");
+
+        auto *pageWidget = pv->widget()->findChild<PdfPageWidget*>();
+        auto *scrollArea = (pageWidget && pageWidget->parentWidget()) ? qobject_cast<QScrollArea*>(pageWidget->parentWidget()->parentWidget()) : nullptr;
+        QVERIFY(pageWidget != nullptr);
+        QVERIFY(scrollArea != nullptr);
+        QVERIFY(pageWidget->width() <= scrollArea->viewport()->width() + 10);
+
+        pv->closeStudioPanel();
+        QTest::qWait(120);
+        QVERIFY(pageWidget->width() <= scrollArea->viewport()->width() + 10);
+    }
+
+    win.setEditMode(false);
+
+    // 11. Multi-page PDF: Floating HUD pill overlay in action (Light theme)
+    QString multiPdf = m_testDirPath + "/multipage_sample.pdf";
+    win.openFile(multiPdf);
+    ThemeManager::setPreset(ThemePreset::ModernLight);
+    ThemeManager::applyTheme(qApp, &win);
+    auto *pdfViewer = win.pdfViewer();
+    if (pdfViewer) {
+        pdfViewer->updateTheme();
+        pdfViewer->nextPage();
+    }
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_pdf_hud_light.png");
+
+    // 12. Multi-page PDF: Floating HUD pill overlay in action (Dark Slate theme)
+    ThemeManager::setPreset(ThemePreset::DarkSlate);
+    ThemeManager::applyTheme(qApp, &win);
+    if (pdfViewer) {
+        pdfViewer->updateTheme();
+        pdfViewer->nextPage();
+    }
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_pdf_hud_dark.png");
+
+    // 13. Verify that in reading mode, window minimum width is not blocked by hidden edit tools
+    win.setEditMode(false);
+    int readingMinW = win.minimumSizeHint().width();
+    QVERIFY2(readingMinW < 600, qPrintable(QString("Reading mode min width should be < 600px, but got %1").arg(readingMinW)));
+
+    // 14. Full Window: PDF in narrow reading window (520px)
+    win.resize(520, 600);
+    QTest::qWait(120);
+    win.grab().save(artDir + "/full_window_pdf_narrow.png");
+}
+
+void TestInteractive::testPreEditGeometryRestorationAndAudioSizing()
+{
+    MainWindow win;
+    win.show();
+    (void)QTest::qWaitForWindowExposed(&win);
+
+    // 1. PDF Window Size Restoration
+    QString pdfPath = m_testDirPath + "/ciao.pdf";
+    if (QFile::exists(pdfPath)) {
+        win.openFile(pdfPath);
+        win.resize(540, 460);
+        QTest::qWait(50);
+        QCOMPARE(win.width(), 540);
+        QCOMPARE(win.height(), 460);
+
+        win.setEditMode(true);
+        QTest::qWait(50);
+        QVERIFY(win.isEditMode());
+
+        win.setEditMode(false);
+        QTest::qWait(50);
+        QVERIFY(!win.isEditMode());
+        QCOMPARE(win.width(), 540);
+        QCOMPARE(win.height(), 460);
+    }
+
+    // 2. Archive Window Size Restoration
+    QString zipPath = m_testDirPath + "/__pycache__.zip";
+    if (QFile::exists(zipPath)) {
+        win.openFile(zipPath);
+        win.resize(560, 480);
+        QTest::qWait(50);
+        QCOMPARE(win.width(), 560);
+        QCOMPARE(win.height(), 480);
+
+        win.setEditMode(true);
+        QTest::qWait(50);
+        QVERIFY(win.isEditMode());
+
+        win.setEditMode(false);
+        QTest::qWait(50);
+        QVERIFY(!win.isEditMode());
+        QCOMPARE(win.width(), 560);
+        QCOMPARE(win.height(), 480);
+    }
+
+    // 3. Audio Player Sizing and Window Size Restoration
+    QString audioPath = m_testDirPath + "/audio_samples/test_tone.mp3";
+    if (QFile::exists(audioPath)) {
+        win.openFile(audioPath);
+        QTest::qWait(50);
+        QVERIFY(win.mediaViewer() != nullptr);
+        QVERIFY(win.mediaViewer()->isAudioOnly());
+
+        win.resize(510, 440);
+        QTest::qWait(50);
+        QVERIFY2(win.width() <= 520, qPrintable(QString("Audio reading window width should be <= 520px, got %1").arg(win.width())));
+
+        MediaViewer *mv = qobject_cast<MediaViewer*>(win.mediaViewer()->widget());
+        if (mv) {
+            // In 510px narrow window: responsive compact mode (Option 1A, 2B, 3A) is engaged
+            QVERIFY(mv->isCompactAudioLayout());
+            if (mv->vinylSleeveWidget()) {
+                QVERIFY(mv->vinylSleeveWidget()->isCompactMode());
+            }
+
+            // In wide window (>= 660px): responsive wide side-by-side layout is engaged
+            win.resize(780, 500);
+            QTest::qWait(50);
+            QVERIFY(!mv->isCompactAudioLayout());
+            if (mv->vinylSleeveWidget()) {
+                QVERIFY(!mv->vinylSleeveWidget()->isCompactMode());
+            }
+
+            // Return to 510px: compact mode engages again
+            win.resize(510, 440);
+            QTest::qWait(50);
+            QVERIFY(mv->isCompactAudioLayout());
+            if (mv->vinylSleeveWidget()) {
+                QVERIFY(mv->vinylSleeveWidget()->isCompactMode());
+            }
+        }
+
+        // Verify edit mode toggle and return to exact pre-edit geometry
+        win.setEditMode(true);
+        QTest::qWait(50);
+        QVERIFY(win.isEditMode());
+
+        win.setEditMode(false);
+        QTest::qWait(50);
+        QVERIFY(!win.isEditMode());
+        QCOMPARE(win.width(), 510);
+        QCOMPARE(win.height(), 440);
+    }
+}
+
+void TestInteractive::testTriestePdfEditing()
+{
+    QString triestePdf = QStringLiteral(PROJECT_ROOT_DIR "/421_Guida turistica di Trieste.pdf");
+    if (!QFile::exists(triestePdf)) {
+        QSKIP("421_Guida turistica di Trieste.pdf not found");
+    }
+
+    MainWindow win;
+    win.show();
+    QCOMPARE(win.openFile(triestePdf), MainWindow::OpenResult::Success);
+    QTest::qWait(100);
+
+    // Switch to edit mode
+    win.setEditMode(true);
+    QTest::qWait(50);
+    QVERIFY(win.isEditMode());
+
+    auto *header = win.minimalHeaderBar();
+    QVERIFY(header != nullptr);
+    QVERIFY(header->quickUndoButton() != nullptr);
+    QVERIFY(header->historyTimelineButton() != nullptr);
+
+    // Test text replace from contextual bar
+    header->showContextualTextBar();
+    auto *cbar = header->contextualBar();
+    QVERIFY(cbar != nullptr);
+    cbar->setTextContent(QStringLiteral("Trieste Nuova Guida 2026"));
+    emit cbar->textReplaceRequested(QStringLiteral("Trieste Nuova Guida 2026"), QFont("Sans Serif", 14), QColor(Qt::darkBlue), true);
+    QTest::qWait(100);
+
+    // Test quick undo
+    header->quickUndoButton()->click();
+    QTest::qWait(100);
+
+    // Test timeline slides
+    auto *historyWidget = header->historyWidget();
+    QVERIFY(historyWidget != nullptr);
+    header->setHistorySteps(win.pdfViewer() ? win.pdfViewer()->historySteps() : QList<PdfHistoryStep>{});
+
+    // 1. Verify window geometry stability across multiple edit toggles
+    if (win.pdfViewer()) win.pdfViewer()->setModified(false);
+    win.setEditMode(false);
+    QTest::qWait(50);
+    int initH = win.height();
+    int initW = win.width();
+    for (int t = 0; t < 4; ++t) {
+        win.setEditMode(true);
+        QTest::qWait(20);
+        win.setEditMode(false);
+        QTest::qWait(20);
+    }
+    QCOMPARE(win.height(), initH);
+    QCOMPARE(win.width(), initW);
+
+    // Switch back to edit mode for tool testing
+    win.setEditMode(true);
+    QTest::qWait(20);
+
+    // 2. Test shapes bar, redact bar, stamp bar tools without crash
+    header->showContextualShapesBar(0);
+    emit header->pdfShapesToolRequested(0);
+    QTest::qWait(30);
+
+    header->showContextualRedactBar();
+    emit header->pdfRedactToolRequested();
+    QTest::qWait(30);
+
+    header->showContextualStampBar();
+    emit header->pdfStampToolRequested();
+    QTest::qWait(30);
+
+    // 3. Test continuous shape drawing and moving on pdfPageWidget
+    auto *pv = dynamic_cast<PdfViewer*>(win.pdfViewer());
+    QVERIFY(pv != nullptr);
+    auto *pageWidget = pv->pageWidget();
+    QVERIFY(pageWidget != nullptr);
+
+    // Draw rect
+    header->showContextualShapesBar(0);
+    emit header->pdfShapesToolRequested(0);
+    QMouseEvent pressEv(QEvent::MouseButtonPress, QPointF(120, 120), QPointF(120, 120), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &pressEv);
+    QMouseEvent dragEv(QEvent::MouseMove, QPointF(240, 220), QPointF(240, 220), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &dragEv);
+    QMouseEvent relEv(QEvent::MouseButtonRelease, QPointF(240, 220), QPointF(240, 220), Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &relEv);
+    QTest::qWait(50);
+
+    // Move rect
+    QMouseEvent pressMove(QEvent::MouseButtonPress, QPointF(150, 150), QPointF(150, 150), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &pressMove);
+    QMouseEvent dragMove(QEvent::MouseMove, QPointF(180, 180), QPointF(180, 180), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &dragMove);
+    QMouseEvent relMove(QEvent::MouseButtonRelease, QPointF(180, 180), QPointF(180, 180), Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &relMove);
+    QTest::qWait(50);
+
+    // 4. Test highlight and global property update
+    header->showContextualHighlightBar();
+    emit header->pdfHighlightToolToggled(true);
+    QMouseEvent pressHl(QEvent::MouseButtonPress, QPointF(100, 100), QPointF(100, 100), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &pressHl);
+    QMouseEvent dragHl(QEvent::MouseMove, QPointF(200, 130), QPointF(200, 130), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &dragHl);
+    QMouseEvent relHl(QEvent::MouseButtonRelease, QPointF(200, 130), QPointF(200, 130), Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(pageWidget, &relHl);
+    QTest::qWait(50);
+
+    // Update highlight properties globally
+    pageWidget->updateHighlighterProperties(Qt::darkGreen, 0.75);
+    QTest::qWait(30);
+
+    // 5. Test close contextual bar exits tool mode
+    header->hideContextualBar();
+    QCOMPARE(pageWidget->toolMode(), PdfToolMode::SelectText);
+    if (win.pdfViewer()) win.pdfViewer()->setModified(false);
 }
 
 QTEST_MAIN(TestInteractive)

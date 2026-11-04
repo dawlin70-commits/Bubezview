@@ -90,9 +90,10 @@ int main(int argc, char *argv[])
     // libmpv requires LC_NUMERIC to be set to "C" for proper decimal parsing
     std::setlocale(LC_NUMERIC, "C");
 
-    // Force pure Qt internal dialogs to guarantee full isolation from KDE KIO workers
-    // and prevent Plasma 6 Wayland selection/shortcut freeze in Dolphin.
-    QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
+    // Enable FreeDesktop Portal integration for 100% native system file pickers (KDE Dolphin / GNOME)
+    if (!qEnvironmentVariableIsSet("QT_USE_PORTAL")) {
+        qputenv("QT_USE_PORTAL", "1");
+    }
 
     // Configure audio playback buffer latency on Linux/PipeWire/PulseAudio
     // to prevent underruns/dropouts during UI activity or intensive tasks.

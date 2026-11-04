@@ -82,6 +82,8 @@ public:
     IPdfViewer *pdfViewer() const { return m_pdfViewer; }
     QTextBrowser *textBrowser() const { return m_textBrowser; }
 
+    void setEditMode(bool editMode);
+
 private slots:
     void onConversionFinished(const QString &sourcePath, const QString &pdfPath);
     void onConversionFailed(const QString &sourcePath, const QString &errorMsg);

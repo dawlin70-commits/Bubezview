@@ -161,6 +161,14 @@ public:
     void updateTheme() override;
 
     /**
+     * @brief Configures whether the internal top bar is visible.
+     * When embedded in MainWindow, this is hidden to prevent double-bar appearance.
+     */
+    void setTopBarVisible(bool visible) override;
+    bool isTopBarVisible() const override;
+    void filterEntries(const QString &pattern) override;
+
+    /**
      * @brief Extracts all files from the current archive into a target destination.
      */
     void extractAll() override { extractAll(QString()); }
@@ -218,6 +226,12 @@ public:
     int entryCount() const override { return m_entryCount; }
     qint64 totalUncompressedSize() const override { return m_totalSize; }
     QString currentArchiveFilePath() const { return m_currentArchiveFilePath; }
+
+    /**
+     * @brief Toggles editing capabilities on the archive viewer.
+     */
+    void setEditMode(bool editMode) override;
+    bool isEditMode() const override { return m_isEditMode; }
 
     /**
      * @brief Determines whether the current archive format is safe to modify in-place.
@@ -303,4 +317,5 @@ private:
     qint64 m_totalSize;
     QString m_formatName;
     QString m_filterName;
+    bool m_isEditMode = true;
 };

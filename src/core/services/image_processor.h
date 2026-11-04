@@ -139,6 +139,23 @@ public:
     static QImage autoEnhance(const QImage &src, const AutoEnhanceOptions &options);
 
     /**
+     * @brief Performs Instant Alpha (magic wand background removal) on an image.
+     * @param src Source image.
+     * @param targetColor Background color to key out (e.g. paper white or custom sampled color).
+     * @param tolerance Color matching tolerance [0, 100].
+     * @param contiguousOnly If true, flood-fills from seed point (leaving isolated inner loops intact).
+     * @param seedPoint Starting coordinate for flood fill (or (-1, -1) to seed from outer borders).
+     * @param smoothFalloff Soft transition boundary falloff [0, 50] to eliminate jagged edges and fringes.
+     * @return Transparent ARGB32 image.
+     */
+    static QImage instantAlpha(const QImage &src,
+                               const QColor &targetColor = Qt::white,
+                               int tolerance = 25,
+                               bool contiguousOnly = false,
+                               const QPoint &seedPoint = QPoint(-1, -1),
+                               int smoothFalloff = 12);
+
+    /**
      * @brief Pixelates a rectangular area (mosaic effect) for privacy redaction (e.g. license plates, faces).
      * @param src Source image.
      * @param region Area to pixelate in image coordinates.

@@ -10,9 +10,6 @@
 #include <QFile>
 #include <QTextStream>
 #include <QFontDatabase>
-#include <QMessageBox>
-#include <QPushButton>
-#include <QAbstractButton>
 #include <QKeyEvent>
 #include <QFileInfo>
 #include <QSet>
@@ -56,7 +53,7 @@ TextViewer::~TextViewer()
 void TextViewer::updateTheme()
 {
     ThemePreset preset = ThemeManager::currentPreset();
-    bool isDark = (preset != ThemePreset::SystemNative);
+    bool isDark = ThemeManager::isDark(preset);
 
     if (m_highlighter) {
         m_highlighter->applyTheme(isDark);
@@ -186,40 +183,7 @@ void TextViewer::setEditable(bool editable)
 
 bool TextViewer::ensureEditable()
 {
-    if (!isReadOnly()) return true;
-
-    // Safety guard for headless / automated test executions or standalone instances
-    if (!isVisible() && parentWidget() == nullptr) {
-        setEditable(true);
-        return true;
-    }
-
-    QMessageBox msg(this->window());
-    msg.setIcon(QMessageBox::Question);
-    msg.setWindowTitle(tr("Read-Only Document"));
-
-    if (isCodeFile()) {
-        msg.setText(tr("<h3>Source Code / Configuration File</h3>"
-                       "<p>This file contains source code or configuration settings.</p>"
-                       "<p>Manual editing may affect script or application execution.</p>"
-                       "<p>Do you want to enable edit mode to start typing and making changes?</p>"));
-    } else {
-        msg.setText(tr("<h3>File is Read-Only</h3>"
-                       "<p>This text file is currently open in read-only mode to prevent accidental changes.</p>"
-                       "<p>Do you want to enable edit mode to start typing and making changes?</p>"));
-    }
-
-    QAbstractButton *btnEnable = msg.addButton(tr("Enable Editing"), QMessageBox::AcceptRole);
-    QAbstractButton *btnCancel = msg.addButton(tr("Cancel"), QMessageBox::RejectRole);
-    Q_UNUSED(btnCancel);
-    msg.setDefaultButton(static_cast<QPushButton*>(btnEnable));
-    msg.exec();
-
-    if (msg.clickedButton() == btnEnable) {
-        setEditable(true);
-        return true;
-    }
-    return false;
+    return !isReadOnly();
 }
 
 bool TextViewer::isCodeFile() const
@@ -371,7 +335,7 @@ void TextViewer::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
     if (!m_lineNumbersVisible) return;
     QPainter painter(m_lineNumberArea);
-    bool isDark = (ThemeManager::currentPreset() != ThemePreset::SystemNative);
+    bool isDark = ThemeManager::isDarkTheme();
     painter.fillRect(event->rect(), isDark ? QColor("#181818") : palette().color(QPalette::Window));
 
     QTextBlock block = firstVisibleBlock();
@@ -449,7 +413,7 @@ void TextViewer::highlightCurrentLine()
 {
     QList<QTextEdit::ExtraSelection> extraSelections;
     QTextEdit::ExtraSelection selection;
-    bool isDark = (ThemeManager::currentPreset() != ThemePreset::SystemNative);
+    bool isDark = ThemeManager::isDarkTheme();
     QColor lineColor = isDark ? QColor(45, 52, 68, 140) : QColor(230, 240, 255, 180);
 
     selection.format.setBackground(lineColor);
@@ -666,21 +630,23 @@ void TextViewer::keyPressEvent(QKeyEvent *event)
     int key = event->key();
     Qt::KeyboardModifiers mods = event->modifiers();
 
-    // 1. Productivity shortcuts
-    if ((mods & Qt::ControlModifier) && key == Qt::Key_D) {
-        duplicateCurrentLine();
-        event->accept();
-        return;
-    }
-    if ((mods & (Qt::ControlModifier | Qt::ShiftModifier)) == (Qt::ControlModifier | Qt::ShiftModifier) && key == Qt::Key_K) {
-        deleteCurrentLine();
-        event->accept();
-        return;
-    }
-    if ((mods & Qt::ControlModifier) && key == Qt::Key_Slash) {
-        toggleComment();
-        event->accept();
-        return;
+    // 1. Productivity shortcuts (only available when editable)
+    if (!isReadOnly()) {
+        if ((mods & Qt::ControlModifier) && key == Qt::Key_D) {
+            duplicateCurrentLine();
+            event->accept();
+            return;
+        }
+        if ((mods & (Qt::ControlModifier | Qt::ShiftModifier)) == (Qt::ControlModifier | Qt::ShiftModifier) && key == Qt::Key_K) {
+            deleteCurrentLine();
+            event->accept();
+            return;
+        }
+        if ((mods & Qt::ControlModifier) && key == Qt::Key_Slash) {
+            toggleComment();
+            event->accept();
+            return;
+        }
     }
     if ((mods & Qt::ControlModifier) && key == Qt::Key_G) {
         gotoLineDialog();
@@ -721,14 +687,10 @@ void TextViewer::keyPressEvent(QKeyEvent *event)
         }
     }
 
-    // 2. Read-only guard with prompt on modifying key
+    // 2. In preview / read-only mode, strictly prevent text modification
     if (isReadOnly()) {
         if (isModifyingKey(event)) {
-            if (ensureEditable()) {
-                QPlainTextEdit::keyPressEvent(event);
-            } else {
-                event->accept(); // Swallow to prevent triggering window-level shortcuts
-            }
+            event->accept();
             return;
         }
     }

@@ -4,10 +4,13 @@
 #include <QImage>
 #include <QPixmap>
 #include <QScrollArea>
+#include <QSplitter>
 #include <QResizeEvent>
 #include <QWheelEvent>
+#include "core/services/image_processor.h"
 
 class ImageCanvasWidget;
+class PhotoStudioPanel;
 
 /**
  * @brief High-performance hardware-accelerated image viewer widget.
@@ -52,6 +55,7 @@ public:
     bool isFitToWindow() const { return m_fitToWindow; }
     void zoomIn();
     void zoomOut();
+    void setZoomFactor(double factor);
 
     /**
      * @brief Zooms into or out of the image anchored at a specific viewport position.
@@ -112,6 +116,12 @@ public:
      */
     bool isDarkTheme() const;
 
+    /**
+     * @brief Toggles editing capabilities on the image viewer.
+     */
+    void setEditMode(bool editMode);
+    bool isEditMode() const { return m_isEditMode; }
+
     // Geometric & visual transformations
     void rotateClockwise();
     void rotateCounterClockwise();
@@ -171,6 +181,18 @@ public:
     void confirmCrop();
     void cancelCropMode();
 
+    /**
+     * @brief Toggles visibility of the right-hand Photo Studio adjustments panel.
+     */
+    void toggleStudioPanel();
+    void openStudioPanel();
+    void closeStudioPanel();
+    bool isStudioPanelVisible() const;
+    PhotoStudioPanel *studioPanel() const { return m_studioPanel; }
+
+    bool isEyedropperActive() const { return m_eyedropperActive; }
+    void setEyedropperActive(bool a);
+
     bool isModified() const { return m_isModified; }
     void setModified(bool mod);
 
@@ -226,11 +248,29 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    void ensureStudioPanelCreated();
     void updateScaledPixmap();
     void pushUndoState();
+    void onStudioAdjustmentsChanged();
+    void onStudioApply();
+    void onStudioCompareToggled(bool showOriginal);
+    void onStudioEyedropperToggled(bool active);
+    void onStudioPrivacyToolRequested(const QString &mode);
 
-    QScrollArea *m_scrollArea;
-    ImageCanvasWidget *m_canvas;
+    QSplitter *m_studioSplitter = nullptr;
+    QScrollArea *m_scrollArea = nullptr;
+    ImageCanvasWidget *m_canvas = nullptr;
+    PhotoStudioPanel *m_studioPanel = nullptr;
+
+    QImage m_preStudioImage;
+    QImage m_studioProxyImage;
+    QImage m_studioAdjustedProxy;
+    QImage m_autoEnhancedProxy;
+    ImageProcessor::AutoEnhanceOptions m_cachedAutoOpts;
+    bool m_autoProxyValid = false;
+    bool m_compareShowingOriginal = false;
+    bool m_eyedropperActive = false;
+    QString m_privacyMode;
 
     QImage m_originalImage;
     QList<QImage> m_undoStack;
@@ -244,4 +284,5 @@ private:
 
     int m_wheelNavAccumulator = 0;
     qint64 m_lastNavTime = 0;
+    bool m_isEditMode = true;
 };

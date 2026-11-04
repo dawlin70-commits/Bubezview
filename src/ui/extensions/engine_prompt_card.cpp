@@ -36,7 +36,8 @@ EnginePromptCard::EnginePromptCard(QWidget *parent)
         "  padding: 28px;"
         "}"
     );
-    card->setFixedWidth(540);
+    card->setMaximumWidth(540);
+    card->setMinimumWidth(320);
 
     QVBoxLayout *cardLay = new QVBoxLayout(card);
     cardLay->setSpacing(16);

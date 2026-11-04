@@ -13,6 +13,12 @@ class QLabel;
 class QPushButton;
 class QToolButton;
 class QSpinBox;
+class QStackedWidget;
+class PdfStudioPanel;
+class PdfPageOrganizerWidget;
+class QGraphicsOpacityEffect;
+class QPropertyAnimation;
+class QTimer;
 
 namespace Poppler {
     class Document;
@@ -91,6 +97,12 @@ public:
     void copySelectedText();
 
     /**
+     * @brief Replaces selected text directly from the contextual action bar.
+     */
+    void replaceSelectedText(const QString &text, const QFont &font, const QColor &color, bool whiteout) override;
+    void updateHighlighterProperties(const QColor &color, double opacity) override;
+
+    /**
      * @brief Cuts currently selected text: copies text to clipboard and applies a whiteout erasure.
      */
     void cutSelectedText();
@@ -106,7 +118,9 @@ public:
      * @brief Checks if text is currently selected on the active page.
      * @return True if words are highlighted.
      */
-    bool hasTextSelection() const;
+    bool hasTextSelection() const override;
+    QString selectedText() const override;
+    void editSelectedTextWithWhiteout() override;
 
     /**
      * @brief Extracts embedded images to the given destination directory.
@@ -161,6 +175,12 @@ public:
     bool hasAreaSelection() const;
 
     /**
+     * @brief Toggles editing capabilities on the PDF viewer.
+     */
+    void setEditMode(bool editMode) override;
+    bool isEditMode() const override { return m_isEditMode; }
+
+    /**
      * @brief Checks if an undo action is available.
      * @return True if previous document state exists.
      */
@@ -191,6 +211,7 @@ public slots:
     void zoomOut() override;
     void resetZoom() override;
     void fitToWidth() override;
+    void setZoomFactor(double factor) override;
     void rotateClockwise();
     void rotateCounterClockwise();
     void zoomAt(const QPoint &viewportPos, double factor);
@@ -199,8 +220,14 @@ public slots:
     void toggleTocSidebar() override;
     void setTocVisible(bool visible);
 
+    void toggleStudioPanel() override;
+    void openStudioPanel(int tabIndex = 0) override;
+    void closeStudioPanel() override;
+    bool isStudioPanelVisible() const override;
+    PdfStudioPanel *studioPanel() const { return m_studioPanel; }
+
     // PDF Annotation & Tool Launchers
-    void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40);
+    void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40, bool isSpotlight = false) override;
     void startShape(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
     void exitContinuousToolMode();
     void openTypewriterDialog();
@@ -208,17 +235,48 @@ public slots:
     void openCryptoSignatureDialog(int defaultTab = 0) override;
     void openInsertImageDialog();
     void openWatermarkDialog();
+    void startWatermark(const QString &text = QStringLiteral("COPY"), qreal angle = 45.0,
+                       qreal opacity = 0.35, const QColor &color = QColor(QStringLiteral("#DC2626")),
+                       const QPoint &initialPos = QPoint(), int style = 0, int fontSize = 28) override;
+    void updateSelectedStampProperties(const QString &text, const QColor &color, qreal angle, int style, int fontSize) override;
+    void commitSelectedStampProperties() override;
     void openShapeDialog();
     void startSnapshot();
     void startSelectArea();
-    void startRedaction();
-    bool insertBlankPage(int afterPageIndex = -1);
+    void startRedaction(const QColor &color = Qt::black, bool permanent = false) override;
+    void startDirectTypewriter(const QFont &font, const QColor &color, bool whiteout) override;
+    void updateTypewriterProperties(const QFont &font, const QColor &color, bool whiteout) override;
+    void updateShapeProperties(int strokeWidth, const QColor &strokeColor, const QColor &fillColor) override;
+    bool deleteCurrentPage() override;
+    bool insertBlankPage(int afterPageIndex = -1) override;
+    bool saveCurrentPageAsPdf(const QString &targetPath, QString *errorMessage = nullptr) override;
+    void openPdfMergeDialog(QWidget *parent = nullptr) override;
+    void openPdfRepairDialog(const QString &filePath, QWidget *parent = nullptr) override;
+    void openPdfImageExtractDialog(const QString &filePath, QWidget *parent = nullptr) override;
     void openPageOrganizer(const QString &target, QWidget *parentWidget = nullptr) override;
+    void showPageGridOrganizer() override;
+    void hidePageGridOrganizer(int targetPageIndex = -1) override;
+    bool isPageGridOrganizerActive() const override;
+    bool commitOrganizerChanges();
+    void organizerRotate() override;
+    void organizerDelete() override;
+    void organizerInsertBlank() override;
+    void organizerAddPdf() override;
+    void organizerReverse() override;
+    void organizerReset() override;
+
+    QList<PdfHistoryStep> historySteps() const override;
+    void restoreHistoryStep(int index) override;
 
     void onAddStampAnnotation(const QImage &image, const QRectF &normalizedRect);
     void onAddStampAnnotations(const QList<QPair<QImage, QRectF>> &stamps);
+    void onMoveStampAnnotation(const QRectF &oldNormRect, const QRectF &newNormRect, const QImage &stampImg);
+    void onDeleteStampAnnotation(const QRectF &normRect);
     void onAddTextAnnotation(const QString &text, const QFont &font, const QColor &color,
-                             const QRectF &normalizedRect, bool whiteout);
+                             const QRectF &normalizedRect, bool whiteout, const QImage &bgImage = QImage(),
+                             const QRectF &bgNormalizedRect = QRectF());
+    void updateTextBgProperties(PdfTextBgMode mode, const QColor &color) override;
+    void commitInPlaceTextEdit() override;
     void onSnapshotAreaSelected(const QRectF &pointRect);
     void onCutAreaRequested(const QRectF &pointRect);
     void onCopyAreaRequested(const QRectF &pointRect);
@@ -248,6 +306,11 @@ public slots:
     void updateTheme();
 
 signals:
+    /**
+     * @brief Emitted when an existing rubber stamp is clicked/selected for contextual bar modification.
+     */
+    void stampSelectedForContextualEdit(const QString &text, const QColor &color, qreal angle, int style, int fontSize);
+
     /**
      * @brief Emitted when the user changes the active viewing page.
      * @param current 1-based current page number.
@@ -295,16 +358,22 @@ private slots:
     void updateNavButtons();
 
 private:
+    void showPageHud();
+    void hidePageHud();
+    void updateHudPosition();
+
+    void ensureStudioPanelCreated();
     bool handleViewportWheel(QWheelEvent *event, QObject *source);
     void prepareForManualZoom();
-    void renderCurrentPage(int transitionDirection = 0);
+    void renderCurrentPage(int transitionDirection = 0, bool preserveScroll = false);
     void populateOutline();
     void buildOutlineBranch(QStandardItem *parentItem, const QVector<Poppler::OutlineItem> &items);
-    void pushUndoState();
+    void pushUndoState(const QString &description = QString());
     void clearUndoRedoStacks();
     void resetDocument();
     void verifyAndRefreshSignatureBanner();
     QString currentDocumentSourcePath() const;
+    QPixmap captureCurrentPageThumbnail() const;
 
     // Top Cryptographic Signature Verification Banner
     QWidget *m_sigBanner = nullptr;
@@ -319,17 +388,23 @@ private:
     QPushButton *m_btnCloseToc;
     QTreeView *m_tocView;
     QStandardItemModel *m_tocModel;
+    QStackedWidget *m_centralStack = nullptr;
     QScrollArea *m_scrollArea;
+    PdfPageOrganizerWidget *m_pageGridOrganizer = nullptr;
     PdfPageWidget *m_pageWidget;
+    PdfStudioPanel *m_studioPanel = nullptr;
+    bool m_studioPanelWasVisible = false;
 
-    // Native Page Navigation Bar (docked bottom bar)
-    QWidget *m_navBar = nullptr;
+    // Floating HUD Page Navigation Pill Overlay
     QWidget *m_pillContainer = nullptr;
     QToolButton *m_btnPrevPage = nullptr;
     QLabel *m_lblPage = nullptr;
     QSpinBox *m_spinPage = nullptr;
     QLabel *m_lblPageCount = nullptr;
     QToolButton *m_btnNextPage = nullptr;
+    QGraphicsOpacityEffect *m_hudOpacity = nullptr;
+    QPropertyAnimation *m_hudAnim = nullptr;
+    QTimer *m_hudTimer = nullptr;
 
     std::unique_ptr<Poppler::Document> m_doc;
     QString m_filePath;
@@ -348,9 +423,13 @@ private:
     QString m_activeSnapshotPath;
     static constexpr int MAX_UNDO_STACK_SIZE = 20;
 
+    QList<PdfHistoryStep> m_historySteps;
+    int m_historyCurrentIndex = 0;
+
     int m_wheelAccumulator = 0;
     qint64 m_lastWheelPageTime = 0;
     int m_lastWheelPageDir = 0;
+    bool m_isEditMode = true;
 };
 
 

@@ -69,6 +69,15 @@ public:
     int archiveCurrentEntryIndex() const { return m_archiveCurrentEntryIndex; }
 
     /**
+     * @brief Toggles between Preview Mode and Edit Mode.
+     * In Preview Mode, spacebar closes window and minimal header is displayed.
+     * In Edit Mode, spacebar allows text editing and full editing toolbar is shown.
+     * @param editMode True for edit mode, false for preview mode.
+     */
+    virtual void setEditMode(bool editMode);
+    bool isEditMode() const { return m_isEditMode; }
+
+    /**
      * @brief Formats current position in directory (e.g. "[3/25]").
      */
     QString fileIndexText() const;
@@ -94,6 +103,11 @@ public slots:
     // Navigation
     void nextFile();
     void prevFile();
+    /**
+     * @brief Scrolls active document or image view vertically.
+     * @param direction Positive (+1) to scroll down, negative (-1) to scroll up.
+     */
+    void scrollCurrentView(int direction);
     void toggleFullscreen();
 
     // Clipboard operations
@@ -109,6 +123,8 @@ public slots:
     void openWithOther();
     void saveCurrentFile();
     void saveAsCurrentFile();
+    void saveCurrentPageAsPdf();
+    void saveCurrentPageAsImage();
     void exportCurrentFileAs();
     void deleteCurrentFile();
     void printCurrentFile();
@@ -193,11 +209,19 @@ public slots:
 protected:
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 
     bool promptAndSaveIfModified();
     void repositionSearchBar();
+
+    IPdfViewer *ensurePdfViewerCreated();
+    IArchiveViewer *ensureArchiveViewerCreated();
+    IMediaViewer *ensureMediaViewerCreated();
+    OfficeViewer *ensureOfficeViewerCreated();
+    FolderViewer *ensureFolderViewerCreated();
+    virtual void onViewerInitialized(FileCategory category) { Q_UNUSED(category); }
 
     /**
      * @brief Hook invoked whenever a new file is loaded.
@@ -208,6 +232,17 @@ protected:
     void scanDirectory(const QString &currentFilePath);
     void startTransitionAnimation(bool forward);
     QString formatFileSize(qint64 bytes) const;
+
+    /**
+     * @brief Saves current window geometry and dimensions to persistent settings.
+     */
+    void saveWindowGeometry();
+
+    /**
+     * @brief Restores window geometry and dimensions from persistent settings,
+     *        falling back to default compact preview dimensions (780x540).
+     */
+    void restoreWindowGeometry();
 
     QWidget *m_centralContainer;
     QStackedWidget *m_stackedWidget;
@@ -233,6 +268,7 @@ protected:
     bool m_filmstripWanted;
 
     QString m_currentFilePath;
+    QString m_previousFilePathBeforeGallery;
     QString m_archiveOriginPath;
     QStringList m_archiveEntries;
     int m_archiveCurrentEntryIndex = -1;
@@ -245,11 +281,14 @@ protected:
 
     // Fast-Skip Transition System
     class TransitionOverlayWidget *m_transitionOverlay;
+    class GalleryZoomTransition *m_galleryTransition;
     class QGraphicsOpacityEffect *m_overlayOpacity;
     class QParallelAnimationGroup *m_animGroup;
     qint64 m_lastSwitchTimeMs;
 
     class QTimer *m_slideshowTimer;
     class QTimer *m_backgroundTimer = nullptr;
+    class QTimer *m_geometrySaveTimer = nullptr;
     bool m_isDaemonMode = false;
+    bool m_isEditMode = false;
 };

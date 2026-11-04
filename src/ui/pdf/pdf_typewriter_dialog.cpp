@@ -9,11 +9,14 @@
 #include <QGroupBox>
 #include <QTextEdit>
 #include <QFontComboBox>
+#include <QFontInfo>
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QPushButton>
 #include <QLabel>
 #include <QColorDialog>
+#include <QKeyEvent>
+#include <QShowEvent>
 
 PdfTypewriterDialog::PdfTypewriterDialog(QWidget *parent)
     : QDialog(parent)
@@ -39,8 +42,9 @@ void PdfTypewriterDialog::setupUi()
     mainLayout->addWidget(lblPrompt);
 
     m_txtInput = new QTextEdit(this);
-    m_txtInput->setPlaceholderText(tr("Type notes, signatures, dates, or form data here..."));
+    m_txtInput->setPlaceholderText(tr("Type notes, signatures, dates, or form data here... (Ctrl+Enter to confirm)"));
     m_txtInput->setMinimumHeight(80);
+    m_txtInput->installEventFilter(this);
     connect(m_txtInput, &QTextEdit::textChanged, this, &PdfTypewriterDialog::updatePreview);
     mainLayout->addWidget(m_txtInput);
 
@@ -171,7 +175,12 @@ void PdfTypewriterDialog::setText(const QString &text)
 
 void PdfTypewriterDialog::setSelectedFont(const QFont &font)
 {
-    m_comboFont->setCurrentFont(font);
+    QString resolved = QFontInfo(font).family();
+    QFont actualFont = font;
+    if (!resolved.isEmpty()) {
+        actualFont.setFamily(resolved);
+    }
+    m_comboFont->setCurrentFont(actualFont);
     int ptSize = font.pointSize();
     if (ptSize <= 0) ptSize = font.pixelSize();
     if (ptSize <= 0) ptSize = 12;
@@ -191,6 +200,36 @@ void PdfTypewriterDialog::setWhiteout(bool whiteout)
 {
     m_chkWhiteout->setChecked(whiteout);
     updatePreview();
+}
+
+void PdfTypewriterDialog::setSampledBackgroundColor(const QColor &color)
+{
+    m_sampledBgColor = color.isValid() ? color : Qt::white;
+    updatePreview();
+}
+
+bool PdfTypewriterDialog::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_txtInput && event->type() == QEvent::KeyPress) {
+        auto *ke = static_cast<QKeyEvent *>(event);
+        if ((ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) &&
+            (ke->modifiers() & Qt::ControlModifier)) {
+            if (m_btnOk && m_btnOk->isEnabled()) {
+                accept();
+            }
+            return true;
+        }
+    }
+    return QDialog::eventFilter(watched, event);
+}
+
+void PdfTypewriterDialog::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent(event);
+    if (m_txtInput) {
+        m_txtInput->setFocus();
+        m_txtInput->selectAll();
+    }
 }
 
 void PdfTypewriterDialog::onFontChanged()
@@ -233,7 +272,10 @@ void PdfTypewriterDialog::updatePreview()
     m_lblPreview->setText(content);
     m_lblPreview->setFont(selectedFont());
 
-    QString bgStyle = m_chkWhiteout->isChecked() ? QStringLiteral("background-color: #FFFFFF;") : QStringLiteral("background-color: transparent;");
+    QColor bgCol = m_sampledBgColor.isValid() ? m_sampledBgColor : Qt::white;
+    QString bgStyle = m_chkWhiteout->isChecked()
+        ? QStringLiteral("background-color: %1;").arg(bgCol.name())
+        : QStringLiteral("background-color: transparent;");
     m_lblPreview->setStyleSheet(QString("border: 1px dashed #475569; border-radius: 6px; padding: 8px; color: %1; %2")
                                .arg(m_currentColor.name())
                                .arg(bgStyle));

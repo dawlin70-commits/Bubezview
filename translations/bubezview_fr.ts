@@ -133,19 +133,19 @@
     </message>
     <message>
         <location filename="../src/viewers/archive/archive_viewer.cpp" line="353"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1124"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1144"/>
         <source>Add Files to Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/archive/archive_viewer.cpp" line="354"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1128"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1148"/>
         <source>Add Folder to Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/viewers/archive/archive_viewer.cpp" line="356"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1133"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1153"/>
         <source>Remove Selected from Archive</source>
         <translation type="unfinished"></translation>
     </message>
@@ -161,7 +161,7 @@
     </message>
     <message>
         <location filename="../src/viewers/archive/archive_viewer.cpp" line="369"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1108"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1128"/>
         <source>Extract Selected...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -196,52 +196,52 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="831"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="851"/>
         <source>⏳ Reading archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="857"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="877"/>
         <source>Encrypted Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="858"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="878"/>
         <source>Enter password to unlock %1:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="867"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="887"/>
         <source>🔒 Password required</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="922"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="942"/>
         <source>Encrypted entry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="954"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="974"/>
         <source>%1 items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="957"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="977"/>
         <source>0 items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="998"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1018"/>
         <source>%1 Items (%2 Total)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1000"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1020"/>
         <source>%1 • %2 Items (%3 Total)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1004"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1024"/>
         <source>Archive: %1
 Format: %2
 Compression: %3
@@ -250,481 +250,481 @@ Total Size: %5</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1016"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1036"/>
         <source>Add or remove files in this archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1017"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1037"/>
         <source>This archive format is read-only and cannot be modified in-place</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1046"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1066"/>
         <source>Encrypted File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1047"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1067"/>
         <source>Enter password to view this file:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1102"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1122"/>
         <source>Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1115"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1135"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1489"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1509"/>
         <source>Select Destination Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1500"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1520"/>
         <source>7-Zip Engine Recommended</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1507"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1527"/>
         <source>this</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1509"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1529"/>
         <source>&lt;h3&gt;7-Zip Engine Recommended&lt;/h3&gt;&lt;p&gt;For maximum speed, multi-core extraction, and full compatibility with &lt;b&gt;%1&lt;/b&gt; archives, &lt;b&gt;7-Zip&lt;/b&gt; (&lt;code&gt;7zz&lt;/code&gt;) is recommended.&lt;/p&gt;&lt;p&gt;Detected distribution: &lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Manual installation command:&lt;br&gt;&lt;code&gt;%3&lt;/code&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1515"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1535"/>
         <source>Install 7-Zip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1516"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1536"/>
         <source>Continue with libarchive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1562"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1582"/>
         <source>7-Zip Multi-Core Extraction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1570"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1590"/>
         <source>⚡ 7-Zip Multi-Core Extracting: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1573"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1593"/>
         <source>Initializing multi-core 7-Zip engine...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1605"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2589"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2844"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1625"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2626"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2881"/>
         <source>Cancelling...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1647"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1667"/>
         <source>Successfully extracted %1 items using the 7-Zip engine to:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1669"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1776"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1689"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1796"/>
         <source>Extraction Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1669"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1807"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1689"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1827"/>
         <source>Could not open archive: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1679"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1699"/>
         <source>Extracting files...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1777"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1797"/>
         <source>Could not extract files:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1780"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1800"/>
         <source>Extraction Completed with Warnings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1781"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1801"/>
         <source>Extracted %1 items, but encountered errors:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1784"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1804"/>
         <source>Successfully extracted %1 items using libarchive engine to:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2424"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2453"/>
         <source>Add Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2424"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2450"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2453"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2483"/>
         <source>No archive is currently open.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2429"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2455"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2479"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2522"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2458"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2488"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2516"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2559"/>
         <source>Read-Only Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2430"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2456"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2480"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2523"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2459"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2489"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2517"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2560"/>
         <source>Modifying &apos;%1&apos; archives in-place is not supported to protect data integrity.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2438"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2467"/>
         <source>Select Files to Add to Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2440"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2469"/>
         <source>All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2450"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2483"/>
         <source>Add Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2464"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2497"/>
         <source>Select Folder to Add to Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2487"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2524"/>
         <source>Remove from Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2488"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2525"/>
         <source>Please select one or more items in the archive tree to remove.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2505"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2542"/>
         <source>Remove Selected Items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2506"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2543"/>
         <source>Remove %1 selected item(s) from archive &apos;%2&apos;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2554"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2591"/>
         <source>Updating Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2561"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2598"/>
         <source>⏳ Preparing archive update...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2746"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2757"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2764"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2783"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2794"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2801"/>
         <source>Archive Modification Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2747"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2784"/>
         <source>An error occurred while updating the archive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2758"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2795"/>
         <source>Unable to overwrite archive file (check write permissions).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2765"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2802"/>
         <source>Failed to finalize updated archive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2789"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3223"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3231"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2826"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3260"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3268"/>
         <source>Create Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2790"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3232"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2827"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3269"/>
         <source>No valid files or folders found to compress.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2801"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2838"/>
         <source>📦 Compressing Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2812"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2849"/>
         <source>⏳ Starting compression...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2915"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2926"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3332"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3347"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2952"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2963"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3369"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3384"/>
         <source>Create Archive Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2916"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3333"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2953"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3370"/>
         <source>Could not create output archive:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2927"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3348"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2964"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3385"/>
         <source>Could not write final archive to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2945"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2982"/>
         <source>📦 Compress / Create Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2968"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3005"/>
         <source>ZIP (.zip) — Universal &amp; Compatible (Multi-Core)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2969"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3006"/>
         <source>TAR.GZ (.tar.gz) — Standard Linux Gzip (Multi-Core)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2970"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3007"/>
         <source>TAR.XZ (.tar.xz) — High Compression XZ (Multi-Core)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2971"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3008"/>
         <source>TAR.ZST (.tar.zst) — Ultra-Fast Zstandard (Multi-Core)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2972"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3009"/>
         <source>7-Zip (.7z) — Maximum Compression (Multi-Core)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3012"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3049"/>
         <source>Quick Source Selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3018"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3055"/>
         <source>Current File (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3033"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3070"/>
         <source>Entire Current Folder (%1/)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3048"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3085"/>
         <source>Files &amp; Folders to Compress</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3053"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3090"/>
         <source>+ Add Files...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3054"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3091"/>
         <source>+ Add Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3055"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3092"/>
         <source>Remove Selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3065"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3102"/>
         <source>Add Files to Compress</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3082"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3119"/>
         <source>Add Folder to Compress</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3103"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3140"/>
         <source>Output Archive Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3108"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3145"/>
         <source>Browse...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3114"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3151"/>
         <source>Optional AES-256 password (supported on .zip and .7z)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3116"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3153"/>
         <source>Open created archive in BubezView when done</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3119"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3156"/>
         <source>Format:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3120"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3157"/>
         <source>Destination:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3121"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3158"/>
         <source>Password:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3165"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3202"/>
         <source>Save Compressed Archive As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3167"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3204"/>
         <source>Archives (*.%1);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3185"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3222"/>
         <source>🚀 Compress &amp; Send (LocalSend)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3186"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3223"/>
         <source>📦 Create Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3224"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3261"/>
         <source>Please specify at least one source item and a destination path.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3251"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3288"/>
         <source>⏳ Compressing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3360"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3397"/>
         <source>Cancelling compression...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1517"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1588"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1679"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1812"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2573"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2827"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3184"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1537"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1608"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1699"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1832"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2610"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2864"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="3221"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1741"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1761"/>
         <source>Extracting: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1646"/>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1783"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1666"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1803"/>
         <source>Extraction Complete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1807"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1827"/>
         <source>Integrity Test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1812"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1832"/>
         <source>Testing archive integrity...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1830"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1850"/>
         <source>Verifying: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1862"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1882"/>
         <source>Integrity Test Passed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1863"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1883"/>
         <source>Archive is healthy! Verified %1 entries without errors.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1865"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1885"/>
         <source>Integrity Test Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1866"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1886"/>
         <source>Corruption detected: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1866"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1886"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -740,304 +740,322 @@ Total Size: %5</source>
 <context>
     <name>AudioTagDialog</name>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="35"/>
-        <source>Audio Tag &amp; Album Editor - BubezView</source>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="37"/>
+        <source>Audio Tag &amp;&amp; Album Editor - BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="67"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="97"/>
         <source>🏷️ Auto-Title from Filename</source>
         <translation>🏷️ Auto-Title from Filename</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="69"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="99"/>
         <source>Clean track titles from filenames by stripping track numbers (e.g. &apos;01 - Song&apos; -&gt; &apos;Song&apos;)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="72"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="102"/>
         <source>🔍 Search Tags Online</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="74"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="104"/>
         <source>Search MusicBrainz for album metadata and automatically fill all track titles</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="77"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="107"/>
         <source>📝 Rename Files on Disk (01 - Title)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="79"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="109"/>
         <source>Rename files on disk formatted with two-digit sequence (01 - Title.ext)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="82"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="112"/>
         <source>🔢 Auto-Number (01...N)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="84"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="114"/>
         <source>Number all tracks sequentially with two digits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="87"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="117"/>
         <source>Aa Title Case</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="89"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="119"/>
         <source>Capitalize words in track titles</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="112"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="142"/>
         <source>Album Cover</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="125"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="155"/>
         <source>🌐 Download</source>
         <translation>🌐 Download</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="127"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="157"/>
         <source>Search and choose cover art from online candidates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="130"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="160"/>
         <source>📁 Browse</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="132"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="162"/>
         <source>Select a cover image from your local drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="135"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="165"/>
         <source>❌</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="138"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="168"/>
         <source>Remove cover</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="145"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="175"/>
         <source>Apply cover to all tracks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="154"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="184"/>
         <source>Album Metadata</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="163"/>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="172"/>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="181"/>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="190"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="193"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="202"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="211"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="220"/>
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="165"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="195"/>
         <source>Apply Artist to all tracks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="166"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="196"/>
         <source>Artist:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="174"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="204"/>
         <source>Apply Album name to all tracks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="175"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="205"/>
         <source>Album:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="183"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="213"/>
         <source>Apply Year to all tracks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="184"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="214"/>
         <source>Year:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="192"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="222"/>
         <source>Apply Genre to all tracks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="193"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="223"/>
         <source>Genre:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="199"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="229"/>
         <source>Comment:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="207"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="237"/>
         <source>Album Tracks List</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="213"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="243"/>
         <source>#</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="213"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="243"/>
         <source>Track Title</source>
         <translation>Titre de la piste</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="213"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="243"/>
         <source>File Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="213"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="243"/>
         <source>Duration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="230"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="267"/>
         <source>🔄 Revert All Edits</source>
         <translation>🔄 Revert All Edits</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="232"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="269"/>
         <source>Discard all changes and restore original tags and cover art</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="235"/>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="539"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="272"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="643"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="239"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="276"/>
         <source>Save All Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="348"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="389"/>
         <source>No Cover
 (Removed)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="371"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="412"/>
         <source>🎵
 No Cover Art</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="385"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="465"/>
         <source>Select Cover Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="385"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="465"/>
         <source>Images (*.jpg *.jpeg *.png *.webp)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="432"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="477"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="524"/>
+        <source>Cover Art Saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="478"/>
+        <source>Cover artwork was successfully copied to your album folder:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="525"/>
+        <source>Album cover art was successfully downloaded and saved directly to your album folder:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="535"/>
         <source>Revert All Edits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="433"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="536"/>
         <source>Are you sure you want to discard all changes and restore original tags and cover art?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="479"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="583"/>
         <source>Revert Complete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="479"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="583"/>
         <source>All tags, track titles, and cover art have been restored to their original state.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="527"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="631"/>
         <source>Search Tags Online</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="528"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="632"/>
         <source>Enter Artist and Album to search on MusicBrainz:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="539"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="643"/>
         <source>Searching album tracks on MusicBrainz...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="560"/>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="571"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="664"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="675"/>
         <source>Search Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="560"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="664"/>
         <source>Network error querying MusicBrainz: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="571"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="675"/>
         <source>Invalid data received from MusicBrainz.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="578"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="682"/>
         <source>No Results</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="578"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="682"/>
         <source>No albums found on MusicBrainz matching &quot;%1&quot;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="589"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="693"/>
         <source>Downloading tracklist details...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="605"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="709"/>
         <source>Details Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="605"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="709"/>
         <source>Error fetching release details: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="652"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="756"/>
         <source>Applied information from MusicBrainz!
 • Artist: %1
 • Album: %2
@@ -1054,18 +1072,18 @@ Would you like to download the album cover art as well?</source>
 Would you like to download the album cover art as well?</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="657"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="761"/>
         <source>Tags Applied</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="711"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="815"/>
         <source>... and %1 more tracks.
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="714"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="818"/>
         <source>Are you sure you want to rename %1 audio files on disk with two-digit sequence (01 - Title.ext)?
 
 Preview:
@@ -1073,27 +1091,27 @@ Preview:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="718"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="822"/>
         <source>Confirm Disk File Renaming</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="739"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="843"/>
         <source>Renaming Succeeded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="739"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="843"/>
         <source>Successfully renamed %1 of %2 files on disk!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="741"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="845"/>
         <source>Renaming Notice</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="741"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="845"/>
         <source>Renamed %1 of %2 files.
 
 Errors encountered:
@@ -1101,22 +1119,22 @@ Errors encountered:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="833"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="941"/>
         <source>Success</source>
         <translation>Succès</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="833"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="941"/>
         <source>%1 of %2 audio files updated successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="836"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="946"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="836"/>
+        <location filename="../src/ui/audio/audio_tag_dialog.cpp" line="946"/>
         <source>Failed to update audio tags. Please ensure files are not write-protected.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1124,19 +1142,17 @@ Errors encountered:
 <context>
     <name>AudioTrimDialog</name>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="714"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="729"/>
         <source>Audio Suite &amp; Tools - BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="779"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2542"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="850"/>
         <source>channels (Stereo)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="779"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2542"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="850"/>
         <source>channel (Mono)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1157,32 +1173,87 @@ Errors encountered:
         <translation type="vanished">🎚️ Equalizzatore Traccia</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="796"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="982"/>
         <source>Format:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="800"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="988"/>
         <source>Original Format (Lossless Copy)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="809"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="997"/>
         <source>Bitrate:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="813"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1846"/>
         <source>Auto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="822"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1006"/>
         <source>Sample Rate:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="826"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="925"/>
+        <source>Temporarily disable all active filters and equalizer to compare with original audio in real-time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="961"/>
+        <source>🎛️ Filters &amp;&amp; Noise Reduction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="962"/>
+        <source>🔊 Channels, Pitch &amp;&amp; Tempo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1186"/>
+        <source>Trimming &amp;&amp; Fades Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1296"/>
+        <source>Noise, Rumble &amp;&amp; Cutoff Filters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1354"/>
+        <source>Vinyl De-Clicker &amp;&amp; De-Pop (Scratches &amp;&amp; clicks)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1361"/>
+        <source>Voice Clarity &amp;&amp; Dynamics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1367"/>
+        <source>Voice Presence &amp;&amp; Clarity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1458"/>
+        <source>Channel Management &amp;&amp; Spatiality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1463"/>
+        <source>Channel Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1481"/>
+        <source>Pitch Shift &amp;&amp; Time Stretch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1844"/>
         <source>Original</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1191,28 +1262,23 @@ Errors encountered:
         <translation type="vanished">🏷️ Editor Tag...</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="843"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1029"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="847"/>
-        <source>Save Audio...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="902"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2244"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1095"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2888"/>
         <source>▶ Play Selection (A-B Loop)</source>
         <translation>▶ Play Selection (A-B Loop)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="916"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1111"/>
         <source>Set Start [A] Here</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="930"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1127"/>
         <source>Set End [B] Here</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1225,395 +1291,614 @@ Errors encountered:
         <translation type="vanished">📑 Dividi da CUE...</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="786"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="960"/>
         <source>✂️ Audio Trimming</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="787"/>
-        <source>🎛️ Filters &amp; Noise Reduction</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="788"/>
-        <source>🔊 Channels, Pitch &amp; Tempo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="789"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="963"/>
         <source>🎚️ Track Equalizer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="834"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="964"/>
+        <source>📋 Summary &amp;&amp; Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1017"/>
         <source>🏷️ Tag Editor...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="835"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1018"/>
         <source>Edit metadata, titles, and album art for this file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="944"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1029"/>
+        <source>Back to Player</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1036"/>
+        <source>💾 Save Audio...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1143"/>
         <source>⚡ Auto-Snap Silence</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="956"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1157"/>
         <source>Automatically detect start and end of audio, trimming leading and trailing silence.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="959"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1160"/>
         <source>📑 Split by CUE...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="971"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1174"/>
         <source>Automatically split audio into individual tracks using a CUE sheet file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="983"/>
-        <source>Trimming &amp; Fades Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="988"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1191"/>
         <source>Fade-In (sec):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="999"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1202"/>
         <source>Fade-Out (sec):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1010"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1213"/>
         <source>Lightning Lossless Mode (Instant copy, no re-encode)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1032"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1235"/>
         <source>⚡ &lt;b&gt;Tip:&lt;/b&gt; When no fades or audio filters are active, Lossless Mode cuts the audio in ~0.1s preserving 100% original quality without recompression.</source>
         <translation>⚡ &lt;b&gt;Tip:&lt;/b&gt; When no fades or audio filters are active, Lossless Mode cuts the audio in ~0.1s preserving 100% original quality without recompression.</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1051"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1254"/>
         <source>Acoustic Scenario Preset:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1056"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1259"/>
         <source>No Filter (Original Audio)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1057"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1260"/>
         <source>🚗 Traffic, Wind &amp; Low Rumble (Cut &lt; 110Hz)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1058"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1261"/>
         <source>💨 PC Fan &amp; Microphone Hiss (Adaptive FFT Denoise)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1059"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1262"/>
         <source>⚡ Electrical Mains Hum (50Hz / 60Hz Notch)</source>
         <translation>⚡ Electrical Mains Hum (50Hz / 60Hz Notch)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1060"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1263"/>
         <source>🎙️ Voice &amp; Clear Podcast (Anti-rumble + Denoise + De-Esser + Gate)</source>
         <translation>🎙️ Voice &amp; Clear Podcast (Anti-rumble + Denoise + De-Esser + Gate)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1061"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1264"/>
         <source>📻 Vinyl Restoration &amp; Clean (De-Click + De-Hum + Denoise)</source>
         <translation>📻 Vinyl Restoration &amp; Clean (De-Click + De-Hum + Denoise)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1062"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1265"/>
         <source>🎚️ Manual &amp; Custom Tuning...</source>
         <translation>🎚️ Manual &amp; Custom Tuning...</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1071"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2245"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="904"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2889"/>
         <source>▶ Play Preview</source>
         <translation>▶ Play Preview</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1086"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1511"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="921"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1958"/>
         <source>🎧 A/B Bypass (Compare Original)</source>
         <translation>🎧 A/B Bypass (Compare Original)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1088"/>
-        <source>Temporarily disable all active filters to compare with original audio in real-time.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1145"/>
-        <source>Noise, Rumble &amp; Cutoff Filters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1150"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1302"/>
         <source>Low-Cut (High-Pass):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1159"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1172"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1185"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1472"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1474"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1482"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1485"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1488"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1311"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1325"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1339"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1919"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1921"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1929"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1932"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1935"/>
         <source>Off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1163"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1316"/>
         <source>High-Cut (Low-Pass):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1176"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1330"/>
         <source>FFT Denoise:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1189"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1344"/>
         <source>De-Hum Notch:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1193"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1348"/>
         <source>Disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1194"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1349"/>
         <source>50 Hz (EU / Asia)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1195"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1350"/>
         <source>60 Hz (US / Americas)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1199"/>
-        <source>Vinyl De-Clicker &amp; De-Pop (Scratches &amp; clicks)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1206"/>
-        <source>Voice Clarity &amp; Dynamics</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1212"/>
-        <source>Voice Presence &amp; Clarity</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1222"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1249"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1377"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1404"/>
         <source>Freq:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1229"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1384"/>
         <source>Gain:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1239"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1394"/>
         <source>De-Esser (Harsh Sibilance Dip)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1256"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1411"/>
         <source>Cut:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1264"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1419"/>
         <source>Noise Gate (Mute background hiss during pauses)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1268"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1423"/>
         <source>Loudness Normalization (Broadcast EBU R128)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1303"/>
-        <source>Gestione Canali &amp; Spazialità</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1308"/>
-        <source>Modalità Canali:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1313"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1468"/>
         <source>Original (Stereo / Multichannel)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1314"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1469"/>
         <source>Stereo ➔ Mono (Balanced Downmix)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1315"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1470"/>
         <source>Swap Channels (L ⇄ R)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1316"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1471"/>
         <source>Left Channel Only (L) on both sides</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1317"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1472"/>
         <source>Right Channel Only (R) on both sides</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1318"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1473"/>
         <source>🎤 Vocal Remover / Karaoke (Center Channel Cancellation)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1326"/>
-        <source>Pitch Shift &amp; Time Stretch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1332"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1487"/>
         <source>Pitch Shift:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1343"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1353"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1498"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1508"/>
         <source>0 semitones (Original)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1355"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1357"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1510"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1512"/>
         <source>semitone</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1355"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1357"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1510"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1512"/>
         <source>semitones</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1363"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1518"/>
         <source>Time Stretch (Speed):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1374"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1529"/>
         <source>1.00x (Original)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1384"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1539"/>
         <source>(Original)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1389"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1544"/>
         <source>🔄 Reverse Audio Playback</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1394"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1549"/>
         <source>✂️ Auto Silence Removal (Trim long gaps between sounds)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2467"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1583"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1760"/>
+        <source>Ready for Instant Lossless Trim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1585"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1762"/>
+        <source>Audio stream will be copied directly in ~0.1s without re-encoding, preserving 100% original quality.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1592"/>
+        <source>🔄 Reset All Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1594"/>
+        <source>Discard all trimming, audio filters, DSP, and equalizer adjustments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1618"/>
+        <source>Active Modifications Inspection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1660"/>
+        <source>✕ Reset Trim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1660"/>
+        <source>Reset selection to full track duration and remove fades</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1664"/>
+        <source>✕ Clear Filters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1664"/>
+        <source>Turn off all acoustic and noise reduction filters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1668"/>
+        <source>✕ Reset DSP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1668"/>
+        <source>Reset pitch shift, playback tempo, and channel matrix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1672"/>
+        <source>✕ Flatten EQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1672"/>
+        <source>Reset all 10 equalizer bands to 0 dB flat</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1676"/>
+        <source>✅ All audio parameters are at default. The file will be saved without unintended modifications.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1683"/>
+        <source>Target &amp;&amp; Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1695"/>
+        <source>💾 Save Audio File As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1713"/>
+        <source>⚠️ Overwrite Original File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1766"/>
+        <source>Format Transcoding to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1768"/>
+        <source>No filters active, but file format conversion requires transcoding.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1773"/>
+        <source>Audio Re-encoding Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1775"/>
+        <source>Active acoustic filters, pitch shifts, or equalizer require decoding and re-encoding.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1782"/>
+        <source>Trimming: %1 to %2 (Duration: %3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1785"/>
+        <source> | Fades: In %1s, Out %2s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1796"/>
+        <source>Low-Cut %1 Hz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1797"/>
+        <source>High-Cut %1 Hz</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1798"/>
+        <source>Denoise -%1 dB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1799"/>
+        <source>Dehum %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1800"/>
+        <source>De-Click</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1801"/>
+        <source>De-Esser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1802"/>
+        <source>Voice Enhancer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1803"/>
+        <source>Loudness Normalization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1804"/>
+        <source>Noise Gate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1805"/>
+        <source>Filters: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1815"/>
+        <source>Pitch %1%2 semitones</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1816"/>
+        <source>Speed %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1817"/>
+        <source>Reverse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1818"/>
+        <source>Silence Removal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1819"/>
+        <source>Channels &amp; Pitch: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1827"/>
+        <source>Equalizer: Active processing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1831"/>
+        <source>Equalizer: &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1845"/>
+        <source>N/A (Lossless / VBR)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1847"/>
+        <source>&lt;b&gt;Target Format:&lt;/b&gt; %1 &amp;nbsp;&amp;nbsp;|&amp;nbsp;&amp;nbsp; &lt;b&gt;Bitrate:&lt;/b&gt; %2 &amp;nbsp;&amp;nbsp;|&amp;nbsp;&amp;nbsp; &lt;b&gt;Sample Rate:&lt;/b&gt; %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1958"/>
+        <source>⚡ BYPASS ACTIVE (Original Sound)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2778"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2781"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2792"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2803"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2815"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2823"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2832"/>
+        <source>Auto (Original)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2785"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2797"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2808"/>
+        <source>Auto (Preserve)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2819"/>
+        <source>N/A (Lossless VBR)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2828"/>
+        <source>N/A (16-bit PCM)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3044"/>
+        <source>Overwrite Original File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3045"/>
+        <source>Are you sure you want to overwrite the original audio file?
+
+%1
+
+A temporary backup is created on disk during processing to protect your data.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3153"/>
         <source>Auto-Snap Silence</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2468"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3154"/>
         <source>Silence detected successfully!
 Audio start: %1
 Audio end: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2471"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3157"/>
         <source>Silence Detection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2471"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3157"/>
         <source>Could not detect silence or no silent intervals found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2483"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3169"/>
         <source>Select CUE Sheet File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2489"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3175"/>
         <source>CUE Sheet Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2489"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3175"/>
         <source>No valid tracks found in CUE file:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2493"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3179"/>
         <source>Split CUE Tracks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2494"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3180"/>
         <source>Found %1 tracks in CUE file.
 Proceed with splitting into audio folder?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2498"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3184"/>
         <source>Destination Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2509"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3195"/>
         <source>Track %1/%2: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2517"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3203"/>
         <source>Successfully split %1 tracks into destination folder:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2519"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3205"/>
         <source>An error occurred while splitting tracks.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1622,8 +1907,8 @@ Proceed with splitting into audio folder?</source>
         <translation type="vanished">🎤 Rimozione Voce / Karaoke (Cancellazione Canale Centrale)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1347"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1378"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1502"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1533"/>
         <source>Reset</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1636,90 +1921,89 @@ Proceed with splitting into audio folder?</source>
         <translation type="vanished">✂️ Rimozione Silenzio automatico (Taglia pause prolungate tra suoni)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1511"/>
         <source>⚡ BYPASS ATTIVO (Suono Originale)</source>
-        <translation>⚡ BYPASS ATTIVO (Suono Originale)</translation>
+        <translation type="vanished">⚡ BYPASS ATTIVO (Suono Originale)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1947"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2394"/>
         <source>Start [A]: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1948"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2395"/>
         <source>End [B]: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="1950"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2397"/>
         <source>Clip Duration: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2182"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2643"/>
         <source>Lossless copy is disabled because audio filters or fades require re-encoding.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2186"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2647"/>
         <source>🎛️ Re-encoding (Audio Filters Active)</source>
         <translation>🎛️ Re-encoding (Audio Filters Active)</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2198"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2659"/>
         <source>⚡ Instant Lossless Ready</source>
         <translation>⚡ Instant Lossless Ready</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2232"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2876"/>
         <source>⏸ Pause Preview</source>
         <translation>⏸ Pause Preview</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2233"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2877"/>
         <source>⏸ Pause</source>
         <translation>⏸ Pause</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2363"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3008"/>
         <source>Lossless mode is only available when keeping original format.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2367"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3012"/>
         <source>🔄 Transcoding to %1</source>
         <translation>🔄 Transcoding to %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2385"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3031"/>
         <source>Save Audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2447"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2517"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3131"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3203"/>
         <source>Success</source>
         <translation>Succès</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2447"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3131"/>
         <source>Audio saved successfully!
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2450"/>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2519"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3136"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3205"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2450"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3136"/>
         <source>Failed to process or export audio file. Please check permissions or format compatibility.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="2483"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="3169"/>
         <source>CUE Sheet (*.cue)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1727,169 +2011,165 @@ Proceed with splitting into audio folder?</source>
 <context>
     <name>BaseSkin</name>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="904"/>
+        <location filename="../src/ui/base_skin.cpp" line="1019"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="905"/>
+        <location filename="../src/ui/base_skin.cpp" line="1020"/>
         <source>Path:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="906"/>
+        <location filename="../src/ui/base_skin.cpp" line="1021"/>
         <source>Size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="907"/>
+        <location filename="../src/ui/base_skin.cpp" line="1022"/>
         <source>Last modified:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="908"/>
+        <location filename="../src/ui/base_skin.cpp" line="1023"/>
         <source>Permissions:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="914"/>
+        <location filename="../src/ui/base_skin.cpp" line="1029"/>
         <source>Total pages:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="916"/>
+        <location filename="../src/ui/base_skin.cpp" line="1031"/>
         <source>Text lines:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="916"/>
+        <location filename="../src/ui/base_skin.cpp" line="1031"/>
         <source>Characters:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="920"/>
-        <location filename="../src/ui/base_skin.cpp" line="2310"/>
+        <location filename="../src/ui/base_skin.cpp" line="1035"/>
+        <location filename="../src/ui/base_skin.cpp" line="2859"/>
         <source>File Metadata &amp; Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="932"/>
-        <location filename="../src/ui/base_skin.cpp" line="2338"/>
+        <location filename="../src/ui/base_skin.cpp" line="1047"/>
+        <location filename="../src/ui/base_skin.cpp" line="2887"/>
         <source>Find in Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="932"/>
-        <source>In-document text search is available for Text and PDF documents.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="968"/>
+        <location filename="../src/ui/base_skin.cpp" line="1083"/>
         <source>PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;BMP Image (*.bmp);;TIFF Image (*.tiff);;PDF Document (*.pdf);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="971"/>
+        <location filename="../src/ui/base_skin.cpp" line="1086"/>
         <source>Plain Text (*.txt);;Markdown Document (*.md);;HTML Document (*.html);;PDF Document (*.pdf);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="977"/>
+        <location filename="../src/ui/base_skin.cpp" line="1092"/>
         <source>PDF Document (*.pdf);;Plain Text (*.txt);;HTML Document (*.html);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="980"/>
+        <location filename="../src/ui/base_skin.cpp" line="1095"/>
         <source>All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="981"/>
-        <location filename="../src/ui/base_skin.cpp" line="1371"/>
+        <location filename="../src/ui/base_skin.cpp" line="1096"/>
+        <location filename="../src/ui/base_skin.cpp" line="1486"/>
         <source>copy_</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="984"/>
-        <location filename="../src/ui/base_skin.cpp" line="1132"/>
+        <location filename="../src/ui/base_skin.cpp" line="1099"/>
+        <location filename="../src/ui/base_skin.cpp" line="1247"/>
         <source>Export As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1132"/>
+        <location filename="../src/ui/base_skin.cpp" line="1247"/>
         <source>File exported successfully to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1134"/>
+        <location filename="../src/ui/base_skin.cpp" line="1249"/>
         <source>Export Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1134"/>
+        <location filename="../src/ui/base_skin.cpp" line="1249"/>
         <source>Could not export file to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1149"/>
+        <location filename="../src/ui/base_skin.cpp" line="1264"/>
         <source>Delete File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1150"/>
+        <location filename="../src/ui/base_skin.cpp" line="1265"/>
         <source>Are you sure you want to move &apos;%1&apos; to trash?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1164"/>
-        <location filename="../src/ui/base_skin.cpp" line="2719"/>
+        <location filename="../src/ui/base_skin.cpp" line="1279"/>
+        <location filename="../src/ui/base_skin.cpp" line="3313"/>
         <source>BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1179"/>
-        <location filename="../src/ui/base_skin.cpp" line="2126"/>
-        <location filename="../src/ui/base_skin.cpp" line="2144"/>
-        <location filename="../src/ui/base_skin.cpp" line="2162"/>
+        <location filename="../src/ui/base_skin.cpp" line="1294"/>
+        <location filename="../src/ui/base_skin.cpp" line="2684"/>
+        <location filename="../src/ui/base_skin.cpp" line="2702"/>
+        <location filename="../src/ui/base_skin.cpp" line="2720"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1179"/>
+        <location filename="../src/ui/base_skin.cpp" line="1294"/>
         <source>Unable to move file to trash.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1196"/>
+        <location filename="../src/ui/base_skin.cpp" line="1311"/>
         <source>Tesseract OCR</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1298"/>
+        <location filename="../src/ui/base_skin.cpp" line="1413"/>
         <source>OCR Tesseract</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1322"/>
+        <location filename="../src/ui/base_skin.cpp" line="1437"/>
         <source>No active image file to save.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1346"/>
-        <location filename="../src/ui/base_skin.cpp" line="1352"/>
-        <location filename="../src/ui/base_skin.cpp" line="1358"/>
+        <location filename="../src/ui/base_skin.cpp" line="1461"/>
+        <location filename="../src/ui/base_skin.cpp" line="1467"/>
+        <location filename="../src/ui/base_skin.cpp" line="1473"/>
+        <location filename="../src/ui/base_skin.cpp" line="1652"/>
         <source>Save</source>
         <translation>Enregistrer</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1346"/>
+        <location filename="../src/ui/base_skin.cpp" line="1461"/>
         <source>Image modifications saved successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1348"/>
+        <location filename="../src/ui/base_skin.cpp" line="1463"/>
         <source>Failed to save image changes to:
 %1
 
@@ -1897,101 +2177,101 @@ Please check write permissions or disk space.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1358"/>
+        <location filename="../src/ui/base_skin.cpp" line="1473"/>
         <source>PDF modifications saved successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1322"/>
-        <location filename="../src/ui/base_skin.cpp" line="1348"/>
-        <location filename="../src/ui/base_skin.cpp" line="1354"/>
-        <location filename="../src/ui/base_skin.cpp" line="1360"/>
-        <location filename="../src/ui/base_skin.cpp" line="1514"/>
-        <location filename="../src/ui/base_skin.cpp" line="1520"/>
-        <location filename="../src/ui/base_skin.cpp" line="1527"/>
+        <location filename="../src/ui/base_skin.cpp" line="1437"/>
+        <location filename="../src/ui/base_skin.cpp" line="1463"/>
+        <location filename="../src/ui/base_skin.cpp" line="1469"/>
+        <location filename="../src/ui/base_skin.cpp" line="1475"/>
+        <location filename="../src/ui/base_skin.cpp" line="1683"/>
+        <location filename="../src/ui/base_skin.cpp" line="1689"/>
+        <location filename="../src/ui/base_skin.cpp" line="1696"/>
         <source>Save Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1360"/>
+        <location filename="../src/ui/base_skin.cpp" line="1475"/>
         <source>Failed to save modifications to PDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1371"/>
-        <location filename="../src/ui/base_skin.cpp" line="1415"/>
+        <location filename="../src/ui/base_skin.cpp" line="1486"/>
+        <location filename="../src/ui/base_skin.cpp" line="1533"/>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1385"/>
-        <location filename="../src/ui/base_skin.cpp" line="1391"/>
-        <location filename="../src/ui/base_skin.cpp" line="1397"/>
-        <location filename="../src/ui/base_skin.cpp" line="1403"/>
+        <location filename="../src/ui/base_skin.cpp" line="1500"/>
+        <location filename="../src/ui/base_skin.cpp" line="1506"/>
+        <location filename="../src/ui/base_skin.cpp" line="1512"/>
+        <location filename="../src/ui/base_skin.cpp" line="1518"/>
         <source>Save As Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="284"/>
+        <location filename="../src/ui/base_skin.cpp" line="308"/>
         <source>Open with another application...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="290"/>
+        <location filename="../src/ui/base_skin.cpp" line="314"/>
         <source>View Hex Dump</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1385"/>
+        <location filename="../src/ui/base_skin.cpp" line="1500"/>
         <source>Failed to save image to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1397"/>
+        <location filename="../src/ui/base_skin.cpp" line="1512"/>
         <source>Failed to save PDF to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1425"/>
-        <location filename="../src/ui/base_skin.cpp" line="2321"/>
+        <location filename="../src/ui/base_skin.cpp" line="1587"/>
+        <location filename="../src/ui/base_skin.cpp" line="2870"/>
         <source>Print Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1439"/>
+        <location filename="../src/ui/base_skin.cpp" line="1601"/>
         <source>All Supported Files (*.png *.jpg *.jpeg *.webp *.svg *.bmp *.gif *.ico *.tiff *.tif *.avif *.pdf *.epub *.docx *.odt *.ods *.xlsx *.xltx *.xlsm *.doc *.xls *.rtf *.txt *.md *.csv *.json *.xml *.py *.cpp *.h *.c *.js *.ts *.html *.css *.sh *.zip *.tar *.gz *.bz2 *.xz *.7z *.rar *.iso *.mp4 *.mkv *.avi *.webm *.mov *.mp3 *.ogg *.flac *.wav *.m4a);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1445"/>
+        <location filename="../src/ui/base_skin.cpp" line="1607"/>
         <source>Open File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1456"/>
+        <location filename="../src/ui/base_skin.cpp" line="1618"/>
         <source>Open Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1487"/>
+        <location filename="../src/ui/base_skin.cpp" line="1648"/>
         <source>Unsaved Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1488"/>
+        <location filename="../src/ui/base_skin.cpp" line="1650"/>
         <source>The document &quot;%1&quot; has unsaved changes.
 Do you want to save them before proceeding?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1514"/>
+        <location filename="../src/ui/base_skin.cpp" line="1683"/>
         <source>Failed to save image changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1527"/>
+        <location filename="../src/ui/base_skin.cpp" line="1696"/>
         <source>Failed to save PDF changes.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2000,177 +2280,177 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">%1 lines • %2 characters • %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1691"/>
+        <location filename="../src/ui/base_skin.cpp" line="2039"/>
         <source>Page %1 of %2 • %3</source>
         <translation>Page %1 of %2 • %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1695"/>
+        <location filename="../src/ui/base_skin.cpp" line="2043"/>
         <source>📦 %1 items • Uncompressed: %2 • Archive size: %3</source>
         <translation>📦 %1 items • Uncompressed: %2 • Archive size: %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1700"/>
+        <location filename="../src/ui/base_skin.cpp" line="2048"/>
         <source>Media • %1</source>
         <translation>Media • %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1705"/>
+        <location filename="../src/ui/base_skin.cpp" line="2053"/>
         <source>Page %1 of %2 • %3 (LibreOffice HD)</source>
         <translation>Page %1 of %2 • %3 (LibreOffice HD)</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1709"/>
+        <location filename="../src/ui/base_skin.cpp" line="2057"/>
         <source>%1 estimated words • %2 (Fast C++ Viewer)</source>
         <translation>%1 estimated words • %2 (Fast C++ Viewer)</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1714"/>
+        <location filename="../src/ui/base_skin.cpp" line="2062"/>
         <source>📁 %1 items • %2</source>
         <translation>📁 %1 items • %2</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2120"/>
+        <location filename="../src/ui/base_skin.cpp" line="2678"/>
         <source>Rename Item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2120"/>
+        <location filename="../src/ui/base_skin.cpp" line="2678"/>
         <source>New name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2126"/>
+        <location filename="../src/ui/base_skin.cpp" line="2684"/>
         <source>Unable to rename item.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2138"/>
+        <location filename="../src/ui/base_skin.cpp" line="2696"/>
         <source>Delete Item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2138"/>
+        <location filename="../src/ui/base_skin.cpp" line="2696"/>
         <source>Move &apos;%1&apos; to trash?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2144"/>
+        <location filename="../src/ui/base_skin.cpp" line="2702"/>
         <source>Unable to move item to trash.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2156"/>
+        <location filename="../src/ui/base_skin.cpp" line="2714"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2156"/>
+        <location filename="../src/ui/base_skin.cpp" line="2714"/>
         <source>Folder name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2162"/>
+        <location filename="../src/ui/base_skin.cpp" line="2720"/>
         <source>Unable to create folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2253"/>
+        <location filename="../src/ui/base_skin.cpp" line="2802"/>
         <source>About BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2258"/>
+        <location filename="../src/ui/base_skin.cpp" line="2807"/>
         <source>Native C++ / Qt6 Universal Viewer for Linux</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2259"/>
+        <location filename="../src/ui/base_skin.cpp" line="2808"/>
         <source>Developed by &lt;b&gt;Davide (Bubez)&lt;/b&gt;.&lt;br&gt;Designed to be ultra-fast, responsive, and well integrated into the Linux desktop ecosystem.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2261"/>
+        <location filename="../src/ui/base_skin.cpp" line="2810"/>
         <source>Active engines and libraries:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2262"/>
+        <location filename="../src/ui/base_skin.cpp" line="2811"/>
         <source>Core, Widgets, Network, PrintSupport</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2263"/>
+        <location filename="../src/ui/base_skin.cpp" line="2812"/>
         <source>Ultra-HD PDF vector rendering</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2264"/>
+        <location filename="../src/ui/base_skin.cpp" line="2813"/>
         <source>ZIP, 7Z, TAR, RAR, ISO archive manager</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2265"/>
+        <location filename="../src/ui/base_skin.cpp" line="2814"/>
         <source>Office document processing and conversion</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2267"/>
+        <location filename="../src/ui/base_skin.cpp" line="2816"/>
         <source>Instant Wi-Fi / local network sharing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2268"/>
+        <location filename="../src/ui/base_skin.cpp" line="2817"/>
         <source>© 2026 Davide / Bubez — Released under Open Source license.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2277"/>
+        <location filename="../src/ui/base_skin.cpp" line="2826"/>
         <source>Keyboard Shortcuts — BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2361"/>
+        <location filename="../src/ui/base_skin.cpp" line="2910"/>
         <source>Action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2361"/>
+        <location filename="../src/ui/base_skin.cpp" line="2910"/>
         <source>Shortcut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2397"/>
+        <location filename="../src/ui/base_skin.cpp" line="2946"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2425"/>
+        <location filename="../src/ui/base_skin.cpp" line="2974"/>
         <source>Installed version: &lt;b&gt;v%1 (Native C++)&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2434"/>
+        <location filename="../src/ui/base_skin.cpp" line="2983"/>
         <source>Could not check for updates: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2514"/>
+        <location filename="../src/ui/base_skin.cpp" line="3085"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2580"/>
+        <location filename="../src/ui/base_skin.cpp" line="3172"/>
         <source>Organize PDF Pages...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2583"/>
+        <location filename="../src/ui/base_skin.cpp" line="3175"/>
         <source>Repair PDF...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2588"/>
+        <location filename="../src/ui/base_skin.cpp" line="3180"/>
         <source>Extract Images from PDF...</source>
         <translation type="unfinished">Extraire les images du PDF...</translation>
     </message>
@@ -2199,8 +2479,8 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">Chemin</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2423"/>
-        <location filename="../src/ui/base_skin.cpp" line="2433"/>
+        <location filename="../src/ui/base_skin.cpp" line="2972"/>
+        <location filename="../src/ui/base_skin.cpp" line="2982"/>
         <source>Check for Updates</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2209,7 +2489,7 @@ Do you want to save them before proceeding?</source>
         <translation type="vanished">Afficher le dump hexadécimal</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/ui/base_skin.cpp" line="379"/>
+        <location filename="../src/ui/base_skin.cpp" line="400"/>
         <source>Replaced %n occurrence(s)</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -2217,660 +2497,783 @@ Do you want to save them before proceeding?</source>
         </translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="530"/>
+        <location filename="../src/ui/base_skin.cpp" line="677"/>
         <source>Corrupted PDF Detected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="531"/>
+        <location filename="../src/ui/base_skin.cpp" line="678"/>
         <source>&lt;p&gt;Failed to open &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The document structure appears damaged or incomplete.&lt;/p&gt;&lt;p&gt;Would you like to repair it using QPDF?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="974"/>
+        <location filename="../src/ui/base_skin.cpp" line="1047"/>
+        <source>In-document text search is available for Text, PDF, and Archive documents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1089"/>
         <source>PDF Document (*.pdf);;PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;TIFF Image (*.tiff);;BMP Image (*.bmp);;Plain Text (*.txt);;All Files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1040"/>
+        <location filename="../src/ui/base_skin.cpp" line="1155"/>
         <source>Export PDF as Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1042"/>
+        <location filename="../src/ui/base_skin.cpp" line="1157"/>
         <source>This PDF contains %1 pages.&lt;br&gt;Which pages would you like to export as &lt;b&gt;%2&lt;/b&gt;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1045"/>
+        <location filename="../src/ui/base_skin.cpp" line="1160"/>
         <source>Current Page (Page %1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1046"/>
+        <location filename="../src/ui/base_skin.cpp" line="1161"/>
         <source>All Pages (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1204"/>
+        <location filename="../src/ui/base_skin.cpp" line="1319"/>
         <source>Downloading OCR language model for &apos;%1&apos; from repository...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1205"/>
-        <location filename="../src/ui/base_skin.cpp" line="1217"/>
+        <location filename="../src/ui/base_skin.cpp" line="1320"/>
+        <location filename="../src/ui/base_skin.cpp" line="1332"/>
+        <location filename="../src/ui/base_skin.cpp" line="1655"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1217"/>
+        <location filename="../src/ui/base_skin.cpp" line="1332"/>
         <source>Downloading English OCR model (eng)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1260"/>
-        <location filename="../src/ui/base_skin.cpp" line="1287"/>
+        <location filename="../src/ui/base_skin.cpp" line="1375"/>
+        <location filename="../src/ui/base_skin.cpp" line="1402"/>
         <source>OCR</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1260"/>
+        <location filename="../src/ui/base_skin.cpp" line="1375"/>
         <source>Unable to render PDF page for OCR.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1287"/>
+        <location filename="../src/ui/base_skin.cpp" line="1402"/>
         <source>Unable to prepare input image for OCR.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1299"/>
+        <location filename="../src/ui/base_skin.cpp" line="1414"/>
         <source>Tesseract encountered an error:&lt;br&gt;&lt;code&gt;%1&lt;/code&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1352"/>
+        <location filename="../src/ui/base_skin.cpp" line="1467"/>
         <source>Text file saved successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1354"/>
+        <location filename="../src/ui/base_skin.cpp" line="1469"/>
         <source>Failed to save changes to text file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1391"/>
+        <location filename="../src/ui/base_skin.cpp" line="1506"/>
         <source>Failed to save text file to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1403"/>
+        <location filename="../src/ui/base_skin.cpp" line="1518"/>
         <source>Failed to copy file to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1415"/>
+        <location filename="../src/ui/base_skin.cpp" line="1533"/>
         <source>File saved successfully to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1520"/>
+        <location filename="../src/ui/base_skin.cpp" line="1546"/>
+        <source>Save Current Page as PDF</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1546"/>
+        <source>PDF Document (*.pdf)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1555"/>
+        <location filename="../src/ui/base_skin.cpp" line="1576"/>
+        <source>Page Saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1555"/>
+        <location filename="../src/ui/base_skin.cpp" line="1576"/>
+        <source>Current page successfully saved to:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1557"/>
+        <location filename="../src/ui/base_skin.cpp" line="1578"/>
+        <source>Error Saving Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1557"/>
+        <source>Failed to save current page as PDF:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1569"/>
+        <source>PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;All Files (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1571"/>
+        <source>Save Current Page as Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1578"/>
+        <source>Failed to save current page as image.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1653"/>
+        <location filename="../src/ui/base_skin.cpp" line="3151"/>
+        <location filename="../src/ui/base_skin.cpp" line="3166"/>
+        <location filename="../src/ui/base_skin.cpp" line="3188"/>
+        <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1651"/>
+        <source>Don't Save</source>
+        <translation>Ne pas enregistrer</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="1689"/>
         <source>Failed to save text file changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1678"/>
-        <source> • ✏️ Edit Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1678"/>
-        <source> • 🔒 Read-Only</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1680"/>
-        <source> (Modified*)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1682"/>
-        <source>%1 lines • %2 words • %3 characters • %4%5</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/base_skin.cpp" line="1913"/>
+        <location filename="../src/ui/base_skin.cpp" line="2413"/>
         <source>No Images Found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1914"/>
+        <location filename="../src/ui/base_skin.cpp" line="2414"/>
         <source>No embedded raster images were found in this PDF document.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1924"/>
+        <location filename="../src/ui/base_skin.cpp" line="2424"/>
         <source>Extraction Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="1925"/>
+        <location filename="../src/ui/base_skin.cpp" line="2425"/>
         <source>Failed to extract images from PDF.&lt;br&gt;Make sure the &apos;poppler-utils&apos; package is installed and the document is accessible.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2180"/>
+        <location filename="../src/ui/base_skin.cpp" line="2729"/>
         <source>Create Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2181"/>
+        <location filename="../src/ui/base_skin.cpp" line="2730"/>
         <source>The Archive Engine plugin (libarchive) is not currently active.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2266"/>
+        <location filename="../src/ui/base_skin.cpp" line="2815"/>
         <source>Studio audio and hardware GPU video playback</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2283"/>
-        <location filename="../src/ui/base_skin.cpp" line="2357"/>
+        <location filename="../src/ui/base_skin.cpp" line="2832"/>
+        <location filename="../src/ui/base_skin.cpp" line="2906"/>
         <source>Keyboard Shortcuts Guide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2288"/>
+        <location filename="../src/ui/base_skin.cpp" line="2837"/>
         <source>Search shortcut or action...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2295"/>
-        <location filename="../src/ui/base_skin.cpp" line="2296"/>
-        <location filename="../src/ui/base_skin.cpp" line="2297"/>
-        <location filename="../src/ui/base_skin.cpp" line="2298"/>
-        <location filename="../src/ui/base_skin.cpp" line="2299"/>
+        <location filename="../src/ui/base_skin.cpp" line="2844"/>
+        <location filename="../src/ui/base_skin.cpp" line="2845"/>
+        <location filename="../src/ui/base_skin.cpp" line="2846"/>
+        <location filename="../src/ui/base_skin.cpp" line="2847"/>
+        <location filename="../src/ui/base_skin.cpp" line="2848"/>
         <source>Navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2295"/>
+        <location filename="../src/ui/base_skin.cpp" line="2844"/>
         <source>Previous File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2295"/>
+        <location filename="../src/ui/base_skin.cpp" line="2844"/>
         <source>Left / Backspace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2296"/>
+        <location filename="../src/ui/base_skin.cpp" line="2845"/>
         <source>Next File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2296"/>
+        <location filename="../src/ui/base_skin.cpp" line="2845"/>
         <source>Right / Space</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2297"/>
+        <location filename="../src/ui/base_skin.cpp" line="2846"/>
         <source>Previous Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2297"/>
+        <location filename="../src/ui/base_skin.cpp" line="2846"/>
         <source>Page Up (or Wheel Up at top)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2298"/>
+        <location filename="../src/ui/base_skin.cpp" line="2847"/>
         <source>Next Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2298"/>
+        <location filename="../src/ui/base_skin.cpp" line="2847"/>
         <source>Page Down (or Wheel Down at bottom)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2299"/>
+        <location filename="../src/ui/base_skin.cpp" line="2848"/>
         <source>Folder Gallery View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2302"/>
-        <location filename="../src/ui/base_skin.cpp" line="2303"/>
-        <location filename="../src/ui/base_skin.cpp" line="2304"/>
-        <location filename="../src/ui/base_skin.cpp" line="2305"/>
-        <location filename="../src/ui/base_skin.cpp" line="2306"/>
-        <location filename="../src/ui/base_skin.cpp" line="2307"/>
-        <location filename="../src/ui/base_skin.cpp" line="2308"/>
-        <location filename="../src/ui/base_skin.cpp" line="2309"/>
-        <location filename="../src/ui/base_skin.cpp" line="2310"/>
-        <location filename="../src/ui/base_skin.cpp" line="2311"/>
-        <location filename="../src/ui/base_skin.cpp" line="2312"/>
+        <location filename="../src/ui/base_skin.cpp" line="2851"/>
+        <location filename="../src/ui/base_skin.cpp" line="2852"/>
+        <location filename="../src/ui/base_skin.cpp" line="2853"/>
+        <location filename="../src/ui/base_skin.cpp" line="2854"/>
+        <location filename="../src/ui/base_skin.cpp" line="2855"/>
+        <location filename="../src/ui/base_skin.cpp" line="2856"/>
+        <location filename="../src/ui/base_skin.cpp" line="2857"/>
+        <location filename="../src/ui/base_skin.cpp" line="2858"/>
+        <location filename="../src/ui/base_skin.cpp" line="2859"/>
+        <location filename="../src/ui/base_skin.cpp" line="2860"/>
+        <location filename="../src/ui/base_skin.cpp" line="2861"/>
         <source>View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2302"/>
+        <location filename="../src/ui/base_skin.cpp" line="2851"/>
         <source>Toggle Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2303"/>
+        <location filename="../src/ui/base_skin.cpp" line="2852"/>
         <source>Photo Slideshow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2304"/>
+        <location filename="../src/ui/base_skin.cpp" line="2853"/>
         <source>Zoom In</source>
         <translation type="unfinished">Zoom avant</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2304"/>
+        <location filename="../src/ui/base_skin.cpp" line="2853"/>
         <source>Ctrl++ (or Ctrl+Wheel Up)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2305"/>
+        <location filename="../src/ui/base_skin.cpp" line="2854"/>
         <source>Zoom Out</source>
         <translation type="unfinished">Zoom arrière</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2305"/>
+        <location filename="../src/ui/base_skin.cpp" line="2854"/>
         <source>Ctrl+- (or Ctrl+Wheel Down)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2306"/>
+        <location filename="../src/ui/base_skin.cpp" line="2855"/>
         <source>Zoom 100% (Original Size)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2308"/>
+        <location filename="../src/ui/base_skin.cpp" line="2857"/>
         <source>Thumbnail Strip (Filmstrip)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2309"/>
+        <location filename="../src/ui/base_skin.cpp" line="2858"/>
         <source>Document Outline (TOC)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2311"/>
+        <location filename="../src/ui/base_skin.cpp" line="2860"/>
         <source>Show / Hide Menu Bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2312"/>
+        <location filename="../src/ui/base_skin.cpp" line="2861"/>
         <source>Show / Hide Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2315"/>
-        <location filename="../src/ui/base_skin.cpp" line="2316"/>
-        <location filename="../src/ui/base_skin.cpp" line="2317"/>
-        <location filename="../src/ui/base_skin.cpp" line="2318"/>
-        <location filename="../src/ui/base_skin.cpp" line="2319"/>
-        <location filename="../src/ui/base_skin.cpp" line="2320"/>
-        <location filename="../src/ui/base_skin.cpp" line="2321"/>
-        <location filename="../src/ui/base_skin.cpp" line="2322"/>
-        <location filename="../src/ui/base_skin.cpp" line="2323"/>
-        <location filename="../src/ui/base_skin.cpp" line="2324"/>
-        <location filename="../src/ui/base_skin.cpp" line="2325"/>
-        <location filename="../src/ui/base_skin.cpp" line="2326"/>
-        <location filename="../src/ui/base_skin.cpp" line="2327"/>
-        <location filename="../src/ui/base_skin.cpp" line="2328"/>
-        <location filename="../src/ui/base_skin.cpp" line="2329"/>
+        <location filename="../src/ui/base_skin.cpp" line="2864"/>
+        <location filename="../src/ui/base_skin.cpp" line="2865"/>
+        <location filename="../src/ui/base_skin.cpp" line="2866"/>
+        <location filename="../src/ui/base_skin.cpp" line="2867"/>
+        <location filename="../src/ui/base_skin.cpp" line="2868"/>
+        <location filename="../src/ui/base_skin.cpp" line="2869"/>
+        <location filename="../src/ui/base_skin.cpp" line="2870"/>
+        <location filename="../src/ui/base_skin.cpp" line="2871"/>
+        <location filename="../src/ui/base_skin.cpp" line="2872"/>
+        <location filename="../src/ui/base_skin.cpp" line="2873"/>
+        <location filename="../src/ui/base_skin.cpp" line="2874"/>
+        <location filename="../src/ui/base_skin.cpp" line="2875"/>
+        <location filename="../src/ui/base_skin.cpp" line="2876"/>
+        <location filename="../src/ui/base_skin.cpp" line="2877"/>
+        <location filename="../src/ui/base_skin.cpp" line="2878"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2315"/>
+        <location filename="../src/ui/base_skin.cpp" line="2864"/>
         <source>Open File...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2316"/>
+        <location filename="../src/ui/base_skin.cpp" line="2865"/>
         <source>Open Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2317"/>
+        <location filename="../src/ui/base_skin.cpp" line="2866"/>
         <source>Open with Default Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2318"/>
+        <location filename="../src/ui/base_skin.cpp" line="2867"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2319"/>
+        <location filename="../src/ui/base_skin.cpp" line="2868"/>
         <source>Save Copy As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2320"/>
+        <location filename="../src/ui/base_skin.cpp" line="2869"/>
         <source>Export As...</source>
         <translation type="unfinished">Exporter sous...</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2322"/>
+        <location filename="../src/ui/base_skin.cpp" line="2871"/>
         <source>Copy Content / Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2323"/>
+        <location filename="../src/ui/base_skin.cpp" line="2872"/>
         <source>Copy File Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2324"/>
+        <location filename="../src/ui/base_skin.cpp" line="2873"/>
         <source>Cut Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2325"/>
+        <location filename="../src/ui/base_skin.cpp" line="2874"/>
         <source>Paste Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2327"/>
+        <location filename="../src/ui/base_skin.cpp" line="2876"/>
         <source>Rename Item (Folder)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2328"/>
+        <location filename="../src/ui/base_skin.cpp" line="2877"/>
         <source>Create New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2329"/>
+        <location filename="../src/ui/base_skin.cpp" line="2878"/>
         <source>Exit Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2332"/>
-        <location filename="../src/ui/base_skin.cpp" line="2333"/>
-        <location filename="../src/ui/base_skin.cpp" line="2334"/>
-        <location filename="../src/ui/base_skin.cpp" line="2335"/>
+        <location filename="../src/ui/base_skin.cpp" line="2881"/>
+        <location filename="../src/ui/base_skin.cpp" line="2882"/>
+        <location filename="../src/ui/base_skin.cpp" line="2883"/>
+        <location filename="../src/ui/base_skin.cpp" line="2884"/>
         <source>Transform</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2332"/>
+        <location filename="../src/ui/base_skin.cpp" line="2881"/>
         <source>Rotate 90° Clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2333"/>
+        <location filename="../src/ui/base_skin.cpp" line="2882"/>
         <source>Rotate 90° Counterclockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2335"/>
+        <location filename="../src/ui/base_skin.cpp" line="2884"/>
         <source>Flip Vertically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2338"/>
-        <location filename="../src/ui/base_skin.cpp" line="2339"/>
-        <location filename="../src/ui/base_skin.cpp" line="2340"/>
-        <location filename="../src/ui/base_skin.cpp" line="2341"/>
-        <location filename="../src/ui/base_skin.cpp" line="2342"/>
+        <location filename="../src/ui/base_skin.cpp" line="2887"/>
+        <location filename="../src/ui/base_skin.cpp" line="2888"/>
+        <location filename="../src/ui/base_skin.cpp" line="2889"/>
+        <location filename="../src/ui/base_skin.cpp" line="2890"/>
+        <location filename="../src/ui/base_skin.cpp" line="2891"/>
         <source>Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2339"/>
+        <location filename="../src/ui/base_skin.cpp" line="2888"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2340"/>
+        <location filename="../src/ui/base_skin.cpp" line="2889"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2341"/>
+        <location filename="../src/ui/base_skin.cpp" line="2890"/>
         <source>Trim Audio Clip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2342"/>
+        <location filename="../src/ui/base_skin.cpp" line="2891"/>
         <source>Play / Pause Media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2342"/>
+        <location filename="../src/ui/base_skin.cpp" line="2891"/>
         <source>Space</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2345"/>
-        <location filename="../src/ui/base_skin.cpp" line="2346"/>
-        <location filename="../src/ui/base_skin.cpp" line="2347"/>
-        <location filename="../src/ui/base_skin.cpp" line="2348"/>
-        <location filename="../src/ui/base_skin.cpp" line="2349"/>
+        <location filename="../src/ui/base_skin.cpp" line="2894"/>
+        <location filename="../src/ui/base_skin.cpp" line="2895"/>
+        <location filename="../src/ui/base_skin.cpp" line="2896"/>
+        <location filename="../src/ui/base_skin.cpp" line="2897"/>
+        <location filename="../src/ui/base_skin.cpp" line="2898"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2345"/>
+        <location filename="../src/ui/base_skin.cpp" line="2894"/>
         <source>Toggle Text Editing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2346"/>
+        <location filename="../src/ui/base_skin.cpp" line="2895"/>
         <source>Find and Replace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2347"/>
+        <location filename="../src/ui/base_skin.cpp" line="2896"/>
         <source>Toggle Word Wrap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2348"/>
+        <location filename="../src/ui/base_skin.cpp" line="2897"/>
         <source>Toggle Line Numbers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2349"/>
+        <location filename="../src/ui/base_skin.cpp" line="2898"/>
         <source>Toggle Syntax Highlighting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2352"/>
-        <location filename="../src/ui/base_skin.cpp" line="2353"/>
-        <location filename="../src/ui/base_skin.cpp" line="2354"/>
-        <location filename="../src/ui/base_skin.cpp" line="2355"/>
+        <location filename="../src/ui/base_skin.cpp" line="2901"/>
+        <location filename="../src/ui/base_skin.cpp" line="2902"/>
+        <location filename="../src/ui/base_skin.cpp" line="2903"/>
+        <location filename="../src/ui/base_skin.cpp" line="2904"/>
         <source>PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2352"/>
+        <location filename="../src/ui/base_skin.cpp" line="2901"/>
         <source>PDF Tools Hub</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2353"/>
+        <location filename="../src/ui/base_skin.cpp" line="2902"/>
         <source>Text Highlighter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2354"/>
+        <location filename="../src/ui/base_skin.cpp" line="2903"/>
         <source>Insert Blank Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2355"/>
+        <location filename="../src/ui/base_skin.cpp" line="2904"/>
         <source>Snapshot / Area Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2357"/>
+        <location filename="../src/ui/base_skin.cpp" line="2906"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2361"/>
+        <location filename="../src/ui/base_skin.cpp" line="2910"/>
         <source>Category</source>
         <translation type="unfinished">Catégorie</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2424"/>
+        <location filename="../src/ui/base_skin.cpp" line="2973"/>
         <source>✅ BubezView is up to date!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2426"/>
+        <location filename="../src/ui/base_skin.cpp" line="2975"/>
         <source>There are no updates available at this time.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2519"/>
+        <location filename="../src/ui/base_skin.cpp" line="3090"/>
         <source>Add to Bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2528"/>
+        <location filename="../src/ui/base_skin.cpp" line="3099"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2531"/>
+        <location filename="../src/ui/base_skin.cpp" line="3102"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2539"/>
+        <location filename="../src/ui/base_skin.cpp" line="3110"/>
         <source>Open With...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2550"/>
+        <location filename="../src/ui/base_skin.cpp" line="3121"/>
         <source>Other Application...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2552"/>
+        <location filename="../src/ui/base_skin.cpp" line="3123"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2556"/>
+        <location filename="../src/ui/base_skin.cpp" line="3128"/>
         <source>Compress / Create Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2563"/>
+        <location filename="../src/ui/base_skin.cpp" line="3132"/>
+        <source>Show Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="3144"/>
         <source>Rotate 90° Right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2564"/>
+        <location filename="../src/ui/base_skin.cpp" line="3145"/>
         <source>Rotate 90° Left</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2647"/>
+        <location filename="../src/ui/base_skin.cpp" line="3152"/>
+        <source>Convert / Export in Other Formats...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="3164"/>
+        <source>Save Current Page as PDF...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="3165"/>
+        <source>Save Current Page as Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="3167"/>
+        <location filename="../src/ui/base_skin.cpp" line="3189"/>
+        <source>Export in Other Formats...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="3241"/>
         <source>MIME Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2647"/>
+        <location filename="../src/ui/base_skin.cpp" line="3241"/>
         <source>Unknown</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2648"/>
+        <location filename="../src/ui/base_skin.cpp" line="3242"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2649"/>
+        <location filename="../src/ui/base_skin.cpp" line="3243"/>
         <source>Last modified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2650"/>
+        <location filename="../src/ui/base_skin.cpp" line="3244"/>
         <source>Permissions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2654"/>
+        <location filename="../src/ui/base_skin.cpp" line="3248"/>
         <source>Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2334"/>
-        <location filename="../src/ui/base_skin.cpp" line="2565"/>
+        <location filename="../src/ui/base_skin.cpp" line="2883"/>
+        <location filename="../src/ui/base_skin.cpp" line="3146"/>
         <source>Flip Horizontally</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2307"/>
-        <location filename="../src/ui/base_skin.cpp" line="2566"/>
+        <location filename="../src/ui/base_skin.cpp" line="2031"/>
+        <source>%1 lines • %2 words • %3 characters • %4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_skin.cpp" line="2856"/>
+        <location filename="../src/ui/base_skin.cpp" line="3148"/>
         <source>Fit to Window</source>
         <translation>Ajuster à la fenêtre</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2567"/>
-        <location filename="../src/ui/base_skin.cpp" line="2575"/>
+        <location filename="../src/ui/base_skin.cpp" line="3149"/>
+        <location filename="../src/ui/base_skin.cpp" line="3162"/>
         <source>Original Size (100%)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2572"/>
+        <location filename="../src/ui/base_skin.cpp" line="3158"/>
         <source>Rotate Clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2573"/>
+        <location filename="../src/ui/base_skin.cpp" line="3159"/>
         <source>Rotate Counterclockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2574"/>
+        <location filename="../src/ui/base_skin.cpp" line="3161"/>
         <source>Fit to Width</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2595"/>
+        <location filename="../src/ui/base_skin.cpp" line="3187"/>
         <source>Find in Document...</source>
         <translation>Rechercher dans le document...</translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2600"/>
+        <location filename="../src/ui/base_skin.cpp" line="3194"/>
         <source>Play / Pause</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2603"/>
+        <location filename="../src/ui/base_skin.cpp" line="3197"/>
         <source>Stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2612"/>
+        <location filename="../src/ui/base_skin.cpp" line="3206"/>
         <source>Thumbnail Strip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2326"/>
-        <location filename="../src/ui/base_skin.cpp" line="2619"/>
+        <location filename="../src/ui/base_skin.cpp" line="2875"/>
+        <location filename="../src/ui/base_skin.cpp" line="3213"/>
         <source>Move to Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/base_skin.cpp" line="2620"/>
+        <location filename="../src/ui/base_skin.cpp" line="3214"/>
         <source>File Properties &amp; Metadata...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>BaseStudioPanel</name>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="41"/>
+        <source>Studio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="50"/>
+        <source>Hold to compare with original</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="60"/>
+        <source>Reset all adjustments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="69"/>
+        <source>Close Studio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="103"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Annuler</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="106"/>
+        <source>Discard studio adjustments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="113"/>
+        <source>Apply Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/base_studio_panel.cpp" line="117"/>
+        <source>Apply adjustments permanently</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3931,6 +4334,355 @@ Do you want to save them before proceeding?</source>
     </message>
 </context>
 <context>
+    <name>ContextualActionBar</name>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="56"/>
+        <source>Font:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="74"/>
+        <source>Font Family</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="89"/>
+        <source>Font Size (pt)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="101"/>
+        <source>Bold (Ctrl+B)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="113"/>
+        <source>Italic (Ctrl+I)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="119"/>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="161"/>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="531"/>
+        <source>Color:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="125"/>
+        <source>Text Color...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="132"/>
+        <source>Whiteout background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="134"/>
+        <source>Apply opaque background patch behind text to cover underlying content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="146"/>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="262"/>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="408"/>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="489"/>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="602"/>
+        <source>Close Tool (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="196"/>
+        <source>Custom Highlighter Color...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="206"/>
+        <source>Opacity:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="213"/>
+        <source>Highlighter Translucency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="238"/>
+        <source>🖍️ Highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="239"/>
+        <source>Highlight text or draw translucent color rect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="247"/>
+        <source>🔦 Spotlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="248"/>
+        <source>Focus Spotlight: dims the page and highlights only the selected area</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="277"/>
+        <source>Shape:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="294"/>
+        <source>▭ Rect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="294"/>
+        <source>Rectangle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="295"/>
+        <source>➔ Arrow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="295"/>
+        <source>Directional Arrow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="296"/>
+        <source>◯ Circle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="296"/>
+        <source>Ellipse / Circle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="297"/>
+        <source>― Line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="297"/>
+        <source>Straight Line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="307"/>
+        <source>Width:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="313"/>
+        <source>1 px</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="314"/>
+        <source>2 px</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="315"/>
+        <source>3 px</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="316"/>
+        <source>5 px</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="317"/>
+        <source>8 px</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="319"/>
+        <source>Stroke Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="328"/>
+        <source>Stroke:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="362"/>
+        <source>Custom Stroke Color...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="372"/>
+        <source>Fill:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="377"/>
+        <source>None</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="381"/>
+        <source>Transparent Fill (No interior color)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="395"/>
+        <source>Pick Fill Color...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="423"/>
+        <source>Style:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="431"/>
+        <source>⬛ Blackout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="435"/>
+        <source>Black opaque redaction box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="441"/>
+        <source>⬜ Whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="444"/>
+        <source>White opaque redaction box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="454"/>
+        <source>Security:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="462"/>
+        <source>👁️ Visual Overlay</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="466"/>
+        <source>Visual overlay (fast, reversible)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="472"/>
+        <source>🔒 Real Sanitize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="475"/>
+        <source>Permanent redaction: permanently wipes underlying text &amp; vector data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="504"/>
+        <source>Stamp:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="523"/>
+        <source>Select rubber stamp preset or type custom text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="553"/>
+        <source>🔴 Red</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="553"/>
+        <source>Red Stamp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="554"/>
+        <source>🟢 Green</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="554"/>
+        <source>Green Stamp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="555"/>
+        <source>🔵 Blue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="555"/>
+        <source>Blue Stamp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="561"/>
+        <source>Custom Stamp Color...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="570"/>
+        <source>Angle:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="587"/>
+        <source>Tilt -15 degrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="588"/>
+        <source>Horizontal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="589"/>
+        <source>Tilt +15 degrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="747"/>
+        <source>Select Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="748"/>
+        <source>Select Text Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="749"/>
+        <source>Select Highlighter Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="750"/>
+        <source>Select Stroke Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="751"/>
+        <source>Select Fill Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/contextual_action_bar.cpp" line="752"/>
+        <source>Select Stamp Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CoverSelectionDialog</name>
     <message>
         <location filename="../src/ui/audio/cover_selection_dialog.cpp" line="148"/>
@@ -4232,77 +4984,77 @@ Do you want to save them before proceeding?</source>
 <context>
     <name>EnginePromptCard</name>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="74"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="75"/>
         <source>🟢 Activate (System Binary)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="86"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="87"/>
         <source>⚙️ Compile from Source...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="122"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="123"/>
         <source>PDF Document Engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="125"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="126"/>
         <source>High-resolution vector PDF rendering, annotations, and bookmarks require the Poppler engine.&lt;br&gt;&lt;br&gt;You can activate it instantly using your distro&apos;s system packages, or compile the plugin from source.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="129"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="130"/>
         <source>Compressed Archive Engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="132"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="133"/>
         <source>Browsing and extracting ZIP, TAR, 7Z, and ISO archives requires the LibArchive engine.&lt;br&gt;&lt;br&gt;You can activate it instantly using your distro&apos;s system packages, or compile the plugin from source.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="136"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="137"/>
         <source>Media &amp; Playback Engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="139"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="140"/>
         <source>Audio and video playback with hardware acceleration requires the MPV engine.&lt;br&gt;&lt;br&gt;You can activate it instantly using your distro&apos;s system packages.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="143"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="144"/>
         <source>Plugin Engine Required</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="145"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="146"/>
         <source>This file requires an optional engine module that is currently inactive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="149"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="150"/>
         <source>%1 Inactive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="150"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="151"/>
         <source>File: &lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="165"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="166"/>
         <source>Checking and installing packages...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="172"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="173"/>
         <source>🟢 Engine activated successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="178"/>
+        <location filename="../src/ui/extensions/engine_prompt_card.cpp" line="179"/>
         <source>🟡 Engine is not yet active. Check system packages or compile from source.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4364,7 +5116,7 @@ Do you want to save them before proceeding?</source>
     <name>EqualizerWidget</name>
     <message>
         <location filename="../src/ui/audio/equalizer_widget.cpp" line="166"/>
-        <location filename="../src/ui/audio/equalizer_widget.cpp" line="481"/>
+        <location filename="../src/ui/audio/equalizer_widget.cpp" line="532"/>
         <source>Flat</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4440,7 +5192,7 @@ Do you want to save them before proceeding?</source>
     </message>
     <message>
         <location filename="../src/ui/audio/equalizer_widget.cpp" line="296"/>
-        <source>Master &amp; Output</source>
+        <source>Master &amp;&amp; Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4464,32 +5216,32 @@ Do you want to save them before proceeding?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/equalizer_widget.cpp" line="441"/>
+        <location filename="../src/ui/audio/equalizer_widget.cpp" line="492"/>
         <source>Save Custom Preset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/equalizer_widget.cpp" line="442"/>
+        <location filename="../src/ui/audio/equalizer_widget.cpp" line="493"/>
         <source>Enter preset name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/equalizer_widget.cpp" line="458"/>
+        <location filename="../src/ui/audio/equalizer_widget.cpp" line="509"/>
         <source>Save Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/equalizer_widget.cpp" line="459"/>
+        <location filename="../src/ui/audio/equalizer_widget.cpp" line="510"/>
         <source>Could not save preset. Name may already exist or be reserved by a factory preset.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/equalizer_widget.cpp" line="469"/>
+        <location filename="../src/ui/audio/equalizer_widget.cpp" line="520"/>
         <source>Delete Preset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/audio/equalizer_widget.cpp" line="470"/>
+        <location filename="../src/ui/audio/equalizer_widget.cpp" line="521"/>
         <source>Are you sure you want to delete custom preset &apos;%1&apos;?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6158,226 +6910,218 @@ Click to switch to source compilation.</source>
     </message>
 </context>
 <context>
-    <name>FolderCardDelegate</name>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="389"/>
-        <source>Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>FolderViewer</name>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="537"/>
-        <source>Go to parent folder (Backspace)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="604"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="652"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="632"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="697"/>
         <source>Select Folder to Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="645"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="690"/>
         <source>Remove from Bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="651"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="696"/>
         <source>Add Folder to Bookmarks...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="535"/>
-        <source>Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="567"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="591"/>
         <source>Filter files...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="574"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="602"/>
         <source>Details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="578"/>
-        <source>Show or hide details panel (Key I)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="707"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="753"/>
         <source>DETAILS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="715"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="761"/>
         <source>Close details panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="744"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="790"/>
         <source>Select an item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="763"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="809"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="882"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1014"/>
         <source>%1 • %2 Items (%3)</source>
         <translation>%1 • %2 Items (%3)</translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1618"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1794"/>
         <source>PLACES</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1630"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1806"/>
         <source>Home</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1631"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1807"/>
         <source>Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1632"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1808"/>
         <source>Downloads</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1633"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1809"/>
         <source>Pictures</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1634"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1810"/>
         <source>Music</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1635"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1811"/>
         <source>Videos</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1636"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1812"/>
         <source>Desktop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1637"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1813"/>
         <source>File System</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1652"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1828"/>
         <source>BOOKMARKS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1674"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1850"/>
         <source>+ Add Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1783"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1959"/>
         <source>No item selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1855"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1943"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2027"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2115"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1856"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2028"/>
         <source>Items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1856"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2028"/>
         <source>%1 (%2 files, %3 folders)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1857"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2029"/>
         <source>Total Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1858"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1945"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2030"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2117"/>
         <source>Location</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1859"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1946"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2031"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2118"/>
         <source>Modified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1861"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1863"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1948"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1950"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2033"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2035"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2120"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2122"/>
         <source>Created</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1865"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1952"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2037"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2124"/>
         <source>Permissions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1944"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2116"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1959"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2133"/>
         <source>Resolution</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1680"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1856"/>
         <source>Click to bookmark a custom folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1788"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1964"/>
         <source>Select a file or folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="851"/>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1855"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="982"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2027"/>
         <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1874"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="557"/>
+        <source>‹ Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="559"/>
+        <source>Go to parent folder (Backspace / Alt+Up)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="606"/>
+        <source>Show or hide details panel (I)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2046"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1898"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2070"/>
         <source>(Unable to read text file)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/folder/folder_viewer.cpp" line="1938"/>
+        <location filename="../src/viewers/folder/folder_viewer.cpp" line="2110"/>
         <source>bytes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6720,122 +7464,122 @@ Click to switch to source compilation.</source>
 <context>
     <name>ImageProcessor</name>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1094"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1099"/>
         <source>Original</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1095"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1100"/>
         <source>Teal &amp; Orange</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1096"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1101"/>
         <source>Vintage Sepia</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1097"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1102"/>
         <source>Retro Film</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1098"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1103"/>
         <source>Film Noir (B&amp;W)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1099"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1104"/>
         <source>Red Filter (Sky B&amp;W)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1100"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1105"/>
         <source>Orange Filter (Skin B&amp;W)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1101"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1106"/>
         <source>Golden Hour</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1102"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1107"/>
         <source>Nordic Cool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1103"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1108"/>
         <source>Cross Process</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1104"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1109"/>
         <source>Cyberpunk Shift</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1105"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1110"/>
         <source>Document &amp; Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1113"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1118"/>
         <source>No filter applied</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1114"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1119"/>
         <source>Hollywood cinematic color grading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1115"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1120"/>
         <source>Classic antique sepia toning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1116"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1121"/>
         <source>Analog matte shadows and soft warmth</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1117"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1122"/>
         <source>High contrast dramatic monochrome</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1118"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1123"/>
         <source>Deep sky contrast and bright foliage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1119"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1124"/>
         <source>Smooth flattering portrait skin tones</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1120"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1125"/>
         <source>Warm amber sunset glow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1121"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1126"/>
         <source>Glacial atmosphere with cyan undertones</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1122"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1127"/>
         <source>High saturation punchy lomo look</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1123"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1128"/>
         <source>Vibrant neon magenta and blue night shift</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/image_processor.cpp" line="1124"/>
+        <location filename="../src/core/services/image_processor.cpp" line="1129"/>
         <source>Sharp black text on clean white paper</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6981,236 +7725,232 @@ Click to switch to source compilation.</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="249"/>
+        <location filename="../src/ui/mainwindow.cpp" line="285"/>
         <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="251"/>
-        <location filename="../src/ui/mainwindow.cpp" line="925"/>
+        <location filename="../src/ui/mainwindow.cpp" line="287"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1245"/>
         <source>Open File...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="254"/>
-        <location filename="../src/ui/mainwindow.cpp" line="926"/>
+        <location filename="../src/ui/mainwindow.cpp" line="290"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1246"/>
         <source>Open Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="259"/>
-        <location filename="../src/ui/mainwindow.cpp" line="927"/>
+        <location filename="../src/ui/mainwindow.cpp" line="295"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1247"/>
         <source>Open with Default Application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="262"/>
+        <location filename="../src/ui/mainwindow.cpp" line="298"/>
         <source>Open With...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="265"/>
-        <location filename="../src/ui/mainwindow.cpp" line="928"/>
+        <location filename="../src/ui/mainwindow.cpp" line="301"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1248"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="269"/>
-        <location filename="../src/ui/mainwindow.cpp" line="743"/>
-        <location filename="../src/ui/mainwindow.cpp" line="930"/>
+        <location filename="../src/ui/mainwindow.cpp" line="305"/>
+        <location filename="../src/ui/mainwindow.cpp" line="783"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1250"/>
         <source>Export As...</source>
         <translation>Exporter sous...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="272"/>
-        <location filename="../src/ui/mainwindow.cpp" line="929"/>
+        <location filename="../src/ui/mainwindow.cpp" line="308"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1249"/>
         <source>Save Copy As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="275"/>
+        <location filename="../src/ui/mainwindow.cpp" line="311"/>
         <source>Compress / Create Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="278"/>
-        <location filename="../src/ui/mainwindow.cpp" line="390"/>
-        <location filename="../src/ui/mainwindow.cpp" line="933"/>
+        <location filename="../src/ui/mainwindow.cpp" line="314"/>
+        <location filename="../src/ui/mainwindow.cpp" line="426"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1253"/>
         <source>Move to Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="283"/>
-        <location filename="../src/ui/mainwindow.cpp" line="931"/>
+        <location filename="../src/ui/mainwindow.cpp" line="319"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1251"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2757"/>
         <source>Print...</source>
         <translation>Imprimer...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="287"/>
+        <location filename="../src/ui/mainwindow.cpp" line="323"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="294"/>
+        <location filename="../src/ui/mainwindow.cpp" line="330"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="301"/>
+        <location filename="../src/ui/mainwindow.cpp" line="337"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="308"/>
+        <location filename="../src/ui/mainwindow.cpp" line="344"/>
         <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="310"/>
-        <location filename="../src/ui/mainwindow.cpp" line="936"/>
+        <location filename="../src/ui/mainwindow.cpp" line="346"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1256"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="324"/>
-        <location filename="../src/ui/mainwindow.cpp" line="937"/>
+        <location filename="../src/ui/mainwindow.cpp" line="360"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1257"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="340"/>
-        <location filename="../src/ui/mainwindow.cpp" line="938"/>
+        <location filename="../src/ui/mainwindow.cpp" line="376"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1258"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="343"/>
-        <location filename="../src/ui/mainwindow.cpp" line="939"/>
+        <location filename="../src/ui/mainwindow.cpp" line="379"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1259"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="346"/>
-        <location filename="../src/ui/mainwindow.cpp" line="940"/>
+        <location filename="../src/ui/mainwindow.cpp" line="382"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1260"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="351"/>
-        <location filename="../src/ui/mainwindow.cpp" line="941"/>
+        <location filename="../src/ui/mainwindow.cpp" line="387"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1261"/>
         <source>Rotate 90° Clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="354"/>
-        <location filename="../src/ui/mainwindow.cpp" line="942"/>
+        <location filename="../src/ui/mainwindow.cpp" line="390"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1262"/>
         <source>Rotate 90° Counterclockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="357"/>
-        <location filename="../src/ui/mainwindow.cpp" line="943"/>
+        <location filename="../src/ui/mainwindow.cpp" line="393"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1263"/>
         <source>Flip Horizontally</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="360"/>
-        <location filename="../src/ui/mainwindow.cpp" line="944"/>
+        <location filename="../src/ui/mainwindow.cpp" line="396"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1264"/>
         <source>Flip Vertically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="363"/>
+        <location filename="../src/ui/mainwindow.cpp" line="399"/>
         <source>✂️ Crop Image (Canvas Selection)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="372"/>
+        <location filename="../src/ui/mainwindow.cpp" line="408"/>
         <source>📐 Resize Image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="375"/>
+        <location filename="../src/ui/mainwindow.cpp" line="411"/>
         <source>🎨 Photo Studio &amp; Filters...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="378"/>
+        <location filename="../src/ui/mainwindow.cpp" line="414"/>
         <source>✨ Flatten Image (Remove Transparency)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="397"/>
+        <location filename="../src/ui/mainwindow.cpp" line="433"/>
         <source>Add Files to Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="398"/>
+        <location filename="../src/ui/mainwindow.cpp" line="434"/>
         <source>Add Folder to Archive...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="399"/>
+        <location filename="../src/ui/mainwindow.cpp" line="435"/>
         <source>Remove Selected from Archive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="480"/>
+        <location filename="../src/ui/mainwindow.cpp" line="516"/>
         <source>Cryptographic Digital Signature (PAdES / .p7m)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="604"/>
+        <location filename="../src/ui/mainwindow.cpp" line="640"/>
         <source>Transparency Background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="622"/>
+        <location filename="../src/ui/mainwindow.cpp" line="658"/>
         <source>Solid White (Removes Transparency)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="623"/>
+        <location filename="../src/ui/mainwindow.cpp" line="659"/>
         <source>Checkerboard Pattern</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="624"/>
+        <location filename="../src/ui/mainwindow.cpp" line="660"/>
         <source>Interface Theme Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="625"/>
+        <location filename="../src/ui/mainwindow.cpp" line="661"/>
         <source>Solid Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="784"/>
-        <source>Main Toolbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/mainwindow.cpp" line="802"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1117"/>
         <source>Button Style</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="814"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1131"/>
         <source>Icons Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="815"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1132"/>
         <source>Text Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="816"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1133"/>
         <source>Text Beside Icons</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="817"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1134"/>
         <source>Text Under Icons</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7219,240 +7959,239 @@ Click to switch to source compilation.</source>
         <translation type="vanished">Inverser les couleurs</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="387"/>
+        <location filename="../src/ui/mainwindow.cpp" line="423"/>
         <source>Rename Item...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="393"/>
+        <location filename="../src/ui/mainwindow.cpp" line="429"/>
         <source>New Folder...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="448"/>
+        <location filename="../src/ui/mainwindow.cpp" line="484"/>
         <source>Typewriter / Text Insert...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="472"/>
+        <location filename="../src/ui/mainwindow.cpp" line="508"/>
         <source>Watermark / Stamp...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="462"/>
+        <location filename="../src/ui/mainwindow.cpp" line="498"/>
         <source>Shapes &amp; Arrows...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="468"/>
+        <location filename="../src/ui/mainwindow.cpp" line="504"/>
         <source>Redact / Blackout...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="496"/>
+        <location filename="../src/ui/mainwindow.cpp" line="532"/>
         <source>Merge PDF Documents...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="492"/>
+        <location filename="../src/ui/mainwindow.cpp" line="528"/>
         <source>Organize PDF Pages...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="404"/>
-        <location filename="../src/ui/mainwindow.cpp" line="955"/>
+        <location filename="../src/ui/mainwindow.cpp" line="440"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1275"/>
         <source>Edit Text Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="412"/>
+        <location filename="../src/ui/mainwindow.cpp" line="448"/>
         <source>Find &amp; Replace...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="415"/>
+        <location filename="../src/ui/mainwindow.cpp" line="451"/>
         <source>Go to Line...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="418"/>
-        <location filename="../src/ui/mainwindow.cpp" line="962"/>
+        <location filename="../src/ui/mainwindow.cpp" line="454"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1282"/>
         <source>Duplicate Current Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="423"/>
-        <location filename="../src/ui/mainwindow.cpp" line="963"/>
+        <location filename="../src/ui/mainwindow.cpp" line="459"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1283"/>
         <source>Delete Current Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="428"/>
-        <location filename="../src/ui/mainwindow.cpp" line="964"/>
+        <location filename="../src/ui/mainwindow.cpp" line="464"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1284"/>
         <source>Toggle Comment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="453"/>
+        <location filename="../src/ui/mainwindow.cpp" line="489"/>
         <source>Annotations &amp; Markup Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="455"/>
+        <location filename="../src/ui/mainwindow.cpp" line="491"/>
         <source>Highlighter...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="443"/>
+        <location filename="../src/ui/mainwindow.cpp" line="479"/>
         <source>Insert Image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="476"/>
+        <location filename="../src/ui/mainwindow.cpp" line="512"/>
         <source>Signature (Visual &amp; Digital)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="485"/>
+        <location filename="../src/ui/mainwindow.cpp" line="521"/>
         <source>PDF Page &amp; Document Operations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="487"/>
+        <location filename="../src/ui/mainwindow.cpp" line="523"/>
         <source>Insert Blank A4 Page...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="498"/>
+        <location filename="../src/ui/mainwindow.cpp" line="534"/>
         <source>Repair PDF Document...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="436"/>
+        <location filename="../src/ui/mainwindow.cpp" line="472"/>
         <source>Select Area...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="507"/>
+        <location filename="../src/ui/mainwindow.cpp" line="543"/>
         <source>&amp;View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="509"/>
-        <location filename="../src/ui/mainwindow.cpp" line="906"/>
+        <location filename="../src/ui/mainwindow.cpp" line="545"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1227"/>
         <source>Folder Gallery View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="524"/>
-        <location filename="../src/ui/mainwindow.cpp" line="918"/>
+        <location filename="../src/ui/mainwindow.cpp" line="560"/>
         <source>Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="527"/>
-        <location filename="../src/ui/mainwindow.cpp" line="919"/>
+        <location filename="../src/ui/mainwindow.cpp" line="563"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1239"/>
         <source>Photo Slideshow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="530"/>
+        <location filename="../src/ui/mainwindow.cpp" line="566"/>
         <source>Inspector / Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="534"/>
+        <location filename="../src/ui/mainwindow.cpp" line="570"/>
         <source>▲ Prev Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="542"/>
+        <location filename="../src/ui/mainwindow.cpp" line="578"/>
         <source>▼ Next Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="552"/>
-        <location filename="../src/ui/mainwindow.cpp" line="913"/>
+        <location filename="../src/ui/mainwindow.cpp" line="588"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1234"/>
         <source>Zoom Tool (Mouse Wheel)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="555"/>
+        <location filename="../src/ui/mainwindow.cpp" line="591"/>
         <source>Toggle mouse wheel functionality between scrolling and zooming</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="557"/>
-        <location filename="../src/ui/mainwindow.cpp" line="914"/>
+        <location filename="../src/ui/mainwindow.cpp" line="593"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1235"/>
         <source>Zoom In</source>
         <translation>Zoom avant</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="560"/>
-        <location filename="../src/ui/mainwindow.cpp" line="915"/>
+        <location filename="../src/ui/mainwindow.cpp" line="596"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1236"/>
         <source>Zoom Out</source>
         <translation>Zoom arrière</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="563"/>
-        <location filename="../src/ui/mainwindow.cpp" line="916"/>
+        <location filename="../src/ui/mainwindow.cpp" line="599"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1237"/>
         <source>Zoom 100%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="566"/>
-        <location filename="../src/ui/mainwindow.cpp" line="917"/>
+        <location filename="../src/ui/mainwindow.cpp" line="602"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1238"/>
         <source>Fit to Window</source>
         <translation>Ajuster à la fenêtre</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="571"/>
-        <location filename="../src/ui/mainwindow.cpp" line="920"/>
+        <location filename="../src/ui/mainwindow.cpp" line="607"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1240"/>
         <source>Thumbnail Strip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="576"/>
-        <location filename="../src/ui/mainwindow.cpp" line="921"/>
+        <location filename="../src/ui/mainwindow.cpp" line="612"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1241"/>
         <source>Document Outline (TOC)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="580"/>
-        <location filename="../src/ui/mainwindow.cpp" line="956"/>
+        <location filename="../src/ui/mainwindow.cpp" line="616"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1276"/>
         <source>Line Numbers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="586"/>
-        <location filename="../src/ui/mainwindow.cpp" line="957"/>
+        <location filename="../src/ui/mainwindow.cpp" line="622"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1277"/>
         <source>Syntax Highlighting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="592"/>
-        <location filename="../src/ui/mainwindow.cpp" line="958"/>
+        <location filename="../src/ui/mainwindow.cpp" line="628"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1278"/>
         <source>Word Wrap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="598"/>
-        <location filename="../src/ui/mainwindow.cpp" line="959"/>
+        <location filename="../src/ui/mainwindow.cpp" line="634"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1279"/>
         <source>Show Whitespace Characters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="673"/>
+        <location filename="../src/ui/mainwindow.cpp" line="713"/>
         <source>Show Uninstalled Features</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="680"/>
+        <location filename="../src/ui/mainwindow.cpp" line="720"/>
         <source>Show Unsupported Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="720"/>
+        <location filename="../src/ui/mainwindow.cpp" line="760"/>
         <source>⚙️ Internal Office Viewer [Inactive]...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7461,42 +8200,42 @@ Click to switch to source compilation.</source>
         <translation type="obsolete">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="726"/>
+        <location filename="../src/ui/mainwindow.cpp" line="766"/>
         <source>⚙️ Advanced PDF Tools (QPDF) [Not installed]...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="732"/>
+        <location filename="../src/ui/mainwindow.cpp" line="772"/>
         <source>⚙️ Extract Images from PDF [pdfimages missing]...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="644"/>
-        <location filename="../src/ui/mainwindow.cpp" line="820"/>
+        <location filename="../src/ui/mainwindow.cpp" line="680"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1137"/>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="515"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1443"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1454"/>
+        <location filename="../src/ui/mainwindow.cpp" line="551"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1925"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1936"/>
         <source>Previous File (Left Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="519"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1448"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1459"/>
+        <location filename="../src/ui/mainwindow.cpp" line="555"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1930"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1941"/>
         <source>Next File (Right Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="651"/>
+        <location filename="../src/ui/mainwindow.cpp" line="689"/>
         <source>Show Status Bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="660"/>
+        <location filename="../src/ui/mainwindow.cpp" line="700"/>
         <source>Show Menu Bar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7509,22 +8248,22 @@ Click to switch to source compilation.</source>
         <translation type="vanished">Afficher les fichiers non pris en charge</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="694"/>
+        <location filename="../src/ui/mainwindow.cpp" line="734"/>
         <source>&amp;Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="696"/>
+        <location filename="../src/ui/mainwindow.cpp" line="736"/>
         <source>Find in Document...</source>
         <translation>Rechercher dans le document...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="699"/>
+        <location filename="../src/ui/mainwindow.cpp" line="739"/>
         <source>Extract Text (OCR Tesseract)...</source>
         <translation>Extraire le texte (OCR Tesseract)...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="700"/>
+        <location filename="../src/ui/mainwindow.cpp" line="740"/>
         <source>Extract Images from PDF...</source>
         <translation>Extraire les images du PDF...</translation>
     </message>
@@ -7533,17 +8272,17 @@ Click to switch to source compilation.</source>
         <translation type="vanished">Fusionner des documents PDF...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="704"/>
+        <location filename="../src/ui/mainwindow.cpp" line="744"/>
         <source>Trim / Cut Audio Clip...</source>
         <translation>Découper l&apos;audio...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="709"/>
+        <location filename="../src/ui/mainwindow.cpp" line="749"/>
         <source>Edit Audio Tags &amp; Cover...</source>
         <translation>Modifier les tags audio et la pochette...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="713"/>
+        <location filename="../src/ui/mainwindow.cpp" line="753"/>
         <source>Extract Audio Track from Video...</source>
         <translation>Extraire la piste audio de la vidéo...</translation>
     </message>
@@ -7560,286 +8299,337 @@ Click to switch to source compilation.</source>
         <translation type="vanished">⚙️ Estrazione Immagini da PDF [pdfimages mancante]...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="742"/>
+        <location filename="../src/ui/mainwindow.cpp" line="782"/>
         <source>File Metadata &amp; Properties...</source>
         <translation>Métadonnées et propriétés du fichier...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="744"/>
+        <location filename="../src/ui/mainwindow.cpp" line="784"/>
         <source>Open with Other Application...</source>
         <translation>Ouvrir avec une autre application...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="751"/>
+        <location filename="../src/ui/mainwindow.cpp" line="791"/>
         <source>&amp;Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="752"/>
-        <location filename="../src/ui/mainwindow.cpp" line="799"/>
+        <location filename="../src/ui/mainwindow.cpp" line="792"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1114"/>
         <source>Configure Toolbars...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="754"/>
+        <location filename="../src/ui/mainwindow.cpp" line="794"/>
         <source>🎨 Appearance...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="755"/>
+        <location filename="../src/ui/mainwindow.cpp" line="795"/>
         <source>🐧 Desktop Integration...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="757"/>
+        <location filename="../src/ui/mainwindow.cpp" line="797"/>
         <source>⚙️ Configure BubezView...</source>
         <translation>⚙️ Configure BubezView...</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="762"/>
+        <location filename="../src/ui/mainwindow.cpp" line="802"/>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="763"/>
+        <location filename="../src/ui/mainwindow.cpp" line="803"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="766"/>
+        <location filename="../src/ui/mainwindow.cpp" line="806"/>
         <source>Keyboard Shortcuts Guide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="769"/>
+        <location filename="../src/ui/mainwindow.cpp" line="809"/>
         <source>Report an Issue / Bug Tracker...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="774"/>
+        <location filename="../src/ui/mainwindow.cpp" line="814"/>
         <source>About BubezView</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="845"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1169"/>
         <source>⚡ Native C++ Engine</source>
         <translation>⚡ Native C++ Engine</translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="904"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1225"/>
         <source>Previous (◀)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="905"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1226"/>
         <source>Next (▶)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="909"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1230"/>
         <source>Previous Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="910"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1231"/>
         <source>Next Page (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="922"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1242"/>
         <source>File Properties / Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="932"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1252"/>
         <source>Copy File Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="947"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1267"/>
         <source>✂️ Crop Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="950"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1270"/>
         <source>Rename Folder Item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="951"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1271"/>
         <source>Move Item to Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="952"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1272"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="960"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1280"/>
         <source>Go to Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="961"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1281"/>
         <source>Find &amp; Replace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="967"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1287"/>
         <source>Find in Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="968"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1288"/>
         <source>Extract Text (OCR)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="969"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1289"/>
         <source>Extract Images from PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="970"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1290"/>
         <source>Cut (Text / Area)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="971"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1291"/>
         <source>Highlighter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="972"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1292"/>
         <source>Select Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="973"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1293"/>
         <source>Typewriter / Text Insert</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="974"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1294"/>
         <source>Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="975"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1295"/>
         <source>Watermark / Stamp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="976"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1296"/>
         <source>Shapes &amp; Arrows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="977"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1297"/>
         <source>Insert Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="978"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1298"/>
         <source>Snapshot (300 DPI)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="979"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1299"/>
         <source>Redact / Blackout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="980"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1300"/>
         <source>Merge PDF Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="981"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1301"/>
         <source>Organize PDF Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="982"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1302"/>
         <source>Repair PDF Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="985"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1305"/>
         <source>Trim Audio Clip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="986"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1306"/>
         <source>Edit Audio Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="987"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1307"/>
         <source>Extract Audio Track</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1127"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1465"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1484"/>
+        <source>BubezView</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="1599"/>
         <source>No file currently open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1147"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1619"/>
         <source>Other Application...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1442"/>
+        <location filename="../src/ui/mainwindow.cpp" line="1924"/>
         <source>Return to Archive (Left Arrow / Backspace)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1586"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2068"/>
         <source>Update Now</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1614"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1701"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2096"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2183"/>
         <source>Dismiss</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1673"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2155"/>
         <source>&lt;b&gt;Debug Mode Active:&lt;/b&gt; Remember to deactivate debug mode in Settings to restore standard fast user mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1679"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2161"/>
         <source>Settings...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1738"/>
-        <location filename="../src/ui/mainwindow.cpp" line="1757"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2220"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2239"/>
         <source>Update: v%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1786"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2268"/>
         <source>A new version of BubezView (v%1) is available!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1794"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2276"/>
         <source>New version v%1 available! Click here to inspect and update.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1816"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2298"/>
         <source>BubezView Update Available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/mainwindow.cpp" line="1817"/>
+        <location filename="../src/ui/mainwindow.cpp" line="2299"/>
         <source>Version %1 is now available for download and installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2658"/>
+        <source>%1 items • %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2696"/>
+        <source>Discard Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2697"/>
+        <source>Are you sure you want to discard all changes made to this document?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2734"/>
+        <source>Save</source>
+        <translation type="unfinished">Enregistrer</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2737"/>
+        <source>Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2742"/>
+        <source>Save Current Page as PDF...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2743"/>
+        <source>Save Current Page as Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2747"/>
+        <source>Export in Other Formats...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/mainwindow.cpp" line="2751"/>
+        <source>Repair PDF...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7859,84 +8649,83 @@ Click to switch to source compilation.</source>
 <context>
     <name>MediaViewer</name>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="437"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1060"/>
         <source>Play / Pause</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="498"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1016"/>
         <source>Playback speed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="451"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1074"/>
         <source>Loop playback</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="494"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1126"/>
         <source>Volume</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="293"/>
         <source>Track Title</source>
-        <translation>Titre de la piste</translation>
+        <translation type="vanished">Titre de la piste</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="327"/>
         <source>Artist</source>
-        <translation>Artiste</translation>
+        <translation type="vanished">Artiste</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="328"/>
         <source>Album</source>
-        <translation>Album</translation>
+        <translation type="vanished">Album</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="329"/>
         <source>Release Year</source>
-        <translation>Année de sortie</translation>
+        <translation type="vanished">Année de sortie</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="330"/>
         <source>Format Details</source>
-        <translation>Détails du format</translation>
+        <translation type="vanished">Détails du format</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="331"/>
         <source>File Size</source>
-        <translation>Taille du fichier</translation>
+        <translation type="vanished">Taille du fichier</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="423"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1046"/>
         <source>Shuffle</source>
         <translation>Aléatoire</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="430"/>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="629"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1053"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1363"/>
         <source>Previous track</source>
         <translation>Piste précédente</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="444"/>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="628"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1067"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1362"/>
         <source>Next track</source>
         <translation>Piste suivante</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="483"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1088"/>
+        <source>Show folder audio tracklist drawer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1114"/>
         <source>Volume / Mute</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="515"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1144"/>
         <source>Edit audio tags &amp; cover art</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="521"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1151"/>
         <source>Trim audio clip</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7945,120 +8734,164 @@ Click to switch to source compilation.</source>
         <translation type="vanished">Égaliseur et DSP audio</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="527"/>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1398"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1158"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2186"/>
         <source>Audio Equalizer &amp; DSP Effects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="624"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1212"/>
+        <source>Folder Audio Tracklist</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1221"/>
+        <source>Close Tracklist</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1358"/>
         <source>Next: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="625"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1359"/>
         <source>Previous: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="686"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1446"/>
         <source>Unknown Artist</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="691"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1451"/>
         <source>Unknown Album</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="728"/>
         <source>🎯 BIT-PERFECT LV2 • DIRECT ALSA HI-RES</source>
-        <translation>🎯 BIT-PERFECT LV2 • DIRECT ALSA HI-RES</translation>
+        <translation type="vanished">🎯 BIT-PERFECT LV2 • DIRECT ALSA HI-RES</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="740"/>
         <source>🎯 BIT-PERFECT LV2 • DIRECT ALSA CD</source>
-        <translation>🎯 BIT-PERFECT LV2 • DIRECT ALSA CD</translation>
+        <translation type="vanished">🎯 BIT-PERFECT LV2 • DIRECT ALSA CD</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="752"/>
         <source>🎯 BIT-PERFECT LV2 • DIRECT ALSA</source>
-        <translation>🎯 BIT-PERFECT LV2 • DIRECT ALSA</translation>
+        <translation type="vanished">🎯 BIT-PERFECT LV2 • DIRECT ALSA</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="767"/>
         <source>🎯 BIT-PERFECT LV1 • HI-RES LOSSLESS</source>
-        <translation>🎯 BIT-PERFECT LV1 • HI-RES LOSSLESS</translation>
+        <translation type="vanished">🎯 BIT-PERFECT LV1 • HI-RES LOSSLESS</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="779"/>
         <source>🎯 BIT-PERFECT LV1 • LOSSLESS CD</source>
-        <translation>🎯 BIT-PERFECT LV1 • LOSSLESS CD</translation>
+        <translation type="vanished">🎯 BIT-PERFECT LV1 • LOSSLESS CD</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="791"/>
         <source>🎯 BIT-PERFECT LV1 • DIRECT STREAM</source>
-        <translation>🎯 BIT-PERFECT LV1 • DIRECT STREAM</translation>
+        <translation type="vanished">🎯 BIT-PERFECT LV1 • DIRECT STREAM</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="808"/>
-        <source>HI-RES LOSSLESS</source>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1470"/>
+        <source>Year %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="822"/>
-        <source>LOSSLESS AUDIO</source>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1528"/>
+        <source>🎯 BIT-PERFECT DIRECT ALSA</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="928"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1530"/>
+        <source>🎯 BIT-PERFECT STREAM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1535"/>
+        <source>VINYL MASTER</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1537"/>
+        <source>HI-RES MASTER</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1542"/>
+        <source>VINYL LOSSLESS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1545"/>
+        <source>LOSSLESS STUDIO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1597"/>
+        <source>Mono</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1597"/>
+        <source>Stereo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1597"/>
+        <source>%1 Ch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1696"/>
         <source>🎯 Bit-Perfect Direct ALSA</source>
         <translation>🎯 Bit-Perfect Direct ALSA</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1047"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1815"/>
         <source>Shuffle: ON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1047"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1815"/>
         <source>Shuffle: OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1070"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1838"/>
         <source>Continuous Playback (Auto-Advance): ON
 Automatically plays the next track when the current one ends.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1071"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="1839"/>
         <source>Continuous Playback (Auto-Advance): OFF
 Playback stops at the end of the current track. Click to enable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1284"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2072"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1284"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2072"/>
         <source>Play</source>
         <translation>Lecture</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1392"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2180"/>
         <source>Equalizer is disabled in Bit-Perfect audiophile mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1403"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2191"/>
         <source>🎯 Bit-Perfect</source>
         <translation>🎯 Bit-Perfect</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1404"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2192"/>
         <source>Bit-Perfect Audiophile Mode: ACTIVE
 • Resampling: Bypassed (Native sample rate)
 • DSP / Pitch Correction: Disabled
@@ -8071,38 +8904,38 @@ Click to disable.</source>
 Click to disable.</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1426"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2214"/>
         <source>🎯 BP</source>
         <translation>🎯 BP</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1427"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2215"/>
         <source>Bit-Perfect Audiophile Mode: OFF
 Click to bypass all software resampling and DSP for bit-exact DAC output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1499"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2287"/>
         <source>🔊 ALSA Direct ▾</source>
         <translation>🔊 ALSA Direct ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1501"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2289"/>
         <source>🔊 S/PDIF ▾</source>
         <translation>🔊 S/PDIF ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1503"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2291"/>
         <source>🔊 ALSA Analog ▾</source>
         <translation>🔊 ALSA Analog ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1505"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2293"/>
         <source>🔊 ALSA HDMI ▾</source>
         <translation>🔊 ALSA HDMI ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1509"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2297"/>
         <source>Audio Output: Direct ALSA Hardware (Bit-Perfect Livello 2)
 Device: %1
 Bypasses PipeWire/PulseAudio completely.
@@ -8110,43 +8943,43 @@ Click to change output device.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1530"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2318"/>
         <source>🔊 Auto ▾</source>
         <translation>🔊 Auto ▾</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1531"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2319"/>
         <source>Audio Output: System Sound Server (PipeWire / PulseAudio)
 Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1640"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2428"/>
         <source>--- System Audio Server ---</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1643"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2431"/>
         <source>🌐 Auto / Default (PipeWire / PulseAudio)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1653"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2441"/>
         <source>--- Direct ALSA Hardware (Bit-Perfect Level 2) ---</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1749"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2537"/>
         <source>🔊 Digital Output S/PDIF (Optical / Coaxial)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1752"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2540"/>
         <source>🔊 Analog Output / Headphones (3.5mm Jack)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1763"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2551"/>
         <source>🔊 HDMI Output: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8155,12 +8988,12 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
         <translation type="vanished">🌐 Auto / Predefinito (PipeWire / PulseAudio)</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1742"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2530"/>
         <source>HD-Audio ALC1220 Analog (front:CARD=Generic,DEV=0)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="1743"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2531"/>
         <source>HD-Audio S/PDIF Digital (iec958:CARD=Generic,DEV=0)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8177,64 +9010,457 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
         <translation type="vanished">🔊 Uscita HDMI: %1</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2026"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2824"/>
         <source>Audio Track %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2099"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2897"/>
         <source>Subtitle %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2107"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="2905"/>
         <source>Off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2145"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3306"/>
         <source>Bit-Perfect Mode Active</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2146"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3307"/>
         <source>Equalizer and DSP processing are disabled while Bit-Perfect audiophile mode is active. Turn off Bit-Perfect to enable equalizer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2152"/>
-        <source>BubezView - Audio Equalizer &amp; DSP</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2200"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3435"/>
         <source>Extract Audio Track</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2200"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3435"/>
         <source>MP3 Audio (*.mp3);;FLAC Lossless (*.flac);;WAV (*.wav);;AAC (*.aac)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2206"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3441"/>
         <source>Success</source>
         <translation>Succès</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2206"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3441"/>
         <source>Audio track extracted successfully!
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2208"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3443"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/media_viewer.cpp" line="2208"/>
+        <location filename="../src/viewers/media/media_viewer.cpp" line="3443"/>
         <source>Failed to extract audio track.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MinimalHeaderBar</name>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="72"/>
+        <source>Close (Esc / Space)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="87"/>
+        <source>Previous File (Left Arrow)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="96"/>
+        <source>Next File (Right Arrow)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="108"/>
+        <source>Folder Gallery (Alt+Up)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="127"/>
+        <source>✕ Discard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="128"/>
+        <source>Discard all changes and exit edit mode (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="135"/>
+        <source>↶ History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="136"/>
+        <source>Undo / Redo action history (Ctrl+Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="141"/>
+        <source>↶ Undo (Ctrl+Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="143"/>
+        <source>↷ Redo (Ctrl+Y)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="180"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="307"/>
+        <source>BubezView</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="215"/>
+        <source>Find in Document (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="224"/>
+        <source>File Properties &amp; Info (Ctrl+I)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="232"/>
+        <source>Share...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="240"/>
+        <source>Preferences (Ctrl+,)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="250"/>
+        <source>💾 Save &amp; Export ▾</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="251"/>
+        <source>Save, Export, OCR, and Sharing options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="255"/>
+        <source>💾 Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="260"/>
+        <source>📄 Save As...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="264"/>
+        <source>📑 Save Current Page as PDF...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="265"/>
+        <source>🖼️ Save Current Page as Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="266"/>
+        <source>🔍 Recognize Text (OCR)...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="267"/>
+        <source>📦 Extract All Images (pdfimages)...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="268"/>
+        <source>🔧 Repair Corrupted PDF...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="271"/>
+        <source>🔗 Share File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="280"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="494"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="1411"/>
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="284"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="496"/>
+        <source>Toggle Edit Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="525"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="1414"/>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="527"/>
+        <source>Commit changes and return to preview mode (Esc)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="640"/>
+        <source>Rotate 90° CCW (Ctrl+Shift+R)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="643"/>
+        <source>Rotate 90° CW (Ctrl+R)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="646"/>
+        <source>Flip Horizontal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="649"/>
+        <source>Flip Vertical</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="655"/>
+        <source>Crop Selection (C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="658"/>
+        <source>Studio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="658"/>
+        <source>Photo Studio &amp; Adjustments (Ctrl+B)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="667"/>
+        <source>✍️ Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="668"/>
+        <source>Write text directly on PDF (T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="693"/>
+        <source>🖍️ Highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="694"/>
+        <source>Highlighter &amp; Spotlight focus (H)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="718"/>
+        <source>📐 Shapes ▾</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="719"/>
+        <source>Geometric shapes, redaction, and rubber stamps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="723"/>
+        <source>📐 Geometric Shapes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="727"/>
+        <source>⬛ Redaction &amp; Blackout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="731"/>
+        <source>💮 Rubber Stamp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="736"/>
+        <source>🛠️ Advanced Studio Panel...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="745"/>
+        <source>✒️ Signature ▾</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="746"/>
+        <source>Handwritten, image, and cryptographic signatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="750"/>
+        <source>✍️ Draw Freehand Signature...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="751"/>
+        <source>🖼️ Insert Signature Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="752"/>
+        <source>🔐 Cryptographic Signature (PAdES)...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="754"/>
+        <source>🔍 Find Signature Fields in Document...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="763"/>
+        <source>📑 Organize Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="764"/>
+        <source>Visual drag-and-drop page manager: reorder, rotate, delete, insert blank pages, and merge PDFs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="779"/>
+        <source>Extract All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="779"/>
+        <source>Extract all files from archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="782"/>
+        <source>Add Files...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="782"/>
+        <source>Add files or folders to archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="785"/>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="785"/>
+        <source>Remove selected items from archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="790"/>
+        <source>Test</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="790"/>
+        <source>Test archive integrity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="794"/>
+        <source>Toggle Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="798"/>
+        <source>Toggle Syntax Highlighting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="802"/>
+        <source>Toggle Word Wrap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="810"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="1573"/>
+        <source>Trim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="810"/>
+        <source>Audio Trimming &amp;&amp; Fade-In/Out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="815"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="1576"/>
+        <source>Filters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="815"/>
+        <source>Noise Reduction, FFT Spectrum &amp;&amp; Dynamics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="820"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="1579"/>
+        <source>Pitch &amp;&amp; Ch.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="820"/>
+        <source>Channels, Pitch Shift &amp;&amp; Time Stretch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="825"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="1582"/>
+        <source>Equalizer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="825"/>
+        <source>10-Band Track Equalizer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="830"/>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="1585"/>
+        <source>Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="830"/>
+        <source>Edit Audio Metadata &amp;&amp; Album Cover</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="835"/>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/minimal_header_bar.cpp" line="835"/>
+        <source>Review Active Changes, Safety Check &amp;&amp; Save</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8595,11 +9821,6 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
 <context>
     <name>OfficeViewer</name>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="180"/>
-        <source>✏️ Edit in LibreOffice</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/viewers/office/office_viewer.cpp" line="181"/>
         <source>Open file directly in LibreOffice desktop suite</source>
         <translation type="unfinished"></translation>
@@ -8630,115 +9851,120 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
         <translation>⚡ Rendering document layout...</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="368"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="378"/>
         <source>⏳ Loading presentation with LibreOffice...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="419"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="429"/>
         <source>⚠️ Unable to display the document.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="392"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="402"/>
         <source>⚠️ LibreOffice is required to preview presentation files (.pptx, .odp).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="336"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="180"/>
+        <source>Open in LibreOffice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="346"/>
         <source>⚠️ LibreOffice preview is disabled in Settings and the Internal Office module is not compiled.&lt;br&gt;Enable LibreOffice in Preferences or compile the internal module in Settings → Extensions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="370"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="380"/>
         <source>⏳ Converting office document with LibreOffice...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="387"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="397"/>
         <source>⚠️ LibreOffice is not installed and the Internal Office module is disabled.&lt;br&gt;Please install LibreOffice or enable the internal module in Settings → Extensions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="497"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="507"/>
         <source>LibreOffice</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="497"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="507"/>
         <source>LibreOffice is not installed on your system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="509"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="519"/>
         <source>Save as PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="509"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="519"/>
         <source>PDF Documents (*.pdf)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="515"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="525"/>
         <source>Save Complete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="515"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="525"/>
         <source>File saved successfully to:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="520"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="530"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="520"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="530"/>
         <source>Unable to save document as PDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="529"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="539"/>
         <source>Select directory for extracted images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="538"/>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="570"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="548"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="580"/>
         <source>No Images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="538"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="548"/>
         <source>Unable to extract images from this format.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="568"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="578"/>
         <source>Images Extracted</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="568"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="578"/>
         <source>Successfully extracted %1 images to:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="570"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="580"/>
         <source>No images found inside this document.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="573"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="583"/>
         <source>LibArchive Required</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/office/office_viewer.cpp" line="573"/>
+        <location filename="../src/viewers/office/office_viewer.cpp" line="583"/>
         <source>Extracting images requires the LibArchive engine. You can enable it in Settings → Extensions.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9112,6 +10338,44 @@ Click to select Direct ALSA Hardware (Bit-Perfect Livello 2).</source>
     <message>
         <location filename="../src/ui/pdf/pdf_crypto_signature_dialog.cpp" line="683"/>
         <source>Could not complete the digital signature operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PdfHistoryCard</name>
+    <message>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="46"/>
+        <source>● Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="49"/>
+        <source>Step %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="70"/>
+        <source>📄</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PdfHistoryWidget</name>
+    <message>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="158"/>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="200"/>
+        <source>Visual History Timeline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="177"/>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="197"/>
+        <source>No modification history available yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_history_widget.cpp" line="204"/>
+        <source>Visual History Timeline (%1 steps)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9529,214 +10793,314 @@ Please choose a different output filename.</source>
 <context>
     <name>PdfPageOrganizerDialog</name>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="52"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="333"/>
         <source>PDF Page Organizer &amp; Reorderer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="71"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="352"/>
         <source>&lt;b&gt;PDF Page Manager&lt;/b&gt; — Drag and drop thumbnails to reorder pages. Use the toolbar to rotate, remove, or reverse pages losslessly via QPDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="83"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="364"/>
         <source>↶ Rotate Left</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="84"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="365"/>
         <source>Rotate selected pages 90 degrees counter-clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="88"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="369"/>
         <source>↷ Rotate Right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="89"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="370"/>
         <source>Rotate selected pages 90 degrees clockwise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="93"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="386"/>
         <source>🗑️ Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="94"/>
-        <source>Remove selected pages from the document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="98"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="415"/>
         <source>⇄ Reverse Order</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="99"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="416"/>
         <source>Invert the overall page sequence</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="103"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="420"/>
         <source>↺ Reset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="104"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="421"/>
         <source>Reset all pages and rotations to their original state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="175"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="479"/>
         <source>Cancel</source>
         <translation type="unfinished">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="179"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="483"/>
         <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="183"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="487"/>
         <source>Save (Overwrite)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="210"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="514"/>
         <source>Load Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="210"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="514"/>
         <source>Failed to open PDF document or file is encrypted.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="267"/>
-        <source>Page %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="269"/>
-        <source>Page %1 (%2°)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="279"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="736"/>
         <source>Total pages: %1 | Selected: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="328"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="873"/>
         <source>Action Denied</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="329"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="874"/>
         <source>A PDF document must contain at least one page. You cannot delete all pages.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="363"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="910"/>
         <source>Reset Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="364"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="911"/>
         <source>Are you sure you want to revert all changes, reordering, and rotations?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="379"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="927"/>
         <source>Save Organized PDF As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="381"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="929"/>
         <source>PDF Files (*.pdf)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="413"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="961"/>
         <source>Save Succeeded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="414"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="962"/>
         <source>Organized PDF document saved successfully to:&lt;br&gt;&lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="426"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="974"/>
         <source>Confirm Overwrite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="427"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="975"/>
         <source>&lt;p&gt;Are you sure you want to overwrite the original file?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This action will replace the original page order permanently.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="451"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="999"/>
         <source>Changes Saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="452"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1000"/>
         <source>The original PDF has been overwritten with the new page configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="402"/>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="458"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="950"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1006"/>
         <source>File Replacement Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="403"/>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="459"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="374"/>
+        <source>◀ Move Left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="375"/>
+        <source>Move selected pages left (Ctrl+Left)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="380"/>
+        <source>Move Right ▶</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="381"/>
+        <source>Move selected pages right (Ctrl+Right)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="387"/>
+        <source>Remove selected pages from the document (Del)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="401"/>
+        <source>➕ Blank Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="402"/>
+        <source>Insert a new blank page after the selected page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="407"/>
+        <source>📑 Add from PDF...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="408"/>
+        <source>Append or insert pages from another PDF file (Visual Merge)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="578"/>
+        <source>#%1 • Blank</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="579"/>
+        <source>#%1 • Blank (%2°)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="580"/>
+        <source>Page #%1 (Empty inserted page)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="582"/>
+        <source>#%1 • %2 (p.%3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="583"/>
+        <source>#%1 • %2 (p.%3, %4°)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="584"/>
+        <source>Page #%1 — Source: %2 (Original page %3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="586"/>
+        <source>#%1 • Page %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="587"/>
+        <source>#%1 • Page %2 (%3°)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="588"/>
+        <source>Page #%1 (Original page %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="617"/>
+        <source>[ Blank ]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="657"/>
+        <source>Select PDF Documents to Insert</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="659"/>
+        <source>PDF Documents (*.pdf)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="681"/>
+        <source>Cannot Load PDF</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="682"/>
+        <source>Could not read document or document is password protected:&lt;br&gt;&lt;b&gt;%1&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="951"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1007"/>
         <source>Failed to replace original file. New document is saved as:&lt;br&gt;&lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="471"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1019"/>
         <source>Empty Document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="471"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1019"/>
         <source>Cannot save a PDF with no pages.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="479"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1027"/>
         <source>QPDF Not Installed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="480"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1028"/>
         <source>Page reorganization requires the system utility &lt;b&gt;qpdf&lt;/b&gt;.&lt;br&gt;Would you like to install it now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="490"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1038"/>
         <source>QPDF Engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="538"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1130"/>
         <source>QPDF Processing Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="539"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1131"/>
         <source>&lt;p&gt;Failed to generate the organized PDF.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Details:&lt;/i&gt;&lt;br&gt;&lt;code&gt;%1&lt;/code&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="540"/>
+        <location filename="../src/ui/pdf/pdf_page_organizer_dialog.cpp" line="1132"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9744,94 +11108,115 @@ Please choose a different output filename.</source>
 <context>
     <name>PdfPageWidget</name>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2284"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2845"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2854"/>
         <source>Copy Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1551"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1934"/>
         <source>Multiple Styles Detected</source>
         <translation>Plusieurs styles détectés</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="520"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="550"/>
         <source>✂️ Text cut and copied to clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="610"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="689"/>
+        <source>⬛ Text redacted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="845"/>
         <source>📋 Clipboard is empty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1552"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1935"/>
         <source>Multiple styles detected.
 Do you want to paste as uniform text or copy the original area?</source>
         <translation>Plusieurs styles ont été détectés.
 Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine ?</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1554"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1937"/>
         <source>📝 Text</source>
         <translation>📝 Texte</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1555"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="1938"/>
         <source>🖼️ Copy Area</source>
         <translation>🖼️ Copier la zone</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2275"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2827"/>
         <source>Cut Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2278"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2831"/>
         <source>Copy Area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2281"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2834"/>
         <source>Clear Area Selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2287"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2838"/>
+        <source>✏️ Edit / Replace Text...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2839"/>
+        <source>✥ Move Selected Text...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2842"/>
         <source>Cut Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2290"/>
-        <source>Highlight Selected Text</source>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2849"/>
+        <source>🖍️ Highlight Selected Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2301"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2852"/>
+        <source>⬛ Redact / Blackout Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2866"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2309"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2874"/>
         <source>Select Area...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2310"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2875"/>
         <source>Insert Image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2312"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2878"/>
         <source>Copy Page Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2315"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2881"/>
         <source>Copy Entire Document Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2319"/>
+        <location filename="../src/viewers/pdf/pdf_page_widget.cpp" line="2885"/>
         <source>Select All</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9873,18 +11258,22 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
     </message>
     <message>
         <location filename="../src/ui/pdf/pdf_repair_dialog.cpp" line="70"/>
-        <location filename="../src/ui/pdf/pdf_repair_dialog.cpp" line="84"/>
         <source>Browse...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf/pdf_repair_dialog.cpp" line="80"/>
-        <source>Save repaired to:</source>
+        <source>Save Repaired As:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/pdf/pdf_repair_dialog.cpp" line="83"/>
         <source>Target path for the recovered PDF file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_repair_dialog.cpp" line="84"/>
+        <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10160,6 +11549,404 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
     </message>
 </context>
 <context>
+    <name>PdfStudioPanel</name>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="32"/>
+        <source>PDF Studio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="36"/>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="46"/>
+        <source>Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="47"/>
+        <source>Shapes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="48"/>
+        <source>Stamps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="49"/>
+        <source>Sign</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="50"/>
+        <source>Redact</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="61"/>
+        <source>Typography</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="96"/>
+        <source>Bold (Ctrl+B)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="104"/>
+        <source>Italic (Ctrl+I)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="112"/>
+        <source>Underline (Ctrl+U)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="122"/>
+        <source>Align Left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="129"/>
+        <source>Align Center</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="136"/>
+        <source>Align Right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="143"/>
+        <source>Text Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="174"/>
+        <source>Custom color...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="176"/>
+        <source>Select Text Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="190"/>
+        <source>Cover / Erase underlying text (Whiteout)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="191"/>
+        <source>Render an opaque white background under text to neatly cover existing content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="197"/>
+        <source>✍️ Place Text Box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="203"/>
+        <source>💡 &lt;b&gt;Tip&lt;/b&gt;: Click anywhere on the PDF page to start typing directly. Drag the side handles to resize the text column width.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="279"/>
+        <source>Shape Geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="284"/>
+        <source>Rectangle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="285"/>
+        <source>Rounded Rectangle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="286"/>
+        <source>Circle / Ellipse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="287"/>
+        <source>Arrow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="288"/>
+        <source>Straight Line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="292"/>
+        <source>Stroke Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="314"/>
+        <source>Border Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="345"/>
+        <source>Select Border Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="357"/>
+        <source>Fill Interior</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="361"/>
+        <source>Transparent (No Fill)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="393"/>
+        <source>Select Fill Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="414"/>
+        <source>📐 Draw Shape on Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="420"/>
+        <source>💡 &lt;b&gt;Tip&lt;/b&gt;: Drag anywhere on the page to create the shape. It remains movable and resizable with handles until you click &lt;b&gt;Apply&lt;/b&gt; or press Enter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="467"/>
+        <source>Preset Stamps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="503"/>
+        <source>Stamp Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="511"/>
+        <source>Stamp Graphic Style</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="516"/>
+        <source>Classic Rounded Box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="517"/>
+        <source>Official Double Border</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="518"/>
+        <source>Modern Dotted Border</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="519"/>
+        <source>Plain Text Only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="523"/>
+        <source>Rotation Angle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="552"/>
+        <source>Opacity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="568"/>
+        <source>Stamp Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="599"/>
+        <source>Select Stamp Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="613"/>
+        <source>💧 Place Stamp on Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="679"/>
+        <source>Handwritten Signature Pad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="690"/>
+        <source>🗑️ Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="696"/>
+        <source>⛶ Large Canvas...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="699"/>
+        <source>Open comfortable full-size signature dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="721"/>
+        <source>✍️ Place Signature on Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="742"/>
+        <source>Graphic or Logo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="746"/>
+        <source>🖼️ Insert Image / Logo...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="760"/>
+        <source>Digital Signature (Cryptographic)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="764"/>
+        <source>🔏 Sign Document with Certificate (P12)...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="770"/>
+        <source>🔍 Verify Document Signatures...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="787"/>
+        <source>Privacy Redaction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="791"/>
+        <source>⚠️ Redaction permanently obscures sensitive information. Underlying text and graphics are burned and unrecoverable once applied.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="796"/>
+        <source>Redaction Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="828"/>
+        <source>Custom Redaction Color...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="830"/>
+        <source>Select Redaction Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="843"/>
+        <source>⬛ Redact Area on Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="874"/>
+        <source>Page 1 of 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="879"/>
+        <source>Go to page:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="894"/>
+        <source>Rotate Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="899"/>
+        <source>🔄 Rotate 90° CW</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="904"/>
+        <source>↺ Rotate 90° CCW</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="911"/>
+        <source>Page Structure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="915"/>
+        <source>📑 Page Organizer...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="917"/>
+        <source>Reorder, rotate, delete, or extract multiple pages interactively</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="921"/>
+        <source>➕ Insert Blank Page After</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="928"/>
+        <source>🗑️ Delete Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="937"/>
+        <source>Export Current Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="942"/>
+        <source>📄 As PDF</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="944"/>
+        <source>Save current page as an independent single-page PDF document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="948"/>
+        <source>🖼️ As Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="950"/>
+        <source>Save current page as a high-resolution raster image (PNG/JPEG/WebP)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pdf/pdf_studio_panel.cpp" line="965"/>
+        <source>Page %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PdfToolsDialog</name>
     <message>
         <source>Close</source>
@@ -10173,93 +11960,108 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
 <context>
     <name>PdfTransformBox</name>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="62"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="68"/>
+        <source>Drag to move</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="72"/>
         <source>✏️ Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="71"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="81"/>
         <source>Black Redaction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="79"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="89"/>
         <source>White Redaction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="87"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="97"/>
         <source>Gray Redaction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="95"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="105"/>
         <source>Custom Color Redaction...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="98"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="108"/>
         <source>Select Redaction Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="104"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="114"/>
         <source>✓ Apply</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="109"/>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="195"/>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="258"/>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="294"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="119"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="395"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="555"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="594"/>
         <source>🔄 Stamp Again</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="112"/>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="196"/>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="259"/>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="295"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="122"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="396"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="556"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="595"/>
         <source>Apply current item and place another copy ready on canvas</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="116"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="126"/>
         <source>✂️ Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="119"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="129"/>
         <source>Cut selected area and copy to clipboard (Ctrl+X)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="123"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="133"/>
         <source>📋 Copy</source>
         <translation type="unfinished">📋 Copier</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="126"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="136"/>
         <source>Copy selected area to clipboard at 300 DPI (Ctrl+C)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="130"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="140"/>
         <source>✕ Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="406"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="455"/>
+        <source>🔄 Draw Another</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="456"/>
+        <source>Commit shape and keep tool active for another</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="709"/>
         <source>🔄 Apply &amp; Continue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="407"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="710"/>
         <source>Apply current redaction and keep tool active for another area</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="607"/>
+        <location filename="../src/viewers/pdf/pdf_transform_box.cpp" line="967"/>
         <source>[REDACTED]</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10325,57 +12127,57 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
 <context>
     <name>PdfViewer</name>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="80"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="86"/>
         <source>🔍 Certificate Details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="87"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="93"/>
         <source>✍️ Add Signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="113"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="119"/>
         <source>📑 Document Outline</source>
         <translation>📑 Document Outline</translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="212"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="221"/>
         <source>Previous Page (Page Up / Left Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="218"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="227"/>
         <source>Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="233"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="242"/>
         <source>of 0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="237"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="246"/>
         <source>Next Page (Page Down / Right Arrow)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="975"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1163"/>
         <source>of %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1395"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1877"/>
         <source>Unknown Signer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1407"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1889"/>
         <source>⚠️ &lt;b&gt;INVALID DIGITAL SIGNATURE (%1)&lt;/b&gt; — Document integrity check failed! Signed by: &lt;b&gt;%2&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1416"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1898"/>
         <source>🛡️ &lt;b&gt;Digitally Signed &amp; Verified (%1)&lt;/b&gt; — Signed by: &lt;b&gt;%2&lt;/b&gt; (%n signature(s))</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -10383,28 +12185,85 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
         </translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1425"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1907"/>
         <source>🔐 &lt;b&gt;Digitally Signed (%1 — Integrity Valid)&lt;/b&gt; — Signed by: &lt;b&gt;%2&lt;/b&gt; (Self-Signed / Unverified CA)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1565"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1952"/>
+        <source>Stamp / Shape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1984"/>
+        <source>Move Shape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2019"/>
+        <source>Text Annotation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2088"/>
         <source>📸 Snapshot copied to clipboard at 200 DPI (%1 × %2 px)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1593"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2116"/>
         <source>📋 Area copied to clipboard at 200 DPI (%1 × %2 px)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1619"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2142"/>
         <source>✂️ Area cut. Press Ctrl+Z to undo anytime.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="1649"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2164"/>
+        <source>Insert Blank Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2172"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2232"/>
         <source>QPDF Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2213"/>
+        <source>Cannot Delete Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2213"/>
+        <source>Cannot delete the only page in the document.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2217"/>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2225"/>
+        <source>Delete Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2218"/>
+        <source>Are you sure you want to delete page %1?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2295"/>
+        <source>Document source file is missing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2418"/>
+        <source>Original Document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_viewer.cpp" line="2449"/>
+        <source>Document Edit</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10529,417 +12388,716 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
 <context>
     <name>PhotoStudioDialog</name>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="821"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="825"/>
         <source>Photo Studio &amp; Filters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="892"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="896"/>
         <source>🪄 Auto Fix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="894"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="898"/>
         <source>Toggle intelligent automatic scene optimization (non-destructive)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="900"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="904"/>
         <source>↔ Before / After</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="902"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="906"/>
         <source>Toggle split-screen slider to compare before and after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="908"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="912"/>
         <source>👁 Hold to Compare</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="909"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="913"/>
         <source>Press and hold (or hold Spacebar) to view the original image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="920"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="924"/>
         <source>↺ Reset All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="922"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="926"/>
         <source>Reset all sliders, filters, and auto-enhancements to original</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="965"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="969"/>
         <source>Intelligent Scene Optimization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="970"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="974"/>
         <source>Enable Intelligent Auto-Enhance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="982"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="986"/>
         <source>Effect Strength:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="993"/>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1128"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="997"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1132"/>
         <source>Double-click to reset to default (100%)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1006"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1010"/>
         <source>Scene Profile:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1012"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1016"/>
         <source>🌿 Natural &amp; Balanced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1013"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1017"/>
         <source>🌅 Vivid &amp; Landscapes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1014"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1018"/>
         <source>👥 Backlight &amp; Shadows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1015"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1019"/>
         <source>🌫️ Dehaze &amp; Atmospheric</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1030"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1034"/>
         <source>Algorithm Protections and Tuning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1048"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1052"/>
         <source>Protect Highlights</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1049"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1053"/>
         <source>Excludes bright light fixtures and applies smooth compression so blown lights never clip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1050"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1054"/>
         <source>Protect Skin Tones</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1051"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1055"/>
         <source>Ensures human skin retains healthy peach vitality without turning cold or cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1053"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1057"/>
         <source>Adaptive Shadows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1054"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1058"/>
         <source>Recovers shadow details for backlit portraits and dark scenes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1055"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1059"/>
         <source>Clean Shadow Noise</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1056"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1060"/>
         <source>Subtle noise reduction in deep lifted dark areas</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1058"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1062"/>
         <source>Neutralize Casts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1059"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1063"/>
         <source>Neutralizes tungsten, yellow, or cold color casts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1060"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1064"/>
         <source>Center-Weighted</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1061"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1065"/>
         <source>Gives higher exposure priority to the center subject</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1066"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1070"/>
         <source>Interactive Calibration and Compare</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1076"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1080"/>
         <source>💧 Neutral Eyedropper</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1080"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1084"/>
         <source>Click, then sample a white or gray area in the photo to calibrate color temperature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1086"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1090"/>
         <source>⊞ 4-Way Compare</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1090"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1094"/>
         <source>Simultaneously compare Original, Natural, Vivid, and Backlight profiles in 4 quadrants</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1095"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1099"/>
         <source>Tip: Use Eyedropper to click on a white/grey object for instant neutral point calibration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1104"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1108"/>
         <source>Auto-Fix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1105"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1109"/>
         <source>Intelligent Auto-Enhance &amp; Scene Optimizer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1117"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1121"/>
         <source>Filter Strength:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1180"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1184"/>
         <source>Filters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1181"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1185"/>
         <source>Photo Color &amp; Film Presets</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1202"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1206"/>
         <source>Double-click to reset to default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1222"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1226"/>
         <source>Brightness</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1223"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1227"/>
         <source>Contrast</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1224"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1228"/>
         <source>Highlights</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1225"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1229"/>
         <source>Shadows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1227"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1231"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1228"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1232"/>
         <source>Light, Brightness &amp; Contrast</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1235"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1239"/>
         <source>Temp (Kelvin)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1236"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1240"/>
         <source>Saturation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1237"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1241"/>
         <source>Hue Shift</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1238"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1242"/>
         <source>Red Gain</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1239"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1243"/>
         <source>Green Gain</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1240"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1244"/>
         <source>Blue Gain</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1242"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1246"/>
         <source>Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1243"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1247"/>
         <source>Color Balance &amp; Temperature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1250"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1254"/>
         <source>Sharpen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1251"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1255"/>
         <source>Soft Blur</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1252"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1256"/>
         <source>Vignette</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1253"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1257"/>
         <source>Invert Colors (Negative)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1258"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1262"/>
         <source>Detail</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1259"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1263"/>
         <source>Sharpness, Blur &amp; Effects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1267"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1271"/>
         <source>Drag a selection rectangle on the image to redact sensitive data (e.g. license plates, faces, document text):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1275"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1279"/>
         <source>▦ Pixelate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1285"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1289"/>
         <source>💧 Blur</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1327"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1331"/>
         <source>Privacy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1328"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1332"/>
         <source>Privacy Redaction (Blur / Mosaic)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1340"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1344"/>
         <source>Cancel</source>
         <translation type="unfinished">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1345"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1349"/>
         <source>✓ Apply Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1514"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1518"/>
         <source>Eyedropper active: click on a neutral white or gray spot in the photo...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1516"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1520"/>
         <source>Neutral sample point calibrated at (%1, %2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1517"/>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1614"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1521"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1618"/>
         <source>Tip: Use Eyedropper to click on a white or gray object for manual neutral point calibration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1532"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="1536"/>
         <source>Calibrated to sample point (%1, %2). White balance neutral point locked.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PhotoStudioPanel</name>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="14"/>
+        <source>Photo Studio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="27"/>
+        <source>Auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="28"/>
+        <source>Adjust</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="29"/>
+        <source>Filters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="30"/>
+        <source>Effects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="41"/>
+        <source>Enable Smart Auto-Enhance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="55"/>
+        <source>Enhancement Profile:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="60"/>
+        <source>Natural (Balanced)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="61"/>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="215"/>
+        <source>Vivid Landscape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="62"/>
+        <source>Backlit &amp; Shadows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="63"/>
+        <source>Dehaze &amp; Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="70"/>
+        <source>Enhance Strength</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="73"/>
+        <source>Fine Tuning Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="77"/>
+        <source>Recover Deep Shadows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="82"/>
+        <source>Protect Highlights</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="87"/>
+        <source>Auto White Balance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="92"/>
+        <source>Protect Skin Tones</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="97"/>
+        <source>Denoise Lifted Shadows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="102"/>
+        <source>Center-Weighted Metering</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="110"/>
+        <source>Neutral White Balance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="115"/>
+        <source> Pipette Neutral Point</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="123"/>
+        <source>Click on a gray/white pixel...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="123"/>
+        <source>Calibration inactive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="127"/>
+        <source>Click pipette, then click a neutral pixel on canvas.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="157"/>
+        <source>LIGHT &amp; TONE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="161"/>
+        <source>Exposure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="162"/>
+        <source>Brightness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="163"/>
+        <source>Contrast</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="164"/>
+        <source>Highlights</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="165"/>
+        <source>Shadows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="168"/>
+        <source>COLOR &amp; BALANCE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="172"/>
+        <source>Saturation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="173"/>
+        <source>Temperature</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="174"/>
+        <source>Tint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="177"/>
+        <source>RGB CHANNELS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="181"/>
+        <source>Red</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="182"/>
+        <source>Green</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="183"/>
+        <source>Blue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="198"/>
+        <source>Filter Strength</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="201"/>
+        <source>ENHANCEMENT PRESETS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="214"/>
+        <source>Original</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="216"/>
+        <source>Golden Hour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="217"/>
+        <source>Nordic Cool</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="218"/>
+        <source>Fine Art B&amp;&amp;W</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="219"/>
+        <source>Document Scan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="256"/>
+        <source>DETAIL &amp; CLARITY</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="260"/>
+        <source>Sharpen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="263"/>
+        <source>VIGNETTE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="267"/>
+        <source>Vignette Intensity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="268"/>
+        <source>Vignette Radius</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="271"/>
+        <source>Invert Colors (Negative)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="276"/>
+        <source>Privacy Redaction Tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="284"/>
+        <source>Pixelate Area</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="291"/>
+        <source>Drag selection on image to pixelate.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="296"/>
+        <source>Blur Area</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="303"/>
+        <source>Drag selection on image to blur.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="308"/>
+        <source>Select an action above, then drag a rectangle on the canvas.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="441"/>
+        <source>Neutral point calibrated: (%1, %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/photo_studio_panel.cpp" line="441"/>
+        <source>Pipette reset.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PhotoStudioViewport</name>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="360"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="361"/>
         <source>1. Original</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="361"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="362"/>
         <source>2. Natural</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="362"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="363"/>
         <source>3. Vivid &amp; Scene</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="363"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="364"/>
         <source>4. Backlight / Shadows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="369"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="370"/>
         <source>Click any quadrant to choose that Auto-Fix profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="386"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="387"/>
         <source>ORIGINAL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="430"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="431"/>
         <source>BEFORE</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="435"/>
+        <location filename="../src/ui/dialogs/photo_studio_dialog.cpp" line="436"/>
         <source>AFTER</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10947,7 +13105,7 @@ Voulez-vous coller sous forme de texte uniforme ou copier la zone d&apos;origine
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/main.cpp" line="304"/>
+        <location filename="../src/main.cpp" line="322"/>
         <source>Select a file to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11553,47 +13711,74 @@ Please authorize the operation in the system prompt if requested.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_canvas_tools.cpp" line="121"/>
+        <location filename="../src/viewers/pdf/pdf_canvas_tools.cpp" line="123"/>
         <source>REDACT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="28"/>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="29"/>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="97"/>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="172"/>
         <source>Source PDF file does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="36"/>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="37"/>
         <source>Failed to create temporary blank page file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="55"/>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="56"/>
         <source>Failed to create output file for page insertion.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="82"/>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="83"/>
         <source>Could not insert page. Please ensure qpdf is installed on your system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1284"/>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="101"/>
+        <source>Cannot delete the only page in the document.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="108"/>
+        <source>Failed to create output file for page deletion.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="131"/>
+        <source>Could not delete page. Please ensure qpdf is installed on your system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="178"/>
+        <source>QPDF utility is not installed on this system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/pdf/pdf_document_ops.cpp" line="196"/>
+        <source>QPDF extraction process failed with code %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1304"/>
         <source>Failed to start multi-core 7z engine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1346"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="1366"/>
         <source>7-Zip operation exited with code %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2121"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2146"/>
         <source>No files or directories found to compress.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2186"/>
+        <location filename="../src/viewers/archive/archive_viewer.cpp" line="2211"/>
         <source>Failed to create temporary list file for compression.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11674,112 +13859,137 @@ Please authorize the operation in the system prompt if requested.</source>
 <context>
     <name>SettingsAppearanceTab</name>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="42"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="43"/>
         <source>Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="46"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="47"/>
         <source>Interface theme:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="49"/>
-        <source>System Native</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="50"/>
-        <source>Dark Slate</source>
+        <source>Dark Slate (Modern Dark)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="51"/>
-        <source>Breeze Dark</source>
+        <source>Breeze Dark (KDE Dark)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="68"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="52"/>
+        <source>Modern Light (macOS Style)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="53"/>
+        <source>Breeze Light (KDE Light)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="70"/>
         <source>File Transitions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="72"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="74"/>
         <source>Transition effect:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="75"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="77"/>
         <source>Zoom &amp; Fade</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="76"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="78"/>
         <source>Parallax Slide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="77"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="79"/>
         <source>Cross Fade</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="78"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="80"/>
         <source>None (instant)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="95"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="97"/>
         <source>Transparent Images Background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="99"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="101"/>
         <source>Background behind transparency:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="102"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="104"/>
         <source>Solid White (Recommended - Removes Transparency)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="103"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="105"/>
         <source>Checkerboard Pattern (Classic Grid)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="104"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="106"/>
         <source>Interface Theme Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="105"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="107"/>
         <source>Solid Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="121"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="123"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="125"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="127"/>
         <source>Interface language:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="128"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="130"/>
         <source>System Default (Automatic)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="190"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="150"/>
+        <source>Folder Gallery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="154"/>
+        <source>Show folders in gallery view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="165"/>
+        <source>Window Geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="169"/>
+        <source>Remember window size and position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="222"/>
         <source>Language Changed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="191"/>
+        <location filename="../src/ui/settings/settings_appearance_tab.cpp" line="223"/>
         <source>Language preference saved.&lt;br&gt;&lt;br&gt;Please restart BubezView for the changes to take full effect across all components.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12702,7 +14912,7 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
 <context>
     <name>SpectrumWidget</name>
     <message>
-        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="234"/>
+        <location filename="../src/ui/audio/audio_trim_dialog.cpp" line="242"/>
         <source>Interactive 4-Node Acoustic Curve:
 • Drag Low-Cut (Blue) / High-Cut (Purple) horizontally
 • Drag Voice Presence (Green) and De-Esser (Yellow) in 2D (Frequency &amp; Gain/Cut)</source>
@@ -12714,12 +14924,12 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
 <context>
     <name>StereoOscilloscopeWidget</name>
     <message>
-        <location filename="../src/viewers/media/stereo_oscilloscope_widget.cpp" line="436"/>
+        <location filename="../src/viewers/media/stereo_oscilloscope_widget.cpp" line="445"/>
         <source>Left</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/stereo_oscilloscope_widget.cpp" line="443"/>
+        <location filename="../src/viewers/media/stereo_oscilloscope_widget.cpp" line="452"/>
         <source>Right</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12778,45 +14988,45 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="341"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="342"/>
         <source>Audio Trimmer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="342"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="343"/>
         <source>The interactive lossless audio trimmer requires the Complete Suite or MPV Multimedia Plugin.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="350"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="352"/>
         <source>Audio Tag Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="351"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="353"/>
         <source>Audio metadata editing requires the TagLib plugin available in the Complete Suite.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="363"/>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="379"/>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="385"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="365"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="381"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="387"/>
         <source>Extract Audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="364"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="366"/>
         <source>Audio stream extraction requires &apos;ffmpeg&apos; installed on your system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="380"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="382"/>
         <source>Audio extraction started successfully:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/media/system_media_viewer.cpp" line="386"/>
+        <location filename="../src/viewers/media/system_media_viewer.cpp" line="388"/>
         <source>Failed to start ffmpeg process.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12824,42 +15034,21 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
 <context>
     <name>TextViewer</name>
     <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="108"/>
+        <location filename="../src/viewers/text/text_viewer.cpp" line="105"/>
         <source>Preview truncated: file size exceeds 15 MB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="199"/>
-        <source>Read-Only Document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="202"/>
-        <source>&lt;h3&gt;Source Code / Configuration File&lt;/h3&gt;&lt;p&gt;This file contains source code or configuration settings.&lt;/p&gt;&lt;p&gt;Manual editing may affect script or application execution.&lt;/p&gt;&lt;p&gt;Do you want to enable edit mode to start typing and making changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="207"/>
-        <source>&lt;h3&gt;File is Read-Only&lt;/h3&gt;&lt;p&gt;This text file is currently open in read-only mode to prevent accidental changes.&lt;/p&gt;&lt;p&gt;Do you want to enable edit mode to start typing and making changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="212"/>
-        <source>Enable Editing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="213"/>
         <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
+        <translation type="obsolete">Annuler</translation>
     </message>
     <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="506"/>
+        <location filename="../src/viewers/text/text_viewer.cpp" line="470"/>
         <source>Go to Line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/viewers/text/text_viewer.cpp" line="507"/>
+        <location filename="../src/viewers/text/text_viewer.cpp" line="471"/>
         <source>Line number (1 - %1):</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12934,92 +15123,92 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
     </message>
     <message>
         <location filename="../src/ui/dialogs/update_dialog.cpp" line="140"/>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="252"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="260"/>
         <source>Hide Details ▲</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="166"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="174"/>
         <source>Update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="167"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="175"/>
         <source>Standalone installer script not found locally.&lt;br&gt;Opening project release download page...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="177"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="185"/>
         <source>Compiling and applying updates in parallel...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="180"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="188"/>
         <source>[Security] Verified developer Ed25519 cryptographic signature.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="204"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="212"/>
         <source>✅ Compilation completed! Finalizing installation...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="206"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="214"/>
         <source>⚙️ Compiling incremental C++ binaries...</source>
         <translation>⚙️ Compiling incremental C++ binaries...</translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="208"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="216"/>
         <source>🔧 Configuring build environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="210"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="218"/>
         <source>🔍 Performing smoke test and library verification...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="220"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="228"/>
         <source>✅ Update completed successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="232"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="240"/>
         <source>Update Completed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="234"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="242"/>
         <source>🎉 BubezView has been updated successfully!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="235"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="243"/>
         <source>Installed version:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="237"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="245"/>
         <source>Would you like to restart BubezView now to apply the updates, or continue using the current session?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="240"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="248"/>
         <source>🔄 Restart Now</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="241"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="249"/>
         <source>Continue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="251"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="259"/>
         <source>❌ Update failed. See compiler output details below.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ui/dialogs/update_dialog.cpp" line="256"/>
+        <location filename="../src/ui/dialogs/update_dialog.cpp" line="264"/>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
@@ -13027,27 +15216,27 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
 <context>
     <name>UpdateManager</name>
     <message>
-        <location filename="../src/core/services/update_manager.cpp" line="186"/>
+        <location filename="../src/core/services/update_manager.cpp" line="204"/>
         <source>Received invalid response from update server.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/update_manager.cpp" line="195"/>
+        <location filename="../src/core/services/update_manager.cpp" line="213"/>
         <source>BubezView entry not found in version registry.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/update_manager.cpp" line="205"/>
+        <location filename="../src/core/services/update_manager.cpp" line="223"/>
         <source>Bug fixes and performance improvements.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/update_manager.cpp" line="213"/>
+        <location filename="../src/core/services/update_manager.cpp" line="232"/>
         <source>Security alert: Signature is present but SHA-256 hash is missing. Update blocked.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/core/services/update_manager.cpp" line="221"/>
+        <location filename="../src/core/services/update_manager.cpp" line="240"/>
         <source>Security alert: Update payload failed cryptographic signature verification! Update blocked.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -13055,32 +15244,32 @@ When you click &apos;Attach&apos; in your browser, simply press Ctrl+V (or Paste
 <context>
     <name>main</name>
     <message>
-        <location filename="../src/main.cpp" line="192"/>
+        <location filename="../src/main.cpp" line="210"/>
         <source>BubezView: Instant universal native file viewer in C++</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="198"/>
+        <location filename="../src/main.cpp" line="216"/>
         <source>Run as DBus previewer daemon for Nemo / Nautilus (org.nemo.Preview).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="204"/>
+        <location filename="../src/main.cpp" line="222"/>
         <source>Capture a preview screenshot and save it to the specified file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="211"/>
+        <location filename="../src/main.cpp" line="229"/>
         <source>Enable verbose debug and diagnostic console output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="217"/>
+        <location filename="../src/main.cpp" line="235"/>
         <source>Force open the initial setup wizard.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="221"/>
+        <location filename="../src/main.cpp" line="239"/>
         <source>File or folder to preview (optional)</source>
         <translation type="unfinished"></translation>
     </message>

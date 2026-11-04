@@ -45,6 +45,14 @@ public:
     void setTextColor(const QColor &color);
     /** @brief Sets the whiteout background checkbox state. */
     void setWhiteout(bool whiteout);
+    /** @brief Sets the sampled background color used for previewing the patch. */
+    void setSampledBackgroundColor(const QColor &color);
+    /** @brief Returns the sampled background color. */
+    QColor sampledBackgroundColor() const { return m_sampledBgColor; }
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 private slots:
     void onFontChanged();
@@ -67,6 +75,7 @@ private:
     QPushButton *m_btnColorRed;
     QPushButton *m_btnColorCustom;
     QColor m_currentColor;
+    QColor m_sampledBgColor = Qt::white;
 
     QLabel *m_lblPreview;
     QPushButton *m_btnOk;

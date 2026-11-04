@@ -236,7 +236,7 @@ FolderCardDelegate::FolderCardDelegate(QObject *parent)
 
 QSize FolderCardDelegate::sizeHint(const QStyleOptionViewItem & /*option*/, const QModelIndex & /*index*/) const
 {
-    return QSize(154, 168);
+    return QSize(148, 152);
 }
 
 void FolderCardDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -248,84 +248,94 @@ void FolderCardDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     QRect rect = option.rect.adjusted(4, 4, -4, -4);
     bool isHover = bool(option.state & QStyle::State_MouseOver);
     bool isSelected = bool(option.state & QStyle::State_Selected);
+    bool isDir = index.data(Qt::UserRole + 1).toBool();
 
     ThemePreset preset = ThemeManager::currentPreset();
 
-    QColor cardBg;
-    QColor cardBorder;
+    QColor cardBg = Qt::transparent;
+    QColor cardBorder = Qt::transparent;
     QColor textColor;
     QColor subTextColor;
 
-    if (preset == ThemePreset::SystemNative) {
-        QPalette pal = option.palette;
+    if (preset == ThemePreset::ModernLight) {
         if (isSelected) {
-            cardBg = pal.highlight().color();
-            cardBg.setAlpha(40);
-            cardBorder = pal.highlight().color();
-            textColor = pal.text().color();
-            subTextColor = pal.placeholderText().color();
+            cardBg = QColor(0, 122, 255, 22);
+            cardBorder = QColor(0, 122, 255, 65);
+            textColor = QColor("#0062cc");
+            subTextColor = QColor("#48484a");
         } else if (isHover) {
-            cardBg = pal.highlight().color();
-            cardBg.setAlpha(18);
-            cardBorder = pal.highlight().color();
-            cardBorder.setAlpha(70);
-            textColor = pal.text().color();
-            subTextColor = pal.placeholderText().color();
+            cardBg = QColor(0, 0, 0, 11);
+            cardBorder = Qt::transparent;
+            textColor = QColor("#1d1d1f");
+            subTextColor = QColor("#6e6e73");
         } else {
-            cardBg = pal.base().color();
-            cardBorder = pal.mid().color();
-            cardBorder.setAlpha(80);
-            textColor = pal.text().color();
-            subTextColor = pal.placeholderText().color();
+            textColor = QColor("#1d1d1f");
+            subTextColor = QColor("#86868b");
+        }
+    } else if (preset == ThemePreset::BreezeLight) {
+        if (isSelected) {
+            cardBg = QColor(61, 174, 233, 26);
+            cardBorder = QColor(61, 174, 233, 70);
+            textColor = QColor("#1d7099");
+            subTextColor = QColor("#4d5257");
+        } else if (isHover) {
+            cardBg = QColor(0, 0, 0, 11);
+            cardBorder = Qt::transparent;
+            textColor = QColor("#232629");
+            subTextColor = QColor("#626569");
+        } else {
+            textColor = QColor("#232629");
+            subTextColor = QColor("#7f8c8d");
         }
     } else if (preset == ThemePreset::DarkSlate) {
         if (isSelected) {
-            cardBg = QColor(56, 189, 248, 38);
-            cardBorder = QColor("#38bdf8");
+            cardBg = QColor(56, 189, 248, 28);
+            cardBorder = QColor(56, 189, 248, 65);
             textColor = QColor("#ffffff");
-            subTextColor = QColor("#94a3b8");
+            subTextColor = QColor("#bae6fd");
         } else if (isHover) {
-            cardBg = QColor(255, 255, 255, 18);
-            cardBorder = QColor(56, 189, 248, 120);
+            cardBg = QColor(255, 255, 255, 14);
+            cardBorder = Qt::transparent;
             textColor = QColor("#f8fafc");
             subTextColor = QColor("#94a3b8");
         } else {
-            cardBg = QColor(255, 255, 255, 8);
-            cardBorder = QColor(255, 255, 255, 14);
-            textColor = QColor("#cbd5e1");
+            textColor = QColor("#e2e8f0");
             subTextColor = QColor("#64748b");
         }
     } else { // BreezeDark
         if (isSelected) {
-            cardBg = QColor(61, 174, 233, 40);
-            cardBorder = QColor("#3daee9");
+            cardBg = QColor(61, 174, 233, 30);
+            cardBorder = QColor(61, 174, 233, 70);
             textColor = QColor("#ffffff");
-            subTextColor = QColor("#a0a6ad");
+            subTextColor = QColor("#bae6fd");
         } else if (isHover) {
-            cardBg = QColor(255, 255, 255, 18);
-            cardBorder = QColor(61, 174, 233, 120);
+            cardBg = QColor(255, 255, 255, 14);
+            cardBorder = Qt::transparent;
             textColor = QColor("#fcfcfc");
             subTextColor = QColor("#a0a6ad");
         } else {
-            cardBg = QColor(255, 255, 255, 8);
-            cardBorder = QColor(255, 255, 255, 14);
-            textColor = QColor("#cfd2d5");
+            textColor = QColor("#d8dce0");
             subTextColor = QColor("#64748b");
         }
     }
 
-    // 1. Draw Card Base Surface (physical elevation feel)
-    painter->setPen(QPen(cardBorder, isSelected ? 1.6 : 1.0));
-    painter->setBrush(QBrush(cardBg));
-    painter->drawRoundedRect(QRectF(rect), 9, 9);
+    // 1. Draw Soft Squircle Highlight ONLY on Hover or Selection (unselected items float cleanly)
+    if (isSelected || isHover) {
+        if (cardBorder.alpha() > 0) {
+            painter->setPen(QPen(cardBorder, 1.0));
+        } else {
+            painter->setPen(Qt::NoPen);
+        }
+        painter->setBrush(QBrush(cardBg));
+        painter->drawRoundedRect(QRectF(rect), 16, 16);
+    }
 
-    // 2. Draw Thumbnail or Icon
-    QRect thumbArea(rect.left() + 6, rect.top() + 8, rect.width() - 12, 94);
+    // 2. Draw Thumbnail or Icon (centered in upper visual zone)
+    QRect thumbArea(rect.left() + 8, rect.top() + 8, rect.width() - 16, 94);
     QVariant thumbVar = index.data(Qt::UserRole + 2); // Custom thumbnail pixmap
 
     if (thumbVar.isValid() && !thumbVar.value<QPixmap>().isNull()) {
         QPixmap pix = thumbVar.value<QPixmap>();
-        // Fast path: if the thumbnail is already pre-scaled to fit thumbArea, use it directly to eliminate per-frame resizing
         QPixmap scaled;
         if (pix.width() <= thumbArea.width() && pix.height() <= thumbArea.height()) {
             scaled = pix;
@@ -338,34 +348,41 @@ void FolderCardDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         int x = thumbArea.left() + (thumbArea.width() - scaled.width()) / 2;
         int y = thumbArea.top() + (thumbArea.height() - scaled.height()) / 2;
 
-        // Draw thumbnail with subtle rounded clip and frame
         QRect imgRect(x, y, scaled.width(), scaled.height());
+
+        // Soft drop shadow behind thumbnail
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(QColor(0, 0, 0, 45));
+        painter->drawRoundedRect(QRectF(imgRect).adjusted(1, 3, 1, 3), 10, 10);
+
+        // Draw thumbnail with smooth 10px rounded clip
         painter->save();
         QPainterPath clip;
-        clip.addRoundedRect(QRectF(imgRect), 5, 5);
+        clip.addRoundedRect(QRectF(imgRect), 10, 10);
         painter->setClipPath(clip);
         painter->drawPixmap(x, y, scaled);
         painter->restore();
 
-        // 1px border around thumbnail
-        painter->setPen(QPen(QColor(255, 255, 255, 30), 1.0));
+        // Subtle inner rim around thumbnail
+        painter->setPen(QPen(QColor(255, 255, 255, 26), 1.0));
         painter->setBrush(Qt::NoBrush);
-        painter->drawRoundedRect(QRectF(imgRect), 5, 5);
+        painter->drawRoundedRect(QRectF(imgRect), 10, 10);
     } else {
         QVariant iconVar = index.data(Qt::DecorationRole);
         if (iconVar.isValid() && iconVar.canConvert<QIcon>()) {
             QIcon icon = iconVar.value<QIcon>();
-            int iconSize = 70;
+            int iconSize = 76;
             int x = thumbArea.left() + (thumbArea.width() - iconSize) / 2;
             int y = thumbArea.top() + (thumbArea.height() - iconSize) / 2;
             icon.paint(painter, x, y, iconSize, iconSize);
         }
     }
 
-    // 3. Draw Primary Label (File / Folder Name)
-    QRect titleArea(rect.left() + 6, rect.top() + 106, rect.width() - 12, 20);
+    // 3. Draw Primary Label (File / Folder Name - single line with middle elision)
+    int titleTop = isDir ? (rect.top() + 106) : (rect.top() + 101);
+    QRect titleArea(rect.left() + 8, titleTop, rect.width() - 16, 20);
     QFont titleFont = option.font;
-    titleFont.setPointSize(9);
+    titleFont.setPointSizeF(9.2);
     titleFont.setWeight(isSelected ? QFont::DemiBold : QFont::Medium);
     painter->setFont(titleFont);
     painter->setPen(textColor);
@@ -375,23 +392,18 @@ void FolderCardDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     QString elidedTitle = fm.elidedText(text, Qt::ElideMiddle, titleArea.width());
     painter->drawText(titleArea, Qt::AlignHCenter | Qt::AlignVCenter, elidedTitle);
 
-    // 4. Draw Secondary Label (Sub-info: Size or "Folder")
-    QRect subArea(rect.left() + 6, rect.top() + 128, rect.width() - 12, 16);
-    QFont subFont = option.font;
-    subFont.setPointSize(8);
-    subFont.setWeight(QFont::Normal);
-    painter->setFont(subFont);
-    painter->setPen(subTextColor);
-
-    QString subText = index.data(Qt::UserRole + 3).toString();
-    if (subText.isEmpty()) {
-        bool isDir = index.data(Qt::UserRole + 1).toBool();
-        subText = isDir ? tr("Folder") : QString();
-    }
-    if (!subText.isEmpty()) {
-        QFontMetrics subFm(subFont);
-        QString elidedSub = subFm.elidedText(subText, Qt::ElideRight, subArea.width());
-        painter->drawText(subArea, Qt::AlignHCenter | Qt::AlignVCenter, elidedSub);
+    // 4. For files, draw subtle secondary metadata (file size) below the filename
+    if (!isDir) {
+        QString subText = index.data(Qt::UserRole + 3).toString();
+        if (!subText.isEmpty()) {
+            QRect subArea(rect.left() + 8, rect.top() + 120, rect.width() - 16, 16);
+            QFont subFont = option.font;
+            subFont.setPointSizeF(7.8);
+            subFont.setWeight(QFont::Normal);
+            painter->setFont(subFont);
+            painter->setPen(subTextColor);
+            painter->drawText(subArea, Qt::AlignHCenter | Qt::AlignVCenter, subText);
+        }
     }
 
     painter->restore();
@@ -510,7 +522,17 @@ FolderViewer::FolderViewer(QWidget *parent)
     , m_itemCount(0)
     , m_totalSize(0)
 {
+    QSettings s("BubezView", "bubezview");
+    m_showFolders = s.value("Gallery/ShowFolders", false).toBool();
     setupUi();
+
+    if (m_listWidget && m_listWidget->verticalScrollBar()) {
+        connect(m_listWidget->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int val) {
+            if (!m_currentFolder.isEmpty()) {
+                m_folderScrollPositions[m_currentFolder] = val;
+            }
+        });
+    }
 }
 
 FolderViewer::~FolderViewer()
@@ -524,30 +546,32 @@ void FolderViewer::setupUi()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
-    // Top Navigation & Stats Bar
+    // Top Navigation & Filter Bar (seamless canvas header with pill controls)
     m_topBar = new QWidget(this);
-    m_topBar->setFixedHeight(40);
+    m_topBar->setFixedHeight(44);
 
     QHBoxLayout *topLayout = new QHBoxLayout(m_topBar);
-    topLayout->setContentsMargins(10, 4, 10, 4);
-    topLayout->setSpacing(8);
+    topLayout->setContentsMargins(18, 8, 18, 4);
+    topLayout->setSpacing(10);
 
-    m_btnUp = new QPushButton(QIcon::fromTheme("go-up"), tr("Up"), m_topBar);
+    m_btnUp = new QPushButton(tr("‹ Up"), m_topBar);
     m_btnUp->setCursor(Qt::PointingHandCursor);
-    m_btnUp->setToolTip(tr("Go to parent folder (Backspace)"));
+    m_btnUp->setToolTip(tr("Go to parent folder (Backspace / Alt+Up)"));
     m_btnUp->setFixedHeight(28);
-    m_btnUp->setMinimumWidth(68);
+    m_btnUp->setEnabled(false);
     connect(m_btnUp, &QPushButton::clicked, this, &FolderViewer::goUpDirectory);
-    topLayout->addWidget(m_btnUp);
+    topLayout->addWidget(m_btnUp, 0, Qt::AlignVCenter);
 
     topLayout->addSpacing(4);
 
+    // Pill badge is hidden: folder title is already presented cleanly in MinimalHeaderBar
     m_pillBadge = new QFrame(m_topBar);
     m_pillBadge->setObjectName("FolderPillBadge");
-    m_pillBadge->setFixedHeight(28);
+    m_pillBadge->setFixedHeight(26);
+    m_pillBadge->setVisible(false);
 
     QHBoxLayout *pillLayout = new QHBoxLayout(m_pillBadge);
-    pillLayout->setContentsMargins(10, 0, 12, 0);
+    pillLayout->setContentsMargins(10, 0, 10, 0);
     pillLayout->setSpacing(6);
     pillLayout->setAlignment(Qt::AlignVCenter);
 
@@ -562,23 +586,27 @@ void FolderViewer::setupUi()
     topLayout->addWidget(m_pillBadge);
     topLayout->addStretch(1);
 
-    // Quick Filter Edit
+    // Quick Filter Search Pill
     m_filterEdit = new QLineEdit(m_topBar);
     m_filterEdit->setPlaceholderText(tr("Filter files..."));
     m_filterEdit->setClearButtonEnabled(true);
     m_filterEdit->setFixedHeight(28);
-    m_filterEdit->setFixedWidth(175);
+    m_filterEdit->setFixedWidth(210);
+    m_filterEdit->addAction(
+        VectorIcons::createUiIcon(VectorIcons::UiIcon::Search, QColor("#64748b"), 15),
+        QLineEdit::LeadingPosition
+    );
     connect(m_filterEdit, &QLineEdit::textChanged, this, &FolderViewer::onFilterTextChanged);
-    topLayout->addWidget(m_filterEdit);
+    topLayout->addWidget(m_filterEdit, 0, Qt::AlignVCenter);
 
-    m_btnToggleInspector = new QPushButton(QIcon::fromTheme("sidebar-show-right", QIcon::fromTheme("dialog-information")), tr("Details"), m_topBar);
+    m_btnToggleInspector = new QPushButton(tr("Details"), m_topBar);
     m_btnToggleInspector->setCheckable(true);
-    m_btnToggleInspector->setChecked(true);
+    m_btnToggleInspector->setChecked(false);
     m_btnToggleInspector->setCursor(Qt::PointingHandCursor);
-    m_btnToggleInspector->setToolTip(tr("Show or hide details panel (Key I)"));
+    m_btnToggleInspector->setToolTip(tr("Show or hide details panel (I)"));
     m_btnToggleInspector->setFixedHeight(28);
     connect(m_btnToggleInspector, &QPushButton::clicked, this, &FolderViewer::toggleInspector);
-    topLayout->addWidget(m_btnToggleInspector);
+    topLayout->addWidget(m_btnToggleInspector, 0, Qt::AlignVCenter);
 
     mainLayout->addWidget(m_topBar);
 
@@ -621,7 +649,7 @@ void FolderViewer::setupUi()
         }
         QMenu menu(this);
         ThemePreset preset = ThemeManager::currentPreset();
-        if (preset != ThemePreset::SystemNative) {
+        if (ThemeManager::isDark(preset)) {
             menu.setStyleSheet(
                 "QMenu {"
                 "   background-color: #21252b;"
@@ -635,6 +663,23 @@ void FolderViewer::setupUi()
                 "}"
                 "QMenu::item:selected {"
                 "   background-color: #38bdf8;"
+                "   color: #ffffff;"
+                "}"
+            );
+        } else {
+            menu.setStyleSheet(
+                "QMenu {"
+                "   background-color: #ffffff;"
+                "   color: #1d1d1f;"
+                "   border: 1px solid #d2d2d7;"
+                "   border-radius: 6px;"
+                "   padding: 4px 0px;"
+                "}"
+                "QMenu::item {"
+                "   padding: 6px 20px 6px 10px;"
+                "}"
+                "QMenu::item:selected {"
+                "   background-color: #007aff;"
                 "   color: #ffffff;"
                 "}"
             );
@@ -659,14 +704,15 @@ void FolderViewer::setupUi()
     });
 
     contentLayout->addWidget(m_bookmarksWidget);
+    m_bookmarksWidget->setVisible(false);
 
-    // Center Column: Card Grid List Widget with Large Cards
+    // Center Column: Card Grid List Widget with Soft Floating Squircle Items
     m_listWidget = new FolderListWidget(this);
     m_listWidget->setViewMode(QListWidget::IconMode);
     m_listWidget->setResizeMode(QListWidget::Adjust);
     m_listWidget->setMovement(QListWidget::Static);
-    m_listWidget->setSpacing(10);
-    m_listWidget->setGridSize(QSize(154, 168));
+    m_listWidget->setSpacing(12);
+    m_listWidget->setGridSize(QSize(148, 152));
     m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     if (m_listWidget->verticalScrollBar()) {
@@ -767,6 +813,7 @@ void FolderViewer::setupUi()
     prevLayout->addWidget(m_btnOpenSelected);
 
     contentLayout->addWidget(m_previewPane);
+    m_previewPane->setVisible(false);
 
     mainLayout->addLayout(contentLayout, 1);
 
@@ -782,19 +829,98 @@ QString FolderViewer::selectedFilePath() const
     return QString();
 }
 
-bool FolderViewer::loadFolder(const QString &folderPath)
+QRect FolderViewer::cardRectForPath(const QString &filePath) const
+{
+    if (m_listWidget) {
+        QListWidgetItem *item = m_pathToItem.value(filePath, nullptr);
+        if (!item) {
+            item = m_pathToItem.value(QFileInfo(filePath).absoluteFilePath(), nullptr);
+        }
+        if (!item) {
+            item = m_pathToItem.value(QFileInfo(filePath).canonicalFilePath(), nullptr);
+        }
+        if (!item && m_listWidget->count() > 0) {
+            item = m_listWidget->currentItem();
+        }
+        if (item) {
+            QRect r = m_listWidget->visualItemRect(item);
+            if (r.isValid() && r.width() > 0 && r.height() > 0) {
+                QPoint globalPt = m_listWidget->viewport()->mapToGlobal(r.topLeft());
+                return QRect(mapFromGlobal(globalPt), r.size());
+            }
+        }
+    }
+    int cw = 148;
+    int ch = 152;
+    return QRect((width() - cw) / 2, (height() - ch) / 2, cw, ch);
+}
+
+void FolderViewer::selectItemByPath(const QString &filePath, bool ensureVisible)
+{
+    if (!m_listWidget || filePath.isEmpty()) return;
+
+    QListWidgetItem *item = m_pathToItem.value(filePath, nullptr);
+    if (!item) {
+        item = m_pathToItem.value(QFileInfo(filePath).absoluteFilePath(), nullptr);
+    }
+    if (!item) {
+        item = m_pathToItem.value(QFileInfo(filePath).canonicalFilePath(), nullptr);
+    }
+
+    if (item) {
+        m_listWidget->blockSignals(true);
+        m_listWidget->setCurrentItem(item);
+        m_listWidget->blockSignals(false);
+
+        if (ensureVisible && m_listWidget->viewport()) {
+            QRect r = m_listWidget->visualItemRect(item);
+            QRect viewRect = m_listWidget->viewport()->rect();
+            if (!viewRect.contains(r)) {
+                m_listWidget->scrollToItem(item, QAbstractItemView::EnsureVisible);
+            }
+        }
+    }
+}
+
+void FolderViewer::setShowFolders(bool show)
+{
+    if (m_showFolders == show) return;
+    m_showFolders = show;
+    QSettings s("BubezView", "bubezview");
+    s.setValue("Gallery/ShowFolders", show);
+    if (!m_currentFolder.isEmpty()) {
+        loadFolder(m_currentFolder, true);
+    }
+}
+
+bool FolderViewer::loadFolder(const QString &folderPath, bool forceReload)
 {
     if (folderPath.isEmpty()) return false;
 
     QDir dir(folderPath);
     if (!dir.exists()) return false;
 
+    QString canonical = dir.canonicalPath();
+    if (canonical.isEmpty()) {
+        canonical = dir.absolutePath();
+    }
+
+    // If folder is already loaded and no forced reload requested, keep loaded state and preserve scroll
+    if (!forceReload && m_currentFolder == canonical && m_listWidget && m_listWidget->count() > 0) {
+        if (m_folderScrollPositions.contains(canonical) && m_listWidget->verticalScrollBar()) {
+            m_listWidget->verticalScrollBar()->setValue(m_folderScrollPositions.value(canonical));
+        }
+        return true;
+    }
+
+    // Save scroll position for the current folder before wiping
+    if (!m_currentFolder.isEmpty() && m_listWidget && m_listWidget->verticalScrollBar()) {
+        m_folderScrollPositions[m_currentFolder] = m_listWidget->verticalScrollBar()->value();
+    }
+
     clear();
 
-    m_currentFolder = dir.canonicalPath();
-    if (m_currentFolder.isEmpty()) {
-        m_currentFolder = dir.absolutePath();
-    }
+    m_currentFolder = canonical;
 
     // Check if parent directory exists
     QDir parentDir(m_currentFolder);
@@ -815,7 +941,9 @@ bool FolderViewer::loadFolder(const QString &folderPath)
         if (name.startsWith('.')) continue; // Rule from bubez py: skip hidden
 
         if (info.isDir()) {
-            subdirs.append(info);
+            if (m_showFolders) {
+                subdirs.append(info);
+            }
         } else {
             files.append(info);
             m_totalSize += info.size();
@@ -836,22 +964,26 @@ bool FolderViewer::loadFolder(const QString &folderPath)
         return collator.compare(a.fileName(), b.fileName()) < 0;
     };
 
-    std::sort(subdirs.begin(), subdirs.end(), compareFileInfos);
+    if (m_showFolders) {
+        std::sort(subdirs.begin(), subdirs.end(), compareFileInfos);
+    }
     std::sort(files.begin(), files.end(), compareFileInfos);
 
-    m_itemCount = subdirs.size() + files.size();
+    m_itemCount = (m_showFolders ? subdirs.size() : 0) + files.size();
 
-    // 1. Add Subfolders
-    for (const QFileInfo &dInfo : subdirs) {
-        QListWidgetItem *item = new QListWidgetItem();
-        item->setText(dInfo.fileName());
-        item->setIcon(getFolderIcon(dInfo.absoluteFilePath()));
-        item->setData(Qt::UserRole, dInfo.absoluteFilePath());
-        item->setData(Qt::UserRole + 1, true); // isDir
-        item->setData(Qt::UserRole + 3, tr("Folder")); // Sub-label
-        item->setToolTip(QString("📁 %1\n%2").arg(dInfo.fileName(), dInfo.absoluteFilePath()));
-        m_listWidget->addItem(item);
-        m_pathToItem.insert(dInfo.absoluteFilePath(), item);
+    // 1. Add Subfolders (only if enabled)
+    if (m_showFolders) {
+        for (const QFileInfo &dInfo : subdirs) {
+            QListWidgetItem *item = new QListWidgetItem();
+            item->setText(dInfo.fileName());
+            item->setIcon(getFolderIcon(dInfo.absoluteFilePath()));
+            item->setData(Qt::UserRole, dInfo.absoluteFilePath());
+            item->setData(Qt::UserRole + 1, true); // isDir
+            item->setData(Qt::UserRole + 3, tr("Folder")); // Sub-label
+            item->setToolTip(QString("📁 %1\n%2").arg(dInfo.fileName(), dInfo.absoluteFilePath()));
+            m_listWidget->addItem(item);
+            m_pathToItem.insert(dInfo.absoluteFilePath(), item);
+        }
     }
 
     // 2. Add Files
@@ -896,10 +1028,15 @@ bool FolderViewer::loadFolder(const QString &folderPath)
         worker->start();
     }
 
+    // Synchronously layout items so scrollbar ranges and visual rects are immediate
+    m_listWidget->doItemsLayout();
+
     emit folderLoaded(m_currentFolder, m_itemCount, m_totalSize);
 
-    // Auto-select first item so preview pane is immediately populated, or reset if folder is empty
-    if (m_listWidget->count() > 0) {
+    // Restore saved scroll position for this folder, or select row 0 if newly visited
+    if (m_folderScrollPositions.contains(m_currentFolder) && m_listWidget->verticalScrollBar()) {
+        m_listWidget->verticalScrollBar()->setValue(m_folderScrollPositions.value(m_currentFolder));
+    } else if (m_listWidget->count() > 0) {
         m_listWidget->setCurrentRow(0);
     } else {
         updateInspectorPane(QString());
@@ -964,7 +1101,7 @@ void FolderViewer::keyPressEvent(QKeyEvent *event)
         goUpDirectory();
         event->accept();
         return;
-    } else if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+    } else if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter || event->key() == Qt::Key_Space) {
         QListWidgetItem *cur = m_listWidget->currentItem();
         if (cur) {
             onItemDoubleClicked(cur);
@@ -1030,100 +1167,116 @@ void FolderViewer::updateTheme()
 {
     ThemePreset preset = ThemeManager::currentPreset();
 
-    if (preset == ThemePreset::SystemNative) {
-        m_topBar->setStyleSheet("background-color: palette(window); border-bottom: 1px solid palette(mid);");
+    if (!ThemeManager::isDark(preset)) {
+        QString winBg = (preset == ThemePreset::ModernLight) ? "#f5f5f7" : "#eff0f1";
+        QString cardBg = (preset == ThemePreset::ModernLight) ? "#ffffff" : "#fcfcfc";
+        QString borderCol = (preset == ThemePreset::ModernLight) ? "#d2d2d7" : "#bdc3c7";
+        QString textCol = (preset == ThemePreset::ModernLight) ? "#1d1d1f" : "#232629";
+        QString subTextCol = (preset == ThemePreset::ModernLight) ? "#6e6e73" : "#626569";
+        QString accentCol = (preset == ThemePreset::ModernLight) ? "#007aff" : "#3daee9";
+        QString hoverCol = (preset == ThemePreset::ModernLight) ? "#e5e5ea" : "#d8dbde";
+
+        // Seamless sub-bar matching canvas background (no double horizontal divider line)
+        m_topBar->setStyleSheet(QString("background-color: %1; border: none;").arg(winBg));
         m_pillBadge->setStyleSheet(
-            "#FolderPillBadge {"
-            "   background-color: palette(button);"
-            "   border: 1px solid palette(mid);"
-            "   border-radius: 14px;"
-            "}"
+            QString("#FolderPillBadge {"
+            "   background-color: %1;"
+            "   border: 1px solid %2;"
+            "   border-radius: 13px;"
+            "}").arg(cardBg, borderCol)
         );
-        m_pillText->setStyleSheet("border: none; background: transparent; color: palette(window-text); font-size: 11px; font-weight: 500;");
+        m_pillText->setStyleSheet(QString("border: none; background: transparent; color: %1; font-size: 11px; font-weight: 500;").arg(textCol));
 
         m_btnUp->setStyleSheet(
-            "QPushButton {"
-            "   background-color: palette(button);"
-            "   color: palette(button-text);"
-            "   border: 1px solid palette(mid);"
-            "   border-radius: 5px;"
+            QString("QPushButton {"
+            "   background-color: rgba(0, 0, 0, 0.05);"
+            "   color: %1;"
+            "   border: none;"
+            "   border-radius: 14px;"
+            "   padding: 0px 14px;"
             "   font-size: 12px;"
-            "   font-weight: 500;"
+            "   font-weight: 600;"
             "}"
             "QPushButton:hover {"
-            "   background-color: palette(highlight);"
-            "   color: palette(highlighted-text);"
-            "   border-color: palette(highlight);"
+            "   background-color: %2;"
+            "   color: #ffffff;"
             "}"
+            "QPushButton:disabled {"
+            "   background-color: rgba(0, 0, 0, 0.025);"
+            "   color: rgba(0, 0, 0, 0.25);"
+            "}").arg(textCol, accentCol)
         );
 
         if (m_filterEdit) {
             m_filterEdit->setStyleSheet(
-                "QLineEdit {"
-                "   background-color: palette(base);"
-                "   color: palette(text);"
-                "   border: 1px solid palette(mid);"
-                "   border-radius: 6px;"
-                "   padding: 3px 8px;"
-                "   font-size: 11px;"
+                QString("QLineEdit {"
+                "   background-color: %1;"
+                "   color: %2;"
+                "   border: 1px solid rgba(0, 0, 0, 0.10);"
+                "   border-radius: 14px;"
+                "   padding: 2px 12px 2px 6px;"
+                "   font-size: 12px;"
                 "}"
+                "QLineEdit:focus {"
+                "   border: 1px solid %3;"
+                "}").arg(cardBg, textCol, accentCol)
             );
         }
 
         m_listWidget->setStyleSheet(
-            "QListWidget {"
-            "   background-color: palette(window);"
+            QString("QListWidget {"
+            "   background-color: %1;"
             "   border: none;"
-            "   padding: 10px;"
-            "}\n" + ThemeManager::scrollBarStyleSheet(preset)
+            "   padding: 6px 18px 16px 18px;"
+            "}\n").arg(winBg) + ThemeManager::scrollBarStyleSheet(preset)
         );
 
         if (m_bookmarksWidget) {
             m_bookmarksWidget->setStyleSheet(
-                "QListWidget {"
-                "   background-color: palette(window);"
-                "   border-right: 1px solid palette(mid);"
-                "   padding: 6px 0px;"
-                "   color: palette(window-text);"
+                QString("QListWidget {"
+                "   background-color: %1;"
+                "   border-right: 1px solid %2;"
+                "   padding: 8px 0px;"
+                "   color: %3;"
                 "   font-size: 12px;"
                 "}"
                 "QListWidget::item {"
-                "   padding: 5px 10px;"
-                "   border-radius: 6px;"
-                "   margin: 1px 6px;"
+                "   padding: 6px 12px;"
+                "   border-radius: 10px;"
+                "   margin: 1px 8px;"
                 "}"
                 "QListWidget::item:hover:!disabled {"
-                "   background-color: palette(alternate-base);"
+                "   background-color: %4;"
                 "}"
                 "QListWidget::item:selected {"
-                "   background-color: palette(highlight);"
-                "   color: palette(highlighted-text);"
+                "   background-color: %5;"
+                "   color: #ffffff;"
                 "   font-weight: 600;"
                 "}"
                 "QListWidget::item:disabled {"
                 "   padding-top: 8px;"
                 "   padding-bottom: 2px;"
                 "   font-weight: bold;"
-                "}"
+                "}").arg(winBg, borderCol, textCol, hoverCol, accentCol)
             );
         }
 
         if (m_previewPane) {
             m_previewPane->setStyleSheet(
-                "QWidget {"
-                "   background-color: palette(window);"
-                "   border-left: 1px solid palette(mid);"
-                "}"
+                QString("QWidget {"
+                "   background-color: %1;"
+                "   border-left: 1px solid %2;"
+                "}").arg(winBg, borderCol)
             );
         }
 
         if (m_previewCard) {
             m_previewCard->setStyleSheet(
-                "QFrame {"
-                "   background-color: palette(base);"
-                "   border: 1px solid palette(mid);"
-                "   border-radius: 8px;"
-                "}"
+                QString("QFrame {"
+                "   background-color: %1;"
+                "   border: 1px solid %2;"
+                "   border-radius: 14px;"
+                "}").arg(cardBg, borderCol)
             );
         }
 
@@ -1131,99 +1284,112 @@ void FolderViewer::updateTheme()
             m_previewImgLabel->setStyleSheet("background-color: transparent; border: none; padding: 2px;");
         }
         if (m_inspectorBadge) {
-            m_inspectorBadge->setStyleSheet("color: palette(highlight); font-size: 11px; font-weight: bold; letter-spacing: 0.8px;");
+            m_inspectorBadge->setStyleSheet(QString("color: %1; font-size: 11px; font-weight: bold; letter-spacing: 0.8px;").arg(accentCol));
         }
         if (m_btnCloseInspector) {
-            m_btnCloseInspector->setStyleSheet("QPushButton { background-color: transparent; border: none; font-size: 11px; border-radius: 11px; } QPushButton:hover { background-color: palette(mid); }");
+            m_btnCloseInspector->setStyleSheet(QString("QPushButton { background-color: transparent; border: none; font-size: 11px; border-radius: 11px; } QPushButton:hover { background-color: %1; }").arg(hoverCol));
         }
         if (m_previewTitleLabel) {
-            m_previewTitleLabel->setStyleSheet("font-weight: bold; font-size: 13px; color: palette(window-text);");
+            m_previewTitleLabel->setStyleSheet(QString("font-weight: bold; font-size: 13px; color: %1;").arg(textCol));
         }
         if (m_previewMetaLabel) {
-            m_previewMetaLabel->setStyleSheet("color: palette(window-text); font-size: 11px; line-height: 1.4;");
+            m_previewMetaLabel->setStyleSheet(QString("color: %1; font-size: 11px; line-height: 1.4;").arg(subTextCol));
         }
         if (m_previewTextEdit) {
             m_previewTextEdit->setStyleSheet(
-                "QPlainTextEdit {"
-                "   background-color: palette(base);"
-                "   color: palette(text);"
+                QString("QPlainTextEdit {"
+                "   background-color: %1;"
+                "   color: %2;"
                 "   border: none;"
                 "   padding: 4px;"
-                "}"
+                "}").arg(cardBg, textCol)
             );
         }
         if (m_btnToggleInspector) {
             m_btnToggleInspector->setStyleSheet(
-                "QPushButton {"
-                "   background-color: palette(button);"
-                "   color: palette(button-text);"
-                "   border: 1px solid palette(mid);"
-                "   border-radius: 5px;"
-                "   padding: 4px 10px;"
+                QString("QPushButton {"
+                "   background-color: rgba(0, 0, 0, 0.05);"
+                "   color: %1;"
+                "   border: none;"
+                "   border-radius: 14px;"
+                "   padding: 0px 14px;"
                 "   font-size: 12px;"
+                "   font-weight: 600;"
+                "}"
+                "QPushButton:hover {"
+                "   background-color: rgba(0, 0, 0, 0.09);"
                 "}"
                 "QPushButton:checked {"
-                "   background-color: palette(highlight);"
-                "   color: palette(highlighted-text);"
-                "   border-color: palette(highlight);"
-                "}"
+                "   background-color: %2;"
+                "   color: #ffffff;"
+                "}").arg(textCol, accentCol)
             );
         }
         if (m_btnOpenSelected) {
             m_btnOpenSelected->setStyleSheet(
-                "QPushButton {"
-                "   background-color: palette(highlight);"
-                "   color: palette(highlighted-text);"
+                QString("QPushButton {"
+                "   background-color: %1;"
+                "   color: #ffffff;"
                 "   border: none;"
-                "   border-radius: 6px;"
+                "   border-radius: 16px;"
                 "   font-size: 12px;"
                 "   font-weight: 600;"
                 "}"
                 "QPushButton:disabled {"
-                "   background-color: palette(button);"
-                "   color: palette(placeholder-text);"
-                "}"
+                "   background-color: %2;"
+                "   color: %3;"
+                "}").arg(accentCol, cardBg, subTextCol)
             );
         }
     } else if (preset == ThemePreset::DarkSlate) {
-        m_topBar->setStyleSheet("background-color: #1e2228; border-bottom: 1px solid #282d36;");
+        // Seamless top bar matching #181a1f canvas background (eliminates double horizontal divider bar)
+        m_topBar->setStyleSheet("background-color: #181a1f; border: none;");
         m_pillBadge->setStyleSheet(
             "#FolderPillBadge {"
             "   background-color: rgba(255, 255, 255, 0.05);"
-            "   border: 1px solid rgba(255, 255, 255, 0.09);"
-            "   border-radius: 14px;"
+            "   border: 1px solid rgba(255, 255, 255, 0.08);"
+            "   border-radius: 13px;"
             "}"
         );
         m_pillText->setStyleSheet("border: none; background: transparent; color: #e2e8f0; font-size: 11px; font-weight: 500;");
 
         m_btnUp->setStyleSheet(
             "QPushButton {"
-            "   background-color: #262c35;"
-            "   color: #cbd5e1;"
-            "   border: 1px solid #3b4252;"
-            "   border-radius: 5px;"
+            "   background-color: rgba(255, 255, 255, 0.06);"
+            "   color: #e2e8f0;"
+            "   border: none;"
+            "   border-radius: 14px;"
+            "   padding: 0px 14px;"
             "   font-size: 12px;"
-            "   font-weight: 500;"
+            "   font-weight: 600;"
             "}"
             "QPushButton:hover {"
-            "   background-color: #38bdf8;"
-            "   color: #0f172a;"
-            "   border-color: #38bdf8;"
+            "   background-color: rgba(56, 189, 248, 0.22);"
+            "   color: #38bdf8;"
+            "}"
+            "QPushButton:disabled {"
+            "   background-color: rgba(255, 255, 255, 0.025);"
+            "   color: rgba(255, 255, 255, 0.22);"
             "}"
         );
 
         if (m_filterEdit) {
             m_filterEdit->setStyleSheet(
                 "QLineEdit {"
-                "   background-color: #14171d;"
+                "   background-color: rgba(255, 255, 255, 0.05);"
                 "   color: #f1f5f9;"
-                "   border: 1px solid #333842;"
-                "   border-radius: 6px;"
-                "   padding: 3px 8px;"
-                "   font-size: 11px;"
+                "   border: 1px solid rgba(255, 255, 255, 0.07);"
+                "   border-radius: 14px;"
+                "   padding: 2px 12px 2px 6px;"
+                "   font-size: 12px;"
+                "}"
+                "QLineEdit:hover {"
+                "   background-color: rgba(255, 255, 255, 0.07);"
+                "   border-color: rgba(255, 255, 255, 0.13);"
                 "}"
                 "QLineEdit:focus {"
-                "   border-color: #38bdf8;"
+                "   background-color: rgba(15, 23, 42, 0.65);"
+                "   border: 1px solid rgba(56, 189, 248, 0.65);"
                 "}"
             );
         }
@@ -1231,21 +1397,21 @@ void FolderViewer::updateTheme()
         if (m_btnToggleInspector) {
             m_btnToggleInspector->setStyleSheet(
                 "QPushButton {"
-                "   background-color: #262c35;"
-                "   color: #cbd5e1;"
-                "   border: 1px solid #3b4252;"
-                "   border-radius: 5px;"
+                "   background-color: rgba(255, 255, 255, 0.06);"
+                "   color: #e2e8f0;"
+                "   border: none;"
+                "   border-radius: 14px;"
                 "   font-size: 12px;"
-                "   padding: 4px 10px;"
+                "   font-weight: 600;"
+                "   padding: 0px 14px;"
                 "}"
                 "QPushButton:hover {"
-                "   background-color: #333b47;"
-                "   color: #f8fafc;"
+                "   background-color: rgba(255, 255, 255, 0.12);"
+                "   color: #ffffff;"
                 "}"
                 "QPushButton:checked {"
                 "   background-color: rgba(56, 189, 248, 0.22);"
                 "   color: #38bdf8;"
-                "   border-color: #38bdf8;"
                 "}"
             );
         }
@@ -1254,7 +1420,7 @@ void FolderViewer::updateTheme()
             "QListWidget {"
             "   background-color: #181a1f;"
             "   border: none;"
-            "   padding: 10px;"
+            "   padding: 6px 18px 16px 18px;"
             "}\n" + ThemeManager::scrollBarStyleSheet(preset)
         );
 
@@ -1262,14 +1428,14 @@ void FolderViewer::updateTheme()
             m_bookmarksWidget->setStyleSheet(
                 "QListWidget {"
                 "   background-color: #14161b;"
-                "   border-right: 1px solid #23272f;"
-                "   padding: 6px 0px;"
+                "   border-right: 1px solid rgba(255, 255, 255, 0.06);"
+                "   padding: 8px 0px;"
                 "   color: #94a3b8;"
                 "   font-size: 12px;"
                 "}"
                 "QListWidget::item {"
-                "   padding: 5px 10px;"
-                "   border-radius: 6px;"
+                "   padding: 6px 12px;"
+                "   border-radius: 10px;"
                 "   margin: 1px 8px;"
                 "}"
                 "QListWidget::item:hover:!disabled {"
@@ -1294,7 +1460,7 @@ void FolderViewer::updateTheme()
             m_previewPane->setStyleSheet(
                 "QWidget {"
                 "   background-color: #14161b;"
-                "   border-left: 1px solid #23272f;"
+                "   border-left: 1px solid rgba(255, 255, 255, 0.06);"
                 "}"
             );
         }
@@ -1303,8 +1469,8 @@ void FolderViewer::updateTheme()
             m_previewCard->setStyleSheet(
                 "QFrame {"
                 "   background-color: #111317;"
-                "   border: 1px solid #282d36;"
-                "   border-radius: 8px;"
+                "   border: 1px solid rgba(255, 255, 255, 0.07);"
+                "   border-radius: 14px;"
                 "}"
             );
         }
@@ -1352,7 +1518,7 @@ void FolderViewer::updateTheme()
                 "   background-color: #0284c7;"
                 "   color: #ffffff;"
                 "   border: none;"
-                "   border-radius: 6px;"
+                "   border-radius: 16px;"
                 "   font-size: 12px;"
                 "   font-weight: 600;"
                 "}"
@@ -1366,44 +1532,54 @@ void FolderViewer::updateTheme()
             );
         }
     } else { // BreezeDark
-        m_topBar->setStyleSheet("background-color: #202326; border-bottom: 1px solid #2a2e33;");
+        // Seamless top bar matching #17191c canvas background
+        m_topBar->setStyleSheet("background-color: #17191c; border: none;");
         m_pillBadge->setStyleSheet(
             "#FolderPillBadge {"
             "   background-color: rgba(255, 255, 255, 0.05);"
-            "   border: 1px solid rgba(255, 255, 255, 0.09);"
-            "   border-radius: 14px;"
+            "   border: 1px solid rgba(255, 255, 255, 0.08);"
+            "   border-radius: 13px;"
             "}"
         );
         m_pillText->setStyleSheet("border: none; background: transparent; color: #eff0f1; font-size: 11px; font-weight: 500;");
 
         m_btnUp->setStyleSheet(
             "QPushButton {"
-            "   background-color: #26292d;"
+            "   background-color: rgba(255, 255, 255, 0.06);"
             "   color: #cfd2d5;"
-            "   border: 1px solid #31363b;"
-            "   border-radius: 5px;"
+            "   border: none;"
+            "   border-radius: 14px;"
+            "   padding: 0px 14px;"
             "   font-size: 12px;"
-            "   font-weight: 500;"
+            "   font-weight: 600;"
             "}"
             "QPushButton:hover {"
-            "   background-color: #3daee9;"
-            "   color: #ffffff;"
-            "   border-color: #3daee9;"
+            "   background-color: rgba(61, 174, 233, 0.24);"
+            "   color: #3daee9;"
+            "}"
+            "QPushButton:disabled {"
+            "   background-color: rgba(255, 255, 255, 0.025);"
+            "   color: rgba(255, 255, 255, 0.22);"
             "}"
         );
 
         if (m_filterEdit) {
             m_filterEdit->setStyleSheet(
                 "QLineEdit {"
-                "   background-color: #141618;"
+                "   background-color: rgba(255, 255, 255, 0.05);"
                 "   color: #eff0f1;"
-                "   border: 1px solid #31363b;"
-                "   border-radius: 6px;"
-                "   padding: 3px 8px;"
-                "   font-size: 11px;"
+                "   border: 1px solid rgba(255, 255, 255, 0.07);"
+                "   border-radius: 14px;"
+                "   padding: 2px 12px 2px 6px;"
+                "   font-size: 12px;"
+                "}"
+                "QLineEdit:hover {"
+                "   background-color: rgba(255, 255, 255, 0.07);"
+                "   border-color: rgba(255, 255, 255, 0.13);"
                 "}"
                 "QLineEdit:focus {"
-                "   border-color: #3daee9;"
+                "   background-color: rgba(15, 18, 22, 0.7);"
+                "   border: 1px solid rgba(61, 174, 233, 0.65);"
                 "}"
             );
         }
@@ -1411,21 +1587,21 @@ void FolderViewer::updateTheme()
         if (m_btnToggleInspector) {
             m_btnToggleInspector->setStyleSheet(
                 "QPushButton {"
-                "   background-color: #26292d;"
+                "   background-color: rgba(255, 255, 255, 0.06);"
                 "   color: #cfd2d5;"
-                "   border: 1px solid #31363b;"
-                "   border-radius: 5px;"
+                "   border: none;"
+                "   border-radius: 14px;"
                 "   font-size: 12px;"
-                "   padding: 4px 10px;"
+                "   font-weight: 600;"
+                "   padding: 0px 14px;"
                 "}"
                 "QPushButton:hover {"
-                "   background-color: #31363b;"
+                "   background-color: rgba(255, 255, 255, 0.12);"
                 "   color: #eff0f1;"
                 "}"
                 "QPushButton:checked {"
                 "   background-color: rgba(61, 174, 233, 0.22);"
                 "   color: #3daee9;"
-                "   border-color: #3daee9;"
                 "}"
             );
         }
@@ -1434,7 +1610,7 @@ void FolderViewer::updateTheme()
             "QListWidget {"
             "   background-color: #17191c;"
             "   border: none;"
-            "   padding: 10px;"
+            "   padding: 6px 18px 16px 18px;"
             "}\n" + ThemeManager::scrollBarStyleSheet(preset)
         );
 
@@ -1442,14 +1618,14 @@ void FolderViewer::updateTheme()
             m_bookmarksWidget->setStyleSheet(
                 "QListWidget {"
                 "   background-color: #151719;"
-                "   border-right: 1px solid #23262a;"
-                "   padding: 6px 0px;"
+                "   border-right: 1px solid rgba(255, 255, 255, 0.06);"
+                "   padding: 8px 0px;"
                 "   color: #a0a6ad;"
                 "   font-size: 12px;"
                 "}"
                 "QListWidget::item {"
-                "   padding: 5px 10px;"
-                "   border-radius: 6px;"
+                "   padding: 6px 12px;"
+                "   border-radius: 10px;"
                 "   margin: 1px 8px;"
                 "}"
                 "QListWidget::item:hover:!disabled {"
@@ -1474,7 +1650,7 @@ void FolderViewer::updateTheme()
             m_previewPane->setStyleSheet(
                 "QWidget {"
                 "   background-color: #151719;"
-                "   border-left: 1px solid #23262a;"
+                "   border-left: 1px solid rgba(255, 255, 255, 0.06);"
                 "}"
             );
         }
@@ -1483,8 +1659,8 @@ void FolderViewer::updateTheme()
             m_previewCard->setStyleSheet(
                 "QFrame {"
                 "   background-color: #101214;"
-                "   border: 1px solid #26292d;"
-                "   border-radius: 8px;"
+                "   border: 1px solid rgba(255, 255, 255, 0.07);"
+                "   border-radius: 14px;"
                 "}"
             );
         }
@@ -1532,7 +1708,7 @@ void FolderViewer::updateTheme()
                 "   background-color: #3daee9;"
                 "   color: #ffffff;"
                 "   border: none;"
-                "   border-radius: 6px;"
+                "   border-radius: 16px;"
                 "   font-size: 12px;"
                 "   font-weight: 600;"
                 "}"
@@ -1795,11 +1971,7 @@ void FolderViewer::updateInspectorPane(const QString &filePath)
     QFileInfo fi(filePath);
     m_previewTitleLabel->setText(fi.fileName());
 
-    ThemePreset preset = ThemeManager::currentPreset();
-    bool isDark = (preset == ThemePreset::DarkSlate || preset == ThemePreset::BreezeDark);
-    if (preset == ThemePreset::SystemNative) {
-        isDark = (palette().color(QPalette::WindowText).lightness() > 128);
-    }
+    bool isDark = ThemeManager::isDarkTheme();
 
     QString labelColor = isDark ? "#94a3b8" : "#64748b";
     QString valColor = isDark ? "#f1f5f9" : "#0f172a";

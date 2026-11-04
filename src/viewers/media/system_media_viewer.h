@@ -80,10 +80,17 @@ public:
      */
     void setSiblingFiles(const QStringList &files) override;
 
+    void setEditMode(bool editMode) override { m_isEditMode = editMode; }
+    bool isEditMode() const override { return m_isEditMode; }
+
     /**
      * @brief Audio trim placeholder for system playback mode.
      */
+    void switchAudioWorkspace(int index) override { Q_UNUSED(index); }
+    int audioWorkspaceIndex() const override { return 0; }
     void openAudioTrimDialog() override;
+    void toggleAudioStudio() override { openAudioTrimDialog(); }
+    bool isAudioStudioActive() const override { return false; }
 
     /**
      * @brief Audio tag editor placeholder or dispatch for system playback mode.
@@ -183,4 +190,5 @@ private:
     bool m_isLooping = false;
     bool m_isSeeking = false;
     float m_previousVolume = 1.0f;
+    bool m_isEditMode = false;
 };

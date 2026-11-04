@@ -20,6 +20,17 @@ namespace Poppler {
 }
 
 /**
+ * @brief Canonical geometric shape types supported in PDF canvas and markup tools.
+ */
+enum class PdfShapeType {
+    Rectangle = 0,
+    Ellipse = 1,
+    Arrow = 2,
+    Line = 3,
+    RoundedRectangle = 4
+};
+
+/**
  * @brief Helper class encapsulating visual rendering and coordinate math for canvas tools.
  */
 class PdfCanvasTools {
@@ -30,8 +41,34 @@ public:
     static QRect normalizeRect(const QPoint &p1, const QPoint &p2);
 
     /**
+     * @brief Computes the shortest distance from point p to the line segment (a, b).
+     */
+    static double pointToLineSegmentDistance(const QPointF &p, const QPointF &a, const QPointF &b);
+
+    /**
+     * @brief Performs accurate vector hit-testing for geometric shapes.
+     * @param shapeType 0: Rectangle, 1: Ellipse, 2: Arrow, 3: Line, 4: Rounded Rect.
+     * @param shapeRect Bounding rect in canvas pixels.
+     * @param localStart Local start point for directional shapes (or QPoint(-1, -1)).
+     * @param localEnd Local end point for directional shapes (or QPoint(-1, -1)).
+     * @param strokeWidth Line width in pixels.
+     * @param fillColor Fill color (determines whether interior is clickable).
+     * @param clickPoint Click point in canvas pixels.
+     * @param tolerance Hit-test threshold in pixels.
+     * @return True if clickPoint hits the shape's stroke or filled interior.
+     */
+    static bool hitTestShape(int shapeType,
+                             const QRect &shapeRect,
+                             const QPoint &localStart,
+                             const QPoint &localEnd,
+                             int strokeWidth,
+                             const QColor &fillColor,
+                             const QPoint &clickPoint,
+                             int tolerance = 6);
+
+    /**
      * @brief Renders vector shapes (Rectangle, Ellipse, Arrow, Line) into an anti-aliased stamp image.
-     * @param shapeType 0 = Rectangle, 1 = Ellipse, 2 = Arrow, 3 = Line.
+     * @param shapeType 0 = Rectangle, 1 = Ellipse, 2 = Arrow, 3 = Line, 4 = Rounded Rect.
      * @param strokeWidth Stroke line width in pixels.
      * @param strokeColor Stroke color.
      * @param fillColor Fill brush color.
@@ -88,4 +125,35 @@ public:
                                  const std::vector<std::unique_ptr<Poppler::TextBox>> &textBoxes,
                                  double scaleX,
                                  double scaleY);
+
+    /**
+     * @brief Calculates bounding box for a rubber stamp given its text, angle, and font size.
+     * @param text Stamp text.
+     * @param angle Rotation angle in degrees.
+     * @param fontSize Font size in points.
+     * @param centerPos Center point on the page.
+     * @param pageW Page width.
+     * @param pageH Page height.
+     * @return Bounding rectangle clamped to page bounds.
+     */
+    static QRect calculateStampRect(const QString &text, qreal angle, int fontSize,
+                                    const QPoint &centerPos, int pageW, int pageH);
+
+    /**
+     * @brief Samples the dominant background color around the perimeter of a given rectangle in a page image.
+     * @param image Rendered raster page image.
+     * @param rect Target area (e.g. text bounding box) in pixel coordinates.
+     * @param marginDistance Number of pixels outside rect to sample (default: 3).
+     * @return Sampled dominant background color (default Qt::white if invalid).
+     */
+    static QColor sampleBackgroundColor(const QImage &image, const QRect &rect, int marginDistance = 3);
+
+    /**
+     * @brief Generates an alpha-feathered background patch image with softly blurred edges.
+     * @param size Target patch dimensions.
+     * @param color Background fill color.
+     * @param featherRadius Feathering margin width in pixels (default: 6).
+     * @return Alpha-feathered QImage patch.
+     */
+    static QImage createFeatheredPatch(const QSize &size, const QColor &color, int featherRadius = 6);
 };

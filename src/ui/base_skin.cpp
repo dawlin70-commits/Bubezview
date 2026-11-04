@@ -1,4 +1,7 @@
 #include "base_skin.h"
+#include <QAbstractSlider>
+#include <QComboBox>
+#include <QKeyEvent>
 #include "image_viewer.h"
 #include "text_viewer.h"
 #include "core/interfaces/i_pdf_viewer.h"
@@ -9,6 +12,7 @@
 #include "build_options_dialog.h"
 #include "office_viewer.h"
 #include "folder_viewer.h"
+#include "gallery_zoom_transition.h"
 #include "theme_manager.h"
 #include "settings_dialog.h"
 #include "action_registry.h"
@@ -20,8 +24,6 @@
 #include "update_dialog.h"
 #include "ocr_manager.h"
 #include "ocr_dialog.h"
-#include "pdf_image_extract_dialog.h"
-#include "pdf_repair_dialog.h"
 #include "fallback_notice_dialog.h"
 #include "build_config.h"
 #include "package_manager_helper.h"
@@ -39,6 +41,8 @@
 #include <cmath>
 #include <QTemporaryFile>
 #include <QApplication>
+#include <QScrollBar>
+#include <QAbstractScrollArea>
 #include <QClipboard>
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
@@ -52,6 +56,29 @@
 #include <QPainter>
 #include <QPrinter>
 #include <QPrintDialog>
+
+namespace {
+/**
+ * @brief Dynamic stacked widget whose minimum size hint only reflects the active viewer,
+ * preventing inactive engine cards or unsupported file inspectors from forcing large minimum sizes.
+ */
+class DynamicStackedWidget : public QStackedWidget {
+public:
+    using QStackedWidget::QStackedWidget;
+
+    QSize sizeHint() const override {
+        if (QWidget *w = currentWidget()) {
+            return w->sizeHint();
+        }
+        return QStackedWidget::sizeHint();
+    }
+
+    QSize minimumSizeHint() const override {
+        // Keep minimum size modest so inner viewer layouts never force the window to expand
+        return QSize(320, 240);
+    }
+};
+} // namespace
 #include <QTimer>
 #include <QInputDialog>
 #include <QMessageBox>
@@ -68,6 +95,8 @@
 #include <QContextMenuEvent>
 #include <QMenu>
 #include <QSettings>
+#include <QScreen>
+#include <QWindow>
 #include "goto_folder_dialog.h"
 #include "share_dialog.h"
 #include "share_manager.h"
@@ -190,24 +219,31 @@ BaseSkin::BaseSkin(QWidget *parent)
     , m_currentIndex(-1)
     , m_currentCategory(FileCategory::Unknown)
     , m_transitionOverlay(nullptr)
+    , m_galleryTransition(nullptr)
     , m_overlayOpacity(nullptr)
     , m_animGroup(nullptr)
     , m_lastSwitchTimeMs(0)
     , m_slideshowTimer(nullptr)
 {
     setWindowIcon(QIcon::fromTheme("bubezview", QIcon(":/icons/bubezview.png")));
-    resize(1000, 700);
+
+    m_geometrySaveTimer = new QTimer(this);
+    m_geometrySaveTimer->setSingleShot(true);
+    connect(m_geometrySaveTimer, &QTimer::timeout, this, &BaseSkin::saveWindowGeometry);
+
+    restoreWindowGeometry();
 
     QSettings settings;
     m_filmstripWanted = settings.value("ui/filmstrip", false).toBool();
 
     m_centralContainer = new QWidget(this);
+    m_centralContainer->setObjectName("centralContainer");
     m_centralContainer->setAutoFillBackground(true);
     QVBoxLayout *centralLayout = new QVBoxLayout(m_centralContainer);
     centralLayout->setContentsMargins(0, 0, 0, 0);
     centralLayout->setSpacing(0);
 
-    m_stackedWidget = new QStackedWidget(m_centralContainer);
+    m_stackedWidget = new DynamicStackedWidget(m_centralContainer);
     m_stackedWidget->setAutoFillBackground(true);
 
     m_imageViewer = new ImageViewer(this);
@@ -230,25 +266,6 @@ BaseSkin::BaseSkin(QWidget *parent)
         }
     });
 
-    auto *pv = PluginManager::instance().createViewer(FileCategory::Pdf, this);
-    m_pdfViewer = dynamic_cast<IPdfViewer*>(pv);
-
-    auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
-    m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
-
-    QSettings initSettings("Bubez", "BubezView");
-    bool mpvEnabled = initSettings.value("modules/mpv_enabled", true).toBool();
-    if (mpvEnabled) {
-        auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
-        m_mediaViewer = dynamic_cast<IMediaViewer*>(mv);
-    }
-    if (!m_mediaViewer) {
-        m_mediaViewer = new SystemMediaViewer(this);
-    }
-
-    m_officeViewer = new OfficeViewer(this);
-    m_folderViewer = new FolderViewer(this);
-
     // 7. Unsupported File Technical Inspection Card
     m_unsupportedViewer = new QWidget(this);
     QVBoxLayout *unsupLay = new QVBoxLayout(m_unsupportedViewer);
@@ -258,7 +275,8 @@ BaseSkin::BaseSkin(QWidget *parent)
     QFrame *cardFrame = new QFrame(m_unsupportedViewer);
     cardFrame->setObjectName("unsupportedCard");
     cardFrame->setStyleSheet("#unsupportedCard { background-color: rgba(30, 41, 59, 0.7); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; padding: 24px; }");
-    cardFrame->setFixedWidth(540);
+    cardFrame->setMaximumWidth(540);
+    cardFrame->setMinimumWidth(320);
 
     QVBoxLayout *cardLay = new QVBoxLayout(cardFrame);
     cardLay->setSpacing(14);
@@ -303,13 +321,13 @@ BaseSkin::BaseSkin(QWidget *parent)
 
     m_stackedWidget->addWidget(m_imageViewer);       // 0
     m_stackedWidget->addWidget(m_textViewer);        // 1
-    m_stackedWidget->addWidget(m_pdfViewer ? m_pdfViewer->widget() : new QWidget(this));         // 2
-    m_stackedWidget->addWidget(m_archiveViewer ? m_archiveViewer->widget() : new QWidget(this)); // 3
-    m_stackedWidget->addWidget(m_mediaViewer ? m_mediaViewer->widget() : new QWidget(this));     // 4
-    m_stackedWidget->addWidget(m_officeViewer);                                                  // 5
-    m_stackedWidget->addWidget(m_folderViewer);                                                  // 6
-    m_stackedWidget->addWidget(m_unsupportedViewer);                                             // 7
-    m_stackedWidget->addWidget(m_enginePromptCard);                                              // 8
+    m_stackedWidget->addWidget(new QWidget(this));   // 2 (Lazy IPdfViewer)
+    m_stackedWidget->addWidget(new QWidget(this));   // 3 (Lazy IArchiveViewer)
+    m_stackedWidget->addWidget(new QWidget(this));   // 4 (Lazy IMediaViewer)
+    m_stackedWidget->addWidget(new QWidget(this));   // 5 (Lazy OfficeViewer)
+    m_stackedWidget->addWidget(new QWidget(this));   // 6 (Lazy FolderViewer)
+    m_stackedWidget->addWidget(m_unsupportedViewer); // 7
+    m_stackedWidget->addWidget(m_enginePromptCard);  // 8
 
     centralLayout->addWidget(m_stackedWidget, 1);
 
@@ -327,12 +345,6 @@ BaseSkin::BaseSkin(QWidget *parent)
         openFile(path);
     });
 
-    if (m_mediaViewer) {
-        m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
-            openFile(path);
-        });
-    }
-
     m_searchBar = new SearchBarWidget(m_centralContainer);
     m_searchBar->hide();
 
@@ -348,6 +360,9 @@ BaseSkin::BaseSkin(QWidget *parent)
             found = m_textViewer->findNext(text, matchCase, &wrapped);
         } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
             found = m_pdfViewer->findNext(text, matchCase, &wrapped);
+        } else if (m_stackedWidget->currentIndex() == 3 && m_archiveViewer) {
+            m_archiveViewer->filterEntries(text);
+            found = true;
         }
         m_searchBar->updateStatus(found, wrapped);
     });
@@ -390,6 +405,7 @@ BaseSkin::BaseSkin(QWidget *parent)
 
     // Transitions
     m_transitionOverlay = new TransitionOverlayWidget(m_centralContainer);
+    m_galleryTransition = new GalleryZoomTransition(m_centralContainer);
 
     m_animGroup = new QParallelAnimationGroup(this);
     connect(m_animGroup, &QParallelAnimationGroup::finished, this, [this]() {
@@ -401,45 +417,38 @@ BaseSkin::BaseSkin(QWidget *parent)
         }
     });
 
-    // Sub-viewer signals
-    if (m_archiveViewer) {
-        m_archiveViewer->setOnFilePreviewRequested(
-            [this](const QString &extractedFilePath, const QString &archiveOriginPath, const QString &internalEntryPath) {
-                m_archiveOriginPath = archiveOriginPath;
-                if (m_archiveViewer) {
-                    m_archiveEntries = m_archiveViewer->previewableEntries();
-                }
-                m_archiveCurrentEntryIndex = m_archiveEntries.indexOf(internalEntryPath);
-                if (m_archiveCurrentEntryIndex < 0 && !m_archiveEntries.isEmpty()) {
-                    m_archiveCurrentEntryIndex = 0;
-                }
-                openArchiveFile(extractedFilePath, internalEntryPath);
-            });
-    }
-
     ShareManager::setFolderCompressor([this](const QString &folderPath, const QString &destZipPath, QWidget *parentWidget) -> bool {
-        if (!m_archiveViewer) return false;
+        if (!ensureArchiveViewerCreated()) return false;
         return m_archiveViewer->createArchive({folderPath}, destZipPath, QStringLiteral("zip"), QString(), parentWidget);
     });
 
-    connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString &folderPath, int, qint64) {
-        if (m_currentCategory == FileCategory::Folder && !folderPath.isEmpty()) {
-            m_currentFilePath = folderPath;
-            updateWindowTitle();
-        }
-    });
-    connect(m_folderViewer, &FolderViewer::filePreviewRequested, this, [this](const QString &path) {
-        openFile(path);
-    });
-    connect(m_folderViewer, &FolderViewer::itemContextMenuRequested, this, [this](const QPoint &globalPos, const QString &) {
-        showContextMenuAt(globalPos);
-    });
+    // Theme will be applied once on the fully-constructed MainWindow derived instance
+    // applyCurrentTheme();
 
-    applyCurrentTheme();
+    setEditMode(false);
+
+    if (qApp) {
+        qApp->installEventFilter(this);
+    }
 }
 
 BaseSkin::~BaseSkin()
 {
+    if (qApp) {
+        qApp->removeEventFilter(this);
+    }
+    if (m_geometrySaveTimer) {
+        m_geometrySaveTimer->stop();
+    }
+    if (m_slideshowTimer) {
+        m_slideshowTimer->stop();
+    }
+    if (m_animGroup) {
+        m_animGroup->stop();
+    }
+    if (m_galleryTransition) {
+        m_galleryTransition->stop();
+    }
     if (m_mediaViewer) {
         m_mediaViewer->stop();
     }
@@ -451,6 +460,142 @@ BaseSkin::~BaseSkin()
     }
 }
 
+IPdfViewer *BaseSkin::ensurePdfViewerCreated()
+{
+    if (m_pdfViewer) {
+        return m_pdfViewer;
+    }
+    auto *pv = PluginManager::instance().createViewer(FileCategory::Pdf, this);
+    m_pdfViewer = dynamic_cast<IPdfViewer*>(pv);
+    if (m_pdfViewer) {
+        QWidget *oldW = m_stackedWidget->widget(2);
+        m_stackedWidget->removeWidget(oldW);
+        delete oldW;
+        m_stackedWidget->insertWidget(2, m_pdfViewer->widget());
+        m_pdfViewer->updateTheme();
+        onViewerInitialized(FileCategory::Pdf);
+    }
+    return m_pdfViewer;
+}
+
+IArchiveViewer *BaseSkin::ensureArchiveViewerCreated()
+{
+    if (m_archiveViewer) {
+        return m_archiveViewer;
+    }
+    auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
+    m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
+    if (m_archiveViewer) {
+        QWidget *oldW = m_stackedWidget->widget(3);
+        m_stackedWidget->removeWidget(oldW);
+        delete oldW;
+        m_stackedWidget->insertWidget(3, m_archiveViewer->widget());
+        m_archiveViewer->setOnFilePreviewRequested([this](const QString &extractedFilePath, const QString &archiveOriginPath, const QString &internalEntryPath) {
+            m_archiveOriginPath = archiveOriginPath;
+            if (m_archiveViewer) {
+                m_archiveEntries = m_archiveViewer->previewableEntries();
+            }
+            m_archiveCurrentEntryIndex = m_archiveEntries.indexOf(internalEntryPath);
+            if (m_archiveCurrentEntryIndex < 0 && !m_archiveEntries.isEmpty()) {
+                m_archiveCurrentEntryIndex = 0;
+            }
+            openArchiveFile(extractedFilePath, internalEntryPath);
+        });
+        m_archiveViewer->updateTheme();
+        onViewerInitialized(FileCategory::Archive);
+    }
+    return m_archiveViewer;
+}
+
+IMediaViewer *BaseSkin::ensureMediaViewerCreated()
+{
+    QSettings s("Bubez", "BubezView");
+    const bool mpvEnabled = s.value("modules/mpv_enabled", true).toBool();
+    const bool canUseMpv = mpvEnabled && PluginManager::instance().isEngineAvailable(FileCategory::Media);
+    const bool isSystemViewer = (dynamic_cast<SystemMediaViewer*>(m_mediaViewer) != nullptr);
+
+    if (!m_mediaViewer || (canUseMpv && isSystemViewer) || (!canUseMpv && !isSystemViewer)) {
+        if (m_mediaViewer) {
+            m_mediaViewer->stop();
+        }
+        IMediaViewer *newViewer = nullptr;
+        if (canUseMpv) {
+            auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
+            newViewer = dynamic_cast<IMediaViewer*>(mv);
+        }
+        if (!newViewer) {
+            newViewer = new SystemMediaViewer(this);
+        }
+        QWidget *oldW = m_stackedWidget->widget(4);
+        m_stackedWidget->removeWidget(oldW);
+        delete oldW;
+        m_mediaViewer = newViewer;
+        m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
+        m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
+            openFile(path);
+        });
+        m_mediaViewer->updateTheme();
+        onViewerInitialized(FileCategory::Media);
+    }
+    return m_mediaViewer;
+}
+
+OfficeViewer *BaseSkin::ensureOfficeViewerCreated()
+{
+    if (m_officeViewer) {
+        return m_officeViewer;
+    }
+    m_officeViewer = new OfficeViewer(this);
+    QWidget *oldW = m_stackedWidget->widget(5);
+    m_stackedWidget->removeWidget(oldW);
+    delete oldW;
+    m_stackedWidget->insertWidget(5, m_officeViewer);
+    onViewerInitialized(FileCategory::Office);
+    return m_officeViewer;
+}
+
+FolderViewer *BaseSkin::ensureFolderViewerCreated()
+{
+    if (m_folderViewer) {
+        return m_folderViewer;
+    }
+    m_folderViewer = new FolderViewer(this);
+    QWidget *oldW = m_stackedWidget->widget(6);
+    m_stackedWidget->removeWidget(oldW);
+    delete oldW;
+    m_stackedWidget->insertWidget(6, m_folderViewer);
+
+    connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString &folderPath, int, qint64) {
+        if (m_currentCategory == FileCategory::Folder && !folderPath.isEmpty()) {
+            m_currentFilePath = folderPath;
+            updateWindowTitle();
+        }
+    });
+    connect(m_folderViewer, &FolderViewer::filePreviewRequested, this, [this](const QString &path) {
+        if (ThemeManager::currentTransition() == TransitionEffect::None || !m_galleryTransition || !m_folderViewer) {
+            openFile(path);
+            return;
+        }
+
+        // Morphing zoom from card to full viewer (half-speed 260ms)
+        QPixmap galleryPix = m_stackedWidget->grab();
+        QRect cardRect = m_folderViewer->cardRectForPath(path);
+
+        openFile(path);
+
+        QPixmap viewerPix = m_stackedWidget->grab();
+        m_galleryTransition->setGeometry(m_stackedWidget->geometry());
+        m_galleryTransition->start(galleryPix, viewerPix, cardRect,
+                                   GalleryZoomTransition::Direction::ZoomInToViewer, 450);
+    });
+    connect(m_folderViewer, &FolderViewer::itemContextMenuRequested, this, [this](const QPoint &globalPos, const QString &) {
+        showContextMenuAt(globalPos);
+    });
+
+    onViewerInitialized(FileCategory::Folder);
+    return m_folderViewer;
+}
+
 BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
 {
     QFileInfo info(filePath);
@@ -458,10 +603,16 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         return OpenResult::Failed;
     }
 
-    // Check for unsaved changes before opening another file
-    if (!m_currentFilePath.isEmpty() && info.canonicalFilePath() != QFileInfo(m_currentFilePath).canonicalFilePath()) {
+    // Check for unsaved changes if in edit mode before opening another file
+    if (m_isEditMode && !m_currentFilePath.isEmpty() && info.canonicalFilePath() != QFileInfo(m_currentFilePath).canonicalFilePath()) {
         if (!promptAndSaveIfModified()) {
             return OpenResult::Failed;
+        }
+        // If the current and incoming files are both audio files (Audio Studio active),
+        // preserve edit mode so workspace page and studio session remain intact.
+        FileCategory nextCat = PluginManager::categorizeFile(info.absoluteFilePath());
+        if (m_currentCategory != FileCategory::Media || nextCat != FileCategory::Media) {
+            setEditMode(false);
         }
     }
 
@@ -508,17 +659,7 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         m_stackedWidget->setCurrentIndex(1);
         opened = m_textViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Pdf) {
-        if (!m_pdfViewer) {
-            auto *pv = PluginManager::instance().createViewer(FileCategory::Pdf, this);
-            m_pdfViewer = dynamic_cast<IPdfViewer*>(pv);
-            if (m_pdfViewer) {
-                QWidget *oldW = m_stackedWidget->widget(2);
-                m_stackedWidget->removeWidget(oldW);
-                delete oldW;
-                m_stackedWidget->insertWidget(2, m_pdfViewer->widget());
-            }
-        }
-        if (!m_pdfViewer) {
+        if (!ensurePdfViewerCreated()) {
             m_enginePromptCard->setTargetFile(FileCategory::Pdf, m_currentFilePath);
             m_stackedWidget->setCurrentWidget(m_enginePromptCard);
             return OpenResult::Success;
@@ -542,28 +683,7 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
             }
         }
     } else if (m_currentCategory == FileCategory::Archive) {
-        if (!m_archiveViewer) {
-            auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
-            m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
-            if (m_archiveViewer) {
-                QWidget *oldW = m_stackedWidget->widget(3);
-                m_stackedWidget->removeWidget(oldW);
-                delete oldW;
-                m_stackedWidget->insertWidget(3, m_archiveViewer->widget());
-                m_archiveViewer->setOnFilePreviewRequested([this](const QString &extractedFilePath, const QString &archiveOriginPath, const QString &internalEntryPath) {
-                    m_archiveOriginPath = archiveOriginPath;
-                    if (m_archiveViewer) {
-                        m_archiveEntries = m_archiveViewer->previewableEntries();
-                    }
-                    m_archiveCurrentEntryIndex = m_archiveEntries.indexOf(internalEntryPath);
-                    if (m_archiveCurrentEntryIndex < 0 && !m_archiveEntries.isEmpty()) {
-                        m_archiveCurrentEntryIndex = 0;
-                    }
-                    openArchiveFile(extractedFilePath, internalEntryPath);
-                });
-            }
-        }
-        if (!m_archiveViewer) {
+        if (!ensureArchiveViewerCreated()) {
             m_enginePromptCard->setTargetFile(FileCategory::Archive, m_currentFilePath);
             m_stackedWidget->setCurrentWidget(m_enginePromptCard);
             return OpenResult::Success;
@@ -571,39 +691,16 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         m_stackedWidget->setCurrentIndex(3);
         opened = m_archiveViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Media) {
-        QSettings s("Bubez", "BubezView");
-        const bool mpvEnabled = s.value("modules/mpv_enabled", true).toBool();
-        const bool canUseMpv = mpvEnabled && PluginManager::instance().isEngineAvailable(FileCategory::Media);
-        const bool isSystemViewer = (dynamic_cast<SystemMediaViewer*>(m_mediaViewer) != nullptr);
-
-        if (!m_mediaViewer || (canUseMpv && isSystemViewer) || (!canUseMpv && !isSystemViewer)) {
-            if (m_mediaViewer) {
-                m_mediaViewer->stop();
-            }
-            IMediaViewer *newViewer = nullptr;
-            if (canUseMpv) {
-                auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
-                newViewer = dynamic_cast<IMediaViewer*>(mv);
-            }
-            if (!newViewer) {
-                newViewer = new SystemMediaViewer(this);
-            }
-            QWidget *oldW = m_stackedWidget->widget(4);
-            m_stackedWidget->removeWidget(oldW);
-            delete oldW;
-            m_mediaViewer = newViewer;
-            m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
-            m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
-                openFile(path);
-            });
-        }
+        ensureMediaViewerCreated();
         m_stackedWidget->setCurrentIndex(4);
         m_mediaViewer->setSiblingFiles(m_siblingFiles);
         opened = m_mediaViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Office) {
+        ensureOfficeViewerCreated();
         m_stackedWidget->setCurrentIndex(5);
         opened = m_officeViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Folder) {
+        ensureFolderViewerCreated();
         m_stackedWidget->setCurrentIndex(6);
         opened = m_folderViewer->loadFolder(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Unknown || !PluginManager::isNativeSupported(m_currentFilePath)) {
@@ -639,6 +736,8 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         if (m_transitionOverlay && m_animGroup && m_animGroup->state() == QAbstractAnimation::Running) {
             m_transitionOverlay->raise();
         }
+
+        setEditMode(m_isEditMode);
 
         return OpenResult::Success;
     }
@@ -761,6 +860,11 @@ void BaseSkin::startTransitionAnimation(bool forward)
 
 void BaseSkin::nextFile()
 {
+    // Categorically disallow sibling file navigation when in Edit Mode
+    if (m_isEditMode) {
+        return;
+    }
+
     if (!m_archiveOriginPath.isEmpty() && !m_archiveEntries.isEmpty()) {
         if (m_archiveCurrentEntryIndex < m_archiveEntries.size() - 1 && m_archiveViewer) {
             startTransitionAnimation(true);
@@ -782,6 +886,11 @@ void BaseSkin::nextFile()
 
 void BaseSkin::prevFile()
 {
+    // Categorically disallow sibling file navigation when in Edit Mode
+    if (m_isEditMode) {
+        return;
+    }
+
     if (!m_archiveOriginPath.isEmpty() && !m_archiveEntries.isEmpty()) {
         if (m_archiveCurrentEntryIndex > 0 && m_archiveViewer) {
             startTransitionAnimation(false);
@@ -924,14 +1033,14 @@ void BaseSkin::showFileInfo()
 
 void BaseSkin::searchInDocument()
 {
-    if (m_stackedWidget->currentIndex() == 1 || m_stackedWidget->currentIndex() == 2) {
+    if (m_stackedWidget->currentIndex() == 1 || m_stackedWidget->currentIndex() == 2 || m_stackedWidget->currentIndex() == 3) {
         if (m_searchBar) {
             repositionSearchBar();
             m_searchBar->showAndFocus();
             m_searchBar->raise();
         }
     } else {
-        QMessageBox::information(this, tr("Find in Document"), tr("In-document text search is available for Text and PDF documents."));
+        QMessageBox::information(this, tr("Find in Document"), tr("In-document text search is available for Text, PDF, and Archive documents."));
     }
 }
 
@@ -1412,10 +1521,57 @@ void BaseSkin::saveAsCurrentFile()
             if (m_filmstrip) {
                 m_filmstrip->setFiles(m_siblingFiles, m_currentIndex);
             }
+            if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) m_imageViewer->setModified(false);
+            if (m_stackedWidget->currentIndex() == 1 && m_textViewer) m_textViewer->document()->setModified(false);
+            if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) m_pdfViewer->setModified(false);
             updateWindowTitle();
             updateStatusBar();
             QMessageBox::information(this, tr("Save As"), tr("File saved successfully to:\n%1").arg(target));
         }
+    }
+}
+
+void BaseSkin::saveCurrentPageAsPdf()
+{
+    if (m_currentCategory != FileCategory::Pdf || !m_pdfViewer) return;
+
+    QFileInfo fi(m_currentFilePath);
+    int curPage = m_pdfViewer->currentPage() + 1;
+    QString defaultName = fi.dir().filePath(QString("%1_p%2.pdf").arg(fi.completeBaseName()).arg(curPage));
+
+    QString target = QFileDialog::getSaveFileName(this, tr("Save Current Page as PDF"), defaultName, tr("PDF Document (*.pdf)"));
+    if (target.isEmpty()) return;
+
+    if (!target.endsWith(".pdf", Qt::CaseInsensitive)) {
+        target += ".pdf";
+    }
+
+    QString err;
+    if (m_pdfViewer->saveCurrentPageAsPdf(target, &err)) {
+        QMessageBox::information(this, tr("Page Saved"), tr("Current page successfully saved to:\n%1").arg(target));
+    } else {
+        QMessageBox::warning(this, tr("Error Saving Page"), tr("Failed to save current page as PDF:\n%1").arg(err));
+    }
+}
+
+void BaseSkin::saveCurrentPageAsImage()
+{
+    if (m_currentCategory != FileCategory::Pdf || !m_pdfViewer) return;
+
+    QFileInfo fi(m_currentFilePath);
+    int curPage = m_pdfViewer->currentPage() + 1;
+    QString defaultName = fi.dir().filePath(QString("%1_p%2.png").arg(fi.completeBaseName()).arg(curPage));
+
+    QString filter = tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;All Files (*)");
+    QString selectedFilter;
+    QString target = QFileDialog::getSaveFileName(this, tr("Save Current Page as Image"), defaultName, filter, &selectedFilter);
+    if (target.isEmpty()) return;
+
+    QImage img = m_pdfViewer->renderPageForOcr(curPage - 1, 300);
+    if (!img.isNull() && img.save(target)) {
+        QMessageBox::information(this, tr("Page Saved"), tr("Current page successfully saved to:\n%1").arg(target));
+    } else {
+        QMessageBox::warning(this, tr("Error Saving Page"), tr("Failed to save current page as image."));
     }
 }
 
@@ -1484,15 +1640,21 @@ bool BaseSkin::promptAndSaveIfModified()
     }
 
     QString docName = QFileInfo(m_currentFilePath).fileName();
-    QMessageBox::StandardButton res = QMessageBox::question(
-        this,
-        tr("Unsaved Changes"),
-        tr("The document \"%1\" has unsaved changes.\nDo you want to save them before proceeding?").arg(docName),
-        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
-        QMessageBox::Save
-    );
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Unsaved Changes"));
+    msgBox.setIcon(QMessageBox::Question);
+    msgBox.setText(tr("The document \"%1\" has unsaved changes.\nDo you want to save them before proceeding?").arg(docName));
 
-    if (res == QMessageBox::Save) {
+    QPushButton *btnSave = msgBox.addButton(tr("Save"), QMessageBox::AcceptRole);
+    QPushButton *btnDiscard = msgBox.addButton(tr("Don't Save"), QMessageBox::DestructiveRole);
+    msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    msgBox.setDefaultButton(btnSave);
+
+    msgBox.exec();
+
+    QAbstractButton *clicked = msgBox.clickedButton();
+
+    if (clicked == btnSave) {
         if (isImgMod) {
             if (!m_currentFilePath.isEmpty()) {
                 QFileInfo fi(m_currentFilePath);
@@ -1530,10 +1692,19 @@ bool BaseSkin::promptAndSaveIfModified()
                 return false;
             }
         }
-    } else if (res == QMessageBox::Discard) {
-        if (isImgMod) m_imageViewer->setModified(false);
-        if (isTextMod) m_textViewer->document()->setModified(false);
-        if (isPdfMod) m_pdfViewer->setModified(false);
+    } else if (clicked == btnDiscard) {
+        if (isImgMod) {
+            m_imageViewer->loadFile(m_currentFilePath);
+            m_imageViewer->setModified(false);
+        }
+        if (isTextMod) {
+            m_textViewer->loadFile(m_currentFilePath);
+            m_textViewer->document()->setModified(false);
+        }
+        if (isPdfMod) {
+            m_pdfViewer->loadFile(m_currentFilePath);
+            m_pdfViewer->setModified(false);
+        }
         return true;
     }
 
@@ -1559,14 +1730,26 @@ void BaseSkin::resizeEvent(QResizeEvent *event)
     if (m_transitionOverlay && m_stackedWidget && (!m_animGroup || m_animGroup->state() != QAbstractAnimation::Running)) {
         m_transitionOverlay->setGeometry(m_stackedWidget->geometry());
     }
+    if (m_galleryTransition && m_stackedWidget && !m_galleryTransition->isRunning()) {
+        m_galleryTransition->setGeometry(m_stackedWidget->geometry());
+    }
+
+    if (m_geometrySaveTimer && isVisible() && !isMinimized()) {
+        m_geometrySaveTimer->start(350);
+    }
 }
 
 void BaseSkin::closeEvent(QCloseEvent *event)
 {
-    if (!promptAndSaveIfModified()) {
+    if (m_isEditMode && !promptAndSaveIfModified()) {
         event->ignore();
         return;
     }
+
+    if (m_geometrySaveTimer && m_geometrySaveTimer->isActive()) {
+        m_geometrySaveTimer->stop();
+    }
+    saveWindowGeometry();
 
     // 1. Immediately stop media playback and release audio hardware locks
     if (m_mediaViewer) {
@@ -1599,6 +1782,96 @@ void BaseSkin::closeEvent(QCloseEvent *event)
         if (!m_isDaemonMode) {
             // Ensure process exits completely and does not leave zombie background processes
             qApp->quit();
+        }
+    }
+}
+
+void BaseSkin::saveWindowGeometry()
+{
+    // Do not save geometry while window is minimized
+    if (isMinimized()) {
+        return;
+    }
+
+    // Do not overwrite normal preview geometry when temporarily maximized in edit mode
+    if (m_isEditMode) {
+        return;
+    }
+
+    QSettings settings("Bubez", "BubezView");
+    if (!settings.value("remember_geometry", true).toBool()) {
+        return;
+    }
+
+    // Save full Qt geometry state (preserves screen position on X11, maximized state, etc.)
+    settings.setValue("window/geometry", saveGeometry());
+
+    // Also persist width & height separately to ensure accurate window dimensions on Wayland compositors
+    const QRect r = (isMaximized() || isFullScreen()) ? normalGeometry() : geometry();
+    if (r.isValid() && r.width() >= 320 && r.height() >= 240) {
+        settings.setValue("window/width", r.width());
+        settings.setValue("window/height", r.height());
+    }
+    settings.sync();
+}
+
+void BaseSkin::restoreWindowGeometry()
+{
+    // Default initial preview dimensions (compact Quick Look style)
+    const QSize defaultSize(780, 540);
+
+    QSettings settings("Bubez", "BubezView");
+    const bool remember = settings.value("remember_geometry", true).toBool();
+
+    bool restored = false;
+    if (remember) {
+        if (settings.contains("window/geometry")) {
+            const QByteArray geom = settings.value("window/geometry").toByteArray();
+            if (!geom.isEmpty() && restoreGeometry(geom)) {
+                restored = true;
+            }
+        }
+
+        // On Wayland compositors or if restoreGeometry didn't apply sizing, enforce saved width and height
+        if (settings.contains("window/width") && settings.contains("window/height")) {
+            int w = settings.value("window/width").toInt();
+            int h = settings.value("window/height").toInt();
+            if (w >= 320 && h >= 240) {
+                resize(w, h);
+                restored = true;
+            }
+        }
+    }
+
+    if (!restored) {
+        resize(defaultSize);
+    }
+
+    // In preview mode, ensure window starts in normal compact mode (not maximized or fullscreen)
+    if (!m_isEditMode && (isMaximized() || isFullScreen())) {
+        showNormal();
+    }
+
+    // Screen boundary safety: ensure window fits within the active screen geometry
+    QScreen *targetScreen = screen();
+    if (!targetScreen) {
+        targetScreen = QGuiApplication::primaryScreen();
+    }
+    if (targetScreen) {
+        const QRect avail = targetScreen->availableGeometry();
+        if (avail.isValid() && avail.width() > 0 && avail.height() > 0) {
+            int maxW = avail.width();
+            int maxH = avail.height();
+            int targetW = qMin(width(), maxW);
+            int targetH = qMin(height(), maxH);
+            if (targetW != width() || targetH != height()) {
+                resize(targetW, targetH);
+            }
+
+            // Center on screen if newly launched or if outside visible screen bounds
+            if (!restored || !avail.intersects(frameGeometry())) {
+                move(avail.center().x() - width() / 2, avail.center().y() - height() / 2);
+            }
         }
     }
 }
@@ -1754,16 +2027,11 @@ QString BaseSkin::fileInfoText() const
             .arg(formatFileSize(info.size()))
             .arg(zoomPercent);
     } else if (idx == 1) { // Text
-        QString editState = m_textViewer->isEditable() ? tr(" • ✏️ Edit Mode") : tr(" • 🔒 Read-Only");
-        if (m_textViewer->document()->isModified()) {
-            editState += tr(" (Modified*)");
-        }
-        return tr("%1 lines • %2 words • %3 characters • %4%5")
+        return tr("%1 lines • %2 words • %3 characters • %4")
             .arg(m_textViewer->lineCount())
             .arg(m_textViewer->wordCount())
             .arg(m_textViewer->charCount())
-            .arg(formatFileSize(info.size()))
-            .arg(editState);
+            .arg(formatFileSize(info.size()));
     } else if (idx == 2) { // PDF
         int cur = m_pdfViewer->currentPage() + 1;
         int total = m_pdfViewer->pageCount();
@@ -1805,10 +2073,43 @@ QString BaseSkin::formatFileSize(qint64 bytes) const
     return QString("%1 GB").arg(bytes / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
 }
 
+void BaseSkin::setEditMode(bool editMode)
+{
+    m_isEditMode = editMode;
+    if (m_imageViewer) {
+        m_imageViewer->setEditMode(editMode);
+    }
+    if (m_textViewer) {
+        m_textViewer->setEditMode(editMode);
+    }
+    if (m_pdfViewer) {
+        m_pdfViewer->setEditMode(editMode);
+    }
+    if (m_archiveViewer) {
+        m_archiveViewer->setEditMode(editMode);
+    }
+    if (m_mediaViewer) {
+        m_mediaViewer->setEditMode(editMode);
+    }
+    if (m_officeViewer) {
+        m_officeViewer->setEditMode(editMode);
+    }
+}
+
 void BaseSkin::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
     case Qt::Key_Escape:
+        if (m_pdfViewer && m_pdfViewer->isPageGridOrganizerActive()) {
+            m_pdfViewer->hidePageGridOrganizer();
+            event->accept();
+            return;
+        }
+        if (m_isEditMode) {
+            setEditMode(false);
+            event->accept();
+            return;
+        }
         if (!m_archiveOriginPath.isEmpty() && QFile::exists(m_archiveOriginPath)) {
             QString returnArchive = m_archiveOriginPath;
             m_archiveOriginPath.clear();
@@ -1822,24 +2123,24 @@ void BaseSkin::keyPressEvent(QKeyEvent *event)
         event->accept();
         break;
     case Qt::Key_Q:
+        if (m_isEditMode) {
+            QMainWindow::keyPressEvent(event);
+            return;
+        }
         close();
         event->accept();
         break;
     case Qt::Key_Space:
-        if (m_stackedWidget->currentIndex() == 4) {
-            m_mediaViewer->togglePlayPause();
-        } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer->currentPage() < m_pdfViewer->pageCount() - 1) {
-            m_pdfViewer->nextPage();
-        } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer() && m_officeViewer->pdfViewer()->currentPage() < m_officeViewer->pdfViewer()->pageCount() - 1) {
-            m_officeViewer->pdfViewer()->nextPage();
-        } else {
-            nextFile();
+        if (m_isEditMode) {
+            QMainWindow::keyPressEvent(event);
+            return;
         }
+        // In macOS Quick Look preview mode, pressing Spacebar closes the preview
+        close();
         event->accept();
         break;
     case Qt::Key_Right:
-    case Qt::Key_Down:
-        if (m_stackedWidget->currentIndex() == 6) {
+        if (m_isEditMode) {
             QMainWindow::keyPressEvent(event);
         } else {
             nextFile();
@@ -1847,11 +2148,26 @@ void BaseSkin::keyPressEvent(QKeyEvent *event)
         }
         break;
     case Qt::Key_Left:
-    case Qt::Key_Up:
-        if (m_stackedWidget->currentIndex() == 6) {
+        if (m_isEditMode) {
             QMainWindow::keyPressEvent(event);
         } else {
             prevFile();
+            event->accept();
+        }
+        break;
+    case Qt::Key_Down:
+        if (m_isEditMode) {
+            QMainWindow::keyPressEvent(event);
+        } else {
+            scrollCurrentView(1);
+            event->accept();
+        }
+        break;
+    case Qt::Key_Up:
+        if (m_isEditMode) {
+            QMainWindow::keyPressEvent(event);
+        } else {
+            scrollCurrentView(-1);
             event->accept();
         }
         break;
@@ -1885,8 +2201,114 @@ void BaseSkin::keyPressEvent(QKeyEvent *event)
     }
 }
 
+bool BaseSkin::eventFilter(QObject *watched, QEvent *event)
+{
+    // In Edit mode, navigation shortcuts (Left/Right = previous/next file) must not
+    // steal arrow keys from focused sliders or combo boxes (e.g. the equalizer bands).
+    if (event->type() == QEvent::ShortcutOverride && m_isEditMode) {
+        auto *w = qobject_cast<QWidget*>(watched);
+        if (w && w->window() == this && (qobject_cast<QAbstractSlider*>(w) || qobject_cast<QComboBox*>(w))) {
+            switch (static_cast<QKeyEvent*>(event)->key()) {
+            case Qt::Key_Left:
+            case Qt::Key_Right:
+            case Qt::Key_Up:
+            case Qt::Key_Down:
+            case Qt::Key_Home:
+            case Qt::Key_End:
+            case Qt::Key_PageUp:
+            case Qt::Key_PageDown:
+                event->accept();
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    if (event->type() == QEvent::KeyPress) {
+        auto *keyEvent = static_cast<QKeyEvent*>(event);
+        auto *widget = qobject_cast<QWidget*>(watched);
+
+        // Only enforce preview rules on this window and its embedded viewers
+        // (Never intercept events from separate modal/sub-dialogs, or when in Edit Mode)
+        if (widget && widget->window() == this && !m_isEditMode) {
+            int key = keyEvent->key();
+            switch (key) {
+            case Qt::Key_Space:
+            case Qt::Key_Escape:
+                close();
+                return true;
+            case Qt::Key_Right:
+                nextFile();
+                return true;
+            case Qt::Key_Left:
+                prevFile();
+                return true;
+            case Qt::Key_Down:
+                scrollCurrentView(1);
+                return true;
+            case Qt::Key_Up:
+                scrollCurrentView(-1);
+                return true;
+            default:
+                break;
+            }
+        }
+    }
+    return QMainWindow::eventFilter(watched, event);
+}
+
+void BaseSkin::scrollCurrentView(int direction)
+{
+    QWidget *curr = m_stackedWidget ? m_stackedWidget->currentWidget() : nullptr;
+    if (!curr) return;
+
+    auto doScroll = [direction](QScrollBar *vbar) -> bool {
+        if (!vbar || vbar->maximum() <= 0) return false;
+        int step = vbar->singleStep();
+        if (step <= 0) step = 40;
+        else step = qMax(40, step * 3);
+        int oldVal = vbar->value();
+        vbar->setValue(oldVal + direction * step);
+        return vbar->value() != oldVal;
+    };
+
+    // 1. Current widget is directly a QAbstractScrollArea (e.g. TextViewer, ArchiveViewer)
+    if (auto *scrollArea = qobject_cast<QAbstractScrollArea*>(curr)) {
+        if (doScroll(scrollArea->verticalScrollBar())) {
+            return;
+        }
+    }
+
+    // 2. Search child QAbstractScrollArea widgets (e.g. ImageViewer, PdfViewer, OfficeViewer, FolderViewer)
+    const auto scrollAreas = curr->findChildren<QAbstractScrollArea*>();
+    for (auto *sa : scrollAreas) {
+        if (sa->isVisible() && doScroll(sa->verticalScrollBar())) {
+            return;
+        }
+    }
+
+    // 3. Fallback: visible vertical QScrollBar children
+    const auto scrollBars = curr->findChildren<QScrollBar*>();
+    for (auto *bar : scrollBars) {
+        if (bar->isVisible() && bar->orientation() == Qt::Vertical && doScroll(bar)) {
+            return;
+        }
+    }
+
+    // 4. Fallback for PDF viewer single-page mode or page transitions
+    if (m_stackedWidget && m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+        if (direction > 0) {
+            m_pdfViewer->nextPage();
+        } else {
+            m_pdfViewer->prevPage();
+        }
+    }
+}
+
 void BaseSkin::rotateCurrentRight()
 {
+    if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->rotateClockwise();
     } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
@@ -1900,6 +2322,7 @@ void BaseSkin::rotateCurrentRight()
 
 void BaseSkin::rotateCurrentLeft()
 {
+    if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->rotateCounterClockwise();
     } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
@@ -1913,6 +2336,7 @@ void BaseSkin::rotateCurrentLeft()
 
 void BaseSkin::flipCurrentHorizontal()
 {
+    if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->flipHorizontal();
     }
@@ -1922,6 +2346,7 @@ void BaseSkin::flipCurrentHorizontal()
 
 void BaseSkin::flipCurrentVertical()
 {
+    if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->flipVertical();
     }
@@ -1982,27 +2407,11 @@ void BaseSkin::extractPdfImages(const QString &filePath)
     }
     if (target.isEmpty() || !QFile::exists(target)) return;
 
-    PdfImageExtractDialog dlg(target, this);
-    int count = dlg.loadImages();
-    if (count > 0) {
-        dlg.exec();
-    } else if (count == 0) {
-        QMessageBox::information(
-            this,
-            tr("No Images Found"),
-            tr("No embedded raster images were found in this PDF document.")
-        );
-    } else if (count == -2) {
-        if (PackageManagerHelper::installComponentInteractive("pdfimages", this)) {
-            // Re-try after successful installation
-            extractPdfImages(target);
-        }
-    } else {
-        QMessageBox::warning(
-            this,
-            tr("Extraction Failed"),
-            tr("Failed to extract images from PDF.<br>Make sure the 'poppler-utils' package is installed and the document is accessible.")
-        );
+    if (ensurePdfViewerCreated() && m_pdfViewer) {
+        m_pdfViewer->openPdfImageExtractDialog(target, this);
+    } else if (m_enginePromptCard) {
+        m_enginePromptCard->setTargetFile(FileCategory::Pdf, target);
+        m_stackedWidget->setCurrentWidget(m_enginePromptCard);
     }
 }
 
@@ -2012,7 +2421,7 @@ void BaseSkin::openPdfRepairDialog(const QString &filePath)
     if (target.isEmpty()) {
         if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
             target = m_currentFilePath;
-        } else if (m_stackedWidget->currentIndex() == 6 && m_folderViewer) {
+        } else if (m_folderViewer) {
             QString sel = m_folderViewer->selectedFilePath();
             if (!sel.isEmpty() && PluginManager::categorizeFile(sel) == FileCategory::Pdf) {
                 target = sel;
@@ -2023,11 +2432,12 @@ void BaseSkin::openPdfRepairDialog(const QString &filePath)
         target = m_currentFilePath;
     }
 
-    PdfRepairDialog dlg(target, this);
-    connect(&dlg, &PdfRepairDialog::fileRepaired, this, [this](const QString &repairedPath) {
-        openFile(repairedPath);
-    });
-    dlg.exec();
+    if (ensurePdfViewerCreated() && m_pdfViewer) {
+        m_pdfViewer->openPdfRepairDialog(target, this);
+    } else if (m_enginePromptCard) {
+        m_enginePromptCard->setTargetFile(FileCategory::Pdf, target);
+        m_stackedWidget->setCurrentWidget(m_enginePromptCard);
+    }
 }
 
 void BaseSkin::openPdfPageOrganizer(const QString &filePath)
@@ -2045,10 +2455,7 @@ void BaseSkin::openPdfPageOrganizer(const QString &filePath)
     }
     if (target.isEmpty() || !QFile::exists(target)) return;
 
-    if (m_pdfViewer) {
-        m_pdfViewer->setOnFileOrganized([this](const QString &organizedPath) {
-            openFile(organizedPath);
-        });
+    if (ensurePdfViewerCreated()) {
         m_pdfViewer->openPageOrganizer(target, this);
     }
 }
@@ -2177,7 +2584,44 @@ bool BaseSkin::isSlideshowActive() const
 
 void BaseSkin::openCurrentFolderInGallery()
 {
+    // Categorically disallow switching to folder gallery when in Edit Mode
+    if (m_isEditMode) {
+        return;
+    }
+
     if (m_currentFilePath.isEmpty()) return;
+
+    // Toggle behavior: if already inside Folder Gallery, return to active file or selected item
+    if (m_currentCategory == FileCategory::Folder) {
+        QString targetPath;
+        if (m_folderViewer) {
+            QString selected = m_folderViewer->selectedFilePath();
+            if (!selected.isEmpty() && !QFileInfo(selected).isDir()) {
+                targetPath = selected;
+            }
+        }
+        if (targetPath.isEmpty() && !m_previousFilePathBeforeGallery.isEmpty() && QFileInfo::exists(m_previousFilePathBeforeGallery)) {
+            targetPath = m_previousFilePathBeforeGallery;
+        }
+
+        if (!targetPath.isEmpty()) {
+            if (ThemeManager::currentTransition() != TransitionEffect::None && m_galleryTransition && m_folderViewer) {
+                QPixmap galleryPix = m_stackedWidget->grab();
+                QRect cardRect = m_folderViewer->cardRectForPath(targetPath);
+                openFile(targetPath);
+                QPixmap viewerPix = m_stackedWidget->grab();
+                m_galleryTransition->setGeometry(m_stackedWidget->geometry());
+                m_galleryTransition->start(galleryPix, viewerPix, cardRect,
+                                           GalleryZoomTransition::Direction::ZoomInToViewer, 450);
+                return;
+            }
+            openFile(targetPath);
+            return;
+        }
+        return;
+    }
+
+    m_previousFilePathBeforeGallery = m_currentFilePath;
     QString dir;
     if (!m_archiveOriginPath.isEmpty()) {
         dir = QFileInfo(m_archiveOriginPath).absolutePath();
@@ -2185,7 +2629,25 @@ void BaseSkin::openCurrentFolderInGallery()
         QFileInfo fi(m_currentFilePath);
         dir = fi.isDir() ? fi.absoluteFilePath() : fi.absolutePath();
     }
+
+    if (ThemeManager::currentTransition() != TransitionEffect::None && m_galleryTransition && m_folderViewer) {
+        QPixmap viewerPix = m_stackedWidget->grab();
+        openFile(dir);
+        if (!m_previousFilePathBeforeGallery.isEmpty()) {
+            m_folderViewer->selectItemByPath(m_previousFilePathBeforeGallery, false);
+        }
+        QPixmap galleryPix = m_stackedWidget->grab();
+        QRect cardRect = m_folderViewer->cardRectForPath(m_previousFilePathBeforeGallery);
+        m_galleryTransition->setGeometry(m_stackedWidget->geometry());
+        m_galleryTransition->start(viewerPix, galleryPix, cardRect,
+                                   GalleryZoomTransition::Direction::ZoomOutToGallery, 450);
+        return;
+    }
+
     openFile(dir);
+    if (!m_previousFilePathBeforeGallery.isEmpty() && m_folderViewer) {
+        m_folderViewer->selectItemByPath(m_previousFilePathBeforeGallery, false);
+    }
 }
 
 void BaseSkin::renameCurrentFolderItem()
@@ -2200,7 +2662,7 @@ void BaseSkin::renameCurrentFolderItem()
     if (ok && !newName.isEmpty() && newName != fi.fileName()) {
         QString newPath = fi.dir().filePath(newName);
         if (QFile::rename(selected, newPath)) {
-            m_folderViewer->loadFolder(m_folderViewer->currentFolder());
+            m_folderViewer->loadFolder(m_folderViewer->currentFolder(), true);
         } else {
             QMessageBox::warning(this, tr("Error"), tr("Unable to rename item."));
         }
@@ -2218,7 +2680,7 @@ void BaseSkin::deleteCurrentFolderItem()
                                      QMessageBox::Yes | QMessageBox::No);
     if (res == QMessageBox::Yes) {
         if (QFile::moveToTrash(selected)) {
-            m_folderViewer->loadFolder(m_folderViewer->currentFolder());
+            m_folderViewer->loadFolder(m_folderViewer->currentFolder(), true);
         } else {
             QMessageBox::warning(this, tr("Error"), tr("Unable to move item to trash."));
         }
@@ -2236,7 +2698,7 @@ void BaseSkin::createFolderInCurrentFolder()
     if (ok && !name.isEmpty()) {
         QDir dir(currentDir);
         if (dir.mkdir(name)) {
-            m_folderViewer->loadFolder(currentDir);
+            m_folderViewer->loadFolder(currentDir, true);
         } else {
             QMessageBox::warning(this, tr("Error"), tr("Unable to create folder."));
         }
@@ -2245,16 +2707,7 @@ void BaseSkin::createFolderInCurrentFolder()
 
 void BaseSkin::openCreateArchiveDialog()
 {
-    if (!m_archiveViewer) {
-        auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
-        m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
-        if (m_archiveViewer) {
-            QWidget *oldW = m_stackedWidget->widget(3);
-            m_stackedWidget->removeWidget(oldW);
-            delete oldW;
-            m_stackedWidget->insertWidget(3, m_archiveViewer->widget());
-        }
-    }
+    ensureArchiveViewerCreated();
     if (!m_archiveViewer) {
         QMessageBox::information(this, tr("Create Archive"),
                                  tr("The Archive Engine plugin (libarchive) is not currently active."));
@@ -2293,7 +2746,7 @@ void BaseSkin::openCreateArchiveDialog()
     }
 
     if (m_currentCategory == FileCategory::Folder && m_folderViewer && !m_folderViewer->currentFolder().isEmpty()) {
-        m_folderViewer->loadFolder(m_folderViewer->currentFolder());
+        m_folderViewer->loadFolder(m_folderViewer->currentFolder(), true);
     }
 
     if (sendLocalSend) {
@@ -2564,7 +3017,7 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
 
     QMenu menu(this);
     ThemePreset preset = ThemeManager::currentPreset();
-    if (preset != ThemePreset::SystemNative) {
+    if (ThemeManager::isDark(preset)) {
         menu.setStyleSheet(
             "QMenu {"
             "   background-color: #21252b;"
@@ -2583,6 +3036,28 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
             "QMenu::separator {"
             "   height: 1px;"
             "   background: #3e4451;"
+            "   margin: 4px 8px;"
+            "}"
+        );
+    } else {
+        menu.setStyleSheet(
+            "QMenu {"
+            "   background-color: #ffffff;"
+            "   color: #1d1d1f;"
+            "   border: 1px solid #d2d2d7;"
+            "   border-radius: 6px;"
+            "   padding: 4px 0px;"
+            "}"
+            "QMenu::item {"
+            "   padding: 6px 24px 6px 12px;"
+            "}"
+            "QMenu::item:selected {"
+            "   background-color: #007aff;"
+            "   color: #ffffff;"
+            "}"
+            "QMenu::separator {"
+            "   height: 1px;"
+            "   background: #e5e5ea;"
             "   margin: 4px 8px;"
             "}"
         );
@@ -2632,30 +3107,51 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
     ShareManager shareMgr(this, [targetPath]() { return targetPath; });
     shareMgr.populateMenu(menuShare);
 
-    menu.addAction(QIcon::fromTheme("package-x-generic"), tr("Compress / Create Archive..."), this, &BaseSkin::openCreateArchiveDialog);
+    if (m_isEditMode || m_currentCategory == FileCategory::Folder) {
+        menu.addAction(QIcon::fromTheme("package-x-generic"), tr("Compress / Create Archive..."), this, &BaseSkin::openCreateArchiveDialog);
+    }
+
+    if (m_currentCategory == FileCategory::Folder && m_folderViewer) {
+        QAction *actShowFolders = menu.addAction(tr("Show Folders"));
+        actShowFolders->setCheckable(true);
+        actShowFolders->setChecked(m_folderViewer->showFolders());
+        connect(actShowFolders, &QAction::toggled, m_folderViewer, &FolderViewer::setShowFolders);
+    }
 
     menu.addSeparator();
 
     // 3. Category Specific Actions
     if (activeCategory == FileCategory::Image && !isFolder) {
         if (m_currentCategory != FileCategory::Folder) {
-            menu.addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate 90° Right"), this, &BaseSkin::rotateCurrentRight);
-            menu.addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate 90° Left"), this, &BaseSkin::rotateCurrentLeft);
-            menu.addAction(QIcon::fromTheme("object-flip-horizontal"), tr("Flip Horizontally"), this, &BaseSkin::flipCurrentHorizontal);
+            if (m_isEditMode) {
+                menu.addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate 90° Right"), this, &BaseSkin::rotateCurrentRight);
+                menu.addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate 90° Left"), this, &BaseSkin::rotateCurrentLeft);
+                menu.addAction(QIcon::fromTheme("object-flip-horizontal"), tr("Flip Horizontally"), this, &BaseSkin::flipCurrentHorizontal);
+            }
             menu.addAction(QIcon::fromTheme("zoom-fit-best"), tr("Fit to Window"), this, &BaseSkin::fitCurrent);
             menu.addAction(QIcon::fromTheme("zoom-original"), tr("Original Size (100%)"), this, &BaseSkin::resetZoomCurrent);
+            menu.addSeparator();
+            menu.addAction(QIcon::fromTheme("document-save-as"), tr("Save As..."), this, &BaseSkin::saveAsCurrentFile);
+            menu.addAction(QIcon::fromTheme("document-export"), tr("Convert / Export in Other Formats..."), this, &BaseSkin::exportCurrentFileAs);
             menu.addSeparator();
         }
     } else if (activeCategory == FileCategory::Pdf) {
         if (m_currentCategory != FileCategory::Folder) {
-            menu.addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate Clockwise"), this, &BaseSkin::rotateCurrentRight);
-            menu.addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate Counterclockwise"), this, &BaseSkin::rotateCurrentLeft);
+            if (m_isEditMode) {
+                menu.addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate Clockwise"), this, &BaseSkin::rotateCurrentRight);
+                menu.addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate Counterclockwise"), this, &BaseSkin::rotateCurrentLeft);
+            }
             menu.addAction(QIcon::fromTheme("zoom-fit-best"), tr("Fit to Width"), this, &BaseSkin::fitCurrent);
             menu.addAction(QIcon::fromTheme("zoom-original"), tr("Original Size (100%)"), this, &BaseSkin::resetZoomCurrent);
+            menu.addSeparator();
+            menu.addAction(QIcon::fromTheme("document-save"), tr("Save Current Page as PDF..."), this, &BaseSkin::saveCurrentPageAsPdf);
+            menu.addAction(QIcon::fromTheme("image-x-generic"), tr("Save Current Page as Image..."), this, &BaseSkin::saveCurrentPageAsImage);
+            menu.addAction(QIcon::fromTheme("document-save-as"), tr("Save As..."), this, &BaseSkin::saveAsCurrentFile);
+            menu.addAction(QIcon::fromTheme("document-export"), tr("Export in Other Formats..."), this, &BaseSkin::exportCurrentFileAs);
         }
 
         // PDF Tools available in both direct PDF viewer and when selecting a PDF card in Folder view
-        if (BuildConfig::isQpdfAvailable()) {
+        if (m_isEditMode && BuildConfig::isQpdfAvailable()) {
             menu.addAction(QIcon::fromTheme("document-edit"), tr("Organize PDF Pages..."), this, [this, targetPath]() {
                 openPdfPageOrganizer(targetPath);
             });
@@ -2672,6 +3168,8 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
     } else if (activeCategory == FileCategory::Text && !isFolder) {
         if (m_currentCategory != FileCategory::Folder) {
             menu.addAction(QIcon::fromTheme("edit-find"), tr("Find in Document..."), this, &BaseSkin::searchInDocument);
+            menu.addAction(QIcon::fromTheme("document-save-as"), tr("Save As..."), this, &BaseSkin::saveAsCurrentFile);
+            menu.addAction(QIcon::fromTheme("document-export"), tr("Export in Other Formats..."), this, &BaseSkin::exportCurrentFileAs);
             menu.addSeparator();
         }
     } else if (activeCategory == FileCategory::Media && !isFolder) {
@@ -2800,12 +3298,14 @@ void BaseSkin::updateWindowTitle()
     }
     QFileInfo info(m_currentFilePath);
     QString mod;
-    if (m_stackedWidget->currentIndex() == 1 && m_textViewer && m_textViewer->document()->isModified()) {
-        mod = "* ";
-    } else if (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified()) {
-        mod = "* ";
-    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer && m_pdfViewer->isModified()) {
-        mod = "* ";
+    if (m_isEditMode) {
+        if (m_stackedWidget->currentIndex() == 1 && m_textViewer && m_textViewer->document()->isModified()) {
+            mod = "* ";
+        } else if (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified()) {
+            mod = "* ";
+        } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer && m_pdfViewer->isModified()) {
+            mod = "* ";
+        }
     }
 
     if (!m_archiveOriginPath.isEmpty()) {

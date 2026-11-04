@@ -586,7 +586,7 @@ void ArchiveViewer::updateTheme()
 {
     ThemePreset preset = ThemeManager::currentPreset();
 
-    if (preset == ThemePreset::SystemNative) {
+    if (preset == ThemePreset::ModernLight || preset == ThemePreset::BreezeLight) {
         // Native System Styling: use QPalette values and system desktop styling
         m_topBar->setStyleSheet("background-color: palette(window); border-bottom: 1px solid palette(mid);");
         m_pillBadge->setStyleSheet(
@@ -819,6 +819,26 @@ void ArchiveViewer::updateTheme()
             "}\n" + ThemeManager::scrollBarStyleSheet(preset)
         );
     }
+}
+
+void ArchiveViewer::setTopBarVisible(bool visible)
+{
+    if (m_topBar) {
+        m_topBar->setVisible(visible);
+    }
+}
+
+bool ArchiveViewer::isTopBarVisible() const
+{
+    return m_topBar && m_topBar->isVisible();
+}
+
+void ArchiveViewer::filterEntries(const QString &pattern)
+{
+    if (m_searchEdit) {
+        m_searchEdit->setText(pattern);
+    }
+    onFilterTextChanged(pattern);
 }
 
 bool ArchiveViewer::loadFile(const QString &filePath, const QString &passphrase)
@@ -2017,6 +2037,11 @@ QString ArchiveViewer::formatSize(qint64 bytes) const
     return QString("%1 GB").arg(bytes / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
 }
 
+void ArchiveViewer::setEditMode(bool editMode)
+{
+    m_isEditMode = editMode;
+}
+
 bool ArchiveViewer::isArchiveEditable() const
 {
     if (m_currentArchiveFilePath.isEmpty()) return false;
@@ -2420,6 +2445,10 @@ bool writeDiskItemToArchive(struct archive *out,
 
 void ArchiveViewer::addFilesToArchive()
 {
+    if (!m_isEditMode) {
+        return;
+    }
+
     if (m_currentArchiveFilePath.isEmpty() || !QFile::exists(m_currentArchiveFilePath)) {
         QMessageBox::information(this, tr("Add Files"), tr("No archive is currently open."));
         return;
@@ -2446,6 +2475,10 @@ void ArchiveViewer::addFilesToArchive()
 
 void ArchiveViewer::addFolderToArchive()
 {
+    if (!m_isEditMode) {
+        return;
+    }
+
     if (m_currentArchiveFilePath.isEmpty() || !QFile::exists(m_currentArchiveFilePath)) {
         QMessageBox::information(this, tr("Add Folder"), tr("No archive is currently open."));
         return;
@@ -2471,6 +2504,10 @@ void ArchiveViewer::addFolderToArchive()
 
 void ArchiveViewer::removeSelectedFromArchive()
 {
+    if (!m_isEditMode) {
+        return;
+    }
+
     if (m_currentArchiveFilePath.isEmpty() || !QFile::exists(m_currentArchiveFilePath)) {
         return;
     }

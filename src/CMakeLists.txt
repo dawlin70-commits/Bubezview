@@ -33,17 +33,20 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/first_run_wizard.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/flippable_toolbar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/goto_folder_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/gallery_zoom_transition.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/photo_studio_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/image_inspector_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/image_resize_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/mainwindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/minimal_header_bar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/contextual_action_bar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/base_studio_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/photo_studio_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ocr/ocr_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ocr/ocr_language_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ocr/ocr_snipper_overlay.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/open_with_dialog.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/pdf/pdf_image_extract_dialog.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/pdf/pdf_merge_dialog.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/pdf/pdf_repair_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/pdf/pdf_history_widget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/search_bar_widget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/settings/settings_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/settings/settings_appearance_tab.cpp

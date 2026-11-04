@@ -12,6 +12,9 @@
 #include <QMessageBox>
 #include <QFileInfo>
 #include <QApplication>
+#include <QTabBar>
+#include <QAbstractItemView>
+#include <QAbstractSpinBox>
 #include <clocale>
 #include <cmath>
 #include <algorithm>
@@ -93,15 +96,20 @@ void WaveformWidget::paintEvent(QPaintEvent *)
         barInactive = QColor("#3e444b");
         barActive = QColor("#3daee9");
         regionColor = QColor(61, 174, 233, 40);
-    } else if (preset == ThemePreset::SystemNative) {
-        QPalette pal = palette();
-        canvasBg = pal.base().color();
-        canvasBorder = pal.mid().color();
-        baselineColor = pal.mid().color();
-        barInactive = pal.mid().color();
-        barActive = pal.highlight().color();
-        regionColor = pal.highlight().color();
-        regionColor.setAlpha(40);
+    } else if (preset == ThemePreset::ModernLight) {
+        canvasBg = QColor("#ffffff");
+        canvasBorder = QColor("#d2d2d7");
+        baselineColor = QColor("#e5e5ea");
+        barInactive = QColor("#c7c7cc");
+        barActive = QColor("#007aff");
+        regionColor = QColor(0, 122, 255, 40);
+    } else if (preset == ThemePreset::BreezeLight) {
+        canvasBg = QColor("#fcfcfc");
+        canvasBorder = QColor("#bdc3c7");
+        baselineColor = QColor("#d8dbde");
+        barInactive = QColor("#bdc3c7");
+        barActive = QColor("#3daee9");
+        regionColor = QColor(61, 174, 233, 40);
     }
 
     // Background canvas with subtle rounded border
@@ -666,9 +674,10 @@ void SpectrumWidget::mouseReleaseEvent(QMouseEvent *)
 // ============================================================================
 // AudioTrimDialog Implementation
 // ============================================================================
-AudioTrimDialog::AudioTrimDialog(const QString &audioFilePath, QWidget *parent)
+AudioTrimDialog::AudioTrimDialog(const QString &audioFilePath, QWidget *parent, bool isEmbedded)
     : QDialog(parent)
     , m_filePath(audioFilePath)
+    , m_isEmbedded(isEmbedded)
     , m_lblInfo(nullptr)
     , m_tabWidget(nullptr)
     , m_waveform(nullptr)
@@ -698,6 +707,9 @@ AudioTrimDialog::AudioTrimDialog(const QString &audioFilePath, QWidget *parent)
     , m_chkNormalize(nullptr)
     , m_chkNoiseGate(nullptr)
     , m_comboFormat(nullptr)
+    , m_comboBitrate(nullptr)
+    , m_comboSampleRate(nullptr)
+    , m_btnOpenTagEditor(nullptr)
     , m_lblStatusBadge(nullptr)
     , m_progressBar(nullptr)
     , m_btnSave(nullptr)
@@ -711,9 +723,13 @@ AudioTrimDialog::AudioTrimDialog(const QString &audioFilePath, QWidget *parent)
     , m_isFiltersPlaying(false)
     , m_isBypassActive(false)
 {
-    setWindowTitle(tr("Audio Suite & Tools - BubezView"));
-    setMinimumSize(820, 580);
-    resize(860, 620);
+    if (m_isEmbedded) {
+        setWindowFlags(Qt::Widget);
+    } else {
+        setWindowTitle(tr("Audio Suite & Tools - BubezView"));
+        setMinimumSize(820, 580);
+        resize(860, 620);
+    }
 
     applyTheme();
 
@@ -727,24 +743,17 @@ AudioTrimDialog::AudioTrimDialog(const QString &audioFilePath, QWidget *parent)
         mpv_initialize(m_previewMpv);
     }
 
-    m_meta = AudioProcessor::readMetadata(m_filePath);
-    m_startMs = 0;
-    m_endMs = m_meta.durationMs > 0 ? m_meta.durationMs : 10000;
-
     m_pcmSampleRate = 22050;
 
     setupUi();
-
-    // Async peak generation
-    QVector<float> peaks = AudioProcessor::generateWaveformPeaks(m_filePath, 260);
-    m_waveform->setPeaks(peaks);
-    m_waveform->setSelection(m_startMs, m_endMs, m_meta.durationMs);
-
-    // Extract PCM data for accurate real-time FFT spectrum analysis
-    m_pcmData = AudioProcessor::extractPcmData(m_filePath, m_pcmSampleRate, 360);
+    installWheelGuards();
 
     connect(m_playbackTimer, &QTimer::timeout, this, &AudioTrimDialog::updatePreviewTimer);
-    applyPreviewFilters();
+    if (!m_filePath.isEmpty()) {
+        loadAudioFile(m_filePath);
+    } else {
+        applyPreviewFilters();
+    }
 }
 
 AudioTrimDialog::~AudioTrimDialog()
@@ -756,15 +765,77 @@ AudioTrimDialog::~AudioTrimDialog()
     }
 }
 
-void AudioTrimDialog::setupUi()
+void AudioTrimDialog::loadAudioFile(const QString &audioFilePath)
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(18, 16, 18, 16);
-    mainLayout->setSpacing(10);
+    stopPreview();
+    m_filePath = audioFilePath;
+    if (m_filePath.isEmpty() || !QFileInfo::exists(m_filePath)) {
+        if (m_lblInfo) m_lblInfo->clear();
+        return;
+    }
 
-    // 1. Shared Header Information
+    m_meta = AudioProcessor::readMetadata(m_filePath);
+    m_startMs = 0;
+    m_endMs = m_meta.durationMs > 0 ? m_meta.durationMs : 10000;
+
+    updateHeaderInfoLabel();
+
+    if (m_waveform) {
+        QVector<float> peaks = AudioProcessor::generateWaveformPeaks(m_filePath, 260);
+        m_waveform->setPeaks(peaks);
+        m_waveform->setSelection(m_startMs, m_endMs, m_meta.durationMs);
+        m_waveform->setCurrentPlayPosition(0, m_meta.durationMs);
+    }
+
+    m_pcmData = AudioProcessor::extractPcmData(m_filePath, m_pcmSampleRate, 360);
+
+    if (m_sliderSeekFilters) {
+        m_sliderSeekFilters->blockSignals(true);
+        m_sliderSeekFilters->setValue(0);
+        m_sliderSeekFilters->blockSignals(false);
+    }
+    if (m_lblTimeFilters) {
+        m_lblTimeFilters->setText(QString("00:00.0 / %1").arg(formatTime(m_meta.durationMs)));
+    }
+
+    updateTimeLabels();
+    applyPreviewFilters();
+}
+
+void AudioTrimDialog::setCurrentTabIndex(int index)
+{
+    if (!m_tabWidget) return;
+    if (index >= 0 && index < m_tabWidget->count()) {
+        m_tabWidget->setCurrentIndex(index);
+    }
+    if (m_studioPreviewBar) {
+        m_studioPreviewBar->setVisible(index > 0 && index < 4);
+    }
+    if (index == 4) {
+        updateSummaryTab();
+    }
+}
+
+int AudioTrimDialog::currentTabIndex() const
+{
+    return m_tabWidget ? m_tabWidget->currentIndex() : 0;
+}
+
+void AudioTrimDialog::stopStudioPreview()
+{
+    stopPreview();
+}
+
+void AudioTrimDialog::refreshTheme()
+{
+    applyTheme();
+    updateHeaderInfoLabel();
+}
+
+void AudioTrimDialog::updateHeaderInfoLabel()
+{
+    if (!m_lblInfo || m_filePath.isEmpty()) return;
     QFileInfo fi(m_filePath);
-    m_lblInfo = new QLabel(this);
     ThemePreset preset = ThemeManager::currentPreset();
     bool isDark = (preset == ThemePreset::DarkSlate || preset == ThemePreset::BreezeDark);
     QString titleColor = isDark ? "#eff0f1" : "#1e293b";
@@ -779,24 +850,141 @@ void AudioTrimDialog::setupUi()
                                 (m_meta.channels == 2 ? tr("channels (Stereo)") : tr("channel (Mono)")),
                                 QString::number(m_meta.bitRate));
     m_lblInfo->setText(infoText);
+}
+
+void AudioTrimDialog::installWheelGuards()
+{
+    const auto combos = findChildren<QComboBox *>();
+    for (QComboBox *cb : combos) {
+        cb->setFocusPolicy(Qt::StrongFocus);
+        cb->installEventFilter(this);
+    }
+    const auto spins = findChildren<QAbstractSpinBox *>();
+    for (QAbstractSpinBox *sb : spins) {
+        sb->setFocusPolicy(Qt::StrongFocus);
+        sb->installEventFilter(this);
+    }
+}
+
+bool AudioTrimDialog::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::Wheel) {
+        if (auto *cb = qobject_cast<QComboBox *>(watched)) {
+            if (!cb->view() || !cb->view()->isVisible()) {
+                event->ignore();
+                return true;
+            }
+        } else if (auto *sb = qobject_cast<QAbstractSpinBox *>(watched)) {
+            if (!sb->hasFocus()) {
+                event->ignore();
+                return true;
+            }
+        }
+    }
+    return QDialog::eventFilter(watched, event);
+}
+
+void AudioTrimDialog::setupUi()
+{
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(18, 12, 18, 14);
+    mainLayout->setSpacing(10);
+
+    // 1. Shared Header Information
+    m_lblInfo = new QLabel(this);
+    updateHeaderInfoLabel();
     mainLayout->addWidget(m_lblInfo);
 
-    // 2. Four-Tab Suite: Trimming, Acoustic Restoration, Channels & Pitch/Tempo, Equalizer
+    // 2. Shared Minimal Studio Preview Bar (visible on Filters, Channels/Pitch, and Equalizer tabs)
+    m_studioPreviewBar = new QWidget(this);
+    QHBoxLayout *playBar = new QHBoxLayout(m_studioPreviewBar);
+    playBar->setContentsMargins(4, 4, 4, 4);
+    playBar->setSpacing(10);
+
+    m_btnPlayFilters = new QPushButton(tr("▶ Play Preview"), m_studioPreviewBar);
+    m_btnPlayFilters->setCursor(Qt::PointingHandCursor);
+    m_btnPlayFilters->setMinimumWidth(145);
+    m_btnPlayFilters->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #0284c7;"
+        "   color: #ffffff;"
+        "   font-weight: bold;"
+        "   padding: 6px 14px;"
+        "   border-radius: 6px;"
+        "   border: 1px solid #0369a1;"
+        "}"
+        "QPushButton:hover { background-color: #0369a1; }"
+    );
+    connect(m_btnPlayFilters, &QPushButton::clicked, this, &AudioTrimDialog::onPlayFiltersClicked);
+    playBar->addWidget(m_btnPlayFilters);
+
+    m_btnBypass = new QPushButton(tr("🎧 A/B Bypass (Compare Original)"), m_studioPreviewBar);
+    m_btnBypass->setCheckable(true);
+    m_btnBypass->setCursor(Qt::PointingHandCursor);
+    m_btnBypass->setMinimumWidth(230);
+    m_btnBypass->setToolTip(tr("Temporarily disable all active filters and equalizer to compare with original audio in real-time."));
+    m_btnBypass->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #282c32;"
+        "   color: #eff0f1;"
+        "   font-weight: bold;"
+        "   padding: 6px 14px;"
+        "   border-radius: 6px;"
+        "   border: 1px solid #475569;"
+        "}"
+        "QPushButton:hover { background-color: #353b44; }"
+        "QPushButton:checked {"
+        "   background-color: #eab308;"
+        "   color: #000000;"
+        "   border: 1px solid #ca8a04;"
+        "}"
+    );
+    connect(m_btnBypass, &QPushButton::toggled, this, &AudioTrimDialog::onBypassToggled);
+    playBar->addWidget(m_btnBypass);
+
+    m_sliderSeekFilters = new QSlider(Qt::Horizontal, m_studioPreviewBar);
+    m_sliderSeekFilters->setRange(0, 1000);
+    m_sliderSeekFilters->setValue(0);
+    connect(m_sliderSeekFilters, &QSlider::sliderMoved, this, &AudioTrimDialog::onFiltersSeek);
+    playBar->addWidget(m_sliderSeekFilters, 1);
+
+    m_lblTimeFilters = new QLabel(QString("00:00.0 / %1").arg(formatTime(m_meta.durationMs)), m_studioPreviewBar);
+    m_lblTimeFilters->setStyleSheet("font-family: monospace; font-size: 12px; font-weight: bold;");
+    playBar->addWidget(m_lblTimeFilters);
+
+    m_studioPreviewBar->setVisible(false); // Hidden on Tab 0 (Trim), shown on Tabs 1..3
+    mainLayout->addWidget(m_studioPreviewBar);
+
+    // 3. Five-Tab Suite: Trimming, Acoustic Restoration, Channels & Pitch/Tempo, Equalizer, Summary
     m_tabWidget = new QTabWidget(this);
     m_tabWidget->addTab(createTrimTab(), tr("✂️ Audio Trimming"));
-    m_tabWidget->addTab(createFiltersTab(), tr("🎛️ Filters & Noise Reduction"));
-    m_tabWidget->addTab(createDspTab(), tr("🔊 Channels, Pitch & Tempo"));
+    m_tabWidget->addTab(createFiltersTab(), tr("🎛️ Filters && Noise Reduction"));
+    m_tabWidget->addTab(createDspTab(), tr("🔊 Channels, Pitch && Tempo"));
     m_tabWidget->addTab(createEqualizerTab(), tr("🎚️ Track Equalizer"));
+    m_tabWidget->addTab(createSummaryTab(), tr("📋 Summary && Save"));
+    if (m_isEmbedded && m_tabWidget->tabBar()) {
+        m_tabWidget->tabBar()->hide();
+    }
+    connect(m_tabWidget, &QTabWidget::currentChanged, this, [this](int idx) {
+        if (m_studioPreviewBar) {
+            m_studioPreviewBar->setVisible(idx > 0 && idx < 4);
+        }
+        if (idx == 4) {
+            updateSummaryTab();
+        }
+    });
     mainLayout->addWidget(m_tabWidget, 1);
 
-    // 3. Shared Footer: Format, Bitrate, Sample Rate, Tag Editor, Action Buttons
+    // 4. Shared Footer: Format, Bitrate, Sample Rate, Tag Editor, Action Buttons
     QHBoxLayout *footerLayout = new QHBoxLayout();
-    footerLayout->setSpacing(8);
+    footerLayout->setSpacing(10);
 
     QLabel *lblOutFmt = new QLabel(tr("Format:"), this);
     footerLayout->addWidget(lblOutFmt);
 
     m_comboFormat = new QComboBox(this);
+    m_comboFormat->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    m_comboFormat->setMinimumWidth(165);
     m_comboFormat->addItem(tr("Original Format (Lossless Copy)"), "copy");
     m_comboFormat->addItem("MP3", "mp3");
     m_comboFormat->addItem("FLAC", "flac");
@@ -810,12 +998,8 @@ void AudioTrimDialog::setupUi()
     footerLayout->addWidget(lblBitrate);
 
     m_comboBitrate = new QComboBox(this);
-    m_comboBitrate->addItem(tr("Auto"), 0);
-    m_comboBitrate->addItem("128 kbps", 128);
-    m_comboBitrate->addItem("192 kbps", 192);
-    m_comboBitrate->addItem("256 kbps", 256);
-    m_comboBitrate->addItem("320 kbps", 320);
-    m_comboBitrate->setCurrentIndex(4); // default 320 kbps
+    m_comboBitrate->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    m_comboBitrate->setMinimumWidth(110);
     connect(m_comboBitrate, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AudioTrimDialog::onFilterChanged);
     footerLayout->addWidget(m_comboBitrate);
 
@@ -823,34 +1007,41 @@ void AudioTrimDialog::setupUi()
     footerLayout->addWidget(lblSamplerate);
 
     m_comboSampleRate = new QComboBox(this);
-    m_comboSampleRate->addItem(tr("Original"), 0);
-    m_comboSampleRate->addItem("44.1 kHz", 44100);
-    m_comboSampleRate->addItem("48.0 kHz", 48000);
-    m_comboSampleRate->addItem("96.0 kHz", 96000);
-    m_comboSampleRate->addItem("192.0 kHz", 192000);
+    m_comboSampleRate->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    m_comboSampleRate->setMinimumWidth(110);
     connect(m_comboSampleRate, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AudioTrimDialog::onFilterChanged);
     footerLayout->addWidget(m_comboSampleRate);
+
+    updateFormatOptions();
 
     m_btnOpenTagEditor = new QPushButton(tr("🏷️ Tag Editor..."), this);
     m_btnOpenTagEditor->setToolTip(tr("Edit metadata, titles, and album art for this file"));
     connect(m_btnOpenTagEditor, &QPushButton::clicked, this, &AudioTrimDialog::onOpenTagEditorClicked);
+    if (m_isEmbedded) {
+        m_btnOpenTagEditor->setVisible(false);
+    }
     footerLayout->addWidget(m_btnOpenTagEditor);
 
     m_lblStatusBadge = new QLabel(this);
     footerLayout->addWidget(m_lblStatusBadge);
     footerLayout->addStretch();
 
-    m_btnCancel = new QPushButton(tr("Cancel"), this);
+    m_btnCancel = new QPushButton(m_isEmbedded ? tr("Back to Player") : tr("Cancel"), this);
     connect(m_btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+    if (m_isEmbedded) {
+        m_btnCancel->setVisible(false);
+    }
     footerLayout->addWidget(m_btnCancel);
 
-    m_btnSave = new QPushButton(tr("Save Audio..."), this);
+    m_btnSave = new QPushButton(tr("💾 Save Audio..."), this);
+    m_btnSave->setCursor(Qt::PointingHandCursor);
+    m_btnSave->setMinimumWidth(145);
     m_btnSave->setStyleSheet(
         "QPushButton {"
         "   background-color: #0284c7;"
         "   color: #ffffff;"
         "   font-weight: bold;"
-        "   padding: 7px 20px;"
+        "   padding: 7px 18px;"
         "   border-radius: 6px;"
         "   border: 1px solid #0369a1;"
         "}"
@@ -867,6 +1058,7 @@ void AudioTrimDialog::setupUi()
     mainLayout->addWidget(m_progressBar);
 
     updateTimeLabels();
+    updateSummaryTab();
 }
 
 QWidget *AudioTrimDialog::createTrimTab()
@@ -899,12 +1091,15 @@ QWidget *AudioTrimDialog::createTrimTab()
 
     // 3. Quick Markers & Preview Controls
     QHBoxLayout *btnLayout = new QHBoxLayout();
+    btnLayout->setSpacing(8);
     m_btnPlayPreview = new QPushButton(tr("▶ Play Selection (A-B Loop)"), tab);
+    m_btnPlayPreview->setCursor(Qt::PointingHandCursor);
     m_btnPlayPreview->setStyleSheet(
         "QPushButton {"
         "   background-color: #0284c7;"
         "   color: #ffffff;"
-        "   padding: 7px 16px;"
+        "   padding: 6px 12px;"
+        "   font-size: 12px;"
         "   font-weight: bold;"
         "   border-radius: 6px;"
         "   border: 1px solid #0369a1;"
@@ -914,11 +1109,13 @@ QWidget *AudioTrimDialog::createTrimTab()
     connect(m_btnPlayPreview, &QPushButton::clicked, this, &AudioTrimDialog::onPlayPreviewClicked);
 
     m_btnSetStart = new QPushButton(tr("Set Start [A] Here"), tab);
+    m_btnSetStart->setCursor(Qt::PointingHandCursor);
     m_btnSetStart->setStyleSheet(
         "QPushButton {"
         "   background-color: rgba(16, 185, 129, 0.15);"
         "   color: #10b981;"
-        "   padding: 7px 14px;"
+        "   padding: 6px 12px;"
+        "   font-size: 12px;"
         "   font-weight: bold;"
         "   border: 1px solid #10b981;"
         "   border-radius: 6px;"
@@ -928,11 +1125,13 @@ QWidget *AudioTrimDialog::createTrimTab()
     connect(m_btnSetStart, &QPushButton::clicked, this, &AudioTrimDialog::onSetStartCurrent);
 
     m_btnSetEnd = new QPushButton(tr("Set End [B] Here"), tab);
+    m_btnSetEnd->setCursor(Qt::PointingHandCursor);
     m_btnSetEnd->setStyleSheet(
         "QPushButton {"
         "   background-color: rgba(245, 158, 11, 0.15);"
         "   color: #f59e0b;"
-        "   padding: 7px 14px;"
+        "   padding: 6px 12px;"
+        "   font-size: 12px;"
         "   font-weight: bold;"
         "   border: 1px solid #f59e0b;"
         "   border-radius: 6px;"
@@ -942,11 +1141,13 @@ QWidget *AudioTrimDialog::createTrimTab()
     connect(m_btnSetEnd, &QPushButton::clicked, this, &AudioTrimDialog::onSetEndCurrent);
 
     m_btnAutoDetectSilence = new QPushButton(tr("⚡ Auto-Snap Silence"), tab);
+    m_btnAutoDetectSilence->setCursor(Qt::PointingHandCursor);
     m_btnAutoDetectSilence->setStyleSheet(
         "QPushButton {"
         "   background-color: rgba(97, 175, 239, 0.15);"
         "   color: #38bdf8;"
-        "   padding: 7px 14px;"
+        "   padding: 6px 12px;"
+        "   font-size: 12px;"
         "   font-weight: bold;"
         "   border: 1px solid #0284c7;"
         "   border-radius: 6px;"
@@ -957,11 +1158,13 @@ QWidget *AudioTrimDialog::createTrimTab()
     connect(m_btnAutoDetectSilence, &QPushButton::clicked, this, &AudioTrimDialog::onAutoDetectSilenceClicked);
 
     m_btnSplitCue = new QPushButton(tr("📑 Split by CUE..."), tab);
+    m_btnSplitCue->setCursor(Qt::PointingHandCursor);
     m_btnSplitCue->setStyleSheet(
         "QPushButton {"
         "   background-color: rgba(168, 85, 247, 0.15);"
         "   color: #c084fc;"
-        "   padding: 7px 14px;"
+        "   padding: 6px 12px;"
+        "   font-size: 12px;"
         "   font-weight: bold;"
         "   border: 1px solid #a855f7;"
         "   border-radius: 6px;"
@@ -980,7 +1183,7 @@ QWidget *AudioTrimDialog::createTrimTab()
     tabLayout->addLayout(btnLayout);
 
     // 4. Trimming Options (Fades & Lossless)
-    QGroupBox *grpTrim = new QGroupBox(tr("Trimming & Fades Options"), tab);
+    QGroupBox *grpTrim = new QGroupBox(tr("Trimming && Fades Options"), tab);
     QGridLayout *grid = new QGridLayout(grpTrim);
     grid->setHorizontalSpacing(18);
     grid->setVerticalSpacing(10);
@@ -1064,59 +1267,7 @@ QWidget *AudioTrimDialog::createFiltersTab()
     presetLayout->addWidget(m_comboPresets, 1);
     tabLayout->addLayout(presetLayout);
 
-    // 2. Dedicated Mini-Player Bar for Filters + A/B Bypass
-    QHBoxLayout *playBar = new QHBoxLayout();
-    playBar->setSpacing(10);
-
-    m_btnPlayFilters = new QPushButton(tr("▶ Play Preview"), tab);
-    m_btnPlayFilters->setStyleSheet(
-        "QPushButton {"
-        "   background-color: #0284c7;"
-        "   color: #ffffff;"
-        "   font-weight: bold;"
-        "   padding: 6px 14px;"
-        "   border-radius: 6px;"
-        "   border: 1px solid #0369a1;"
-        "}"
-        "QPushButton:hover { background-color: #0369a1; }"
-    );
-    connect(m_btnPlayFilters, &QPushButton::clicked, this, &AudioTrimDialog::onPlayFiltersClicked);
-    playBar->addWidget(m_btnPlayFilters);
-
-    m_btnBypass = new QPushButton(tr("🎧 A/B Bypass (Compare Original)"), tab);
-    m_btnBypass->setCheckable(true);
-    m_btnBypass->setToolTip(tr("Temporarily disable all active filters to compare with original audio in real-time."));
-    m_btnBypass->setStyleSheet(
-        "QPushButton {"
-        "   background-color: palette(button);"
-        "   color: palette(button-text);"
-        "   font-weight: bold;"
-        "   padding: 6px 14px;"
-        "   border-radius: 6px;"
-        "   border: 1px solid #cbd5e1;"
-        "}"
-        "QPushButton:checked {"
-        "   background-color: #eab308;"
-        "   color: #000000;"
-        "   border: 1px solid #ca8a04;"
-        "}"
-    );
-    connect(m_btnBypass, &QPushButton::toggled, this, &AudioTrimDialog::onBypassToggled);
-    playBar->addWidget(m_btnBypass);
-
-    m_sliderSeekFilters = new QSlider(Qt::Horizontal, tab);
-    m_sliderSeekFilters->setRange(0, 1000);
-    m_sliderSeekFilters->setValue(0);
-    connect(m_sliderSeekFilters, &QSlider::sliderMoved, this, &AudioTrimDialog::onFiltersSeek);
-    playBar->addWidget(m_sliderSeekFilters, 1);
-
-    m_lblTimeFilters = new QLabel(QString("00:00.0 / %1").arg(formatTime(m_meta.durationMs)), tab);
-    m_lblTimeFilters->setStyleSheet("font-family: monospace; font-size: 12px; font-weight: bold;");
-    playBar->addWidget(m_lblTimeFilters);
-
-    tabLayout->addLayout(playBar);
-
-    // 3. Interactive Spectrum Analyzer & Curve Widget
+    // 2. Interactive Spectrum Analyzer & Curve Widget
     m_spectrumWidget = new SpectrumWidget(tab);
     m_spectrumWidget->setFixedHeight(150);
     connect(m_spectrumWidget, &SpectrumWidget::lowCutChanged, this, [this](int hz) {
@@ -1137,15 +1288,16 @@ QWidget *AudioTrimDialog::createFiltersTab()
     });
     tabLayout->addWidget(m_spectrumWidget);
 
-    // 4. Acoustic Cleaning & Enhancement GroupBoxes (Side-by-side or neatly grouped)
+    // 3. Acoustic Cleaning & Enhancement GroupBoxes (Side-by-side or neatly grouped)
     QHBoxLayout *groupsLayout = new QHBoxLayout();
     groupsLayout->setSpacing(12);
 
     // Left Box: Noise & Rumble Removal
-    QGroupBox *grpNoise = new QGroupBox(tr("Noise, Rumble & Cutoff Filters"), tab);
+    QGroupBox *grpNoise = new QGroupBox(tr("Noise, Rumble && Cutoff Filters"), tab);
     QGridLayout *gridNoise = new QGridLayout(grpNoise);
     gridNoise->setHorizontalSpacing(10);
     gridNoise->setVerticalSpacing(6);
+    gridNoise->setColumnStretch(1, 1);
 
     QLabel *lblLowCut = new QLabel(tr("Low-Cut (High-Pass):"), grpNoise);
     gridNoise->addWidget(lblLowCut, 0, 0);
@@ -1157,7 +1309,8 @@ QWidget *AudioTrimDialog::createFiltersTab()
     gridNoise->addWidget(m_sliderLowCut, 0, 1);
 
     m_lblLowCutVal = new QLabel(tr("Off"), grpNoise);
-    m_lblLowCutVal->setFixedWidth(50);
+    m_lblLowCutVal->setMinimumWidth(82);
+    m_lblLowCutVal->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     gridNoise->addWidget(m_lblLowCutVal, 0, 2);
 
     QLabel *lblHighCut = new QLabel(tr("High-Cut (Low-Pass):"), grpNoise);
@@ -1170,7 +1323,8 @@ QWidget *AudioTrimDialog::createFiltersTab()
     gridNoise->addWidget(m_sliderHighCut, 1, 1);
 
     m_lblHighCutVal = new QLabel(tr("Off"), grpNoise);
-    m_lblHighCutVal->setFixedWidth(50);
+    m_lblHighCutVal->setMinimumWidth(82);
+    m_lblHighCutVal->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     gridNoise->addWidget(m_lblHighCutVal, 1, 2);
 
     QLabel *lblDenoise = new QLabel(tr("FFT Denoise:"), grpNoise);
@@ -1183,7 +1337,8 @@ QWidget *AudioTrimDialog::createFiltersTab()
     gridNoise->addWidget(m_sliderDenoise, 2, 1);
 
     m_lblDenoiseVal = new QLabel(tr("Off"), grpNoise);
-    m_lblDenoiseVal->setFixedWidth(50);
+    m_lblDenoiseVal->setMinimumWidth(82);
+    m_lblDenoiseVal->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     gridNoise->addWidget(m_lblDenoiseVal, 2, 2);
 
     QLabel *lblDehum = new QLabel(tr("De-Hum Notch:"), grpNoise);
@@ -1196,20 +1351,20 @@ QWidget *AudioTrimDialog::createFiltersTab()
     connect(m_comboDehum, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AudioTrimDialog::onManualControlChanged);
     gridNoise->addWidget(m_comboDehum, 3, 1, 1, 2);
 
-    m_chkDeclick = new QCheckBox(tr("Vinyl De-Clicker & De-Pop (Scratches & clicks)"), grpNoise);
+    m_chkDeclick = new QCheckBox(tr("Vinyl De-Clicker && De-Pop (Scratches && clicks)"), grpNoise);
     connect(m_chkDeclick, &QCheckBox::toggled, this, &AudioTrimDialog::onManualControlChanged);
     gridNoise->addWidget(m_chkDeclick, 4, 0, 1, 3);
 
     groupsLayout->addWidget(grpNoise, 1);
 
     // Right Box: Voice & Dynamics Enhancement
-    QGroupBox *grpVoice = new QGroupBox(tr("Voice Clarity & Dynamics"), tab);
+    QGroupBox *grpVoice = new QGroupBox(tr("Voice Clarity && Dynamics"), tab);
     QVBoxLayout *vboxVoice = new QVBoxLayout(grpVoice);
     vboxVoice->setSpacing(6);
 
     // Parametric Voice Presence
     QHBoxLayout *rowVoiceHdr = new QHBoxLayout();
-    m_chkVoiceEnhance = new QCheckBox(tr("Voice Presence & Clarity"), grpVoice);
+    m_chkVoiceEnhance = new QCheckBox(tr("Voice Presence && Clarity"), grpVoice);
     connect(m_chkVoiceEnhance, &QCheckBox::toggled, this, &AudioTrimDialog::onManualControlChanged);
     rowVoiceHdr->addWidget(m_chkVoiceEnhance);
 
@@ -1299,13 +1454,13 @@ QWidget *AudioTrimDialog::createDspTab()
     tabLayout->setContentsMargins(16, 14, 16, 14);
     tabLayout->setSpacing(14);
 
-    // 1. Canali & Spazialità Group
-    QGroupBox *grpChannels = new QGroupBox(tr("Gestione Canali & Spazialità"), tab);
+    // 1. Channel Management & Spatiality Group
+    QGroupBox *grpChannels = new QGroupBox(tr("Channel Management && Spatiality"), tab);
     QVBoxLayout *channelsLayout = new QVBoxLayout(grpChannels);
     channelsLayout->setSpacing(10);
 
     QHBoxLayout *rowChannel = new QHBoxLayout();
-    QLabel *lblChannelMode = new QLabel(tr("Modalità Canali:"), grpChannels);
+    QLabel *lblChannelMode = new QLabel(tr("Channel Mode:"), grpChannels);
     lblChannelMode->setStyleSheet("font-weight: bold;");
     rowChannel->addWidget(lblChannelMode);
 
@@ -1323,7 +1478,7 @@ QWidget *AudioTrimDialog::createDspTab()
     tabLayout->addWidget(grpChannels);
 
     // 2. Pitch Shift & Time Stretch Group
-    QGroupBox *grpPitchTempo = new QGroupBox(tr("Pitch Shift & Time Stretch"), tab);
+    QGroupBox *grpPitchTempo = new QGroupBox(tr("Pitch Shift && Time Stretch"), tab);
     QGridLayout *pitchGrid = new QGridLayout(grpPitchTempo);
     pitchGrid->setHorizontalSpacing(14);
     pitchGrid->setVerticalSpacing(12);
@@ -1399,6 +1554,298 @@ QWidget *AudioTrimDialog::createDspTab()
     tabLayout->addStretch();
 
     return tab;
+}
+
+QWidget *AudioTrimDialog::createSummaryTab()
+{
+    QWidget *tab = new QWidget(this);
+    QVBoxLayout *tabLayout = new QVBoxLayout(tab);
+    tabLayout->setContentsMargins(28, 20, 28, 20);
+    tabLayout->setSpacing(16);
+
+    ThemePreset pr = ThemeManager::currentPreset();
+    bool isDarkPr = (pr == ThemePreset::DarkSlate || pr == ThemePreset::BreezeDark);
+
+    // 1. Status Banner Card
+    m_cardSummaryStatus = new QFrame(tab);
+    m_cardSummaryStatus->setObjectName("SummaryStatusCard");
+    m_cardSummaryStatus->setMinimumHeight(68);
+    QHBoxLayout *bannerLayout = new QHBoxLayout(m_cardSummaryStatus);
+    bannerLayout->setContentsMargins(18, 12, 18, 12);
+    bannerLayout->setSpacing(14);
+
+    m_lblSummaryIcon = new QLabel("⚡", m_cardSummaryStatus);
+    m_lblSummaryIcon->setStyleSheet("font-size: 26px;");
+    bannerLayout->addWidget(m_lblSummaryIcon);
+
+    QVBoxLayout *bannerTextLayout = new QVBoxLayout();
+    bannerTextLayout->setSpacing(2);
+    m_lblSummaryTitle = new QLabel(tr("Ready for Instant Lossless Trim"), m_cardSummaryStatus);
+    m_lblSummaryTitle->setStyleSheet(QString("font-size: 14px; font-weight: bold; color: %1;").arg(isDarkPr ? "#f1f5f9" : "#1e293b"));
+    m_lblSummaryDesc = new QLabel(tr("Audio stream will be copied directly in ~0.1s without re-encoding, preserving 100% original quality."), m_cardSummaryStatus);
+    m_lblSummaryDesc->setStyleSheet(QString("font-size: 11.5px; color: %1;").arg(isDarkPr ? "#94a3b8" : "#64748b"));
+    m_lblSummaryDesc->setWordWrap(true);
+    bannerTextLayout->addWidget(m_lblSummaryTitle);
+    bannerTextLayout->addWidget(m_lblSummaryDesc);
+    bannerLayout->addLayout(bannerTextLayout, 1);
+
+    m_btnSummaryResetAll = new QPushButton(tr("🔄 Reset All Changes"), m_cardSummaryStatus);
+    m_btnSummaryResetAll->setCursor(Qt::PointingHandCursor);
+    m_btnSummaryResetAll->setToolTip(tr("Discard all trimming, audio filters, DSP, and equalizer adjustments"));
+    m_btnSummaryResetAll->setStyleSheet(
+        "QPushButton {"
+        "   background-color: rgba(239, 68, 68, 0.12);"
+        "   color: #ef4444;"
+        "   border: 1px solid rgba(239, 68, 68, 0.3);"
+        "   border-radius: 6px;"
+        "   padding: 6px 14px;"
+        "   font-size: 12px;"
+        "   font-weight: 600;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgba(239, 68, 68, 0.22);"
+        "}"
+        "QPushButton:disabled {"
+        "   opacity: 0.4;"
+        "}"
+    );
+    connect(m_btnSummaryResetAll, &QPushButton::clicked, this, &AudioTrimDialog::resetAll);
+    bannerLayout->addWidget(m_btnSummaryResetAll);
+
+    tabLayout->addWidget(m_cardSummaryStatus);
+
+    // 2. Active Modifications Inspection Box
+    QGroupBox *grpChanges = new QGroupBox(tr("Active Modifications Inspection"), tab);
+    QVBoxLayout *changesLayout = new QVBoxLayout(grpChanges);
+    changesLayout->setContentsMargins(14, 16, 14, 14);
+    changesLayout->setSpacing(10);
+
+    auto makeRow = [tab](const QString &icon, QLabel *&textLbl, QPushButton *&btn, const QString &btnText, const QString &tooltip) -> QFrame * {
+        QFrame *row = new QFrame(tab);
+        row->setStyleSheet("QFrame { background: rgba(128, 128, 128, 0.08); border-radius: 6px; padding: 2px 6px; }");
+        QHBoxLayout *rowLayout = new QHBoxLayout(row);
+        rowLayout->setContentsMargins(8, 6, 8, 6);
+        rowLayout->setSpacing(10);
+
+        QLabel *iconLbl = new QLabel(icon, row);
+        iconLbl->setStyleSheet("font-size: 16px;");
+        rowLayout->addWidget(iconLbl);
+
+        textLbl = new QLabel(row);
+        textLbl->setStyleSheet("font-size: 12.5px; font-weight: 500;");
+        textLbl->setWordWrap(true);
+        rowLayout->addWidget(textLbl, 1);
+
+        btn = new QPushButton(btnText, row);
+        btn->setCursor(Qt::PointingHandCursor);
+        btn->setToolTip(tooltip);
+        btn->setStyleSheet(
+            "QPushButton {"
+            "   background: rgba(255, 255, 255, 0.08);"
+            "   border: 1px solid rgba(128, 128, 128, 0.2);"
+            "   border-radius: 4px;"
+            "   padding: 3px 10px;"
+            "   font-size: 11.5px;"
+            "}"
+            "QPushButton:hover {"
+            "   background: rgba(239, 68, 68, 0.15);"
+            "   color: #ef4444;"
+            "   border-color: rgba(239, 68, 68, 0.35);"
+            "}"
+        );
+        rowLayout->addWidget(btn);
+        return row;
+    };
+
+    m_rowSummaryTrim = makeRow("✂️", m_lblSummaryTrimText, m_btnSummaryResetTrim, tr("✕ Reset Trim"), tr("Reset selection to full track duration and remove fades"));
+    connect(m_btnSummaryResetTrim, &QPushButton::clicked, this, &AudioTrimDialog::resetTrim);
+    changesLayout->addWidget(m_rowSummaryTrim);
+
+    m_rowSummaryFilters = makeRow("🎛️", m_lblSummaryFiltersText, m_btnSummaryResetFilters, tr("✕ Clear Filters"), tr("Turn off all acoustic and noise reduction filters"));
+    connect(m_btnSummaryResetFilters, &QPushButton::clicked, this, &AudioTrimDialog::resetFilters);
+    changesLayout->addWidget(m_rowSummaryFilters);
+
+    m_rowSummaryDsp = makeRow("🔊", m_lblSummaryDspText, m_btnSummaryResetDsp, tr("✕ Reset DSP"), tr("Reset pitch shift, playback tempo, and channel matrix"));
+    connect(m_btnSummaryResetDsp, &QPushButton::clicked, this, &AudioTrimDialog::resetDsp);
+    changesLayout->addWidget(m_rowSummaryDsp);
+
+    m_rowSummaryEq = makeRow("🎚️", m_lblSummaryEqText, m_btnSummaryResetEq, tr("✕ Flatten EQ"), tr("Reset all 10 equalizer bands to 0 dB flat"));
+    connect(m_btnSummaryResetEq, &QPushButton::clicked, this, &AudioTrimDialog::resetEqualizer);
+    changesLayout->addWidget(m_rowSummaryEq);
+
+    m_lblSummaryNoChanges = new QLabel(tr("✅ All audio parameters are at default. The file will be saved without unintended modifications."), grpChanges);
+    m_lblSummaryNoChanges->setStyleSheet("color: #10b981; font-size: 12.5px; font-weight: 500; padding: 12px 6px;");
+    changesLayout->addWidget(m_lblSummaryNoChanges);
+
+    tabLayout->addWidget(grpChanges);
+
+    // 3. Export Card
+    QGroupBox *grpExport = new QGroupBox(tr("Target && Export"), tab);
+    QVBoxLayout *exportLayout = new QVBoxLayout(grpExport);
+    exportLayout->setContentsMargins(14, 16, 14, 14);
+    exportLayout->setSpacing(12);
+
+    m_lblSummaryTarget = new QLabel(grpExport);
+    m_lblSummaryTarget->setStyleSheet("font-size: 12px;");
+    exportLayout->addWidget(m_lblSummaryTarget);
+
+    QHBoxLayout *saveBtnLayout = new QHBoxLayout();
+    saveBtnLayout->setSpacing(12);
+
+    m_btnSummarySave = new QPushButton(tr("💾 Save Audio File As..."), grpExport);
+    m_btnSummarySave->setCursor(Qt::PointingHandCursor);
+    m_btnSummarySave->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #0284c7;"
+        "   color: #ffffff;"
+        "   font-size: 13px;"
+        "   font-weight: bold;"
+        "   border-radius: 6px;"
+        "   padding: 9px 20px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #0369a1;"
+        "}"
+    );
+    connect(m_btnSummarySave, &QPushButton::clicked, this, &AudioTrimDialog::onSaveClicked);
+    saveBtnLayout->addWidget(m_btnSummarySave);
+
+    m_btnSummaryOverwrite = new QPushButton(tr("⚠️ Overwrite Original File"), grpExport);
+    m_btnSummaryOverwrite->setCursor(Qt::PointingHandCursor);
+    m_btnSummaryOverwrite->setStyleSheet(
+        "QPushButton {"
+        "   background-color: rgba(245, 158, 11, 0.12);"
+        "   color: #f59e0b;"
+        "   border: 1px solid rgba(245, 158, 11, 0.35);"
+        "   font-size: 13px;"
+        "   font-weight: bold;"
+        "   border-radius: 6px;"
+        "   padding: 9px 18px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgba(245, 158, 11, 0.22);"
+        "}"
+    );
+    connect(m_btnSummaryOverwrite, &QPushButton::clicked, this, &AudioTrimDialog::onOverwriteClicked);
+    saveBtnLayout->addWidget(m_btnSummaryOverwrite);
+    saveBtnLayout->addStretch();
+
+    exportLayout->addLayout(saveBtnLayout);
+    tabLayout->addWidget(grpExport);
+
+    tabLayout->addStretch(1);
+    return tab;
+}
+
+void AudioTrimDialog::updateSummaryTab()
+{
+    if (!m_cardSummaryStatus) return;
+
+    bool trimActive = hasActiveTrim();
+    bool filtersActive = hasActiveFilters();
+    bool dspActive = hasActiveDsp();
+    bool eqActive = hasActiveEq();
+    bool anyActive = trimActive || filtersActive || dspActive || eqActive;
+
+    if (m_btnSummaryResetAll) {
+        m_btnSummaryResetAll->setEnabled(anyActive);
+    }
+
+    // Status Banner
+    if (!filtersActive && !dspActive && !eqActive) {
+        QString fmt = m_comboFormat ? m_comboFormat->currentData().toString() : "copy";
+        if (fmt == "copy") {
+            m_cardSummaryStatus->setStyleSheet("QFrame#SummaryStatusCard { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; }");
+            m_lblSummaryIcon->setText("⚡");
+            m_lblSummaryTitle->setText(tr("Ready for Instant Lossless Trim"));
+            m_lblSummaryTitle->setStyleSheet("font-size: 14px; font-weight: bold; color: #10b981;");
+            m_lblSummaryDesc->setText(tr("Audio stream will be copied directly in ~0.1s without re-encoding, preserving 100% original quality."));
+        } else {
+            m_cardSummaryStatus->setStyleSheet("QFrame#SummaryStatusCard { background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 8px; }");
+            m_lblSummaryIcon->setText("🔄");
+            m_lblSummaryTitle->setText(tr("Format Transcoding to %1").arg(fmt.toUpper()));
+            m_lblSummaryTitle->setStyleSheet("font-size: 14px; font-weight: bold; color: #0284c7;");
+            m_lblSummaryDesc->setText(tr("No filters active, but file format conversion requires transcoding."));
+        }
+    } else {
+        m_cardSummaryStatus->setStyleSheet("QFrame#SummaryStatusCard { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; }");
+        m_lblSummaryIcon->setText("🎛️");
+        m_lblSummaryTitle->setText(tr("Audio Re-encoding Required"));
+        m_lblSummaryTitle->setStyleSheet("font-size: 14px; font-weight: bold; color: #f59e0b;");
+        m_lblSummaryDesc->setText(tr("Active acoustic filters, pitch shifts, or equalizer require decoding and re-encoding."));
+    }
+
+    // Trim row
+    if (m_rowSummaryTrim) {
+        m_rowSummaryTrim->setVisible(trimActive);
+        if (trimActive) {
+            QString txt = tr("Trimming: %1 to %2 (Duration: %3)")
+                .arg(formatTime(m_startMs), formatTime(m_endMs), formatTime(m_endMs - m_startMs));
+            if (m_spinFadeIn && m_spinFadeOut && (m_spinFadeIn->value() > 0.0 || m_spinFadeOut->value() > 0.0)) {
+                txt += tr(" | Fades: In %1s, Out %2s").arg(m_spinFadeIn->value()).arg(m_spinFadeOut->value());
+            }
+            m_lblSummaryTrimText->setText(txt);
+        }
+    }
+
+    // Filters row
+    if (m_rowSummaryFilters) {
+        m_rowSummaryFilters->setVisible(filtersActive);
+        if (filtersActive) {
+            QStringList fl;
+            if (m_sliderLowCut && m_sliderLowCut->value() > 0) fl << tr("Low-Cut %1 Hz").arg(m_sliderLowCut->value());
+            if (m_sliderHighCut && m_sliderHighCut->value() < 20000) fl << tr("High-Cut %1 Hz").arg(m_sliderHighCut->value());
+            if (m_sliderDenoise && m_sliderDenoise->value() > 0) fl << tr("Denoise -%1 dB").arg(m_sliderDenoise->value());
+            if (m_comboDehum && m_comboDehum->currentIndex() > 0) fl << tr("Dehum %1").arg(m_comboDehum->currentText());
+            if (m_chkDeclick && m_chkDeclick->isChecked()) fl << tr("De-Click");
+            if (m_chkDeesser && m_chkDeesser->isChecked()) fl << tr("De-Esser");
+            if (m_chkVoiceEnhance && m_chkVoiceEnhance->isChecked()) fl << tr("Voice Enhancer");
+            if (m_chkNormalize && m_chkNormalize->isChecked()) fl << tr("Loudness Normalization");
+            if (m_chkNoiseGate && m_chkNoiseGate->isChecked()) fl << tr("Noise Gate");
+            m_lblSummaryFiltersText->setText(tr("Filters: %1").arg(fl.join(", ")));
+        }
+    }
+
+    // DSP row
+    if (m_rowSummaryDsp) {
+        m_rowSummaryDsp->setVisible(dspActive);
+        if (dspActive) {
+            QStringList dl;
+            if (m_comboChannels && m_comboChannels->currentIndex() > 0) dl << m_comboChannels->currentText();
+            if (m_sliderPitch && m_sliderPitch->value() != 0) dl << tr("Pitch %1%2 semitones").arg(m_sliderPitch->value() > 0 ? "+" : "").arg(m_sliderPitch->value());
+            if (m_sliderSpeed && m_sliderSpeed->value() != 100) dl << tr("Speed %1%").arg(m_sliderSpeed->value());
+            if (m_chkReverse && m_chkReverse->isChecked()) dl << tr("Reverse");
+            if (m_chkRemoveSilence && m_chkRemoveSilence->isChecked()) dl << tr("Silence Removal");
+            m_lblSummaryDspText->setText(tr("Channels & Pitch: %1").arg(dl.join(", ")));
+        }
+    }
+
+    // EQ row
+    if (m_rowSummaryEq) {
+        m_rowSummaryEq->setVisible(eqActive);
+        if (eqActive) {
+            QString eqTxt = tr("Equalizer: Active processing");
+            if (m_equalizerWidget) {
+                EqualizerPreset p = m_equalizerWidget->currentPreset();
+                if (!p.name.isEmpty()) {
+                    eqTxt = tr("Equalizer: '%1'").arg(p.name);
+                }
+            }
+            m_lblSummaryEqText->setText(eqTxt);
+        }
+    }
+
+    if (m_lblSummaryNoChanges) {
+        m_lblSummaryNoChanges->setVisible(!anyActive);
+    }
+
+    // Target label
+    if (m_lblSummaryTarget) {
+        QString fmt = m_comboFormat ? m_comboFormat->currentText() : tr("Original");
+        QString br = (m_comboBitrate && m_comboBitrate->isEnabled()) ? m_comboBitrate->currentText() : tr("N/A (Lossless / VBR)");
+        QString sr = (m_comboSampleRate && m_comboSampleRate->isEnabled()) ? m_comboSampleRate->currentText() : tr("Auto");
+        m_lblSummaryTarget->setText(tr("<b>Target Format:</b> %1 &nbsp;&nbsp;|&nbsp;&nbsp; <b>Bitrate:</b> %2 &nbsp;&nbsp;|&nbsp;&nbsp; <b>Sample Rate:</b> %3").arg(fmt, br, sr));
+    }
 }
 
 void AudioTrimDialog::onPresetSelected(int index)
@@ -1508,7 +1955,7 @@ void AudioTrimDialog::onBypassToggled(bool checked)
 {
     m_isBypassActive = checked;
     if (m_btnBypass) {
-        m_btnBypass->setText(checked ? tr("⚡ BYPASS ATTIVO (Suono Originale)") : tr("🎧 A/B Bypass (Compare Original)"));
+        m_btnBypass->setText(checked ? tr("⚡ BYPASS ACTIVE (Original Sound)") : tr("🎧 A/B Bypass (Compare Original)"));
     }
     applyPreviewFilters();
 }
@@ -2139,10 +2586,24 @@ void AudioTrimDialog::applyPreviewFilters()
     }
 
     // 10-Band Graphic Equalizer, Pre-Amp, Limiter, Stereo Width
+    bool hasActiveEq = false;
     if (m_equalizerWidget && !m_equalizerWidget->isBypassed()) {
-        QString eqMpv = EqualizerManager::buildMpvAfString(m_equalizerWidget->currentPreset());
-        if (!eqMpv.isEmpty()) {
-            filters << eqMpv;
+        const EqualizerPreset eq = m_equalizerWidget->currentPreset();
+        if (std::abs(eq.preAmpDb) > 0.05 || std::abs(eq.stereoWidth - 1.0) > 0.01) {
+            hasActiveEq = true;
+        } else {
+            for (double g : eq.bandGainsDb) {
+                if (std::abs(g) > 0.05) {
+                    hasActiveEq = true;
+                    break;
+                }
+            }
+        }
+        if (hasActiveEq) {
+            QString eqMpv = EqualizerManager::buildMpvAfString(eq);
+            if (!eqMpv.isEmpty()) {
+                filters << eqMpv;
+            }
         }
     }
 
@@ -2171,7 +2632,7 @@ void AudioTrimDialog::applyPreviewFilters()
                            (chMode != 0) || (pitchSemitones != 0) || (speedVal != 100) ||
                            (m_chkReverse && m_chkReverse->isChecked()) ||
                            (m_chkRemoveSilence && m_chkRemoveSilence->isChecked()) ||
-                           (m_equalizerWidget && !m_equalizerWidget->isBypassed()) ||
+                           hasActiveEq ||
                            (targetSr > 0) || (targetBr > 0);
 
     if (m_chkLossless) {
@@ -2199,6 +2660,189 @@ void AudioTrimDialog::applyPreviewFilters()
             }
         }
     }
+
+    emit studioModificationsChanged(hasActiveTrim(), hasActiveFilters(), hasActiveDsp(), hasActiveEq);
+    updateSummaryTab();
+}
+
+bool AudioTrimDialog::hasActiveTrim() const
+{
+    bool rangeModified = (m_startMs > 50) || (m_meta.durationMs > 0 && m_endMs < m_meta.durationMs - 50);
+    bool fadesModified = (m_spinFadeIn && m_spinFadeIn->value() > 0.0) || (m_spinFadeOut && m_spinFadeOut->value() > 0.0);
+    return rangeModified || fadesModified;
+}
+
+bool AudioTrimDialog::hasActiveFilters() const
+{
+    return (m_sliderLowCut && m_sliderLowCut->value() > 0) ||
+           (m_sliderHighCut && m_sliderHighCut->value() < 20000) ||
+           (m_sliderDenoise && m_sliderDenoise->value() > 0) ||
+           (m_comboDehum && m_comboDehum->currentIndex() > 0) ||
+           (m_chkDeclick && m_chkDeclick->isChecked()) ||
+           (m_chkDeesser && m_chkDeesser->isChecked()) ||
+           (m_chkVoiceEnhance && m_chkVoiceEnhance->isChecked()) ||
+           (m_chkNormalize && m_chkNormalize->isChecked()) ||
+           (m_chkNoiseGate && m_chkNoiseGate->isChecked());
+}
+
+bool AudioTrimDialog::hasActiveDsp() const
+{
+    return (m_comboChannels && m_comboChannels->currentIndex() > 0) ||
+           (m_sliderPitch && m_sliderPitch->value() != 0) ||
+           (m_sliderSpeed && m_sliderSpeed->value() != 100) ||
+           (m_chkReverse && m_chkReverse->isChecked()) ||
+           (m_chkRemoveSilence && m_chkRemoveSilence->isChecked());
+}
+
+bool AudioTrimDialog::hasActiveEq() const
+{
+    if (!m_equalizerWidget || m_equalizerWidget->isBypassed()) return false;
+    const EqualizerPreset eq = m_equalizerWidget->currentPreset();
+    if (std::abs(eq.preAmpDb) > 0.05 || std::abs(eq.stereoWidth - 1.0) > 0.01) return true;
+    for (double g : eq.bandGainsDb) {
+        if (std::abs(g) > 0.05) return true;
+    }
+    return false;
+}
+
+void AudioTrimDialog::resetTrim()
+{
+    m_startMs = 0;
+    m_endMs = m_meta.durationMs > 0 ? m_meta.durationMs : 10000;
+    if (m_waveform) {
+        m_waveform->setSelection(m_startMs, m_endMs, m_meta.durationMs);
+    }
+    if (m_spinFadeIn) m_spinFadeIn->setValue(0.0);
+    if (m_spinFadeOut) m_spinFadeOut->setValue(0.0);
+    updateTimeLabels();
+    applyPreviewFilters();
+}
+
+void AudioTrimDialog::resetFilters()
+{
+    if (m_comboPresets) m_comboPresets->setCurrentIndex(0);
+    if (m_sliderLowCut) m_sliderLowCut->setValue(0);
+    if (m_sliderHighCut) m_sliderHighCut->setValue(20000);
+    if (m_sliderDenoise) m_sliderDenoise->setValue(0);
+    if (m_comboDehum) m_comboDehum->setCurrentIndex(0);
+    if (m_chkDeclick) m_chkDeclick->setChecked(false);
+    if (m_chkDeesser) m_chkDeesser->setChecked(false);
+    if (m_chkVoiceEnhance) m_chkVoiceEnhance->setChecked(false);
+    if (m_chkNormalize) m_chkNormalize->setChecked(false);
+    if (m_chkNoiseGate) m_chkNoiseGate->setChecked(false);
+    applyPreviewFilters();
+}
+
+void AudioTrimDialog::resetDsp()
+{
+    if (m_comboChannels) m_comboChannels->setCurrentIndex(0);
+    if (m_sliderPitch) m_sliderPitch->setValue(0);
+    if (m_sliderSpeed) m_sliderSpeed->setValue(100);
+    if (m_chkReverse) m_chkReverse->setChecked(false);
+    if (m_chkRemoveSilence) m_chkRemoveSilence->setChecked(false);
+    applyPreviewFilters();
+}
+
+void AudioTrimDialog::resetEqualizer()
+{
+    if (m_equalizerWidget) {
+        m_equalizerWidget->resetToFlat();
+    }
+    applyPreviewFilters();
+}
+
+void AudioTrimDialog::resetAll()
+{
+    resetTrim();
+    resetFilters();
+    resetDsp();
+    resetEqualizer();
+}
+
+void AudioTrimDialog::updateFormatOptions()
+{
+    if (!m_comboFormat || !m_comboBitrate || !m_comboSampleRate) return;
+
+    QString fmt = m_comboFormat->currentData().toString();
+
+    m_comboBitrate->blockSignals(true);
+    m_comboSampleRate->blockSignals(true);
+
+    int prevBr = m_comboBitrate->currentData().toInt();
+    int prevSr = m_comboSampleRate->currentData().toInt();
+
+    m_comboBitrate->clear();
+    m_comboSampleRate->clear();
+
+    if (fmt == "copy") {
+        m_comboBitrate->addItem(tr("Auto (Original)"), 0);
+        m_comboBitrate->setEnabled(false);
+
+        m_comboSampleRate->addItem(tr("Auto (Original)"), 0);
+        m_comboSampleRate->setEnabled(false);
+    } else if (fmt == "mp3") {
+        m_comboBitrate->setEnabled(true);
+        m_comboBitrate->addItem(tr("Auto (Preserve)"), 0);
+        m_comboBitrate->addItem("128 kbps", 128);
+        m_comboBitrate->addItem("192 kbps", 192);
+        m_comboBitrate->addItem("256 kbps", 256);
+        m_comboBitrate->addItem("320 kbps", 320);
+
+        m_comboSampleRate->setEnabled(true);
+        m_comboSampleRate->addItem(tr("Auto (Original)"), 0);
+        m_comboSampleRate->addItem("44.1 kHz", 44100);
+        m_comboSampleRate->addItem("48.0 kHz", 48000);
+    } else if (fmt == "aac") {
+        m_comboBitrate->setEnabled(true);
+        m_comboBitrate->addItem(tr("Auto (Preserve)"), 0);
+        m_comboBitrate->addItem("128 kbps", 128);
+        m_comboBitrate->addItem("192 kbps", 192);
+        m_comboBitrate->addItem("256 kbps (Apple Standard)", 256);
+
+        m_comboSampleRate->setEnabled(true);
+        m_comboSampleRate->addItem(tr("Auto (Original)"), 0);
+        m_comboSampleRate->addItem("44.1 kHz", 44100);
+        m_comboSampleRate->addItem("48.0 kHz", 48000);
+    } else if (fmt == "ogg") {
+        m_comboBitrate->setEnabled(true);
+        m_comboBitrate->addItem(tr("Auto (Preserve)"), 0);
+        m_comboBitrate->addItem("128 kbps (Q4)", 128);
+        m_comboBitrate->addItem("192 kbps (Q6)", 192);
+        m_comboBitrate->addItem("256 kbps (Q8)", 256);
+        m_comboBitrate->addItem("320 kbps (Q9)", 320);
+
+        m_comboSampleRate->setEnabled(true);
+        m_comboSampleRate->addItem(tr("Auto (Original)"), 0);
+        m_comboSampleRate->addItem("44.1 kHz", 44100);
+        m_comboSampleRate->addItem("48.0 kHz", 48000);
+    } else if (fmt == "flac") {
+        m_comboBitrate->addItem(tr("N/A (Lossless VBR)"), 0);
+        m_comboBitrate->setEnabled(false);
+
+        m_comboSampleRate->setEnabled(true);
+        m_comboSampleRate->addItem(tr("Auto (Original)"), 0);
+        m_comboSampleRate->addItem("44.1 kHz", 44100);
+        m_comboSampleRate->addItem("48.0 kHz", 48000);
+        m_comboSampleRate->addItem("96.0 kHz (Hi-Res)", 96000);
+    } else if (fmt == "wav") {
+        m_comboBitrate->addItem(tr("N/A (16-bit PCM)"), 0);
+        m_comboBitrate->setEnabled(false);
+
+        m_comboSampleRate->setEnabled(true);
+        m_comboSampleRate->addItem(tr("Auto (Original)"), 0);
+        m_comboSampleRate->addItem("44.1 kHz", 44100);
+        m_comboSampleRate->addItem("48.0 kHz", 48000);
+        m_comboSampleRate->addItem("96.0 kHz (Hi-Res)", 96000);
+    }
+
+    int brIdx = m_comboBitrate->findData(prevBr);
+    m_comboBitrate->setCurrentIndex(brIdx >= 0 ? brIdx : 0);
+
+    int srIdx = m_comboSampleRate->findData(prevSr);
+    m_comboSampleRate->setCurrentIndex(srIdx >= 0 ? srIdx : 0);
+
+    m_comboBitrate->blockSignals(false);
+    m_comboSampleRate->blockSignals(false);
 }
 
 void AudioTrimDialog::onFilterChanged()
@@ -2216,9 +2860,9 @@ void AudioTrimDialog::startPreview()
     const char *cmd[] = {"loadfile", pathBytes.constData(), "replace", nullptr};
     mpv_command(m_previewMpv, cmd);
 
-    // If Tab 1 is active, seek to startMs; if Tab 2 is active and user seeked, keep position
+    // If Tab 0 (Trim) is active, seek to startMs; if Tabs 1..3 are active and user seeked, keep position
     double startSec = static_cast<double>(m_startMs) / 1000.0;
-    if (m_tabWidget && m_tabWidget->currentIndex() == 1 && m_sliderSeekFilters && m_meta.durationMs > 0) {
+    if (m_tabWidget && m_tabWidget->currentIndex() != 0 && m_sliderSeekFilters && m_meta.durationMs > 0) {
         startSec = (static_cast<double>(m_sliderSeekFilters->value()) / 1000.0) * (static_cast<double>(m_meta.durationMs) / 1000.0);
     }
     mpv_command_string(m_previewMpv, QString("seek %1 absolute").arg(startSec).toUtf8().constData());
@@ -2355,6 +2999,7 @@ void AudioTrimDialog::updatePreviewTimer()
 
 void AudioTrimDialog::onFormatChanged(int)
 {
+    updateFormatOptions();
     QString fmt = m_comboFormat->currentData().toString();
     if (fmt != "copy") {
         m_chkLossless->blockSignals(true);
@@ -2369,6 +3014,7 @@ void AudioTrimDialog::onFormatChanged(int)
     } else {
         applyPreviewFilters();
     }
+    updateSummaryTab();
 }
 
 void AudioTrimDialog::onSaveClicked()
@@ -2384,6 +3030,30 @@ void AudioTrimDialog::onSaveClicked()
     QString defaultName = fi.dir().filePath(QString("%1_processed.%2").arg(fi.baseName(), ext));
     QString dest = QFileDialog::getSaveFileName(this, tr("Save Audio"), defaultName, QString("Audio (*.%1)").arg(ext));
     if (dest.isEmpty()) return;
+
+    processAndSaveAudio(dest);
+}
+
+void AudioTrimDialog::onOverwriteClicked()
+{
+    stopPreview();
+    if (m_filePath.isEmpty()) return;
+
+    auto res = QMessageBox::question(
+        this,
+        tr("Overwrite Original File"),
+        tr("Are you sure you want to overwrite the original audio file?\n\n%1\n\nA temporary backup is created on disk during processing to protect your data.").arg(m_filePath),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No
+    );
+    if (res != QMessageBox::Yes) return;
+
+    processAndSaveAudio(m_filePath);
+}
+
+void AudioTrimDialog::processAndSaveAudio(const QString &dest)
+{
+    stopPreview();
 
     AudioTrimOptions opts;
     opts.startMs = m_startMs;
@@ -2409,12 +3079,22 @@ void AudioTrimDialog::onSaveClicked()
     opts.timeStretch = m_sliderSpeed ? (m_sliderSpeed->value() / 100.0) : 1.0;
     opts.reverseAudio = m_chkReverse && m_chkReverse->isChecked();
     opts.removeSilence = m_chkRemoveSilence && m_chkRemoveSilence->isChecked();
-    opts.targetBitrateKbps = m_comboBitrate ? m_comboBitrate->currentData().toInt() : 0;
-    opts.targetSampleRate = m_comboSampleRate ? m_comboSampleRate->currentData().toInt() : 0;
+    opts.targetBitrateKbps = (m_comboBitrate && m_comboBitrate->isEnabled()) ? m_comboBitrate->currentData().toInt() : 0;
+    opts.targetSampleRate = (m_comboSampleRate && m_comboSampleRate->isEnabled()) ? m_comboSampleRate->currentData().toInt() : 0;
 
     if (m_equalizerWidget && !m_equalizerWidget->isBypassed()) {
-        opts.equalizerEnabled = true;
-        opts.equalizerPreset = m_equalizerWidget->currentPreset();
+        const EqualizerPreset eq = m_equalizerWidget->currentPreset();
+        bool hasActiveEq = (std::abs(eq.preAmpDb) > 0.05 || std::abs(eq.stereoWidth - 1.0) > 0.01);
+        if (!hasActiveEq) {
+            for (double g : eq.bandGainsDb) {
+                if (std::abs(g) > 0.05) {
+                    hasActiveEq = true;
+                    break;
+                }
+            }
+        }
+        opts.equalizerEnabled = hasActiveEq;
+        opts.equalizerPreset = eq;
     }
 
     opts.losslessCopy = m_chkLossless->isChecked() &&
@@ -2432,6 +3112,8 @@ void AudioTrimDialog::onSaveClicked()
     m_progressBar->setVisible(true);
     m_progressBar->setValue(30);
     m_btnSave->setEnabled(false);
+    if (m_btnSummarySave) m_btnSummarySave->setEnabled(false);
+    if (m_btnSummaryOverwrite) m_btnSummaryOverwrite->setEnabled(false);
     qApp->processEvents();
 
     bool success = AudioProcessor::trimAudio(m_filePath, dest, opts, [this](int prog) {
@@ -2441,11 +3123,15 @@ void AudioTrimDialog::onSaveClicked()
 
     m_progressBar->setVisible(false);
     m_btnSave->setEnabled(true);
+    if (m_btnSummarySave) m_btnSummarySave->setEnabled(true);
+    if (m_btnSummaryOverwrite) m_btnSummaryOverwrite->setEnabled(true);
 
     if (success) {
         m_savedPath = dest;
         QMessageBox::information(this, tr("Success"), tr("Audio saved successfully!\n%1").arg(dest));
-        accept();
+        if (!m_isEmbedded) {
+            accept();
+        }
     } else {
         QMessageBox::critical(this, tr("Error"), tr("Failed to process or export audio file. Please check permissions or format compatibility."));
     }
@@ -2522,27 +3208,14 @@ void AudioTrimDialog::onSplitCueClicked()
 
 void AudioTrimDialog::onOpenTagEditorClicked()
 {
+    if (m_isEmbedded) {
+        emit openTagEditorRequested();
+        return;
+    }
     AudioTagDialog tagDlg(m_filePath, QStringList(), this);
     if (tagDlg.exec() == QDialog::Accepted) {
-        // Refresh metadata
         m_meta = AudioProcessor::readMetadata(m_filePath);
-        if (m_lblInfo) {
-            QFileInfo fi(m_filePath);
-            ThemePreset preset = ThemeManager::currentPreset();
-            bool isDark = (preset == ThemePreset::DarkSlate || preset == ThemePreset::BreezeDark);
-            QString titleColor = isDark ? "#eff0f1" : "#1e293b";
-            QString subColor = isDark ? "#959ca7" : "#64748b";
-            QString infoText = QString("<div style='font-size: 14px; font-weight: bold; color: %1;'>%2</div>"
-                                       "<div style='font-size: 11px; color: %3; margin-top: 2px;'>%4 &nbsp;|&nbsp; %5 kHz &nbsp;|&nbsp; %6 %7 &nbsp;|&nbsp; %8 kbps</div>")
-                                   .arg(titleColor, fi.fileName(),
-                                        subColor,
-                                        m_meta.codecName.isEmpty() ? fi.suffix().toUpper() : m_meta.codecName,
-                                        QString::number(m_meta.sampleRate / 1000.0, 'f', 1),
-                                        QString::number(m_meta.channels),
-                                        (m_meta.channels == 2 ? tr("channels (Stereo)") : tr("channel (Mono)")),
-                                        QString::number(m_meta.bitRate));
-            m_lblInfo->setText(infoText);
-        }
+        updateHeaderInfoLabel();
     }
 }
 

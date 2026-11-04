@@ -115,18 +115,15 @@ private:
 MpvVideoWidget::MpvVideoWidget(QWidget *parent)
     : QWidget(parent)
     , m_glWidget(nullptr)
+    , m_mpv(nullptr)
 {
     setStyleSheet("background-color: #000000;");
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-
-    // QOpenGLWidget crashes in offscreen platform under Qt6 (no platform RHI support).
-    // Gracefully bypass OpenGL widget creation when running offscreen.
-    if (QGuiApplication::platformName() != "offscreen") {
-        m_glWidget = new MpvGLWidget(this);
-        layout->addWidget(m_glWidget);
-    }
+    // Note: MpvGLWidget is lazily instantiated via ensureGlWidgetCreated() when
+    // playing an actual video file, avoiding OpenGL context and native window surface
+    // recreation when launching or playing audio-only files.
 }
 
 MpvVideoWidget::~MpvVideoWidget()
@@ -136,9 +133,22 @@ MpvVideoWidget::~MpvVideoWidget()
 
 void MpvVideoWidget::setMpvHandle(mpv_handle *mpv)
 {
+    m_mpv = mpv;
     if (m_glWidget) {
         m_glWidget->setMpvHandle(mpv);
     }
+}
+
+void MpvVideoWidget::ensureGlWidgetCreated()
+{
+    if (m_glWidget) return;
+    if (QGuiApplication::platformName() == "offscreen") return;
+
+    m_glWidget = new MpvGLWidget(this);
+    if (m_mpv) {
+        m_glWidget->setMpvHandle(m_mpv);
+    }
+    layout()->addWidget(m_glWidget);
 }
 
 void MpvVideoWidget::cleanup()

@@ -5,13 +5,16 @@
 #include <QMainWindow>
 #include <QSettings>
 
+class QFileDialog;
+
 /**
  * @brief Available visual theme presets for BubezView.
  */
 enum class ThemePreset {
-    SystemNative, ///< Follow the desktop environment's native Qt palette and widget styling.
-    DarkSlate,    ///< Elegant custom dark slate theme with high contrast borders.
-    BreezeDark    ///< KDE Breeze-inspired dark styling.
+    DarkSlate,   ///< Elegant custom dark slate theme with high contrast borders (#22262b).
+    BreezeDark,  ///< KDE Breeze-inspired dark styling (#181b1d).
+    ModernLight, ///< macOS/Cupertino-inspired frosted silver light styling (#f5f5f7 / #ffffff).
+    BreezeLight  ///< KDE Breeze-inspired clean light styling (#eff0f1 / #fcfcfc).
 };
 
 /**
@@ -53,6 +56,32 @@ public:
     static ThemePreset stringToPreset(const QString &str);
 
     /**
+     * @brief Checks whether the given theme preset has a dark visual appearance.
+     * @param preset The target ThemePreset.
+     * @return True if preset is DarkSlate or BreezeDark.
+     */
+    static inline bool isDark(ThemePreset preset) {
+        return preset == ThemePreset::DarkSlate || preset == ThemePreset::BreezeDark;
+    }
+
+    /**
+     * @brief Checks whether the currently active theme preset is dark.
+     * @return True if active preset is dark.
+     */
+    static inline bool isDarkTheme() {
+        return isDark(currentPreset());
+    }
+
+    /**
+     * @brief Returns the appropriate contrast icon stroke color for the given preset.
+     * @param preset The target ThemePreset.
+     * @return Light gray for dark themes, dark charcoal for light themes.
+     */
+    static inline QColor iconColor(ThemePreset preset) {
+        return isDark(preset) ? QColor("#e2e8f0") : QColor("#232629");
+    }
+
+    /**
      * @brief Reads the active transition effect for file switching.
      * @return Active TransitionEffect.
      */
@@ -89,4 +118,23 @@ public:
      * @return Formatted Qt stylesheet string for QScrollBar.
      */
     static QString scrollBarStyleSheet(ThemePreset preset);
+
+    /**
+     * @brief Generates cohesive, modern stylesheet rules for QFileDialog and file browser views.
+     *
+     * Provides elegant dark/light theme styling for the file picker tree, places sidebar,
+     * headers, path bars, and action buttons.
+     *
+     * @param preset The target ThemePreset.
+     * @return Formatted Qt stylesheet string for QFileDialog and its sub-widgets.
+     */
+    static QString fileDialogStyleSheet(ThemePreset preset);
+
+    /**
+     * @brief Configures any QFileDialog instance with BubezView places (FolderViewer bookmarks),
+     * crisp vector navigation icons, and non-truncated sidebar geometry.
+     *
+     * @param dialog Pointer to the target QFileDialog.
+     */
+    static void configureFileDialog(QFileDialog *dialog);
 };

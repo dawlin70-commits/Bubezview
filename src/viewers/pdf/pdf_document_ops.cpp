@@ -14,6 +14,7 @@
 #include <QPainter>
 #include <QPageSize>
 #include <QTextStream>
+#include <QStandardPaths>
 #include <QCoreApplication>
 #include <algorithm>
 #include <cmath>
@@ -86,6 +87,53 @@ bool PdfDocumentOps::insertBlankPage(const QString &sourceFilePath,
     return true;
 }
 
+bool PdfDocumentOps::deletePage(const QString &sourceFilePath,
+                                int totalPages,
+                                int pageIndex,
+                                QString &outFilePath,
+                                QString &errorMessage)
+{
+    if (sourceFilePath.isEmpty() || !QFile::exists(sourceFilePath)) {
+        errorMessage = QObject::tr("Source PDF file does not exist.");
+        return false;
+    }
+    if (totalPages <= 1) {
+        errorMessage = QObject::tr("Cannot delete the only page in the document.");
+        return false;
+    }
+
+    QTemporaryFile outFile(QDir::tempPath() + QStringLiteral("/bubez_deleted_XXXXXX.pdf"));
+    outFile.setAutoRemove(false);
+    if (!outFile.open()) {
+        errorMessage = QObject::tr("Failed to create output file for page deletion.");
+        return false;
+    }
+    outFilePath = outFile.fileName();
+    outFile.close();
+
+    int del1Based = pageIndex + 1;
+    QStringList args;
+    args << sourceFilePath << QStringLiteral("--pages") << sourceFilePath;
+
+    if (del1Based <= 1) {
+        args << QStringLiteral("2-z");
+    } else if (del1Based >= totalPages) {
+        args << QStringLiteral("1-%1").arg(totalPages - 1);
+    } else {
+        args << QStringLiteral("1-%1,%2-z").arg(del1Based - 1).arg(del1Based + 1);
+    }
+    args << QStringLiteral("--") << outFilePath;
+
+    int ret = QProcess::execute(QStringLiteral("qpdf"), args);
+    if (ret != 0 && ret != 3) {
+        QFile::remove(outFilePath);
+        outFilePath.clear();
+        errorMessage = QObject::tr("Could not delete page. Please ensure qpdf is installed on your system.");
+        return false;
+    }
+
+    return true;
+}
 
 bool PdfDocumentOps::exportPage(Poppler::Page *page,
                                const QString &format,
@@ -113,6 +161,41 @@ bool PdfDocumentOps::exportPage(Poppler::Page *page,
     if (img.isNull()) return false;
 
     return img.save(outputPath);
+}
+
+bool PdfDocumentOps::extractSinglePageToPdf(const QString &sourceFilePath,
+                                           int pageIndex0Based,
+                                           const QString &outFilePath,
+                                           QString &errorMessage)
+{
+    if (sourceFilePath.isEmpty() || !QFile::exists(sourceFilePath)) {
+        errorMessage = QObject::tr("Source PDF file does not exist.");
+        return false;
+    }
+
+    QString qpdfExe = QStandardPaths::findExecutable(QStringLiteral("qpdf"));
+    if (qpdfExe.isEmpty()) {
+        errorMessage = QObject::tr("QPDF utility is not installed on this system.");
+        return false;
+    }
+
+    int pageNum1Based = pageIndex0Based + 1;
+    QProcess proc;
+    QStringList args;
+    args << "--warning-exit-0" << sourceFilePath << "--pages" << sourceFilePath << QString::number(pageNum1Based) << "--" << outFilePath;
+    proc.start(qpdfExe, args);
+    proc.waitForFinished(10000);
+
+    int exitCode = proc.exitCode();
+    if ((exitCode == 0 || exitCode == 3) && QFile::exists(outFilePath) && QFileInfo(outFilePath).size() > 0) {
+        return true;
+    }
+
+    errorMessage = QString::fromUtf8(proc.readAllStandardError()).trimmed();
+    if (errorMessage.isEmpty()) {
+        errorMessage = QObject::tr("QPDF extraction process failed with code %1.").arg(exitCode);
+    }
+    return false;
 }
 
 int PdfDocumentOps::extractEmbeddedImages(const QString &filePath, const QString &targetDir)
@@ -208,3 +291,4 @@ bool PdfDocumentOps::saveDocumentWithRotation(Poppler::Document *doc,
 
     return true;
 }
+

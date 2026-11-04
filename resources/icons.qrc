@@ -5,5 +5,7 @@
         <file alias="binary_package.svg">icons/binary_package.svg</file>
         <file alias="source_lightning.svg">icons/source_lightning.svg</file>
         <file alias="wrench.svg">icons/wrench.svg</file>
+        <file alias="chevron_down_light.svg">icons/chevron_down_light.svg</file>
+        <file alias="chevron_down_dark.svg">icons/chevron_down_dark.svg</file>
     </qresource>
 </RCC>

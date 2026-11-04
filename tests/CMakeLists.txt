@@ -55,6 +55,9 @@ add_test(NAME TestGpu COMMAND test_gpu)
 add_executable(test_image
     test_image.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/image/image_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/base_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/photo_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/photo_studio_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/system/gpu_acceleration_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp
@@ -65,6 +68,7 @@ target_include_directories(test_image PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/services
     ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/ui
     ${CMAKE_SOURCE_DIR}/src/ui/dialogs
     ${CMAKE_SOURCE_DIR}/src/viewers/image
 )
@@ -122,12 +126,49 @@ target_link_libraries(test_media_system PRIVATE
 
 add_test(NAME TestMediaSystem COMMAND test_media_system)
 
+# Automated PDF Studio panel and dynamic transform box test
+pkg_check_modules(POPPLER_QT6 poppler-qt6)
+
+add_executable(test_pdf_studio
+    test_pdf_studio.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/base_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_history_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/minimal_header_bar.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/contextual_action_bar.cpp
+    ${CMAKE_SOURCE_DIR}/resources/icons.qrc
+)
+
+target_include_directories(test_pdf_studio PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf
+    ${POPPLER_QT6_INCLUDE_DIRS}
+)
+
+target_link_libraries(test_pdf_studio PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Test
+    ${POPPLER_QT6_LIBRARIES}
+)
+
+add_test(NAME TestPdfStudio COMMAND test_pdf_studio)
+
 # Interactive manual test target (excluded from default build and ctest per Rule 2)
 add_executable(test_interactive EXCLUDE_FROM_ALL
     test_interactive.cpp
     ${APP_CORE_SOURCES}
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_crypto_signature_dialog.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_image_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_page_organizer_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_typewriter_dialog.cpp
@@ -163,7 +204,7 @@ target_include_directories(test_interactive PRIVATE
 
 target_link_libraries(test_interactive PRIVATE
     Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::DBus Qt6::OpenGLWidgets
-    Qt6::PrintSupport Qt6::Network Qt6::Svg Qt6::Test
+    Qt6::PrintSupport Qt6::Network Qt6::Svg Qt6::Test Qt6::Multimedia Qt6::MultimediaWidgets
     ${POPPLER_QT6_LIBRARIES}
     ${LIBARCHIVE_LIBRARIES}
     ${LIBREVENGE_LIBRARIES}

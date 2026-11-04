@@ -77,11 +77,11 @@ void PdfRepairDialog::setupUi()
 
     // Output file row
     auto *outputLay = new QHBoxLayout();
-    auto *lblOut = new QLabel(tr("Save repaired to:"), this);
+    auto *lblOut = new QLabel(tr("Save Repaired As:"), this);
     lblOut->setFixedWidth(110);
     m_editOutput = new QLineEdit(this);
     m_editOutput->setPlaceholderText(tr("Target path for the recovered PDF file..."));
-    m_btnBrowseOutput = new QPushButton(tr("Browse..."), this);
+    m_btnBrowseOutput = new QPushButton(tr("Save As..."), this);
     m_btnBrowseOutput->setCursor(Qt::PointingHandCursor);
     connect(m_btnBrowseOutput, &QPushButton::clicked, this, &PdfRepairDialog::onBrowseOutput);
     outputLay->addWidget(lblOut);

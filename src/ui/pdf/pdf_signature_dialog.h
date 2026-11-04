@@ -9,6 +9,7 @@
 #include <QImage>
 #include <QPainterPath>
 #include <vector>
+#include "core/services/image_processor.h"
 
 class QTabWidget;
 class QListWidget;
@@ -102,6 +103,19 @@ private:
 
     QTabWidget *m_tabs = nullptr;
 
+    // Tabs
+    QWidget *m_tabSaved = nullptr;
+    QWidget *m_tabImage = nullptr;
+    QWidget *m_tabDraw = nullptr;
+    QWidget *m_tabDigital = nullptr;
+
+    // Saved Tab
+    QListWidget *m_listSaved = nullptr;
+    QPushButton *m_btnAddFromImage = nullptr;
+    QPushButton *m_btnAddFreehand = nullptr;
+    QPushButton *m_btnDeleteSaved = nullptr;
+    QLabel *m_lblEmptySaved = nullptr;
+
     // Draw Tab
     SignatureCanvasWidget *m_canvas = nullptr;
     QPushButton *m_btnColorBlack = nullptr;
@@ -115,13 +129,18 @@ private:
     QImage m_processedImportedImage;
     QLabel *m_lblImagePreview = nullptr;
     QSlider *m_sliderThreshold = nullptr;
+    QLabel *m_lblToleranceVal = nullptr;
     QCheckBox *m_chkAutoRemoveWhite = nullptr;
+    QCheckBox *m_chkContiguousOnly = nullptr;
     QPushButton *m_btnBrowseImage = nullptr;
+    QPushButton *m_btnResetKeyColor = nullptr;
+    QColor m_targetKeyColor = Qt::white;
+    QPoint m_seedPoint = QPoint(-1, -1);
 
-    // Saved Tab
-    QListWidget *m_listSaved = nullptr;
-    QPushButton *m_btnDeleteSaved = nullptr;
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
+private:
     // Common Footer
     QCheckBox *m_chkSaveToLibrary = nullptr;
     QPushButton *m_btnOk = nullptr;

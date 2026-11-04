@@ -49,6 +49,12 @@ public:
      */
     void reset();
 
+    /**
+     * @brief Returns the file path whose waveform is currently loaded.
+     * @return Current audio file path.
+     */
+    QString currentFilePath() const { return m_currentFilePath; }
+
 signals:
     /**
      * @brief Emitted when user clicks or drags on either waveform box to seek.

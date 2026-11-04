@@ -9,6 +9,7 @@
 #include <QThread>
 #include <QPointer>
 #include <QHash>
+#include <QMap>
 #include <atomic>
 
 class QPlainTextEdit;
@@ -86,9 +87,17 @@ public:
      * @brief Scans and populates the folder gallery for a directory path.
      * Starts background asynchronous thumbnail extraction.
      * @param folderPath Absolute filesystem directory path.
+     * @param forceReload If false and folderPath is already loaded, preserves current items and scroll.
      * @return True if directory exists and was loaded; false otherwise.
      */
-    bool loadFolder(const QString &folderPath);
+    bool loadFolder(const QString &folderPath, bool forceReload = false);
+
+    /**
+     * @brief Selects an item by file path without forcing unnecessary scrolling if already visible.
+     * @param filePath Absolute path of the file.
+     * @param ensureVisible If true and item is currently outside visible area, scrolls gently to it.
+     */
+    void selectItemByPath(const QString &filePath, bool ensureVisible = false);
 
     /**
      * @brief Clears list items, cancels active thumbnail workers, and resets counters.
@@ -114,6 +123,20 @@ public:
 
     /** @brief Returns the parent directory navigation button. */
     QPushButton *upButton() const { return m_btnUp; }
+
+    /** @brief Returns whether subfolders are included in the gallery alongside files. */
+    bool showFolders() const { return m_showFolders; }
+
+    /** @brief Sets whether subfolders are displayed in the gallery. */
+    void setShowFolders(bool show);
+
+    /**
+     * @brief Returns the visual card rectangle of an item in coordinates of FolderViewer.
+     * Used for morphing zoom transitions from/to the gallery.
+     * @param filePath Absolute path of the file.
+     * @return Rectangle in local coordinates, or a sensible center fallback.
+     */
+    QRect cardRectForPath(const QString &filePath) const;
 
     /**
      * @brief Returns the absolute path of the currently selected card in the gallery.
@@ -225,8 +248,10 @@ private:
 
     QPointer<ThumbnailWorker> m_worker;
     QHash<QString, QListWidgetItem*> m_pathToItem;
+    QMap<QString, int> m_folderScrollPositions;
 
     QString m_currentFolder;
+    bool m_showFolders = false;
     int m_itemCount;
     qint64 m_totalSize;
 };

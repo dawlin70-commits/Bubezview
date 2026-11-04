@@ -336,6 +336,7 @@ void SystemMediaViewer::resetMixer()
 
 void SystemMediaViewer::openAudioTrimDialog()
 {
+    if (!m_isEditMode) return;
     QMessageBox::information(
         this,
         tr("Audio Trimmer"),
@@ -345,6 +346,7 @@ void SystemMediaViewer::openAudioTrimDialog()
 
 void SystemMediaViewer::openAudioTagDialog()
 {
+    if (!m_isEditMode) return;
     QMessageBox::information(
         this,
         tr("Audio Tag Editor"),
@@ -500,7 +502,7 @@ void SystemMediaViewer::toggleMute()
 
 void SystemMediaViewer::playNextTrack()
 {
-    if (m_siblingFiles.isEmpty()) return;
+    if (m_isEditMode || m_siblingFiles.isEmpty()) return;
 
     int nextIdx = (m_currentIndex + 1) % m_siblingFiles.size();
     QString nextFile = m_siblingFiles.at(nextIdx);
@@ -514,7 +516,7 @@ void SystemMediaViewer::playNextTrack()
 
 void SystemMediaViewer::playPreviousTrack()
 {
-    if (m_siblingFiles.isEmpty()) return;
+    if (m_isEditMode || m_siblingFiles.isEmpty()) return;
 
     int prevIdx = (m_currentIndex <= 0) ? (m_siblingFiles.size() - 1) : (m_currentIndex - 1);
     QString prevFile = m_siblingFiles.at(prevIdx);

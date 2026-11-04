@@ -60,10 +60,15 @@ public:
     EqualizerPreset currentPreset() const;
 
     /**
-     * @brief Sets the equalizer configuration from a preset.
+     * @brief Applies equalizer parameters from a preset.
      * @param preset Equalizer parameters.
      */
     void applyPreset(const EqualizerPreset &preset);
+
+    /**
+     * @brief Resets all equalizer bands and pre-amp to flat (0 dB).
+     */
+    void resetToFlat();
 
     /**
      * @brief Checks if equalizer is currently bypassed.

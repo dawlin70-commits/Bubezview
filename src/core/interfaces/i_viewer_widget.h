@@ -134,4 +134,16 @@ public:
      * @brief Rotates view 90 degrees counter-clockwise.
      */
     virtual void rotateCounterClockwise() {}
+
+    /**
+     * @brief Toggles editing capabilities on the viewer.
+     * @param editMode True if editing is enabled; false if viewer is strictly read-only preview.
+     */
+    virtual void setEditMode(bool editMode) { Q_UNUSED(editMode); }
+
+    /**
+     * @brief Checks if viewer is currently in interactive edit mode.
+     * @return True if in edit mode; false if in view-only preview mode.
+     */
+    virtual bool isEditMode() const { return false; }
 };

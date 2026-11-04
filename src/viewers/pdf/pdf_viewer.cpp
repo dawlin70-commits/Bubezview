@@ -1,13 +1,17 @@
 #include "pdf_viewer.h"
 #include "pdf_document_ops.h"
 #include "theme_manager.h"
+#include "pdf_studio_panel.h"
 #include "pdf_typewriter_dialog.h"
 #include "pdf_signature_dialog.h"
 #include "pdf_crypto_signature_dialog.h"
-#include "pdf_image_dialog.h"
 #include "pdf_watermark_dialog.h"
 #include "pdf_page_organizer_dialog.h"
+#include "pdf_merge_dialog.h"
+#include "pdf_repair_dialog.h"
+#include "pdf_image_extract_dialog.h"
 #include "gpu_acceleration_manager.h"
+#include <QStackedWidget>
 #include <poppler/qt6/poppler-qt6.h>
 #include <poppler/qt6/poppler-annotation.h>
 #include <poppler/qt6/poppler-form.h>
@@ -27,6 +31,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QToolTip>
+#include <QStandardPaths>
 #include <QTextStream>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -35,6 +40,8 @@
 #include <QPainter>
 #include <QPageSize>
 #include <QDateTime>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
 #include <QDebug>
 #include <cmath>
 
@@ -48,12 +55,15 @@ PdfViewer::PdfViewer(QWidget *parent)
     , m_tocModel(nullptr)
     , m_scrollArea(nullptr)
     , m_pageWidget(nullptr)
-    , m_navBar(nullptr)
+    , m_pillContainer(nullptr)
     , m_btnPrevPage(nullptr)
     , m_lblPage(nullptr)
     , m_spinPage(nullptr)
     , m_lblPageCount(nullptr)
     , m_btnNextPage(nullptr)
+    , m_hudOpacity(nullptr)
+    , m_hudAnim(nullptr)
+    , m_hudTimer(nullptr)
     , m_currentPage(0)
     , m_pageCount(0)
     , m_zoomFactor(1.0)
@@ -101,7 +111,7 @@ PdfViewer::PdfViewer(QWidget *parent)
     mainLayout->addWidget(m_sigBanner);
 
     m_splitter = new QSplitter(Qt::Horizontal, this);
-    m_splitter->setHandleWidth(2);
+    m_splitter->setHandleWidth(0);
 
     // 1. Table of Contents (TOC) Sidebar
     m_tocContainer = new QWidget(m_splitter);
@@ -134,11 +144,17 @@ PdfViewer::PdfViewer(QWidget *parent)
     m_splitter->addWidget(m_tocContainer);
     m_tocContainer->hide(); // Initially hidden until an outline is confirmed
 
-    // 2. Main Page Scroll Canvas
-    m_scrollArea = new QScrollArea(m_splitter);
+    // 2. Central Stacked Area (Page Scroll Canvas vs. In-Window Page Grid Organizer)
+    m_centralStack = new QStackedWidget(m_splitter);
+
+    m_scrollArea = new QScrollArea(m_centralStack);
+    m_scrollArea->setFrameShape(QFrame::NoFrame);
+    m_scrollArea->setLineWidth(0);
     m_scrollArea->setAlignment(Qt::AlignCenter);
+    m_scrollArea->setMouseTracking(true);
 
     m_pageWidget = new PdfPageWidget(m_scrollArea);
+    m_pageWidget->setMouseTracking(true);
     m_scrollArea->setWidget(m_pageWidget);
 
     connect(m_pageWidget, &PdfPageWidget::selectionChanged, this, [this](bool hasSel) {
@@ -154,7 +170,31 @@ PdfViewer::PdfViewer(QWidget *parent)
     });
     connect(m_pageWidget, &PdfPageWidget::addStampAnnotationRequested, this, &PdfViewer::onAddStampAnnotation);
     connect(m_pageWidget, &PdfPageWidget::addStampAnnotationsRequested, this, &PdfViewer::onAddStampAnnotations);
+    connect(m_pageWidget, &PdfPageWidget::moveStampAnnotationRequested, this, &PdfViewer::onMoveStampAnnotation);
+    connect(m_pageWidget, &PdfPageWidget::deleteStampAnnotationRequested, this, &PdfViewer::onDeleteStampAnnotation);
     connect(m_pageWidget, &PdfPageWidget::addTextAnnotationRequested, this, &PdfViewer::onAddTextAnnotation);
+    connect(m_pageWidget, &PdfPageWidget::inPlaceTextEditStarted, this,
+            [this](const QString &text, const QFont &font, const QColor &color, PdfTextBgMode bgMode, const QColor &bgColor) {
+        if (m_inPlaceTextEditStartedCallback) {
+            m_inPlaceTextEditStartedCallback(text, font, color, bgMode, bgColor);
+        }
+    });
+    connect(m_pageWidget, &PdfPageWidget::inPlaceTextEditFinished, this, [this]() {
+        if (m_inPlaceTextEditFinishedCallback) {
+            m_inPlaceTextEditFinishedCallback();
+        }
+    });
+    connect(m_pageWidget, &PdfPageWidget::textSelectedForContextualEdit, this, [this](const QString &text, const QFont &font, const QColor &color, bool whiteout) {
+        if (m_textSelectedForEditCallback) {
+            m_textSelectedForEditCallback(text, font, color, whiteout);
+        }
+    });
+    connect(m_pageWidget, &PdfPageWidget::stampSelectedForContextualEdit, this, [this](const QString &text, const QColor &color, qreal angle, int style, int fontSize) {
+        emit stampSelectedForContextualEdit(text, color, angle, style, fontSize);
+        if (m_stampSelectedForEditCallback) {
+            m_stampSelectedForEditCallback(text, color, angle, style, fontSize);
+        }
+    });
     connect(m_pageWidget, &PdfPageWidget::insertImageRequested, this, &PdfViewer::openInsertImageDialog);
     connect(m_pageWidget, &PdfPageWidget::snapshotAreaSelected, this, &PdfViewer::onSnapshotAreaSelected);
     connect(m_pageWidget, &PdfPageWidget::cutAreaRequested, this, &PdfViewer::onCutAreaRequested);
@@ -178,7 +218,18 @@ PdfViewer::PdfViewer(QWidget *parent)
         }
     });
 
-    m_splitter->addWidget(m_scrollArea);
+    m_centralStack->addWidget(m_scrollArea); // index 0: Normal page canvas
+
+    m_pageGridOrganizer = new PdfPageOrganizerWidget(m_centralStack);
+    connect(m_pageGridOrganizer, &PdfPageOrganizerWidget::backRequested, this, [this]() {
+        hidePageGridOrganizer();
+    });
+    connect(m_pageGridOrganizer, &PdfPageOrganizerWidget::pageDoubleClicked, this, [this](int pageIdx) {
+        hidePageGridOrganizer(pageIdx);
+    });
+    m_centralStack->addWidget(m_pageGridOrganizer); // index 1: Integrated in-window thumbnail organizer
+
+    m_splitter->addWidget(m_centralStack);
 
     connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged, this, &PdfViewer::onVerticalScrollChanged);
 
@@ -191,20 +242,19 @@ PdfViewer::PdfViewer(QWidget *parent)
     // Give majority width to the document page
     m_splitter->setStretchFactor(0, 0);
     m_splitter->setStretchFactor(1, 1);
+    m_splitter->setCollapsible(0, true);
+    m_splitter->setCollapsible(1, false);
 
     mainLayout->addWidget(m_splitter);
 
-    // 3. Native Bottom Page Navigation Bar with Reader Pill Container
-    m_navBar = new QWidget(this);
-    m_navBar->setFixedHeight(44);
-    QHBoxLayout *navLayout = new QHBoxLayout(m_navBar);
-    navLayout->setContentsMargins(8, 4, 8, 4);
-    navLayout->setSpacing(0);
+    // 3. Floating HUD Overlay Page Navigation Pill (Option 1: auto-hiding capsule pill)
+    m_pillContainer = new QWidget(this);
+    m_pillContainer->setObjectName(QStringLiteral("PdfPageHud"));
+    m_pillContainer->setFixedHeight(34);
+    m_pillContainer->setAttribute(Qt::WA_Hover, true);
 
-    m_pillContainer = new QWidget(m_navBar);
-    m_pillContainer->setFixedHeight(32);
     QHBoxLayout *pillLayout = new QHBoxLayout(m_pillContainer);
-    pillLayout->setContentsMargins(6, 2, 8, 2);
+    pillLayout->setContentsMargins(8, 3, 10, 3);
     pillLayout->setSpacing(6);
 
     m_btnPrevPage = new QToolButton(m_pillContainer);
@@ -246,11 +296,21 @@ PdfViewer::PdfViewer(QWidget *parent)
     pillLayout->addWidget(m_lblPageCount);
     pillLayout->addWidget(m_btnNextPage);
 
-    navLayout->addStretch();
-    navLayout->addWidget(m_pillContainer);
-    navLayout->addStretch();
+    m_hudOpacity = new QGraphicsOpacityEffect(m_pillContainer);
+    m_hudOpacity->setOpacity(0.0);
+    m_pillContainer->setGraphicsEffect(m_hudOpacity);
+    m_pillContainer->hide();
 
-    mainLayout->addWidget(m_navBar);
+    m_hudAnim = new QPropertyAnimation(m_hudOpacity, "opacity", this);
+    connect(m_hudAnim, &QPropertyAnimation::finished, this, [this]() {
+        if (m_hudOpacity && m_hudOpacity->opacity() <= 0.01 && m_pillContainer) {
+            m_pillContainer->hide();
+        }
+    });
+
+    m_hudTimer = new QTimer(this);
+    m_hudTimer->setSingleShot(true);
+    connect(m_hudTimer, &QTimer::timeout, this, &PdfViewer::hidePageHud);
 
     // Connect signals to interface callbacks
     connect(this, &PdfViewer::documentModified, this, [this](bool m) { if (m_docModifiedCallback) m_docModifiedCallback(m); });
@@ -293,89 +353,88 @@ void PdfViewer::resetDocument()
         }
         m_activeSnapshotPath.clear();
     }
+    if (m_centralStack && m_centralStack->currentIndex() == 1) {
+        m_centralStack->setCurrentIndex(0);
+    }
 }
 
 void PdfViewer::updateTheme()
 {
     ThemePreset preset = ThemeManager::currentPreset();
+    bool isDark = ThemeManager::isDark(preset);
 
-    if (preset == ThemePreset::SystemNative) {
-        m_splitter->setStyleSheet("QSplitter::handle { background-color: palette(mid); }");
-        if (m_tocContainer) {
-            m_tocContainer->setStyleSheet("background-color: palette(window); border-right: 1px solid palette(mid);");
+    QString canvasBg;
+    if (preset == ThemePreset::DarkSlate) {
+        canvasBg = QStringLiteral("#22262b");
+    } else if (preset == ThemePreset::BreezeDark) {
+        canvasBg = QStringLiteral("#181b1d");
+    } else if (preset == ThemePreset::ModernLight) {
+        canvasBg = QStringLiteral("#f5f5f7");
+    } else { // BreezeLight
+        canvasBg = QStringLiteral("#eff0f1");
+    }
+
+    if (m_splitter) {
+        m_splitter->setHandleWidth((m_tocContainer && m_tocContainer->isVisible()) ? 2 : 0);
+        if (preset == ThemePreset::ModernLight) {
+            m_splitter->setStyleSheet("QSplitter::handle { background-color: #d2d2d7; }");
+        } else if (preset == ThemePreset::BreezeLight) {
+            m_splitter->setStyleSheet("QSplitter::handle { background-color: #bdc3c7; }");
+        } else {
+            m_splitter->setStyleSheet("QSplitter::handle { background-color: #3b3b3b; }");
         }
-        if (m_lblTocTitle) {
-            m_lblTocTitle->setStyleSheet("font-weight: bold; color: palette(window-text); font-size: 11px;");
-        }
-        if (m_btnCloseToc) {
-            m_btnCloseToc->setStyleSheet("color: palette(window-text); font-size: 10px; border: none; padding: 0;");
-        }
-        if (m_tocView) {
-            m_tocView->setStyleSheet(
-                "QTreeView { background-color: palette(base); color: palette(text); border: none; font-size: 12px; }"
-                "QTreeView::item { padding: 4px 2px; border-radius: 4px; }"
-                "QTreeView::item:hover { background-color: palette(alternate-base); color: palette(text); }"
-                "QTreeView::item:selected { background-color: palette(highlight); color: palette(highlighted-text); }"
-            );
-        }
-        if (m_scrollArea) {
-            // Soft neutral light canvas for native light theme with visible scrollbars
-            m_scrollArea->setStyleSheet(
-                "QScrollArea { background-color: #e4e7eb; border: none; }\n" +
-                ThemeManager::scrollBarStyleSheet(preset)
-            );
-            if (m_scrollArea->viewport()) {
-                QPalette pal = m_scrollArea->viewport()->palette();
-                pal.setColor(QPalette::Window, QColor("#e4e7eb"));
-                m_scrollArea->viewport()->setPalette(pal);
-                m_scrollArea->viewport()->setStyleSheet("background-color: #e4e7eb; border: none;");
-                m_scrollArea->viewport()->setAutoFillBackground(true);
-            }
-        }
-    } else if (preset == ThemePreset::DarkSlate) {
-        m_splitter->setStyleSheet("QSplitter::handle { background-color: #3b3b3b; }");
-        if (m_tocContainer) {
+    }
+
+    if (m_tocContainer) {
+        if (preset == ThemePreset::ModernLight) {
+            m_tocContainer->setStyleSheet("background-color: #f5f5f7; border-right: 1px solid #d2d2d7;");
+        } else if (preset == ThemePreset::BreezeLight) {
+            m_tocContainer->setStyleSheet("background-color: #eff0f1; border-right: 1px solid #bdc3c7;");
+        } else if (preset == ThemePreset::DarkSlate) {
             m_tocContainer->setStyleSheet("background-color: #1e2226; border-right: 1px solid #2d333b;");
+        } else {
+            m_tocContainer->setStyleSheet("background-color: #1e1e1e; border-right: 1px solid #333333;");
         }
-        if (m_lblTocTitle) {
+    }
+
+    if (m_lblTocTitle) {
+        if (preset == ThemePreset::ModernLight) {
+            m_lblTocTitle->setStyleSheet("font-weight: bold; color: #1d1d1f; font-size: 11px;");
+        } else if (preset == ThemePreset::BreezeLight) {
+            m_lblTocTitle->setStyleSheet("font-weight: bold; color: #232629; font-size: 11px;");
+        } else {
             m_lblTocTitle->setStyleSheet("font-weight: bold; color: #d4d4d4; font-size: 11px;");
         }
-        if (m_btnCloseToc) {
-            m_btnCloseToc->setStyleSheet("color: #888888; font-size: 10px; border: none; padding: 0;");
-        }
-        if (m_tocView) {
+    }
+
+    if (m_btnCloseToc) {
+        m_btnCloseToc->setStyleSheet(isDark ? "color: #888888; font-size: 10px; border: none; padding: 0;"
+                                           : "color: #6e6e73; font-size: 10px; border: none; padding: 0;");
+    }
+
+    if (m_tocView) {
+        if (preset == ThemePreset::ModernLight) {
+            m_tocView->setStyleSheet(
+                "QTreeView { background-color: #ffffff; color: #1d1d1f; border: none; font-size: 12px; }"
+                "QTreeView::item { padding: 4px 2px; border-radius: 4px; }"
+                "QTreeView::item:hover { background-color: #f0f0f2; color: #1d1d1f; }"
+                "QTreeView::item:selected { background-color: #007aff; color: #ffffff; }"
+            );
+        } else if (preset == ThemePreset::BreezeLight) {
+            m_tocView->setStyleSheet(
+                "QTreeView { background-color: #fcfcfc; color: #232629; border: none; font-size: 12px; }"
+                "QTreeView::item { padding: 4px 2px; border-radius: 4px; }"
+                "QTreeView::item:hover { background-color: #eff0f1; color: #232629; }"
+                "QTreeView::item:selected { background-color: #3daee9; color: #ffffff; }"
+            );
+        } else if (preset == ThemePreset::DarkSlate) {
             m_tocView->setStyleSheet(
                 "QTreeView { background-color: #1e2226; color: #cccccc; border: none; font-size: 12px; }"
                 "QTreeView::item { padding: 4px 2px; border-radius: 4px; }"
                 "QTreeView::item:hover { background-color: #2d333b; color: white; }"
                 "QTreeView::item:selected { background-color: #383c42; color: white; }"
             );
-        }
-        if (m_scrollArea) {
-            m_scrollArea->setStyleSheet(
-                "QScrollArea { background-color: #22262b; border: none; }\n" +
-                ThemeManager::scrollBarStyleSheet(preset)
-            );
-            if (m_scrollArea->viewport()) {
-                QPalette pal = m_scrollArea->viewport()->palette();
-                pal.setColor(QPalette::Window, QColor("#22262b"));
-                m_scrollArea->viewport()->setPalette(pal);
-                m_scrollArea->viewport()->setStyleSheet("background-color: #22262b; border: none;");
-                m_scrollArea->viewport()->setAutoFillBackground(true);
-            }
-        }
-    } else { // BreezeDark
-        m_splitter->setStyleSheet("QSplitter::handle { background-color: #3b3b3b; }");
-        if (m_tocContainer) {
-            m_tocContainer->setStyleSheet("background-color: #1e1e1e; border-right: 1px solid #333333;");
-        }
-        if (m_lblTocTitle) {
-            m_lblTocTitle->setStyleSheet("font-weight: bold; color: #d4d4d4; font-size: 11px;");
-        }
-        if (m_btnCloseToc) {
-            m_btnCloseToc->setStyleSheet("color: #888888; font-size: 10px; border: none; padding: 0;");
-        }
-        if (m_tocView) {
+        } else {
             m_tocView->setStyleSheet(
                 "QTreeView { background-color: #1e1e1e; color: #cccccc; border: none; font-size: 12px; }"
                 "QTreeView::item { padding: 4px 2px; border-radius: 4px; }"
@@ -383,73 +442,204 @@ void PdfViewer::updateTheme()
                 "QTreeView::item:selected { background-color: #04395e; color: white; }"
             );
         }
-        if (m_scrollArea) {
-            m_scrollArea->setStyleSheet(
-                "QScrollArea { background-color: #2b2b2b; border: none; }\n" +
-                ThemeManager::scrollBarStyleSheet(preset)
-            );
-            if (m_scrollArea->viewport()) {
-                QPalette pal = m_scrollArea->viewport()->palette();
-                pal.setColor(QPalette::Window, QColor("#2b2b2b"));
-                m_scrollArea->viewport()->setPalette(pal);
-                m_scrollArea->viewport()->setStyleSheet("background-color: #2b2b2b; border: none;");
-                m_scrollArea->viewport()->setAutoFillBackground(true);
-            }
+    }
+
+    // Transparent overlay scrollbar so the PDF canvas is 100% seamless without opaque sidebars
+    QString overlayScrollStyle = isDark ? QStringLiteral(
+        "QScrollBar:vertical {"
+        "   background: transparent;"
+        "   width: 8px;"
+        "   margin: 0px;"
+        "   border: none;"
+        "}"
+        "QScrollBar::handle:vertical {"
+        "   background: rgba(255, 255, 255, 0.28);"
+        "   min-height: 28px;"
+        "   border-radius: 4px;"
+        "   margin: 1px;"
+        "}"
+        "QScrollBar::handle:vertical:hover {"
+        "   background: rgba(255, 255, 255, 0.50);"
+        "}"
+        "QScrollBar::handle:vertical:pressed {"
+        "   background: rgba(255, 255, 255, 0.70);"
+        "}"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+        "   height: 0px;"
+        "   background: none;"
+        "}"
+        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+        "   background: none;"
+        "}"
+        "QScrollBar:horizontal {"
+        "   background: transparent;"
+        "   height: 8px;"
+        "   margin: 0px;"
+        "   border: none;"
+        "}"
+        "QScrollBar::handle:horizontal {"
+        "   background: rgba(255, 255, 255, 0.28);"
+        "   min-width: 28px;"
+        "   border-radius: 4px;"
+        "   margin: 1px;"
+        "}"
+        "QScrollBar::handle:horizontal:hover {"
+        "   background: rgba(255, 255, 255, 0.50);"
+        "}"
+        "QScrollBar::handle:horizontal:pressed {"
+        "   background: rgba(255, 255, 255, 0.70);"
+        "}"
+        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
+        "   width: 0px;"
+        "   background: none;"
+        "}"
+        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+        "   background: none;"
+        "}"
+    ) : QStringLiteral(
+        "QScrollBar:vertical {"
+        "   background: transparent;"
+        "   width: 8px;"
+        "   margin: 0px;"
+        "   border: none;"
+        "}"
+        "QScrollBar::handle:vertical {"
+        "   background: rgba(0, 0, 0, 0.25);"
+        "   min-height: 28px;"
+        "   border-radius: 4px;"
+        "   margin: 1px;"
+        "}"
+        "QScrollBar::handle:vertical:hover {"
+        "   background: rgba(0, 0, 0, 0.45);"
+        "}"
+        "QScrollBar::handle:vertical:pressed {"
+        "   background: rgba(0, 0, 0, 0.65);"
+        "}"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+        "   height: 0px;"
+        "   background: none;"
+        "}"
+        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+        "   background: none;"
+        "}"
+        "QScrollBar:horizontal {"
+        "   background: transparent;"
+        "   height: 8px;"
+        "   margin: 0px;"
+        "   border: none;"
+        "}"
+        "QScrollBar::handle:horizontal {"
+        "   background: rgba(0, 0, 0, 0.25);"
+        "   min-width: 28px;"
+        "   border-radius: 4px;"
+        "   margin: 1px;"
+        "}"
+        "QScrollBar::handle:horizontal:hover {"
+        "   background: rgba(0, 0, 0, 0.45);"
+        "}"
+        "QScrollBar::handle:horizontal:pressed {"
+        "   background: rgba(0, 0, 0, 0.65);"
+        "}"
+        "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
+        "   width: 0px;"
+        "   background: none;"
+        "}"
+        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+        "   background: none;"
+        "}"
+    );
+
+    if (m_scrollArea) {
+        m_scrollArea->setFrameShape(QFrame::NoFrame);
+        m_scrollArea->setLineWidth(0);
+        m_scrollArea->setStyleSheet(
+            "QScrollArea { background-color: " + canvasBg + "; border: none; }\n" +
+            overlayScrollStyle
+        );
+        if (m_scrollArea->viewport()) {
+            QPalette pal = m_scrollArea->viewport()->palette();
+            pal.setColor(QPalette::Window, QColor(canvasBg));
+            m_scrollArea->viewport()->setPalette(pal);
+            m_scrollArea->viewport()->setStyleSheet("background-color: " + canvasBg + "; border: none;");
+            m_scrollArea->viewport()->setAutoFillBackground(true);
         }
     }
 
-    if (m_navBar) {
-        if (preset == ThemePreset::SystemNative) {
-            m_navBar->setStyleSheet("background-color: transparent; border: none;");
-            if (m_pillContainer) {
-                m_pillContainer->setStyleSheet(
-                    "QWidget { background-color: palette(window); border: 1px solid palette(mid); border-radius: 16px; }"
-                );
-            }
+    // Option 1: Floating semi-transparent HUD capsule pill
+    if (m_pillContainer) {
+        if (preset == ThemePreset::ModernLight) {
+            m_pillContainer->setStyleSheet(
+                "QWidget#PdfPageHud { background-color: rgba(255, 255, 255, 0.92); border: 1px solid rgba(0, 0, 0, 0.15); border-radius: 17px; }"
+            );
             if (m_btnPrevPage) {
                 m_btnPrevPage->setStyleSheet(
-                    "QToolButton { background-color: transparent; border: 1px solid transparent; border-radius: 13px; font-weight: bold; font-size: 11px; padding: 0px; }"
-                    "QToolButton:hover { background-color: palette(alternate-base); border-color: palette(mid); }"
-                    "QToolButton:pressed { background-color: palette(mid); }"
-                    "QToolButton:disabled { color: palette(mid); }"
+                    "QToolButton { color: #1d1d1f; background: transparent; border: none; border-radius: 13px; font-weight: bold; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background-color: rgba(0, 0, 0, 0.08); color: #007aff; }"
+                    "QToolButton:pressed { background-color: rgba(0, 0, 0, 0.15); }"
+                    "QToolButton:disabled { color: #aeaeb2; }"
                 );
             }
             if (m_btnNextPage) {
                 m_btnNextPage->setStyleSheet(
-                    "QToolButton { background-color: transparent; border: 1px solid transparent; border-radius: 13px; font-weight: bold; font-size: 11px; padding: 0px; }"
-                    "QToolButton:hover { background-color: palette(alternate-base); border-color: palette(mid); }"
-                    "QToolButton:pressed { background-color: palette(mid); }"
-                    "QToolButton:disabled { color: palette(mid); }"
+                    "QToolButton { color: #1d1d1f; background: transparent; border: none; border-radius: 13px; font-weight: bold; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background-color: rgba(0, 0, 0, 0.08); color: #007aff; }"
+                    "QToolButton:pressed { background-color: rgba(0, 0, 0, 0.15); }"
+                    "QToolButton:disabled { color: #aeaeb2; }"
                 );
             }
-            if (m_lblPage) m_lblPage->setStyleSheet("background: transparent; color: palette(window-text); font-size: 11px; font-weight: 500; border: none;");
-            if (m_lblPageCount) m_lblPageCount->setStyleSheet("background: transparent; color: palette(window-text); font-size: 11px; font-weight: 500; border: none;");
+            if (m_lblPage) m_lblPage->setStyleSheet("background: transparent; color: #6e6e73; font-size: 11px; font-weight: 500; border: none;");
+            if (m_lblPageCount) m_lblPageCount->setStyleSheet("background: transparent; color: #6e6e73; font-size: 11px; font-weight: 500; border: none;");
             if (m_spinPage) {
                 m_spinPage->setStyleSheet(
-                    "QSpinBox { background-color: palette(base); color: palette(text); border: 1px solid palette(mid); border-radius: 6px; font-size: 12px; font-weight: bold; padding: 1px 2px; }"
-                    "QSpinBox:focus { border: 1px solid palette(highlight); }"
+                    "QSpinBox { background-color: #ffffff; color: #1d1d1f; border: 1px solid #d2d2d7; border-radius: 6px; font-size: 12px; font-weight: bold; padding: 1px 2px; }"
+                    "QSpinBox:focus { border: 1px solid #007aff; }"
+                );
+            }
+        } else if (preset == ThemePreset::BreezeLight) {
+            m_pillContainer->setStyleSheet(
+                "QWidget#PdfPageHud { background-color: rgba(252, 252, 252, 0.92); border: 1px solid rgba(0, 0, 0, 0.15); border-radius: 17px; }"
+            );
+            if (m_btnPrevPage) {
+                m_btnPrevPage->setStyleSheet(
+                    "QToolButton { color: #232629; background: transparent; border: none; border-radius: 13px; font-weight: bold; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background-color: rgba(0, 0, 0, 0.08); color: #3daee9; }"
+                    "QToolButton:pressed { background-color: rgba(0, 0, 0, 0.15); }"
+                    "QToolButton:disabled { color: #a5adb5; }"
+                );
+            }
+            if (m_btnNextPage) {
+                m_btnNextPage->setStyleSheet(
+                    "QToolButton { color: #232629; background: transparent; border: none; border-radius: 13px; font-weight: bold; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background-color: rgba(0, 0, 0, 0.08); color: #3daee9; }"
+                    "QToolButton:pressed { background-color: rgba(0, 0, 0, 0.15); }"
+                    "QToolButton:disabled { color: #a5adb5; }"
+                );
+            }
+            if (m_lblPage) m_lblPage->setStyleSheet("background: transparent; color: #626569; font-size: 11px; font-weight: 500; border: none;");
+            if (m_lblPageCount) m_lblPageCount->setStyleSheet("background: transparent; color: #626569; font-size: 11px; font-weight: 500; border: none;");
+            if (m_spinPage) {
+                m_spinPage->setStyleSheet(
+                    "QSpinBox { background-color: #fcfcfc; color: #232629; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 12px; font-weight: bold; padding: 1px 2px; }"
+                    "QSpinBox:focus { border: 1px solid #3daee9; }"
                 );
             }
         } else if (preset == ThemePreset::DarkSlate) {
-            m_navBar->setStyleSheet("background-color: transparent; border: none;");
-            if (m_pillContainer) {
-                m_pillContainer->setStyleSheet(
-                    "QWidget { background-color: #21262d; border: 1px solid #30363d; border-radius: 16px; }"
-                );
-            }
+            m_pillContainer->setStyleSheet(
+                "QWidget#PdfPageHud { background-color: rgba(22, 27, 34, 0.88); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 17px; }"
+            );
             if (m_btnPrevPage) {
                 m_btnPrevPage->setStyleSheet(
-                    "QToolButton { color: #c9d1d9; background: transparent; border: 1px solid transparent; border-radius: 13px; font-size: 11px; padding: 0px; }"
-                    "QToolButton:hover { background: #30363d; border-color: #484f58; color: #58a6ff; }"
-                    "QToolButton:pressed { background: #161b22; }"
+                    "QToolButton { color: #c9d1d9; background: transparent; border: none; border-radius: 13px; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background: rgba(255, 255, 255, 0.12); color: #58a6ff; }"
+                    "QToolButton:pressed { background: rgba(255, 255, 255, 0.20); }"
                     "QToolButton:disabled { color: #484f58; }"
                 );
             }
             if (m_btnNextPage) {
                 m_btnNextPage->setStyleSheet(
-                    "QToolButton { color: #c9d1d9; background: transparent; border: 1px solid transparent; border-radius: 13px; font-size: 11px; padding: 0px; }"
-                    "QToolButton:hover { background: #30363d; border-color: #484f58; color: #58a6ff; }"
-                    "QToolButton:pressed { background: #161b22; }"
+                    "QToolButton { color: #c9d1d9; background: transparent; border: none; border-radius: 13px; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background: rgba(255, 255, 255, 0.12); color: #58a6ff; }"
+                    "QToolButton:pressed { background: rgba(255, 255, 255, 0.20); }"
                     "QToolButton:disabled { color: #484f58; }"
                 );
             }
@@ -457,30 +647,27 @@ void PdfViewer::updateTheme()
             if (m_lblPageCount) m_lblPageCount->setStyleSheet("background: transparent; color: #8b949e; font-size: 11px; font-weight: 500; border: none;");
             if (m_spinPage) {
                 m_spinPage->setStyleSheet(
-                    "QSpinBox { background: #0d1117; color: #f0f6fc; border: 1px solid #30363d; border-radius: 6px; font-size: 12px; font-weight: bold; padding: 1px 2px; }"
+                    "QSpinBox { background: rgba(13, 17, 23, 0.80); color: #f0f6fc; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; font-size: 12px; font-weight: bold; padding: 1px 2px; }"
                     "QSpinBox:focus { border: 1px solid #58a6ff; }"
                 );
             }
         } else { // BreezeDark
-            m_navBar->setStyleSheet("background-color: transparent; border: none;");
-            if (m_pillContainer) {
-                m_pillContainer->setStyleSheet(
-                    "QWidget { background-color: #2a2e32; border: 1px solid #383e44; border-radius: 16px; }"
-                );
-            }
+            m_pillContainer->setStyleSheet(
+                "QWidget#PdfPageHud { background-color: rgba(24, 27, 29, 0.88); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 17px; }"
+            );
             if (m_btnPrevPage) {
                 m_btnPrevPage->setStyleSheet(
-                    "QToolButton { color: #eff0f1; background: transparent; border: 1px solid transparent; border-radius: 13px; font-size: 11px; padding: 0px; }"
-                    "QToolButton:hover { background: #31363b; border-color: #3daee9; color: #3daee9; }"
-                    "QToolButton:pressed { background: #232629; }"
+                    "QToolButton { color: #eff0f1; background: transparent; border: none; border-radius: 13px; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background: rgba(255, 255, 255, 0.12); color: #3daee9; }"
+                    "QToolButton:pressed { background: rgba(255, 255, 255, 0.20); }"
                     "QToolButton:disabled { color: #555a5f; }"
                 );
             }
             if (m_btnNextPage) {
                 m_btnNextPage->setStyleSheet(
-                    "QToolButton { color: #eff0f1; background: transparent; border: 1px solid transparent; border-radius: 13px; font-size: 11px; padding: 0px; }"
-                    "QToolButton:hover { background: #31363b; border-color: #3daee9; color: #3daee9; }"
-                    "QToolButton:pressed { background: #232629; }"
+                    "QToolButton { color: #eff0f1; background: transparent; border: none; border-radius: 13px; font-size: 11px; padding: 0px; }"
+                    "QToolButton:hover { background: rgba(255, 255, 255, 0.12); color: #3daee9; }"
+                    "QToolButton:pressed { background: rgba(255, 255, 255, 0.20); }"
                     "QToolButton:disabled { color: #555a5f; }"
                 );
             }
@@ -488,7 +675,7 @@ void PdfViewer::updateTheme()
             if (m_lblPageCount) m_lblPageCount->setStyleSheet("background: transparent; color: #bdc3c7; font-size: 11px; font-weight: 500; border: none;");
             if (m_spinPage) {
                 m_spinPage->setStyleSheet(
-                    "QSpinBox { background: #1b1e20; color: #eff0f1; border: 1px solid #383e44; border-radius: 6px; font-size: 12px; font-weight: bold; padding: 1px 2px; }"
+                    "QSpinBox { background: rgba(27, 30, 32, 0.80); color: #eff0f1; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; font-size: 12px; font-weight: bold; padding: 1px 2px; }"
                     "QSpinBox:focus { border: 1px solid #3daee9; }"
                 );
             }
@@ -498,6 +685,8 @@ void PdfViewer::updateTheme()
     if (m_pageWidget) {
         m_pageWidget->updateTheme();
     }
+
+    updateHudPosition();
 }
 
 bool PdfViewer::loadFile(const QString &filePath, bool preserveHistory)
@@ -598,6 +787,9 @@ bool PdfViewer::loadDocument(std::unique_ptr<Poppler::Document> doc, const QStri
     m_isModified = false;
     emit documentModified(false);
     emit pageChanged(m_currentPage + 1, m_pageCount);
+    if (m_studioPanel) {
+        m_studioPanel->updatePageInfo(m_currentPage, m_pageCount);
+    }
     return true;
 }
 
@@ -613,6 +805,7 @@ void PdfViewer::clear()
     m_zoomFactor = 1.0;
     m_hasOutline = false;
     m_isModified = false;
+    m_studioPanelWasVisible = false;
     m_tocModel->clear();
     m_tocContainer->hide();
     clearUndoRedoStacks();
@@ -658,7 +851,7 @@ QImage PdfViewer::renderCurrentPageForOcr(int dpi) const
     return renderPageForOcr(m_currentPage, dpi);
 }
 
-void PdfViewer::renderCurrentPage(int /*transitionDirection*/)
+void PdfViewer::renderCurrentPage(int /*transitionDirection*/, bool preserveScroll)
 {
     if (!m_doc || m_currentPage < 0 || m_currentPage >= m_pageCount) {
         m_pageWidget->clear();
@@ -666,10 +859,41 @@ void PdfViewer::renderCurrentPage(int /*transitionDirection*/)
         return;
     }
 
-    int availWidth = m_scrollArea->viewport()->width() - 36;
-    m_pageWidget->setDocument(m_doc.get(), m_zoomFactor, m_fitToWidthMode, m_rotationDegrees, availWidth);
+    int savedScrollX = (m_scrollArea && m_scrollArea->horizontalScrollBar()) ? m_scrollArea->horizontalScrollBar()->value() : 0;
+    int savedScrollY = (m_scrollArea && m_scrollArea->verticalScrollBar()) ? m_scrollArea->verticalScrollBar()->value() : 0;
+    int savedPage = m_currentPage;
+
+    // Block scrollbar signals while rebuilding layouts to avoid triggering spurious onVerticalScrollChanged(0)
+    std::unique_ptr<QSignalBlocker> blockV;
+    std::unique_ptr<QSignalBlocker> blockH;
+    if (m_scrollArea) {
+        if (m_scrollArea->verticalScrollBar()) {
+            blockV = std::make_unique<QSignalBlocker>(m_scrollArea->verticalScrollBar());
+        }
+        if (m_scrollArea->horizontalScrollBar()) {
+            blockH = std::make_unique<QSignalBlocker>(m_scrollArea->horizontalScrollBar());
+        }
+    }
+
+    int availWidth = m_scrollArea ? std::max(120, m_scrollArea->viewport()->width() - 48) : 600;
+    bool fitWidth = m_fitToWidthMode || isStudioPanelVisible();
+    m_pageWidget->setDocument(m_doc.get(), m_zoomFactor, fitWidth, m_rotationDegrees, availWidth);
     m_pageWidget->setFilePath(m_filePath);
-    m_pageWidget->setActivePage(m_currentPage);
+    m_pageWidget->setActivePage(savedPage);
+
+    if (preserveScroll && m_scrollArea) {
+        if (savedScrollY <= 0 && savedPage > 0) {
+            int pageTop = m_pageWidget->pageTopY(savedPage);
+            if (pageTop > 0) savedScrollY = pageTop - 8;
+        }
+        if (m_scrollArea->horizontalScrollBar()) {
+            m_scrollArea->horizontalScrollBar()->setValue(savedScrollX);
+        }
+        if (m_scrollArea->verticalScrollBar()) {
+            m_scrollArea->verticalScrollBar()->setValue(savedScrollY);
+        }
+    }
+
     updateNavButtons();
 }
 
@@ -748,6 +972,9 @@ void PdfViewer::setTocVisible(bool visible)
     }
 
     m_tocContainer->setVisible(visible);
+    if (m_splitter) {
+        m_splitter->setHandleWidth(visible ? 2 : 0);
+    }
     if (visible) {
         // Set reasonable sidebar width ratio
         QList<int> sizes = m_splitter->sizes();
@@ -758,6 +985,7 @@ void PdfViewer::setTocVisible(bool visible)
         }
         m_tocView->expandAll();
     }
+    updateHudPosition();
 }
 
 void PdfViewer::copySelectedText()
@@ -788,6 +1016,18 @@ void PdfViewer::pasteText()
 bool PdfViewer::hasTextSelection() const
 {
     return m_pageWidget && m_pageWidget->hasSelection();
+}
+
+QString PdfViewer::selectedText() const
+{
+    return m_pageWidget ? m_pageWidget->selectedText() : QString();
+}
+
+void PdfViewer::editSelectedTextWithWhiteout()
+{
+    if (m_pageWidget) {
+        m_pageWidget->editSelectedTextWithWhiteout();
+    }
 }
 
 bool PdfViewer::hasAreaSelection() const
@@ -922,6 +1162,9 @@ void PdfViewer::scrollToPage(int pageIndex)
 
     m_currentPage = pageIndex;
     m_pageWidget->setActivePage(pageIndex);
+    if (m_studioPanel) {
+        m_studioPanel->updatePageInfo(m_currentPage, m_pageCount);
+    }
 
     int topY = m_pageWidget->pageTopY(pageIndex);
     if (topY >= 0 && m_scrollArea && m_scrollArea->verticalScrollBar()) {
@@ -933,11 +1176,13 @@ void PdfViewer::scrollToPage(int pageIndex)
         m_spinPage->setValue(m_currentPage + 1);
     }
     updateNavButtons();
+    showPageHud();
     emit pageChanged(m_currentPage + 1, m_pageCount);
 }
 
 void PdfViewer::onVerticalScrollChanged(int /*value*/)
 {
+    showPageHud();
     if (!m_doc || m_pageCount <= 0 || !m_pageWidget || !m_scrollArea) return;
 
     int vpCenterY = m_scrollArea->verticalScrollBar()->value() + m_scrollArea->viewport()->height() / 3;
@@ -973,6 +1218,11 @@ void PdfViewer::updateNavButtons()
     }
     if (m_lblPageCount) {
         m_lblPageCount->setText(tr("of %1").arg(m_pageCount));
+    }
+    if (m_pageCount <= 1) {
+        if (m_pillContainer) m_pillContainer->hide();
+    } else {
+        updateHudPosition();
     }
 }
 
@@ -1014,20 +1264,113 @@ void PdfViewer::fitToWidth()
     if (m_zoomChangedCallback) m_zoomChangedCallback(m_zoomFactor);
 }
 
+void PdfViewer::setZoomFactor(double factor)
+{
+    prepareForManualZoom();
+    m_fitToWidthMode = false;
+    m_zoomFactor = std::clamp(factor, 0.2, 5.0);
+    renderCurrentPage();
+    emit zoomChanged(m_zoomFactor);
+    if (m_zoomChangedCallback) m_zoomChangedCallback(m_zoomFactor);
+}
+
 void PdfViewer::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+    updateHudPosition();
     if (m_fitToWidthMode && m_doc) {
         renderCurrentPage();
     }
 }
 
+void PdfViewer::updateHudPosition()
+{
+    if (!m_pillContainer) return;
+    if (isPageGridOrganizerActive()) {
+        m_pillContainer->hide();
+        return;
+    }
+    m_pillContainer->adjustSize();
+    int w = m_pillContainer->width();
+    int h = m_pillContainer->height();
+    int centralX = m_centralStack ? m_centralStack->x() : (m_scrollArea ? m_scrollArea->x() : 0);
+    int centralW = m_centralStack ? m_centralStack->width() : (m_scrollArea ? m_scrollArea->width() : width());
+    int x = centralX + (centralW - w) / 2;
+    int y = height() - h - 16;
+    m_pillContainer->move(x, y);
+    m_pillContainer->raise();
+}
+
+void PdfViewer::showPageHud()
+{
+    if (m_pageCount <= 1 || !m_pillContainer || isPageGridOrganizerActive()) {
+        if (m_pillContainer && !m_pillContainer->isHidden()) {
+            m_pillContainer->hide();
+        }
+        return;
+    }
+
+    updateHudPosition();
+    if (m_pillContainer->isHidden()) {
+        m_pillContainer->show();
+    }
+    m_pillContainer->raise();
+
+    if (m_hudAnim) {
+        m_hudAnim->stop();
+        m_hudAnim->setDuration(160);
+        m_hudAnim->setStartValue(m_hudOpacity ? m_hudOpacity->opacity() : 0.0);
+        m_hudAnim->setEndValue(1.0);
+        m_hudAnim->start();
+    } else if (m_hudOpacity) {
+        m_hudOpacity->setOpacity(1.0);
+    }
+
+    if (m_hudTimer) {
+        m_hudTimer->start(2200);
+    }
+}
+
+void PdfViewer::hidePageHud()
+{
+    if (!m_pillContainer || m_pillContainer->isHidden()) return;
+
+    if (m_pillContainer->underMouse()) {
+        if (m_hudTimer) m_hudTimer->start(1500);
+        return;
+    }
+
+    if (m_hudAnim) {
+        m_hudAnim->stop();
+        m_hudAnim->setDuration(280);
+        m_hudAnim->setStartValue(m_hudOpacity ? m_hudOpacity->opacity() : 1.0);
+        m_hudAnim->setEndValue(0.0);
+        m_hudAnim->start();
+    } else {
+        m_pillContainer->hide();
+    }
+}
+
 bool PdfViewer::eventFilter(QObject *watched, QEvent *event)
 {
+    if (watched == m_scrollArea->viewport() && event->type() == QEvent::Resize) {
+        auto *re = static_cast<QResizeEvent*>(event);
+        if (re->size().width() != re->oldSize().width()) {
+            updateHudPosition();
+            if (m_doc) {
+                renderCurrentPage();
+            }
+        }
+    }
+
+    if (event->type() == QEvent::MouseMove) {
+        showPageHud();
+    }
     bool isWheelSource = (watched == m_scrollArea->viewport() ||
                           watched == m_pageWidget ||
                           (m_pageWidget && watched == m_pageWidget->transformBox()));
     if (isWheelSource && event->type() == QEvent::Wheel) {
+        showPageHud();
         auto *we = static_cast<QWheelEvent*>(event);
         if (handleViewportWheel(we, watched)) {
             return true;
@@ -1040,6 +1383,22 @@ bool PdfViewer::handleViewportWheel(QWheelEvent *event, QObject *source)
 {
     if (!m_doc || m_pageCount <= 0) {
         return false;
+    }
+
+    // Never scroll the PDF document when the mouse is interacting with the side panel or TOC
+    if (m_studioPanel && m_studioPanel->isVisible()) {
+        QPoint ptInPanel = m_studioPanel->mapFromGlobal(event->globalPosition().toPoint());
+        if (m_studioPanel->rect().contains(ptInPanel)) {
+            event->accept();
+            return true;
+        }
+    }
+    if (m_tocContainer && m_tocContainer->isVisible()) {
+        QPoint ptInToc = m_tocContainer->mapFromGlobal(event->globalPosition().toPoint());
+        if (m_tocContainer->rect().contains(ptInToc)) {
+            event->accept();
+            return true;
+        }
     }
 
     // 1. Zoom with Mouse Wheel: Ctrl + Wheel or Zoom Tool active
@@ -1271,10 +1630,30 @@ bool PdfViewer::save()
 
 bool PdfViewer::saveAs(const QString &targetPath)
 {
+    commitSelectedStampProperties();
+    if (isPageGridOrganizerActive() && m_pageGridOrganizer && m_pageGridOrganizer->isModified()) {
+        commitOrganizerChanges();
+    }
+
     if (!m_doc || targetPath.isEmpty()) return false;
 
     int rot = m_rotationDegrees;
-    bool ok = PdfDocumentOps::saveDocumentWithRotation(m_doc.get(), m_filePath, targetPath, rot);
+    bool ok = false;
+
+    // If we have an active snapshot from page organizer / operations and no pending canvas rotation, copy snapshot directly
+    if (!m_activeSnapshotPath.isEmpty() && QFile::exists(m_activeSnapshotPath) && rot == 0) {
+        if (QFileInfo(m_activeSnapshotPath).canonicalFilePath() != QFileInfo(targetPath).canonicalFilePath()) {
+            if (QFile::exists(targetPath)) {
+                QFile::remove(targetPath);
+            }
+            ok = QFile::copy(m_activeSnapshotPath, targetPath);
+        } else {
+            ok = true;
+        }
+    }
+    if (!ok) {
+        ok = PdfDocumentOps::saveDocumentWithRotation(m_doc.get(), m_filePath, targetPath, rot);
+    }
     if (!ok) return false;
 
     int savedPage = m_currentPage;
@@ -1301,27 +1680,78 @@ bool PdfViewer::exportCurrentPage(const QString &format, const QString &outputPa
     return PdfDocumentOps::exportPage(page.get(), format, outputPath, dpi, m_rotationDegrees);
 }
 
-void PdfViewer::openTypewriterDialog()
+void PdfViewer::setEditMode(bool editMode)
 {
-    if (!m_doc) return;
-    PdfTypewriterDialog dlg(window());
-    if (dlg.exec() == QDialog::Accepted) {
-        m_pageWidget->startTypewriter(dlg.text(), dlg.selectedFont(), dlg.textColor(), dlg.isWhiteout());
+    m_isEditMode = editMode;
+    if (m_pageWidget) {
+        m_pageWidget->setEditMode(editMode);
+    }
+    if (!editMode) {
+        exitContinuousToolMode();
     }
 }
 
-void PdfViewer::startHighlighter(const QColor &color, double opacity)
+void PdfViewer::ensureStudioPanelCreated()
 {
-    if (!m_doc) return;
+    // Standalone studio panel shell is decoupled from PdfViewer to preserve 100% canvas viewport width.
+}
+
+void PdfViewer::toggleStudioPanel()
+{
+}
+
+void PdfViewer::openStudioPanel(int /*tabIndex*/)
+{
+}
+
+void PdfViewer::closeStudioPanel()
+{
+}
+
+bool PdfViewer::isStudioPanelVisible() const
+{
+    return false;
+}
+
+void PdfViewer::openTypewriterDialog()
+{
+    if (!m_isEditMode || !m_doc || !m_pageWidget) return;
+    m_pageWidget->startTypewriter(QString(), QFont(QStringLiteral("Sans Serif"), 12), Qt::black, false);
+}
+
+void PdfViewer::startHighlighter(const QColor &color, double opacity, bool isSpotlight)
+{
+    if (!m_isEditMode || !m_doc) return;
     m_pageWidget->setContinuousMode(true);
-    m_pageWidget->startHighlighter(color, opacity);
+    m_pageWidget->startHighlighter(color, opacity, isSpotlight);
 }
 
 void PdfViewer::startShape(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor)
 {
-    if (!m_doc) return;
+    if (!m_isEditMode || !m_doc) return;
     m_pageWidget->setContinuousMode(true);
     m_pageWidget->startShape(shapeType, strokeWidth, strokeColor, fillColor);
+}
+
+void PdfViewer::startWatermark(const QString &text, qreal angle, qreal opacity,
+                               const QColor &color, const QPoint &initialPos, int style, int fontSize)
+{
+    if (!m_isEditMode || !m_doc || !m_pageWidget) return;
+    m_pageWidget->setContinuousMode(true);
+    m_pageWidget->startWatermark(text, angle, opacity, color, initialPos, style, fontSize);
+}
+
+void PdfViewer::updateSelectedStampProperties(const QString &text, const QColor &color, qreal angle, int style, int fontSize)
+{
+    if (!m_isEditMode || !m_pageWidget) return;
+    m_pageWidget->updateSelectedStampProperties(text, color, angle, style, fontSize);
+}
+
+void PdfViewer::commitSelectedStampProperties()
+{
+    if (m_pageWidget) {
+        m_pageWidget->commitSelectedStampToPdf();
+    }
 }
 
 void PdfViewer::exitContinuousToolMode()
@@ -1334,16 +1764,16 @@ void PdfViewer::exitContinuousToolMode()
 
 void PdfViewer::openSignatureDialog()
 {
-    if (!m_doc) return;
-    PdfSignatureDialog dlg(this);
+    if (!m_isEditMode || !m_doc) return;
+    PdfSignatureDialog dlg(window());
     if (dlg.exec() == QDialog::Accepted) {
         if (dlg.isCryptoSignatureRequested()) {
             openCryptoSignatureDialog(1);
-            return;
-        }
-        QImage sigImg = dlg.signatureImage();
-        if (!sigImg.isNull()) {
-            m_pageWidget->startSignature(sigImg);
+        } else {
+            QImage sigImg = dlg.signatureImage();
+            if (!sigImg.isNull() && m_pageWidget) {
+                m_pageWidget->startSignature(sigImg);
+            }
         }
     }
 }
@@ -1431,14 +1861,19 @@ void PdfViewer::verifyAndRefreshSignatureBanner()
 
 void PdfViewer::openWatermarkDialog()
 {
-    if (!m_doc) return;
-    m_pageWidget->startWatermark();
+    if (!m_isEditMode || !m_doc || !m_pageWidget) return;
+    PdfWatermarkDialog dlg(window());
+    if (dlg.exec() == QDialog::Accepted) {
+        m_pageWidget->setContinuousMode(true);
+        m_pageWidget->startWatermark(dlg.watermarkText(), dlg.angle(), dlg.opacity(), dlg.color(), QPoint(), dlg.style());
+    }
 }
 
 void PdfViewer::openShapeDialog()
 {
-    if (!m_doc) return;
-    startShape(0, 3, Qt::red, Qt::transparent);
+    if (!m_isEditMode || !m_doc || !m_pageWidget) return;
+    m_pageWidget->setContinuousMode(true);
+    m_pageWidget->startShape(0, 2, QColor(QStringLiteral("#EF4444")), Qt::transparent);
 }
 
 void PdfViewer::startSnapshot()
@@ -1447,20 +1882,24 @@ void PdfViewer::startSnapshot()
     m_pageWidget->startSnapshot();
 }
 
-void PdfViewer::startRedaction()
+void PdfViewer::startRedaction(const QColor &color, bool permanent)
 {
-    if (!m_doc) return;
-    m_pageWidget->startRedaction();
+    if (!m_isEditMode || !m_doc) return;
+    if (m_pageWidget) {
+        m_pageWidget->setContinuousMode(true);
+        m_pageWidget->startRedaction(color, permanent);
+    }
 }
 
 void PdfViewer::onAddStampAnnotations(const QList<QPair<QImage, QRectF>> &stamps)
 {
-    if (!m_doc || m_currentPage < 0 || m_currentPage >= m_pageCount || stamps.isEmpty()) return;
+    int pageIdx = (m_pageWidget && m_pageWidget->activePage() >= 0) ? m_pageWidget->activePage() : m_currentPage;
+    if (!m_isEditMode || !m_doc || pageIdx < 0 || pageIdx >= m_pageCount || stamps.isEmpty()) return;
 
-    std::unique_ptr<Poppler::Page> page = m_doc->page(m_currentPage);
+    std::unique_ptr<Poppler::Page> page = m_doc->page(pageIdx);
     if (!page) return;
 
-    pushUndoState();
+    pushUndoState(tr("Stamp / Shape"));
 
     constexpr int MaxStampDim = 1800;
     for (const auto &pair : stamps) {
@@ -1477,7 +1916,7 @@ void PdfViewer::onAddStampAnnotations(const QList<QPair<QImage, QRectF>> &stamps
     }
 
     setModified(true);
-    renderCurrentPage();
+    renderCurrentPage(0, true);
 }
 
 void PdfViewer::onAddStampAnnotation(const QImage &image, const QRectF &normalizedRect)
@@ -1485,23 +1924,132 @@ void PdfViewer::onAddStampAnnotation(const QImage &image, const QRectF &normaliz
     onAddStampAnnotations({{image, normalizedRect}});
 }
 
-void PdfViewer::onAddTextAnnotation(const QString &text, const QFont &font, const QColor &color,
-                                    const QRectF &normalizedRect, bool whiteout)
+void PdfViewer::onMoveStampAnnotation(const QRectF &oldNormRect, const QRectF &newNormRect, const QImage &stampImg)
 {
-    if (!m_doc || m_currentPage < 0 || m_currentPage >= m_pageCount || text.isEmpty()) return;
+    int pageIdx = (m_pageWidget && m_pageWidget->activePage() >= 0) ? m_pageWidget->activePage() : m_currentPage;
+    if (!m_isEditMode || !m_doc || pageIdx < 0 || pageIdx >= m_pageCount || stampImg.isNull()) return;
 
-    std::unique_ptr<Poppler::Page> page = m_doc->page(m_currentPage);
+    std::unique_ptr<Poppler::Page> page = m_doc->page(pageIdx);
     if (!page) return;
 
-    pushUndoState();
+    pushUndoState(tr("Move Shape"));
 
-    // If whiteout is requested, place a clean white stamp underneath the text box
-    if (whiteout) {
+    auto annots = page->annotations();
+    Poppler::Annotation *matchedAnn = nullptr;
+    double bestDist = 1e9;
+    for (auto &ann : annots) {
+        if (ann && ann->subType() == Poppler::Annotation::AStamp) {
+            QRectF b = ann->boundary();
+            if (std::abs(b.x() - oldNormRect.x()) < 0.03 &&
+                std::abs(b.y() - oldNormRect.y()) < 0.03 &&
+                std::abs(b.width() - oldNormRect.width()) < 0.03 &&
+                std::abs(b.height() - oldNormRect.height()) < 0.03) {
+                matchedAnn = ann.get();
+                break;
+            }
+            double dx = b.center().x() - oldNormRect.center().x();
+            double dy = b.center().y() - oldNormRect.center().y();
+            double dist = std::sqrt(dx * dx + dy * dy);
+            if (dist < 0.15 && dist < bestDist) {
+                bestDist = dist;
+                matchedAnn = ann.get();
+            }
+        }
+    }
+    if (matchedAnn) {
+        for (auto &ann : annots) {
+            if (ann.get() == matchedAnn) {
+                auto rawAnn = ann.release();
+                page->removeAnnotation(rawAnn);
+                break;
+            }
+        }
+    }
+
+    auto *newStamp = new Poppler::StampAnnotation();
+    newStamp->setStampCustomImage(stampImg);
+    newStamp->setBoundary(newNormRect);
+    page->addAnnotation(newStamp);
+    delete newStamp;
+
+    setModified(true);
+    renderCurrentPage(0, true);
+    emit historyChanged();
+}
+
+void PdfViewer::onDeleteStampAnnotation(const QRectF &normRect)
+{
+    int pageIdx = (m_pageWidget && m_pageWidget->activePage() >= 0) ? m_pageWidget->activePage() : m_currentPage;
+    if (!m_isEditMode || !m_doc || pageIdx < 0 || pageIdx >= m_pageCount) return;
+
+    std::unique_ptr<Poppler::Page> page = m_doc->page(pageIdx);
+    if (!page) return;
+
+    pushUndoState(tr("Delete Shape"));
+
+    auto annots = page->annotations();
+    Poppler::Annotation *matchedAnn = nullptr;
+    double bestDist = 1e9;
+    for (auto &ann : annots) {
+        if (ann && ann->subType() == Poppler::Annotation::AStamp) {
+            QRectF b = ann->boundary();
+            if (std::abs(b.x() - normRect.x()) < 0.03 &&
+                std::abs(b.y() - normRect.y()) < 0.03 &&
+                std::abs(b.width() - normRect.width()) < 0.03 &&
+                std::abs(b.height() - normRect.height()) < 0.03) {
+                matchedAnn = ann.get();
+                break;
+            }
+            double dx = b.center().x() - normRect.center().x();
+            double dy = b.center().y() - normRect.center().y();
+            double dist = std::sqrt(dx * dx + dy * dy);
+            if (dist < 0.15 && dist < bestDist) {
+                bestDist = dist;
+                matchedAnn = ann.get();
+            }
+        }
+    }
+    if (matchedAnn) {
+        for (auto &ann : annots) {
+            if (ann.get() == matchedAnn) {
+                auto rawAnn = ann.release();
+                page->removeAnnotation(rawAnn);
+                break;
+            }
+        }
+    }
+
+    setModified(true);
+    renderCurrentPage(0, true);
+    emit historyChanged();
+}
+
+void PdfViewer::onAddTextAnnotation(const QString &text, const QFont &font, const QColor &color,
+                                    const QRectF &normalizedRect, bool whiteout, const QImage &bgImage,
+                                    const QRectF &bgNormalizedRect)
+{
+    int pageIdx = (m_pageWidget && m_pageWidget->activePage() >= 0) ? m_pageWidget->activePage() : m_currentPage;
+    if (!m_isEditMode || !m_doc || pageIdx < 0 || pageIdx >= m_pageCount || text.isEmpty()) return;
+
+    std::unique_ptr<Poppler::Page> page = m_doc->page(pageIdx);
+    if (!page) return;
+
+    pushUndoState(tr("Text Edit"));
+
+    // 1. If background image provided or whiteout requested, place stamp underneath
+    QRectF bgRect = (bgNormalizedRect.isValid() && !bgNormalizedRect.isEmpty()) ? bgNormalizedRect : normalizedRect;
+    if (!bgImage.isNull()) {
+        auto *bgStamp = new Poppler::StampAnnotation();
+        bgStamp->setStampCustomImage(bgImage);
+        bgStamp->setBoundary(bgRect);
+        page->addAnnotation(bgStamp);
+        delete bgStamp;
+    } else if (whiteout) {
         QImage whiteImg(16, 16, QImage::Format_RGB32);
         whiteImg.fill(Qt::white);
         auto *whiteStamp = new Poppler::StampAnnotation();
         whiteStamp->setStampCustomImage(whiteImg);
-        whiteStamp->setBoundary(normalizedRect);
+        whiteStamp->setBoundary(bgRect);
         page->addAnnotation(whiteStamp);
         delete whiteStamp;
     }
@@ -1535,7 +2083,21 @@ void PdfViewer::onAddTextAnnotation(const QString &text, const QFont &font, cons
     delete ann;
 
     setModified(true);
-    renderCurrentPage();
+    renderCurrentPage(0, true);
+}
+
+void PdfViewer::updateTextBgProperties(PdfTextBgMode mode, const QColor &color)
+{
+    if (m_pageWidget) {
+        m_pageWidget->updateTextBgProperties(mode, color);
+    }
+}
+
+void PdfViewer::commitInPlaceTextEdit()
+{
+    if (m_pageWidget) {
+        m_pageWidget->commitInPlaceTextEdit();
+    }
 }
 
 void PdfViewer::onSnapshotAreaSelected(const QRectF &pointRect)
@@ -1596,7 +2158,7 @@ void PdfViewer::onCopyAreaRequested(const QRectF &pointRect)
 
 void PdfViewer::onCutAreaRequested(const QRectF &pointRect)
 {
-    if (!m_doc || m_currentPage < 0 || m_currentPage >= m_pageCount) return;
+    if (!m_isEditMode || !m_doc || m_currentPage < 0 || m_currentPage >= m_pageCount) return;
 
     std::unique_ptr<Poppler::Page> page = m_doc->page(m_currentPage);
     if (!page) return;
@@ -1622,23 +2184,35 @@ void PdfViewer::onCutAreaRequested(const QRectF &pointRect)
 
 void PdfViewer::openInsertImageDialog()
 {
-    if (!m_doc) return;
-    PdfImageDialog dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        QImage img = dlg.selectedImage();
-        if (!img.isNull()) {
-            m_pageWidget->startInsertImage(img);
-        }
+    if (!m_isEditMode || !m_doc) return;
+
+    QString startDir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+    if (startDir.isEmpty() || !QDir(startDir).exists()) {
+        const QString candidate = QDir::homePath() + "/Immagini";
+        startDir = QDir(candidate).exists() ? candidate : QDir::homePath();
+    }
+
+    QString filePath = QFileDialog::getOpenFileName(
+        this,
+        tr("Select Image to Insert"),
+        startDir,
+        tr("Images (*.png *.jpg *.jpeg *.webp *.bmp *.svg *.tiff);;All Files (*)")
+    );
+    if (filePath.isEmpty()) return;
+
+    QImage img(filePath);
+    if (!img.isNull() && m_pageWidget) {
+        m_pageWidget->startInsertImage(img);
     }
 }
 
 bool PdfViewer::insertBlankPage(int afterPageIndex)
 {
-    if (m_filePath.isEmpty()) return false;
+    if (!m_isEditMode || m_filePath.isEmpty()) return false;
     QString srcPath = currentDocumentSourcePath();
     if (!QFile::exists(srcPath)) return false;
 
-    pushUndoState();
+    pushUndoState(tr("Insert Blank Page"));
 
     int targetIndex = (afterPageIndex >= 0) ? afterPageIndex : m_currentPage;
     QString outPath;
@@ -1683,8 +2257,122 @@ bool PdfViewer::insertBlankPage(int afterPageIndex)
     return true;
 }
 
+bool PdfViewer::deleteCurrentPage()
+{
+    if (!m_isEditMode || m_filePath.isEmpty()) return false;
+    if (m_pageCount <= 1) {
+        QMessageBox::warning(window(), tr("Cannot Delete Page"), tr("Cannot delete the only page in the document."));
+        return false;
+    }
+
+    auto reply = QMessageBox::question(window(), tr("Delete Page"),
+                                       tr("Are you sure you want to delete page %1?").arg(m_currentPage + 1),
+                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (reply != QMessageBox::Yes) return false;
+
+    QString srcPath = currentDocumentSourcePath();
+    if (!QFile::exists(srcPath)) return false;
+
+    pushUndoState(tr("Delete Page"));
+
+    QString outPath;
+    QString errorMsg;
+    bool ok = PdfDocumentOps::deletePage(srcPath, m_pageCount, m_currentPage, outPath, errorMsg);
+    if (!ok) {
+        if (!errorMsg.isEmpty()) {
+            QMessageBox::warning(window(), tr("QPDF Required"), errorMsg);
+        }
+        return false;
+    }
+
+    int newTargetPage = std::min(m_currentPage, m_pageCount - 2);
+    if (!m_activeSnapshotPath.isEmpty() && QFile::exists(m_activeSnapshotPath) &&
+        !m_undoStack.contains(m_activeSnapshotPath) && !m_redoStack.contains(m_activeSnapshotPath)) {
+        QString toRemove = m_activeSnapshotPath;
+        resetDocument();
+        QFile::remove(toRemove);
+    } else {
+        resetDocument();
+    }
+
+    m_activeSnapshotPath = outPath;
+    m_doc = Poppler::Document::load(m_activeSnapshotPath);
+    if (!m_doc || m_doc->isLocked()) {
+        resetDocument();
+        return false;
+    }
+
+    m_doc->setRenderHint(Poppler::Document::Antialiasing, true);
+    m_doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+    m_doc->setRenderHint(Poppler::Document::ThinLineSolid, true);
+
+    m_pageCount = m_doc->numPages();
+    m_currentPage = std::max(0, std::min(newTargetPage, m_pageCount - 1));
+    populateOutline();
+    renderCurrentPage();
+    updateNavButtons();
+    emit pageChanged(m_currentPage + 1, m_pageCount);
+    setModified(true);
+    return true;
+}
+
+void PdfViewer::startDirectTypewriter(const QFont &font, const QColor &color, bool whiteout)
+{
+    if (m_pageWidget) {
+        m_pageWidget->setContinuousMode(true);
+        m_pageWidget->updateTypewriterProperties(font, color, whiteout);
+        m_pageWidget->setToolMode(PdfToolMode::Typewriter);
+    }
+}
+
+void PdfViewer::updateTypewriterProperties(const QFont &font, const QColor &color, bool whiteout)
+{
+    if (m_pageWidget) {
+        m_pageWidget->updateTypewriterProperties(font, color, whiteout);
+    }
+}
+
+void PdfViewer::updateShapeProperties(int strokeWidth, const QColor &strokeColor, const QColor &fillColor)
+{
+    if (m_pageWidget) {
+        m_pageWidget->updateShapeProperties(strokeWidth, strokeColor, fillColor);
+    }
+}
+
+bool PdfViewer::saveCurrentPageAsPdf(const QString &targetPath, QString *errorMessage)
+{
+    QString srcPath = currentDocumentSourcePath();
+    if (srcPath.isEmpty() || !QFile::exists(srcPath)) {
+        if (errorMessage) *errorMessage = tr("Document source file is missing.");
+        return false;
+    }
+
+    // If document is modified with in-memory annotations/edits, save changes to a temporary working file first
+    QString workingFile = srcPath;
+    QTemporaryFile tempDoc(QDir::tempPath() + "/bubez_extract_work_XXXXXX.pdf");
+    tempDoc.setAutoRemove(false);
+    if (isModified() && tempDoc.open()) {
+        QString tempPath = tempDoc.fileName();
+        tempDoc.close();
+        if (saveAs(tempPath)) {
+            workingFile = tempPath;
+        }
+    }
+
+    QString err;
+    bool ok = PdfDocumentOps::extractSinglePageToPdf(workingFile, currentPage(), targetPath, err);
+    if (workingFile != srcPath) {
+        QFile::remove(workingFile);
+    }
+    if (!ok && errorMessage) {
+        *errorMessage = err;
+    }
+    return ok;
+}
+
 void PdfViewer::onFormFieldModified()
 {
+    if (!m_isEditMode) return;
     setModified(true);
 }
 
@@ -1712,6 +2400,9 @@ void PdfViewer::clearUndoRedoStacks()
     }
     m_redoStack.clear();
 
+    m_historySteps.clear();
+    m_historyCurrentIndex = 0;
+
     if (!m_activeSnapshotPath.isEmpty() && QFile::exists(m_activeSnapshotPath)) {
         resetDocument();
         QFile::remove(m_activeSnapshotPath);
@@ -1720,7 +2411,27 @@ void PdfViewer::clearUndoRedoStacks()
     emit historyChanged();
 }
 
-void PdfViewer::pushUndoState()
+QPixmap PdfViewer::captureCurrentPageThumbnail() const
+{
+    if (m_pageWidget) {
+        QPixmap pm = m_pageWidget->pixmap();
+        if (!pm.isNull()) {
+            return pm.scaled(80, 110, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
+    }
+    if (m_doc && m_currentPage >= 0 && m_currentPage < m_pageCount) {
+        std::unique_ptr<Poppler::Page> p = m_doc->page(m_currentPage);
+        if (p) {
+            QImage img = p->renderToImage(36, 36);
+            if (!img.isNull()) {
+                return QPixmap::fromImage(img).scaled(80, 110, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
+        }
+    }
+    return QPixmap();
+}
+
+void PdfViewer::pushUndoState(const QString &description)
 {
     if (!m_doc) return;
 
@@ -1750,6 +2461,22 @@ void PdfViewer::pushUndoState()
         return;
     }
 
+    // Capture baseline snapshot if this is the first edit
+    if (m_historySteps.isEmpty()) {
+        PdfHistoryStep initStep;
+        initStep.index = 0;
+        initStep.snapshotPath = snapshotPath;
+        initStep.description = tr("Original Document");
+        initStep.timestamp = QDateTime::currentDateTime();
+        initStep.thumbnail = captureCurrentPageThumbnail();
+        initStep.pageIndex = m_currentPage;
+        initStep.scrollX = (m_scrollArea && m_scrollArea->horizontalScrollBar()) ? m_scrollArea->horizontalScrollBar()->value() : 0;
+        initStep.scrollY = (m_scrollArea && m_scrollArea->verticalScrollBar()) ? m_scrollArea->verticalScrollBar()->value() : 0;
+        initStep.isCurrent = false;
+        m_historySteps.append(initStep);
+        m_historyCurrentIndex = 0;
+    }
+
     // Clear redo stack on new action and purge its temp files
     for (const QString &path : m_redoStack) {
         if (QFile::exists(path)) {
@@ -1757,6 +2484,32 @@ void PdfViewer::pushUndoState()
         }
     }
     m_redoStack.clear();
+
+    // If new action happens after some undos, truncate future history steps
+    while (m_historySteps.size() > m_historyCurrentIndex + 1) {
+        QString oldSnap = m_historySteps.last().snapshotPath;
+        if (QFile::exists(oldSnap) && oldSnap != snapshotPath && !m_undoStack.contains(oldSnap)) {
+            QFile::remove(oldSnap);
+        }
+        m_historySteps.removeLast();
+    }
+
+    PdfHistoryStep step;
+    step.index = m_historySteps.size();
+    step.snapshotPath = snapshotPath;
+    step.description = description.isEmpty() ? tr("Document Edit") : description;
+    step.timestamp = QDateTime::currentDateTime();
+    step.thumbnail = captureCurrentPageThumbnail();
+    step.pageIndex = m_currentPage;
+    step.scrollX = (m_scrollArea && m_scrollArea->horizontalScrollBar()) ? m_scrollArea->horizontalScrollBar()->value() : 0;
+    step.scrollY = (m_scrollArea && m_scrollArea->verticalScrollBar()) ? m_scrollArea->verticalScrollBar()->value() : 0;
+    step.isCurrent = true;
+
+    for (auto &hs : m_historySteps) {
+        hs.isCurrent = false;
+    }
+    m_historySteps.append(step);
+    m_historyCurrentIndex = m_historySteps.size() - 1;
 
     m_undoStack.append(snapshotPath);
     while (m_undoStack.size() > MAX_UNDO_STACK_SIZE) {
@@ -1767,6 +2520,33 @@ void PdfViewer::pushUndoState()
     }
     m_isModified = true;
     emit documentModified(true);
+    emit historyChanged();
+}
+
+QList<PdfHistoryStep> PdfViewer::historySteps() const
+{
+    QList<PdfHistoryStep> steps = m_historySteps;
+    for (int i = 0; i < steps.size(); ++i) {
+        steps[i].isCurrent = (i == m_historyCurrentIndex);
+    }
+    return steps;
+}
+
+void PdfViewer::restoreHistoryStep(int index)
+{
+    if (index < 0 || index >= m_historySteps.size() || index == m_historyCurrentIndex) return;
+
+    int stepsToMove = index - m_historyCurrentIndex;
+    if (stepsToMove < 0) {
+        for (int i = 0; i < -stepsToMove; ++i) {
+            undo();
+        }
+    } else {
+        for (int i = 0; i < stepsToMove; ++i) {
+            redo();
+        }
+    }
+    m_historyCurrentIndex = index;
     emit historyChanged();
 }
 
@@ -1790,6 +2570,10 @@ bool PdfViewer::canRedo() const
 
 void PdfViewer::undo()
 {
+    if (!m_isEditMode) return;
+    if (m_pageWidget) {
+        m_pageWidget->cancelPendingStampCommit();
+    }
     // 1. If an uncommitted transform box or area selection is active, cancel it first
     if (m_pageWidget) {
         if (m_pageWidget->transformBox() && m_pageWidget->transformBox()->isVisible()) {
@@ -1838,6 +2622,16 @@ void PdfViewer::undo()
     int savedPage = m_currentPage;
     double savedZoom = m_zoomFactor;
     int savedRot = m_rotationDegrees;
+    int savedScrollX = (m_scrollArea && m_scrollArea->horizontalScrollBar()) ? m_scrollArea->horizontalScrollBar()->value() : 0;
+    int savedScrollY = (m_scrollArea && m_scrollArea->verticalScrollBar()) ? m_scrollArea->verticalScrollBar()->value() : 0;
+
+    // Block scrollbar signals while resetting document to prevent jumping to page 0
+    std::unique_ptr<QSignalBlocker> blockV;
+    std::unique_ptr<QSignalBlocker> blockH;
+    if (m_scrollArea) {
+        if (m_scrollArea->verticalScrollBar()) blockV = std::make_unique<QSignalBlocker>(m_scrollArea->verticalScrollBar());
+        if (m_scrollArea->horizontalScrollBar()) blockH = std::make_unique<QSignalBlocker>(m_scrollArea->horizontalScrollBar());
+    }
 
     // Release current active snapshot if not in undo/redo stack
     if (!m_activeSnapshotPath.isEmpty() && QFile::exists(m_activeSnapshotPath) &&
@@ -1866,9 +2660,25 @@ void PdfViewer::undo()
     m_rotationDegrees = savedRot;
 
     populateOutline();
-    renderCurrentPage();
+    renderCurrentPage(0, true);
+
+    if (m_scrollArea) {
+        if (savedScrollY <= 0 && savedPage > 0) {
+            int pageTop = m_pageWidget->pageTopY(savedPage);
+            if (pageTop > 0) savedScrollY = pageTop - 8;
+        }
+        if (m_scrollArea->horizontalScrollBar()) m_scrollArea->horizontalScrollBar()->setValue(savedScrollX);
+        if (m_scrollArea->verticalScrollBar()) m_scrollArea->verticalScrollBar()->setValue(savedScrollY);
+    }
+    blockV.reset();
+    blockH.reset();
+
     updateNavButtons();
     emit pageChanged(m_currentPage + 1, m_pageCount);
+
+    if (m_historyCurrentIndex > 0) {
+        m_historyCurrentIndex--;
+    }
 
     setModified(!m_undoStack.isEmpty());
     emit historyChanged();
@@ -1876,6 +2686,10 @@ void PdfViewer::undo()
 
 void PdfViewer::redo()
 {
+    if (!m_isEditMode) return;
+    if (m_pageWidget) {
+        m_pageWidget->cancelPendingStampCommit();
+    }
     if (!canRedo() || !m_doc || m_redoStack.isEmpty()) return;
 
     // 1. Snapshot current state for undo
@@ -1906,6 +2720,16 @@ void PdfViewer::redo()
     int savedPage = m_currentPage;
     double savedZoom = m_zoomFactor;
     int savedRot = m_rotationDegrees;
+    int savedScrollX = (m_scrollArea && m_scrollArea->horizontalScrollBar()) ? m_scrollArea->horizontalScrollBar()->value() : 0;
+    int savedScrollY = (m_scrollArea && m_scrollArea->verticalScrollBar()) ? m_scrollArea->verticalScrollBar()->value() : 0;
+
+    // Block scrollbar signals while resetting document to prevent jumping to page 0
+    std::unique_ptr<QSignalBlocker> blockV;
+    std::unique_ptr<QSignalBlocker> blockH;
+    if (m_scrollArea) {
+        if (m_scrollArea->verticalScrollBar()) blockV = std::make_unique<QSignalBlocker>(m_scrollArea->verticalScrollBar());
+        if (m_scrollArea->horizontalScrollBar()) blockH = std::make_unique<QSignalBlocker>(m_scrollArea->horizontalScrollBar());
+    }
 
     if (!m_activeSnapshotPath.isEmpty() && QFile::exists(m_activeSnapshotPath) &&
         !m_undoStack.contains(m_activeSnapshotPath) && !m_redoStack.contains(m_activeSnapshotPath)) {
@@ -1933,9 +2757,25 @@ void PdfViewer::redo()
     m_rotationDegrees = savedRot;
 
     populateOutline();
-    renderCurrentPage();
+    renderCurrentPage(0, true);
+
+    if (m_scrollArea) {
+        if (savedScrollY <= 0 && savedPage > 0) {
+            int pageTop = m_pageWidget->pageTopY(savedPage);
+            if (pageTop > 0) savedScrollY = pageTop - 8;
+        }
+        if (m_scrollArea->horizontalScrollBar()) m_scrollArea->horizontalScrollBar()->setValue(savedScrollX);
+        if (m_scrollArea->verticalScrollBar()) m_scrollArea->verticalScrollBar()->setValue(savedScrollY);
+    }
+    blockV.reset();
+    blockH.reset();
+
     updateNavButtons();
     emit pageChanged(m_currentPage + 1, m_pageCount);
+
+    if (m_historyCurrentIndex < m_historySteps.size() - 1) {
+        m_historyCurrentIndex++;
+    }
 
     setModified(true);
     emit historyChanged();
@@ -1943,15 +2783,203 @@ void PdfViewer::redo()
 
 void PdfViewer::openPageOrganizer(const QString &target, QWidget *parentWidget)
 {
-    PdfPageOrganizerDialog dlg(target, parentWidget ? parentWidget : this);
-    connect(&dlg, &PdfPageOrganizerDialog::fileOrganized, this, [this](const QString &organizedPath) {
+    Q_UNUSED(target);
+    Q_UNUSED(parentWidget);
+    if (isPageGridOrganizerActive()) {
+        hidePageGridOrganizer();
+    } else {
+        showPageGridOrganizer();
+    }
+}
+
+void PdfViewer::openPdfMergeDialog(QWidget *parent)
+{
+    QStringList initialFiles;
+    if (!m_filePath.isEmpty()) {
+        initialFiles << m_filePath;
+    }
+    PdfMergeDialog dlg(initialFiles, parent ? parent : this);
+    QObject::connect(&dlg, &PdfMergeDialog::fileMerged, this, [this](const QString &outPath) {
         if (m_fileOrganizedCallback) {
-            m_fileOrganizedCallback(organizedPath);
+            m_fileOrganizedCallback(outPath);
         } else {
-            loadFile(organizedPath);
+            loadFile(outPath);
         }
     });
     dlg.exec();
+}
+
+void PdfViewer::openPdfRepairDialog(const QString &filePath, QWidget *parent)
+{
+    QString target = filePath.isEmpty() ? m_filePath : filePath;
+    if (target.isEmpty()) return;
+
+    PdfRepairDialog dlg(target, parent ? parent : this);
+    QObject::connect(&dlg, &PdfRepairDialog::fileRepaired, this, [this](const QString &repairedPath) {
+        if (m_fileOrganizedCallback) {
+            m_fileOrganizedCallback(repairedPath);
+        } else {
+            loadFile(repairedPath);
+        }
+    });
+    dlg.exec();
+}
+
+void PdfViewer::openPdfImageExtractDialog(const QString &filePath, QWidget *parent)
+{
+    QString target = filePath.isEmpty() ? m_filePath : filePath;
+    if (target.isEmpty()) return;
+
+    PdfImageExtractDialog dlg(target, parent ? parent : this);
+    dlg.exec();
+}
+
+void PdfViewer::showPageGridOrganizer()
+{
+    if (!m_doc || !m_pageGridOrganizer || !m_centralStack) return;
+    if (isPageGridOrganizerActive()) return;
+
+    if (m_pillContainer) {
+        m_pillContainer->hide();
+    }
+
+    m_pageGridOrganizer->loadDocument(m_doc.get(), currentDocumentSourcePath(), m_currentPage);
+    m_centralStack->setCurrentIndex(1);
+    m_pageGridOrganizer->setFocus();
+
+    if (m_pageOrganizerOpenedCallback) {
+        m_pageOrganizerOpenedCallback();
+    }
+}
+
+void PdfViewer::hidePageGridOrganizer(int targetPageIndex)
+{
+    if (!isPageGridOrganizerActive()) return;
+
+    int selectedIdx = targetPageIndex >= 0 ? targetPageIndex : (m_pageGridOrganizer ? m_pageGridOrganizer->selectedPageIndex() : -1);
+
+    if (m_pageGridOrganizer && m_pageGridOrganizer->isModified()) {
+        commitOrganizerChanges();
+    }
+
+    if (m_centralStack) {
+        m_centralStack->setCurrentIndex(0);
+    }
+
+    if (selectedIdx >= 0 && selectedIdx < m_pageCount) {
+        m_currentPage = selectedIdx;
+    } else if (m_currentPage >= m_pageCount) {
+        m_currentPage = qMax(0, m_pageCount - 1);
+    }
+
+    renderCurrentPage(0, true);
+    updateNavButtons();
+    emit pageChanged(m_currentPage + 1, m_pageCount);
+
+    updateHudPosition();
+
+    if (m_pageOrganizerClosedCallback) {
+        m_pageOrganizerClosedCallback(selectedIdx);
+    }
+}
+
+bool PdfViewer::isPageGridOrganizerActive() const
+{
+    return m_centralStack && m_centralStack->currentIndex() == 1;
+}
+
+void PdfViewer::organizerRotate()
+{
+    if (m_pageGridOrganizer) m_pageGridOrganizer->rotateSelectedPages();
+}
+
+void PdfViewer::organizerDelete()
+{
+    if (m_pageGridOrganizer) m_pageGridOrganizer->deleteSelectedPages();
+}
+
+void PdfViewer::organizerInsertBlank()
+{
+    if (m_pageGridOrganizer) m_pageGridOrganizer->insertBlankPage();
+}
+
+void PdfViewer::organizerAddPdf()
+{
+    if (m_pageGridOrganizer) m_pageGridOrganizer->addFromPdf();
+}
+
+void PdfViewer::organizerReverse()
+{
+    if (m_pageGridOrganizer) m_pageGridOrganizer->reverseOrder();
+}
+
+void PdfViewer::organizerReset()
+{
+    if (m_pageGridOrganizer) m_pageGridOrganizer->resetOrder();
+}
+
+bool PdfViewer::commitOrganizerChanges()
+{
+    if (!m_pageGridOrganizer || !m_pageGridOrganizer->isModified()) {
+        return false;
+    }
+
+    QString organizedPath;
+    if (!m_pageGridOrganizer->applyChanges(organizedPath) || !QFile::exists(organizedPath)) {
+        return false;
+    }
+
+    pushUndoState(tr("Organize Pages"));
+
+    // Release previous snapshot if not referenced in undo/redo stacks
+    if (!m_activeSnapshotPath.isEmpty() && QFile::exists(m_activeSnapshotPath) &&
+        !m_undoStack.contains(m_activeSnapshotPath) && !m_redoStack.contains(m_activeSnapshotPath)) {
+        QString toRemove = m_activeSnapshotPath;
+        resetDocument();
+        QFile::remove(toRemove);
+    } else {
+        resetDocument();
+    }
+
+    m_activeSnapshotPath = organizedPath;
+    m_doc = Poppler::Document::load(m_activeSnapshotPath);
+    if (!m_doc || m_doc->isLocked()) {
+        resetDocument();
+        return false;
+    }
+
+    m_doc->setRenderHint(Poppler::Document::Antialiasing, true);
+    m_doc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+    m_doc->setRenderHint(Poppler::Document::ThinLineSolid, true);
+
+    m_pageCount = m_doc->numPages();
+    m_currentPage = qBound(0, m_currentPage, m_pageCount - 1);
+
+    populateOutline();
+    renderCurrentPage(0, true);
+    updateNavButtons();
+    emit pageChanged(m_currentPage + 1, m_pageCount);
+
+    setModified(true);
+    emit historyChanged();
+
+    return true;
+}
+
+void PdfViewer::replaceSelectedText(const QString &text, const QFont &font, const QColor &color, bool whiteout)
+{
+    if (m_pageWidget) {
+        pushUndoState(tr("Edit Text"));
+        m_pageWidget->replaceSelectedText(text, font, color, whiteout);
+        setModified(true);
+    }
+}
+
+void PdfViewer::updateHighlighterProperties(const QColor &color, double opacity)
+{
+    if (m_pageWidget) {
+        m_pageWidget->updateHighlighterProperties(color, opacity);
+    }
 }
 
 

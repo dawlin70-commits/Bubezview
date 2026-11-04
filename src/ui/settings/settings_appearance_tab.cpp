@@ -11,6 +11,7 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QScrollArea>
 #include <QFrame>
 #include <QSettings>
@@ -46,9 +47,10 @@ void SettingsAppearanceTab::setupUi()
     QLabel *lblTheme = new QLabel(tr("Interface theme:"), grpTheme);
     m_comboTheme = new QComboBox(grpTheme);
     m_comboTheme->setCursor(Qt::PointingHandCursor);
-    m_comboTheme->addItem(tr("System Native"), static_cast<int>(ThemePreset::SystemNative));
-    m_comboTheme->addItem(tr("Dark Slate"), static_cast<int>(ThemePreset::DarkSlate));
-    m_comboTheme->addItem(tr("Breeze Dark"), static_cast<int>(ThemePreset::BreezeDark));
+    m_comboTheme->addItem(tr("Dark Slate (Modern Dark)"), static_cast<int>(ThemePreset::DarkSlate));
+    m_comboTheme->addItem(tr("Breeze Dark (KDE Dark)"), static_cast<int>(ThemePreset::BreezeDark));
+    m_comboTheme->addItem(tr("Modern Light (macOS Style)"), static_cast<int>(ThemePreset::ModernLight));
+    m_comboTheme->addItem(tr("Breeze Light (KDE Light)"), static_cast<int>(ThemePreset::BreezeLight));
 
     ThemePreset currentTheme = ThemeManager::currentPreset();
     for (int i = 0; i < m_comboTheme->count(); ++i) {
@@ -143,6 +145,36 @@ void SettingsAppearanceTab::setupUi()
     layLang->addWidget(lblLang);
     layLang->addWidget(m_comboLanguage, 1);
     layout->addWidget(grpLang);
+
+    // 5. Folder Gallery Group
+    QGroupBox *grpGallery = new QGroupBox(tr("Folder Gallery"), content);
+    QVBoxLayout *layGallery = new QVBoxLayout(grpGallery);
+    layGallery->setContentsMargins(12, 10, 12, 12);
+
+    m_chkShowFolders = new QCheckBox(tr("Show folders in gallery view"), grpGallery);
+    m_chkShowFolders->setCursor(Qt::PointingHandCursor);
+    m_chkShowFolders->setChecked(settings.value("Gallery/ShowFolders", false).toBool());
+    connect(m_chkShowFolders, &QCheckBox::toggled, this, [](bool checked) {
+        QSettings s("BubezView", "bubezview");
+        s.setValue("Gallery/ShowFolders", checked);
+    });
+    layGallery->addWidget(m_chkShowFolders);
+    layout->addWidget(grpGallery);
+
+    // 6. Window Dimensions & Geometry
+    QGroupBox *grpWindow = new QGroupBox(tr("Window Geometry"), content);
+    QVBoxLayout *layWindow = new QVBoxLayout(grpWindow);
+    layWindow->setContentsMargins(12, 10, 12, 12);
+
+    m_chkRememberGeometry = new QCheckBox(tr("Remember window size and position"), grpWindow);
+    m_chkRememberGeometry->setCursor(Qt::PointingHandCursor);
+    m_chkRememberGeometry->setChecked(settings.value("remember_geometry", true).toBool());
+    connect(m_chkRememberGeometry, &QCheckBox::toggled, this, [](bool checked) {
+        QSettings s("Bubez", "BubezView");
+        s.setValue("remember_geometry", checked);
+    });
+    layWindow->addWidget(m_chkRememberGeometry);
+    layout->addWidget(grpWindow);
 
     layout->addStretch();
 

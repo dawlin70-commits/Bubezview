@@ -13,9 +13,11 @@
 #include <QImage>
 #include <QFont>
 #include <QColor>
+#include "core/interfaces/i_pdf_viewer.h"
 
 class QPushButton;
 class QHBoxLayout;
+class QTextEdit;
 
 /**
  * @brief Types of items that can be placed and transformed via PdfTransformBox.
@@ -55,7 +57,21 @@ public:
     ~PdfTransformBox() override;
 
     /**
-     * @brief Activates the transform box for a text block.
+     * @brief Activates the transform box for in-place text editing on canvas.
+     * @param text Content string.
+     * @param font Font family and size.
+     * @param textColor Color of the text.
+     * @param bgMode Background coverage mode (Auto, Transparent, Feathered, Custom).
+     * @param bgColor Background tint color.
+     * @param initialRect Exact target rectangle in canvas pixels (if valid), or empty to center at initialPos.
+     * @param initialPos Fallback position if initialRect is invalid.
+     */
+    void showText(const QString &text, const QFont &font, const QColor &textColor,
+                  PdfTextBgMode bgMode, const QColor &bgColor,
+                  const QRect &initialRect = QRect(), const QPoint &initialPos = QPoint());
+
+    /**
+     * @brief Activates the transform box for a text block (backwards compatible).
      * @param text Content string.
      * @param font Font family and size.
      * @param textColor Color of the text.
@@ -94,6 +110,61 @@ public:
     void updateWatermark(const QString &text, qreal angle, qreal opacity, const QColor &color, int style);
 
     /**
+     * @brief Activates the transform box for an interactive persistent geometric shape.
+     * @param shapeType 0: Rectangle, 1: Rounded Rect, 2: Arrow, 3: Line, 4: Ellipse.
+     * @param strokeWidth Stroke line width in pixels.
+     * @param strokeColor Stroke border color.
+     * @param fillColor Fill brush color.
+     * @param initialRect Starting bounding rectangle on page.
+     * @param localStart Start point relative to initialRect for Arrow/Line.
+     * @param localEnd End point relative to initialRect for Arrow/Line.
+     */
+    void showShape(int shapeType, int strokeWidth, const QColor &strokeColor,
+                   const QColor &fillColor, const QRect &initialRect,
+                   const QPoint &localStart = QPoint(), const QPoint &localEnd = QPoint());
+
+    /**
+     * @brief Updates shape parameters in real-time.
+     */
+    void updateShape(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
+    void setShapeType(int shapeType);
+    void setShapeStrokeWidth(int width);
+    void setShapeStrokeColor(const QColor &color);
+    void setShapeFillColor(const QColor &color);
+
+    int shapeType() const { return m_shapeType; }
+    int shapeStrokeWidth() const { return m_shapeStrokeWidth; }
+    QColor shapeStrokeColor() const { return m_shapeStrokeColor; }
+    QColor shapeFillColor() const { return m_shapeFillColor; }
+    QPoint shapeLocalStart() const { return m_shapeLocalStart; }
+    QPoint shapeLocalEnd() const { return m_shapeLocalEnd; }
+
+    /**
+     * @brief Updates text styling and content in real-time from the side panel.
+     */
+    void updateTextContent(const QString &text);
+    void updateTextFont(const QFont &font);
+    void updateTextColor(const QColor &color);
+    void updateTextWhiteout(bool whiteout);
+    void updateTextAlignment(Qt::Alignment alignment);
+
+    Qt::Alignment textAlignment() const { return m_textAlignment; }
+    void adjustHeightToFitText();
+
+    /**
+     * @brief Sets the page zoom scale factor (screen pixels per PDF point).
+     */
+    void setScaleFactor(double scaleFactor);
+    double scaleFactor() const { return m_scaleFactor; }
+
+    /**
+     * @brief Computes font scaled to current screen zoom level for pixel-perfect on-screen preview.
+     */
+    QFont screenFont() const;
+
+
+
+    /**
      * @brief Activates the transform box for a permanent redaction block.
      * @param initialRect Starting widget rectangle.
      */
@@ -125,11 +196,17 @@ public:
 
     PdfTransformItemType itemType() const { return m_itemType; }
     QRect boxRect() const { return m_boxRect; }
+    void setBoxRect(const QRect &rect);
+    QTextEdit *inlineTextEdit() const { return m_inlineTextEdit; }
 
-    QString text() const { return m_text; }
+    QString text() const;
     QFont textFont() const { return m_font; }
     QColor textColor() const { return m_color; }
     bool isWhiteout() const { return m_whiteout; }
+    PdfTextBgMode textBgMode() const { return m_textBgMode; }
+    void setTextBgMode(PdfTextBgMode mode);
+    QColor textBgColor() const { return m_textBgColor; }
+    void setTextBgColor(const QColor &color);
     QImage image() const { return m_image; }
     qreal watermarkAngle() const { return m_angle; }
     qreal watermarkOpacity() const { return m_opacity; }
@@ -138,9 +215,31 @@ public:
     bool isTextModified() const { return m_isTextModified; }
     void setTextModified(bool modified) { m_isTextModified = modified; }
 
+    /**
+     * @brief Switches text box to solid draggable placement mode (hides inline editor so user can drag freely).
+     * @param placementOnly True to activate placement mode, false for editing mode.
+     * @param centerOnPoint If valid and topLeftPos is null, centers the box around this point.
+     * @param suggestedWidth Optional suggested width (e.g. from original text block or previous width).
+     * @param topLeftPos If valid, positions the box's top-left corner at this point instead of centering.
+     */
+    void setPlacementMode(bool placementOnly, const QPoint &centerOnPoint = QPoint(),
+                          int suggestedWidth = 0, const QPoint &topLeftPos = QPoint());
+    bool isPlacementMode() const { return m_isPlacementMode; }
+
+    /**
+     * @brief Sets whether the current box geometry collides with existing page text.
+     */
+    void setHasCollision(bool collision);
+    bool hasCollision() const { return m_hasCollision; }
+
     QRect dragHandleRect() const;
 
 signals:
+    /**
+     * @brief Emitted whenever the box position or size changes during user interaction.
+     */
+    void geometryChanged(const QRect &newRect);
+
     /**
      * @brief Emitted when the user clicks 'Apply' or presses Enter.
      */
@@ -166,6 +265,8 @@ signals:
      */
     void cutAreaRequested();
 
+
+
     /**
      * @brief Emitted when the user requests copying the selected area.
      */
@@ -186,8 +287,10 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     void updateHandles();
@@ -195,6 +298,7 @@ private:
     void repositionToolbar();
     void updateCachedPixmap(bool fast = false);
     void updateRedactionColorButtons();
+    void updateInlineTextEditStyle();
 
     PdfTransformItemType m_itemType;
     QRect m_boxRect;
@@ -206,7 +310,10 @@ private:
     QString m_text;
     QFont m_font;
     QColor m_color;
-    bool m_whiteout;
+    bool m_whiteout = true;
+    PdfTextBgMode m_textBgMode = PdfTextBgMode::Auto;
+    QColor m_textBgColor = Qt::white;
+    Qt::Alignment m_textAlignment = Qt::AlignLeft;
     QImage m_image;
     QPixmap m_cachedScaledPixmap;
     QSize m_lastCachedSize;
@@ -216,6 +323,21 @@ private:
     int m_watermarkStyle = 0;
     QColor m_redactionColor = Qt::black;
     bool m_isTextModified = false;
+    int m_minBoxHeight = 0;
+    bool m_isPlacementMode = false;
+    bool m_hasCollision = false;
+    double m_scaleFactor = 1.0;
+
+    // Shape properties
+    int m_shapeType = 0;
+    int m_shapeStrokeWidth = 2;
+    QColor m_shapeStrokeColor = QColor(QStringLiteral("#ef4444"));
+    QColor m_shapeFillColor = Qt::transparent;
+    QPoint m_shapeLocalStart;
+    QPoint m_shapeLocalEnd;
+
+    // Inline canvas text editor
+    QTextEdit *m_inlineTextEdit = nullptr;
 
     // Handle geometries (8 control handles)
     static constexpr int HandleSize = 10;

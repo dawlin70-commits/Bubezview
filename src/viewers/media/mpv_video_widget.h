@@ -27,10 +27,18 @@ public:
     void setMpvHandle(mpv_handle *mpv);
 
     /**
+     * @brief Lazily ensures the OpenGL video surface widget is created.
+     * Called only when playing an actual video file, avoiding OpenGL context
+     * and native window surface recreation when opening audio-only files.
+     */
+    void ensureGlWidgetCreated();
+
+    /**
      * @brief Safely releases the OpenGL mpv render context before mpv_destroy.
      */
     void cleanup();
 
 private:
-    MpvGLWidget *m_glWidget;
+    MpvGLWidget *m_glWidget = nullptr;
+    mpv_handle *m_mpv = nullptr;
 };

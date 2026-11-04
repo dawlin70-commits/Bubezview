@@ -48,6 +48,24 @@ public:
     virtual void openAudioTrimDialog() = 0;
 
     /**
+     * @brief Switches the active audio workspace page (0=Player, 1=Equalizer, 2=Tags, 3=Trim, 4=Restore).
+     * @param index Target 0-based workspace page index.
+     */
+    virtual void switchAudioWorkspace(int index) { Q_UNUSED(index); }
+    virtual int audioWorkspaceIndex() const { return 0; }
+
+    /**
+     * @brief Toggles between the Vinyl Turntable Player and the in-place Audio Studio workspace.
+     */
+    virtual void toggleAudioStudio() {}
+    virtual bool isAudioStudioActive() const { return false; }
+
+    /**
+     * @brief Toggles the audio equalizer dialog.
+     */
+    virtual void toggleEqualizerDialog() {}
+
+    /**
      * @brief Opens ID3 metadata, album cover, and tag editing dialog.
      */
     virtual void openAudioTagDialog() = 0;
@@ -82,6 +100,34 @@ public:
         m_trackChangeCallback = callback;
     }
 
+    /**
+     * @brief Registers callback invoked when active audio workspace page changes.
+     * @param callback Function receiving new 0-based workspace index.
+     */
+    virtual void setOnAudioWorkspaceChanged(std::function<void(int workspaceIndex)> callback) {
+        m_audioWorkspaceChangedCallback = callback;
+    }
+
+    /**
+     * @brief Registers callback invoked when an audio workspace's modification state changes.
+     * @param callback Function receiving workspace index and modified bool.
+     */
+    virtual void setOnAudioWorkspaceModified(std::function<void(int workspaceIndex, bool modified)> callback) {
+        m_audioWorkspaceModifiedCallback = callback;
+    }
+
+    /**
+     * @brief Updates the audio player responsive layout to match target dimensions.
+     * @param forceW Target width override or 0 to use current width.
+     * @param forceH Target height override or 0 to use current height.
+     */
+    virtual void updateAudioResponsiveLayout(int forceW = 0, int forceH = 0) {
+        Q_UNUSED(forceW);
+        Q_UNUSED(forceH);
+    }
+
 protected:
     std::function<void(const QString&)> m_trackChangeCallback;
+    std::function<void(int)> m_audioWorkspaceChangedCallback;
+    std::function<void(int, bool)> m_audioWorkspaceModifiedCallback;
 };

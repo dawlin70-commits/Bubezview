@@ -177,7 +177,7 @@ void OfficeViewer::setupUi()
     tbLayout->setContentsMargins(12, 6, 12, 6);
     tbLayout->setSpacing(8);
 
-    m_btnEditLo = new QPushButton(tr("✏️ Edit in LibreOffice"), m_toolbarWidget);
+    m_btnEditLo = new QPushButton(tr("Open in LibreOffice"), m_toolbarWidget);
     m_btnEditLo->setToolTip(tr("Open file directly in LibreOffice desktop suite"));
     connect(m_btnEditLo, &QPushButton::clicked, this, &OfficeViewer::onOpenInLibreOffice);
 
@@ -231,42 +231,52 @@ void OfficeViewer::setupUi()
     updateTheme();
 }
 
+void OfficeViewer::setEditMode(bool editMode)
+{
+    if (m_pdfViewer) {
+        m_pdfViewer->setEditMode(editMode);
+    }
+}
+
 void OfficeViewer::updateTheme()
 {
     ThemePreset preset = ThemeManager::currentPreset();
 
-    if (preset == ThemePreset::SystemNative) {
+    if (!ThemeManager::isDark(preset)) {
+        QString tbBg = (preset == ThemePreset::ModernLight) ? "#f5f5f7" : "#eff0f1";
+        QString borderCol = (preset == ThemePreset::ModernLight) ? "#d2d2d7" : "#bdc3c7";
+        QString accentCol = (preset == ThemePreset::ModernLight) ? "#007aff" : "#3daee9";
         m_toolbarWidget->setStyleSheet(
-            "#OfficeToolbar {"
-            "   background-color: palette(window);"
-            "   border-bottom: 1px solid palette(mid);"
+            QString("#OfficeToolbar {"
+            "   background-color: %1;"
+            "   border-bottom: 1px solid %2;"
             "}"
             "QPushButton {"
-            "   background-color: palette(button);"
-            "   color: palette(button-text);"
-            "   border: 1px solid palette(mid);"
+            "   background-color: #ffffff;"
+            "   color: #1d1d1f;"
+            "   border: 1px solid %2;"
             "   border-radius: 4px;"
             "   padding: 5px 12px;"
             "   font-size: 13px;"
             "   font-weight: 500;"
             "}"
             "QPushButton:hover {"
-            "   background-color: palette(highlight);"
-            "   color: palette(highlighted-text);"
-            "}"
+            "   background-color: %3;"
+            "   color: #ffffff;"
+            "}").arg(tbBg, borderCol, accentCol)
         );
-        m_lblDocInfo->setStyleSheet("color: palette(window-text); font-size: 12px; margin-left: 10px; font-weight: 500;");
+        m_lblDocInfo->setStyleSheet("color: #6e6e73; font-size: 12px; margin-left: 10px; font-weight: 500;");
         m_textBrowser->setStyleSheet(
-            "QTextBrowser {"
-            "   background-color: palette(base);"
-            "   color: palette(text);"
-            "   selection-background-color: palette(highlight);"
-            "   selection-color: palette(highlighted-text);"
+            QString("QTextBrowser {"
+            "   background-color: #ffffff;"
+            "   color: #1d1d1f;"
+            "   selection-background-color: %1;"
+            "   selection-color: #ffffff;"
             "   font-family: 'Segoe UI', 'Ubuntu', 'Helvetica Neue', sans-serif;"
             "   font-size: 14px;"
             "   padding: 24px 32px;"
             "   border: none;"
-            "}\n" + ThemeManager::scrollBarStyleSheet(preset)
+            "}\n").arg(accentCol) + ThemeManager::scrollBarStyleSheet(preset)
         );
     } else {
         m_toolbarWidget->setStyleSheet(

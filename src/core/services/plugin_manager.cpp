@@ -140,8 +140,6 @@ void PluginManager::discoverPlugins()
     QStringList searchDirs = {
         QCoreApplication::applicationDirPath() + "/plugins",
         QCoreApplication::applicationDirPath() + "/../plugins",
-        QDir::currentPath() + "/plugins",
-        QDir::currentPath() + "/build_deb/plugins",
         QDir::homePath() + "/.local/lib/bubezview/plugins",
         "/usr/local/lib/bubezview/plugins",
         "/usr/lib/bubezview/plugins"

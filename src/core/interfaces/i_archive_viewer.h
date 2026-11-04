@@ -146,6 +146,17 @@ public:
         m_archiveLoadedCallback = callback;
     }
 
+    /**
+     * @brief Configures top toolbar visibility (e.g. false when integrated into minimal header bar).
+     */
+    virtual void setTopBarVisible(bool visible) { Q_UNUSED(visible); }
+    virtual bool isTopBarVisible() const { return false; }
+
+    /**
+     * @brief Filters entries in the archive tree by name pattern.
+     */
+    virtual void filterEntries(const QString &pattern) { Q_UNUSED(pattern); }
+
 protected:
     std::function<void(const QString&, const QString&, const QString&)> m_filePreviewCallback;
     std::function<void(const QString&, int, qint64)> m_archiveLoadedCallback;

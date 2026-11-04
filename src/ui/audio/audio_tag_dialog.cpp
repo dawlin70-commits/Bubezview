@@ -25,18 +25,46 @@
 
 AudioTagDialog::AudioTagDialog(const QString &currentFilePath,
                                const QStringList &siblingFiles,
-                               QWidget *parent)
+                               QWidget *parent,
+                               bool isEmbedded)
     : QDialog(parent)
     , m_initialFilePath(currentFilePath)
     , m_currentTrackIdx(0)
+    , m_isEmbedded(isEmbedded)
     , m_newCoverPath(QString())
     , m_removeCover(false)
 {
-    setWindowTitle(tr("Audio Tag & Album Editor - BubezView"));
-    setMinimumSize(1020, 640);
-    resize(1060, 680);
+    setWindowTitle(tr("Audio Tag && Album Editor - BubezView"));
+    if (m_isEmbedded) {
+        setWindowFlags(Qt::Widget);
+        setMinimumSize(560, 340);
+    } else {
+        setMinimumSize(1020, 640);
+        resize(1060, 680);
+    }
 
-    // Filter audio sibling files
+    setupUi();
+    if (!currentFilePath.isEmpty()) {
+        loadFiles(currentFilePath, siblingFiles);
+    }
+}
+
+AudioTagDialog::~AudioTagDialog() = default;
+
+void AudioTagDialog::loadFiles(const QString &currentFilePath, const QStringList &siblingFiles)
+{
+    m_initialFilePath = currentFilePath;
+    m_candidateFiles.clear();
+    m_currentTrackIdx = 0;
+    m_newCoverPath.clear();
+    m_removeCover = false;
+
+    if (m_txtArtist) m_txtArtist->clear();
+    if (m_txtAlbum) m_txtAlbum->clear();
+    if (m_txtYear) m_txtYear->clear();
+    if (m_txtGenre) m_txtGenre->clear();
+    if (m_txtComment) m_txtComment->clear();
+
     const QStringList audioExts = {"mp3", "flac", "wav", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "wv"};
     for (const QString &path : siblingFiles) {
         QString ext = QFileInfo(path).suffix().toLower();
@@ -44,15 +72,17 @@ AudioTagDialog::AudioTagDialog(const QString &currentFilePath,
             m_candidateFiles.append(path);
         }
     }
-    if (!m_candidateFiles.contains(m_initialFilePath) && QFileInfo::exists(m_initialFilePath)) {
+    if (!m_initialFilePath.isEmpty() && !m_candidateFiles.contains(m_initialFilePath) && QFileInfo::exists(m_initialFilePath)) {
         m_candidateFiles.prepend(m_initialFilePath);
     }
 
-    setupUi();
     loadTracks();
 }
 
-AudioTagDialog::~AudioTagDialog() = default;
+void AudioTagDialog::refreshTheme()
+{
+    applyTheme();
+}
 
 void AudioTagDialog::setupUi()
 {
@@ -219,6 +249,13 @@ void AudioTagDialog::setupUi()
     m_tableTracks->setSelectionMode(QAbstractItemView::SingleSelection);
     m_tableTracks->setAlternatingRowColors(true);
     connect(m_tableTracks, &QTableWidget::cellClicked, this, &AudioTagDialog::onTableRowSelected);
+    connect(m_tableTracks, &QTableWidget::cellChanged, this, &AudioTagDialog::checkIfModified);
+
+    connect(m_txtArtist, &QLineEdit::textChanged, this, &AudioTagDialog::checkIfModified);
+    connect(m_txtAlbum, &QLineEdit::textChanged, this, &AudioTagDialog::checkIfModified);
+    connect(m_txtYear, &QLineEdit::textChanged, this, &AudioTagDialog::checkIfModified);
+    connect(m_txtGenre, &QLineEdit::textChanged, this, &AudioTagDialog::checkIfModified);
+    connect(m_txtComment, &QLineEdit::textChanged, this, &AudioTagDialog::checkIfModified);
 
     tracksLayout->addWidget(m_tableTracks);
     bodyLayout->addWidget(grpTracks, 1);
@@ -244,6 +281,10 @@ void AudioTagDialog::setupUi()
     actionsLayout->addStretch();
     actionsLayout->addWidget(m_btnCancel);
     actionsLayout->addWidget(m_btnSave);
+    if (m_isEmbedded) {
+        m_btnCancel->setVisible(false);
+        mainLayout->setContentsMargins(14, 10, 14, 10);
+    }
     mainLayout->addLayout(actionsLayout);
 
     applyTheme();
@@ -380,13 +421,63 @@ void AudioTagDialog::onTableRowSelected(int row)
     }
 }
 
+QString AudioTagDialog::saveCoverToAlbumFolder(const QString &sourcePath)
+{
+    if (sourcePath.isEmpty() || !QFileInfo::exists(sourcePath)) {
+        return QString();
+    }
+
+    QString targetDir;
+    if (m_currentTrackIdx >= 0 && m_currentTrackIdx < m_tracks.size()) {
+        targetDir = QFileInfo(m_tracks[m_currentTrackIdx].filePath).dir().absolutePath();
+    } else if (!m_tracks.isEmpty()) {
+        targetDir = QFileInfo(m_tracks[0].filePath).dir().absolutePath();
+    } else if (!m_initialFilePath.isEmpty()) {
+        targetDir = QFileInfo(m_initialFilePath).dir().absolutePath();
+    }
+
+    if (targetDir.isEmpty() || !QDir(targetDir).exists()) {
+        return sourcePath;
+    }
+
+    QFileInfo srcFi(sourcePath);
+    if (srcFi.dir().absolutePath() == targetDir && srcFi.baseName().toLower() == "cover") {
+        return sourcePath;
+    }
+
+    QString ext = srcFi.suffix().toLower();
+    if (ext.isEmpty() || ext == "jpeg") ext = "jpg";
+    QString destCover = QString("%1/cover.%2").arg(targetDir, ext);
+
+    if (QFile::exists(destCover)) {
+        QFile::remove(destCover);
+    }
+
+    if (QFile::copy(sourcePath, destCover)) {
+        return destCover;
+    }
+
+    return sourcePath;
+}
+
 void AudioTagDialog::onChangeCoverClicked()
 {
     QString file = QFileDialog::getOpenFileName(this, tr("Select Cover Image"), QString(), tr("Images (*.jpg *.jpeg *.png *.webp)"));
     if (!file.isEmpty()) {
-        m_newCoverPath = file;
+        QString savedPath = saveCoverToAlbumFolder(file);
+        m_newCoverPath = savedPath;
         m_removeCover = false;
         updateCoverPreview();
+        checkIfModified();
+        emit coverArtChanged(m_newCoverPath);
+
+        if (savedPath != file) {
+            QMessageBox::information(
+                this,
+                tr("Cover Art Saved"),
+                tr("Cover artwork was successfully copied to your album folder:\n%1").arg(savedPath)
+            );
+        }
     }
 }
 
@@ -395,6 +486,7 @@ void AudioTagDialog::onRemoveCoverClicked()
     m_newCoverPath.clear();
     m_removeCover = true;
     updateCoverPreview();
+    checkIfModified();
 }
 
 void AudioTagDialog::onDownloadCoverClicked()
@@ -418,9 +510,20 @@ void AudioTagDialog::onDownloadCoverClicked()
     if (dlg.exec() == QDialog::Accepted) {
         QString coverPath = dlg.selectedCoverPath();
         if (!coverPath.isEmpty() && QFileInfo::exists(coverPath)) {
-            m_newCoverPath = coverPath;
+            QString savedPath = saveCoverToAlbumFolder(coverPath);
+            if (savedPath != coverPath && coverPath.startsWith(QDir::tempPath())) {
+                QFile::remove(coverPath);
+            }
+            m_newCoverPath = savedPath;
             m_removeCover = false;
             updateCoverPreview();
+            emit coverArtChanged(m_newCoverPath);
+
+            QMessageBox::information(
+                this,
+                tr("Cover Art Saved"),
+                tr("Album cover art was successfully downloaded and saved directly to your album folder:\n%1").arg(savedPath)
+            );
         }
     }
 }
@@ -475,6 +578,7 @@ void AudioTagDialog::onRevertClicked()
     m_newCoverPath.clear();
     m_removeCover = false;
     updateCoverPreview();
+    checkIfModified();
 
     QMessageBox::information(this, tr("Revert Complete"), tr("All tags, track titles, and cover art have been restored to their original state."));
 }
@@ -823,6 +927,8 @@ void AudioTagDialog::onSaveClicked()
 
         bool ok = AudioProcessor::writeMetadata(track.filePath, updated, coverToApply, stripCover);
         if (ok) {
+            track.metadata = updated;
+            track.originalMetadata = updated;
             successCount++;
         }
     }
@@ -830,11 +936,53 @@ void AudioTagDialog::onSaveClicked()
     m_btnSave->setEnabled(true);
 
     if (successCount > 0) {
+        emit tagsSaved();
+        checkIfModified();
         QMessageBox::information(this, tr("Success"), tr("%1 of %2 audio files updated successfully!").arg(successCount).arg(m_tracks.size()));
-        accept();
+        if (!m_isEmbedded) {
+            accept();
+        }
     } else {
         QMessageBox::critical(this, tr("Error"), tr("Failed to update audio tags. Please ensure files are not write-protected."));
     }
+}
+
+bool AudioTagDialog::hasModifiedTags() const
+{
+    if (m_removeCover || !m_newCoverPath.isEmpty()) return true;
+
+    // Check common metadata fields vs initial
+    if (m_txtArtist && m_txtArtist->text().trimmed() != m_initialArtist.trimmed()) return true;
+    if (m_txtAlbum && m_txtAlbum->text().trimmed() != m_initialAlbum.trimmed()) return true;
+    if (m_txtYear && m_txtYear->text().trimmed() != m_initialYear.trimmed()) return true;
+    if (m_txtGenre && m_txtGenre->text().trimmed() != m_initialGenre.trimmed()) return true;
+    if (m_txtComment && m_txtComment->text().trimmed() != m_initialComment.trimmed()) return true;
+
+    // Check individual track table rows
+    if (m_tableTracks) {
+        for (int i = 0; i < m_tracks.size() && i < m_tableTracks->rowCount(); ++i) {
+            auto *titleItem = m_tableTracks->item(i, 1);
+            if (titleItem) {
+                QString curTitle = titleItem->text().trimmed();
+                QString origTitle = m_tracks[i].originalMetadata.title.trimmed();
+                if (origTitle.isEmpty()) origTitle = QFileInfo(m_tracks[i].filePath).completeBaseName().trimmed();
+                if (curTitle != origTitle) return true;
+            }
+            auto *numItem = m_tableTracks->item(i, 0);
+            if (numItem) {
+                QString curNum = numItem->text().trimmed();
+                QString origNum = m_tracks[i].originalMetadata.trackNumber.trimmed();
+                if (origNum.contains('/')) origNum = origNum.split('/').first().trimmed();
+                if (!origNum.isEmpty() && curNum.toInt() != origNum.toInt()) return true;
+            }
+        }
+    }
+    return false;
+}
+
+void AudioTagDialog::checkIfModified()
+{
+    emit tagsModified(hasModifiedTags());
 }
 
 void AudioTagDialog::applyTheme()

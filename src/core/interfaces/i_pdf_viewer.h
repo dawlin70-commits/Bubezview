@@ -11,10 +11,40 @@
 #include "i_viewer_widget.h"
 #include <QColor>
 #include <QImage>
+#include <QPixmap>
+#include <QDateTime>
+#include <QList>
 #include <functional>
 #include <utility>
 
 class QWidget;
+
+/**
+ * @enum PdfTextBgMode
+ * @brief Strategy for handling background coverage behind edited PDF text.
+ */
+enum class PdfTextBgMode {
+    Auto = 0,        ///< Automatically sampled background color from document
+    Transparent = 1, ///< No background fill, transparent overlay
+    Feathered = 2,   ///< Feathered / soft gradient blend around borders
+    Custom = 3       ///< Custom user-chosen solid color
+};
+
+/**
+ * @struct PdfHistoryStep
+ * @brief Represents a discrete state snapshot in the visual PDF modification timeline.
+ */
+struct PdfHistoryStep {
+    int index = 0;
+    QString snapshotPath;
+    QString description;
+    QDateTime timestamp;
+    QPixmap thumbnail;
+    int pageIndex = 0;
+    int scrollX = 0;
+    int scrollY = 0;
+    bool isCurrent = false;
+};
 
 /**
  * @class IPdfViewer
@@ -71,6 +101,12 @@ public:
      * @brief Resets zoom to 100%.
      */
     virtual void resetZoom() {}
+
+    /**
+     * @brief Sets absolute zoom factor (1.0 = 100%).
+     * @param factor Target zoom level.
+     */
+    virtual void setZoomFactor(double factor) { Q_UNUSED(factor); }
 
     /**
      * @brief Current zoom factor (1.0 = 100%).
@@ -134,6 +170,16 @@ public:
     virtual bool hasTextSelection() const = 0;
 
     /**
+     * @brief Returns currently selected text as plain string.
+     */
+    virtual QString selectedText() const { return QString(); }
+
+    /**
+     * @brief Initiates contextual edit / replacement on currently selected text.
+     */
+    virtual void editSelectedTextWithWhiteout() {}
+
+    /**
      * @brief Checks if user has an active marquee rectangular area selection.
      * @return True if area is selected.
      */
@@ -161,13 +207,43 @@ public:
 
     /**
      * @brief Initiates interactive redaction / black-out box tool.
+     * @param color Redaction fill color (e.g. Qt::black for blackout, Qt::white for whiteout).
+     * @param permanent If true, wipes underlying text and vector stream data (real sanitization).
      */
-    virtual void startRedaction() = 0;
+    virtual void startRedaction(const QColor &color = Qt::black, bool permanent = false) = 0;
 
     /**
      * @brief Opens interactive Watermark configuration dialog.
      */
     virtual void openWatermarkDialog() = 0;
+
+    /**
+     * @brief Activates the Watermark / Rubber Stamp placement tool.
+     * @param text Watermark or stamp string (e.g. "APPROVED", "CONFIDENTIAL").
+     * @param angle Rotation angle in degrees (e.g. 0.0, -15.0, 45.0).
+     * @param opacity Translucency factor (0.1 to 1.0).
+     * @param color Stamp font and border color.
+     * @param initialPos Center point in widget coordinates.
+     * @param style Stamp graphic style (0: ClassicRounded, 1: OfficialDouble, 2: Dotted, 3: PlainText, 4: Solid).
+     * @param fontSize Stamp font size in points (default 28).
+     */
+    virtual void startWatermark(const QString &text = QStringLiteral("COPY"), qreal angle = 45.0,
+                               qreal opacity = 0.35, const QColor &color = QColor(QStringLiteral("#DC2626")),
+                               const QPoint &initialPos = QPoint(), int style = 0, int fontSize = 28) {
+        Q_UNUSED(text); Q_UNUSED(angle); Q_UNUSED(opacity); Q_UNUSED(color); Q_UNUSED(initialPos); Q_UNUSED(style); Q_UNUSED(fontSize);
+    }
+
+    /**
+     * @brief Updates visual and textual properties of currently selected rubber stamp.
+     */
+    virtual void updateSelectedStampProperties(const QString &text, const QColor &color, qreal angle, int style, int fontSize) {
+        Q_UNUSED(text); Q_UNUSED(color); Q_UNUSED(angle); Q_UNUSED(style); Q_UNUSED(fontSize);
+    }
+
+    /**
+     * @brief Commits any pending interactive stamp modifications to the PDF document.
+     */
+    virtual void commitSelectedStampProperties() {}
 
     /**
      * @brief Opens dialog to insert external image onto page canvas.
@@ -191,11 +267,56 @@ public:
      * @return True if page inserted successfully.
      */
     virtual bool insertBlankPage(int afterPageIndex = -1) = 0;
+    virtual bool deleteCurrentPage() = 0;
+
+    /**
+     * @brief Initiates point-and-click direct typewriter tool on canvas.
+     * @param font Desired text font.
+     * @param color Text color.
+     * @param whiteout Whether to paint an opaque white background under text.
+     */
+    virtual void startDirectTypewriter(const QFont &font, const QColor &color, bool whiteout) {
+        Q_UNUSED(font); Q_UNUSED(color); Q_UNUSED(whiteout);
+    }
+
+    /**
+     * @brief Updates live typewriter formatting properties for inline editor and subsequent placements.
+     * @param font Text font.
+     * @param color Text color.
+     * @param whiteout Whether whiteout patch is active.
+     */
+    virtual void updateTypewriterProperties(const QFont &font, const QColor &color, bool whiteout) {
+        Q_UNUSED(font); Q_UNUSED(color); Q_UNUSED(whiteout);
+    }
+
+    /**
+     * @brief Updates live shape drawing properties for active transform box and subsequent shapes.
+     * @param strokeWidth Line width in points.
+     * @param strokeColor Stroke contour color.
+     * @param fillColor Interior fill color.
+     */
+    virtual void updateShapeProperties(int strokeWidth, const QColor &strokeColor, const QColor &fillColor) {
+        Q_UNUSED(strokeWidth); Q_UNUSED(strokeColor); Q_UNUSED(fillColor);
+    }
+
+
 
     /**
      * @brief Starts interactive rectangular area selection tool.
      */
     virtual void startSelectArea() = 0;
+
+    /**
+     * @brief Saves the current PDF page as an independent single-page PDF document.
+     * @param targetPath Destination file path.
+     * @param errorMessage Detailed failure reason on error.
+     * @return True on success; false on failure.
+     */
+    virtual bool saveCurrentPageAsPdf(const QString &targetPath, QString *errorMessage = nullptr) {
+        Q_UNUSED(targetPath);
+        Q_UNUSED(errorMessage);
+        return false;
+    }
 
     /**
      * @brief Sets or resets modified state of document.
@@ -204,12 +325,21 @@ public:
     virtual void setModified(bool mod) = 0;
 
     /**
-     * @brief Starts the highlighter tool with the given color and opacity.
+     * @brief Toggles the PDF Studio side panel.
+     */
+    virtual void toggleStudioPanel() {}
+    virtual void openStudioPanel(int tabIndex = 0) { Q_UNUSED(tabIndex); }
+    virtual void closeStudioPanel() {}
+    virtual bool isStudioPanelVisible() const { return false; }
+
+    /**
+     * @brief Starts the highlighter tool with the given color, opacity, and spotlight mode.
      * @param color Highlight color (default translucent yellow).
      * @param opacity Opacity factor between 0.0 and 1.0 (default 0.40).
+     * @param isSpotlight True to enable page-dimming spotlight cutout focus.
      */
-    virtual void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40) {
-        Q_UNUSED(color); Q_UNUSED(opacity);
+    virtual void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40, bool isSpotlight = false) {
+        Q_UNUSED(color); Q_UNUSED(opacity); Q_UNUSED(isSpotlight);
     }
 
     /**
@@ -279,13 +409,36 @@ public:
     }
 
     /**
-     * @brief Opens interactive PDF page organizer dialog for page reordering and rotation.
+     * @brief Opens interactive PDF page organizer for page reordering and rotation.
      * @param target File path of the PDF to organize.
-     * @param parentWidget Parent widget for dialog hierarchy.
+     * @param parentWidget Parent widget for hierarchy.
      */
     virtual void openPageOrganizer(const QString &target, QWidget *parentWidget = nullptr) {
         Q_UNUSED(target); Q_UNUSED(parentWidget);
     }
+
+    /**
+     * @brief Shows the integrated in-window PDF page grid organizer view.
+     */
+    virtual void showPageGridOrganizer() {}
+
+    /**
+     * @brief Hides the integrated in-window PDF page grid organizer and returns to page view.
+     * @param targetPageIndex Optional 0-based page index to navigate to. If -1, uses selected organizer page.
+     */
+    virtual void hidePageGridOrganizer(int targetPageIndex = -1) { Q_UNUSED(targetPageIndex); }
+
+    /**
+     * @brief Checks if the PDF page grid organizer is currently active.
+     */
+    virtual bool isPageGridOrganizerActive() const { return false; }
+
+    virtual void organizerRotate() {}
+    virtual void organizerDelete() {}
+    virtual void organizerInsertBlank() {}
+    virtual void organizerAddPdf() {}
+    virtual void organizerReverse() {}
+    virtual void organizerReset() {}
 
     /**
      * @brief Registers callback invoked when PDF pages are organized and saved.
@@ -303,6 +456,124 @@ public:
         m_zoomChangedCallback = std::move(callback);
     }
 
+    /**
+     * @brief Registers callback invoked when user requests to save current page as single-page PDF.
+     * @param callback Function receiving notification.
+     */
+    virtual void setOnSavePageAsPdfRequested(std::function<void()> callback) {
+        m_savePageAsPdfRequestedCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Registers callback invoked when user requests to save current page as image.
+     * @param callback Function receiving notification.
+     */
+    virtual void setOnSavePageAsImageRequested(std::function<void()> callback) {
+        m_savePageAsImageRequestedCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Returns the discrete history snapshots recorded during the editing session.
+     * @return List of history steps including page thumbnails and action descriptions.
+     */
+    virtual QList<PdfHistoryStep> historySteps() const { return {}; }
+
+    /**
+     * @brief Restores the PDF document state to a specific history snapshot index.
+     * @param index Target 0-based snapshot step index.
+     */
+    virtual void restoreHistoryStep(int index) { Q_UNUSED(index); }
+
+    /**
+     * @brief Replaces selected text directly from the contextual action bar.
+     */
+    virtual void replaceSelectedText(const QString &text, const QFont &font, const QColor &color, bool whiteout) {
+        Q_UNUSED(text); Q_UNUSED(font); Q_UNUSED(color); Q_UNUSED(whiteout);
+    }
+
+    /**
+     * @brief Updates color and opacity of active highlight live.
+     */
+    virtual void updateHighlighterProperties(const QColor &color, double opacity) {
+        Q_UNUSED(color); Q_UNUSED(opacity);
+    }
+
+    /**
+     * @brief Updates text background mode and tint during in-place text editing.
+     */
+    virtual void updateTextBgProperties(PdfTextBgMode mode, const QColor &color) {
+        Q_UNUSED(mode); Q_UNUSED(color);
+    }
+
+    /**
+     * @brief Commits in-place text editing currently active on the page canvas.
+     */
+    virtual void commitInPlaceTextEdit() {}
+
+    /**
+     * @brief Registers callback invoked when text is selected for contextual editing.
+     */
+    virtual void setOnTextSelectedForContextualEdit(std::function<void(const QString &, const QFont &, const QColor &, bool)> callback) {
+        m_textSelectedForEditCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Registers callback invoked when in-place text editing starts directly on canvas.
+     */
+    virtual void setOnInPlaceTextEditStarted(std::function<void(const QString &, const QFont &, const QColor &, PdfTextBgMode, const QColor &)> callback) {
+        m_inPlaceTextEditStartedCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Registers callback invoked when in-place text editing finishes.
+     */
+    virtual void setOnInPlaceTextEditFinished(std::function<void()> callback) {
+        m_inPlaceTextEditFinishedCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Registers callback invoked when a rubber stamp is selected for contextual editing.
+     */
+    virtual void setOnStampSelectedForContextualEdit(std::function<void(const QString &, const QColor &, qreal, int, int)> callback) {
+        m_stampSelectedForEditCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Registers callback invoked when page grid organizer is opened.
+     */
+    virtual void setOnPageOrganizerOpened(std::function<void()> callback) {
+        m_pageOrganizerOpenedCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Registers callback invoked when page grid organizer is closed.
+     * @param callback Function receiving selected target page index (-1 if default).
+     */
+    virtual void setOnPageOrganizerClosed(std::function<void(int)> callback) {
+        m_pageOrganizerClosedCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Launches the PDF merge dialog allowing user to combine multiple documents.
+     * @param parent Optional parent widget.
+     */
+    virtual void openPdfMergeDialog(QWidget *parent = nullptr) { Q_UNUSED(parent); }
+
+    /**
+     * @brief Launches the PDF repair dialog to salvage damaged PDF structures via QPDF.
+     * @param filePath Path to corrupt PDF file.
+     * @param parent Optional parent widget.
+     */
+    virtual void openPdfRepairDialog(const QString &filePath, QWidget *parent = nullptr) { Q_UNUSED(filePath); Q_UNUSED(parent); }
+
+    /**
+     * @brief Launches the PDF image extraction dialog.
+     * @param filePath Path to target PDF file.
+     * @param parent Optional parent widget.
+     */
+    virtual void openPdfImageExtractDialog(const QString &filePath, QWidget *parent = nullptr) { Q_UNUSED(filePath); Q_UNUSED(parent); }
+
+
 protected:
     std::function<void(bool)> m_docModifiedCallback;
     std::function<void(int, int)> m_pageChangedCallback;
@@ -311,4 +582,12 @@ protected:
     std::function<void()> m_continuousModeExitedCallback;
     std::function<void(const QString &)> m_fileOrganizedCallback;
     std::function<void(double)> m_zoomChangedCallback;
+    std::function<void()> m_savePageAsPdfRequestedCallback;
+    std::function<void()> m_savePageAsImageRequestedCallback;
+    std::function<void(const QString &, const QFont &, const QColor &, bool)> m_textSelectedForEditCallback;
+    std::function<void(const QString &, const QFont &, const QColor &, PdfTextBgMode, const QColor &)> m_inPlaceTextEditStartedCallback;
+    std::function<void()> m_inPlaceTextEditFinishedCallback;
+    std::function<void(const QString &, const QColor &, qreal, int, int)> m_stampSelectedForEditCallback;
+    std::function<void()> m_pageOrganizerOpenedCallback;
+    std::function<void(int)> m_pageOrganizerClosedCallback;
 };

@@ -13,11 +13,14 @@
 #include <QFont>
 #include <QColor>
 #include <QMap>
+#include <QSet>
+#include <QVector>
 #include <memory>
 #include <vector>
 #include "pdf_transform_box.h"
 
 class QLineEdit;
+class QTimer;
 
 namespace Poppler {
     class Document;
@@ -138,6 +141,13 @@ public:
     void setToolMode(PdfToolMode mode);
 
     /**
+     * @brief Toggles editing capabilities on the canvas.
+     */
+    void setEditMode(bool editMode);
+    bool isEditMode() const { return m_isEditMode; }
+    QPixmap pixmap() const { return m_pixmap; }
+
+    /**
      * @brief Returns the active interaction mode.
      */
     PdfToolMode toolMode() const { return m_toolMode; }
@@ -171,6 +181,8 @@ public:
      * @brief Activates the rectangular Area Selection mode.
      */
     void startSelectArea();
+
+
 
     /**
      * @brief Cuts the active area selection: copies 300 DPI rendering to clipboard and applies whiteout.
@@ -219,7 +231,23 @@ public:
      * @param initialPos Center point in widget coordinates.
      */
     void startWatermark(const QString &text = QStringLiteral("COPY"), qreal angle = 45.0, qreal opacity = 0.35,
-                       const QColor &color = QColor(QStringLiteral("#DC2626")), const QPoint &initialPos = QPoint(), int style = 0);
+                       const QColor &color = QColor(QStringLiteral("#DC2626")), const QPoint &initialPos = QPoint(),
+                       int style = 0, int fontSize = 28);
+
+    /**
+     * @brief Updates visual and textual properties of currently selected rubber stamp.
+     */
+    void updateSelectedStampProperties(const QString &text, const QColor &color, qreal angle, int style, int fontSize);
+
+    /**
+     * @brief Commits pending stamp or shape property changes to the PDF document.
+     */
+    void commitSelectedStampToPdf();
+
+    /**
+     * @brief Cancels any pending stamp commit without modifying the PDF document.
+     */
+    void cancelPendingStampCommit();
 
     /**
      * @brief Activates the Shape tool with drawing options.
@@ -230,6 +258,69 @@ public:
      */
     void startShape(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
 
+    void setShapeType(int type);
+    void setShapeStrokeWidth(int width);
+    void setShapeStrokeColor(const QColor &color);
+    void setShapeFillColor(const QColor &color);
+
+    QFont typewriterFont() const { return m_typewriterFont; }
+    QColor typewriterColor() const { return m_typewriterColor; }
+    bool isTypewriterWhiteout() const { return m_typewriterWhiteout; }
+    Qt::Alignment typewriterAlignment() const { return m_typewriterAlignment; }
+
+    void setTypewriterFont(const QFont &font);
+    void setTypewriterColor(const QColor &color);
+    void setTypewriterWhiteout(bool whiteout);
+    void setTypewriterAlignment(Qt::Alignment alignment);
+
+    /**
+     * @brief Modifies existing selected text by covering it with a whiteout patch and opening an inline text editor on top.
+     */
+    void editSelectedTextWithWhiteout();
+
+    /**
+     * @brief Starts direct in-place text editing on canvas over currently selected text.
+     */
+    void startInPlaceTextEdit();
+
+    /**
+     * @brief Samples the dominant background color around the perimeter of a given rectangle on the page.
+     */
+    QColor sampleBackgroundColorForRect(int pageIndex, const QRectF &ptRect) const;
+
+    /**
+     * @brief Updates text background mode and tint during in-place text editing.
+     */
+    void updateTextBgProperties(PdfTextBgMode mode, const QColor &color);
+
+    /**
+     * @brief Commits currently active in-place text edit directly to the PDF document.
+     */
+    void commitInPlaceTextEdit();
+
+    /**
+     * @brief Moves existing selected text by covering the original location with whiteout and activating the drag transform box.
+     */
+    void moveSelectedText();
+
+    /**
+     * @brief Applies a permanent blackout redaction over currently selected text.
+     */
+    void redactSelectedText();
+
+    /**
+     * @brief Updates active typewriter formatting parameters and propagates changes to any active transform box.
+     */
+    void updateTypewriterProperties(const QFont &font, const QColor &color, bool whiteout);
+
+    /**
+     * @brief Updates active shape drawing parameters and propagates changes to any active transform box.
+     */
+    void updateShapeProperties(int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
+    void updateShapeProperties(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
+    void updateSelectedShapeProperties(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
+    void deleteSelectedShape();
+
     /**
      * @brief Activates the 300 DPI high-resolution snapshot clipping tool.
      */
@@ -237,15 +328,18 @@ public:
 
     /**
      * @brief Activates the Redaction blackout box tool.
+     * @param color Redaction fill color (e.g. Qt::black for blackout, Qt::white for whiteout).
+     * @param permanent If true, wipes underlying text and vector stream data (real sanitization).
      */
-    void startRedaction();
+    void startRedaction(const QColor &color = Qt::black, bool permanent = false);
 
     /**
-     * @brief Activates the semi-transparent highlighter markup tool.
+     * @brief Activates the semi-transparent highlighter markup or spotlight cutout tool.
      * @param color Base color for the highlighter.
      * @param opacity Opacity factor from 0.05 to 1.0.
+     * @param isSpotlight True to activate Spotlight cutout mode.
      */
-    void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40);
+    void startHighlighter(const QColor &color = QColor(255, 235, 59), double opacity = 0.40, bool isSpotlight = false);
 
     /**
      * @brief Highlights the currently selected text using the specified color and opacity.
@@ -253,6 +347,32 @@ public:
      * @param opacity Opacity factor.
      */
     void highlightSelectedText(const QColor &color = QColor(255, 235, 59), double opacity = 0.40);
+
+    /**
+     * @brief Updates color and opacity of the currently selected/active highlight markup live.
+     * @param color New highlight color.
+     * @param opacity Opacity factor (0.05 to 1.0).
+     */
+    void updateHighlighterProperties(const QColor &color, double opacity);
+
+    /**
+     * @brief Clears active highlight selection border.
+     */
+    void clearActiveHighlightSelection();
+
+    /**
+     * @brief Returns active highlight index in placed shapes (-1 if none selected).
+     */
+    int activeHighlightIndex() const { return m_activeHighlightIndex; }
+
+    /**
+     * @brief Replaces selected text directly from the contextual action bar without floating dialogs.
+     * @param newText Replacement text.
+     * @param font Target font style and size.
+     * @param color Text color.
+     * @param whiteout True if original text area should be covered with whiteout.
+     */
+    void replaceSelectedText(const QString &newText, const QFont &font, const QColor &color, bool whiteout = true);
 
     /**
      * @brief Configures whether the active tool remains active for consecutive strokes.
@@ -329,6 +449,20 @@ signals:
     void addStampAnnotationRequested(const QImage &image, const QRectF &normalizedRect);
 
     /**
+     * @brief Emitted when an existing shape/stamp annotation is moved to a new position.
+     * @param oldNormRect Previous normalized page boundary.
+     * @param newNormRect New normalized page boundary.
+     * @param stampImg Rendered image of the shape.
+     */
+    void moveStampAnnotationRequested(const QRectF &oldNormRect, const QRectF &newNormRect, const QImage &stampImg);
+
+    /**
+     * @brief Emitted when a stamp annotation is deleted from the page.
+     * @param normRect Normalized page boundary of the deleted shape.
+     */
+    void deleteStampAnnotationRequested(const QRectF &normRect);
+
+    /**
      * @brief Emitted when multiple stamp annotations are added in a single batch (e.g. text cut).
      * @param stamps List of image and normalized rect pairs.
      */
@@ -341,9 +475,22 @@ signals:
      * @param color Text color.
      * @param normalizedRect Normalized page boundary (0.0 to 1.0 coordinates).
      * @param whiteout True if an opaque white background should be placed under the text.
+     * @param bgImage Custom background stamp image (e.g. sampled color or feathered patch).
      */
     void addTextAnnotationRequested(const QString &text, const QFont &font, const QColor &color,
-                                    const QRectF &normalizedRect, bool whiteout);    /**
+                                    const QRectF &normalizedRect, bool whiteout, const QImage &bgImage = QImage(),
+                                    const QRectF &bgNormalizedRect = QRectF());
+
+    /**
+     * @brief Emitted when in-place text editing starts directly on canvas.
+     */
+    void inPlaceTextEditStarted(const QString &text, const QFont &font, const QColor &color,
+                                PdfTextBgMode bgMode, const QColor &bgColor);
+
+    /**
+     * @brief Emitted when in-place text editing finishes.
+     */
+    void inPlaceTextEditFinished();    /**
      * @brief Emitted when the user requests image insertion from the context menu.
      */
     void insertImageRequested();
@@ -383,6 +530,8 @@ signals:
      */
     void toolModeChanged(PdfToolMode mode);
 
+
+
     /**
      * @brief Emitted when the user exits continuous mode (e.g. via Escape key).
      */
@@ -403,6 +552,16 @@ signals:
      */
     void activePageChanged(int pageIndex);
 
+    /**
+     * @brief Emitted when text has been selected on page, ready for direct editing via ContextualActionBar.
+     */
+    void textSelectedForContextualEdit(const QString &text, const QFont &font, const QColor &color, bool whiteout);
+
+    /**
+     * @brief Emitted when an existing rubber stamp is selected on page, notifying the contextual bar.
+     */
+    void stampSelectedForContextualEdit(const QString &text, const QColor &color, qreal angle, int style, int fontSize);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
@@ -413,6 +572,8 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private slots:
     void onTransformBoxApplied();
@@ -441,6 +602,7 @@ private:
 
     PdfToolMode m_toolMode;
     PdfTransformBox *m_transformBox;
+    bool m_isEditMode = true;
 
     // Text selection state
     bool m_isSelecting;
@@ -467,13 +629,86 @@ private:
     QColor m_shapeStrokeColor;
     QColor m_shapeFillColor;
 
+    // Continuous Shape Drawing & Direct Move State
+    struct PlacedShapeItem {
+        int id = 0;
+        int pageIndex = 0;
+        int shapeType = 0;
+        int strokeWidth = 2;
+        QColor strokeColor = Qt::black;
+        QColor fillColor = Qt::transparent;
+        QRect rect;
+        QPoint startPt = QPoint(-1, -1);
+        QPoint endPt = QPoint(-1, -1);
+        QRectF normRect;
+        QImage stampImage;
+
+        // Stamp-specific parameters
+        QString stampText;
+        qreal stampAngle = 0.0;
+        qreal stampOpacity = 0.90;
+        QColor stampColor = QColor(QStringLiteral("#dc2626"));
+        int stampStyle = 0;
+        int stampSize = 28;
+    };
+    QList<PlacedShapeItem> m_placedShapes;
+    int m_shapeIdCounter = 0;
+    int m_hoveredShapeIndex = -1;
+    int m_selectedShapeIndex = -1;
+    bool m_isMovingShape = false;
+    int m_movingShapeIndex = -1;
+    QPoint m_moveShapeStartMouse;
+    QRect m_moveShapeInitialRect;
+    QRect m_moveShapeCurrentRect;
+
+    // Deferred Whiteout for Move Operation (only applied on commit)
+    QRectF m_pendingMoveWhiteoutRect;
+
+    // Pending Erased Block State & Collision Guardrail for Separate-Window Text Replacement
+    QRectF m_pendingErasedPtRect;
+    QRectF m_pendingErasedNormRect;
+    QColor m_pendingErasedBgColor = Qt::white;
+    QSet<int> m_pendingErasedBoxIndices;
+    QSet<int> m_permanentlyErasedBoxIndices;
+    QVector<QRectF> m_collidingTextPtRects;
+    void updateTransformBoxCollision();
+    void clearPendingErasedState();
+
+    // Typewriter parameters
+    QFont m_typewriterFont = QFont(QStringLiteral("Sans Serif"), 12);
+    QColor m_typewriterColor = Qt::black;
+    bool m_typewriterWhiteout = false;
+    Qt::Alignment m_typewriterAlignment = Qt::AlignLeft;
+
+    // Watermark / Rubber Stamp parameters
+    QString m_watermarkText = QStringLiteral("APPROVED");
+    qreal m_watermarkAngle = 0.0;
+    qreal m_watermarkOpacity = 0.90;
+    QColor m_watermarkColor = QColor(QStringLiteral("#dc2626"));
+    int m_watermarkStyle = 0;
+    int m_watermarkSize = 28;
+
+    // Redaction parameters
+    QColor m_redactionColor = Qt::black;
+    bool m_redactionPermanent = false;
+
     // Highlighter parameters
     QColor m_highlighterColor;
     double m_highlighterOpacity;
+    bool m_highlighterSpotlight = false;
+    int m_activeHighlightIndex = -1;
+    QRectF m_selectedTextPtRect;
+    QRectF m_selectedTextNormRect;
+    int m_selectedTextPageIndex = -1;
     void commitHighlightDrawing(const QRect &rect);
 
     // Continuous tool placement mode
     bool m_continuousMode;
+
+    // Debounced stamp property commit
+    QTimer *m_stampCommitTimer = nullptr;
+    int m_committingShapeIndex = -1;
+    QRectF m_commitOldNormRect;
 
     // Inline AcroForms text editor
     QLineEdit *m_inlineEditor;

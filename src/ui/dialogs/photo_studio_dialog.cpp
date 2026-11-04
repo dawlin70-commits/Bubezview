@@ -62,9 +62,9 @@ void HistogramWidget::paintEvent(QPaintEvent *)
     const QRect r = rect().adjusted(1, 1, -1, -1);
 
     // Theme-adaptive background and border
-    bool isDark = palette().windowText().color().value() > palette().window().color().value();
-    QColor bg = isDark ? QColor(24, 26, 30) : palette().base().color();
-    QColor border = isDark ? QColor(55, 60, 68) : palette().mid().color();
+    bool isDark = ThemeManager::isDarkTheme();
+    QColor bg = isDark ? QColor(24, 27, 32) : QColor(241, 245, 249);
+    QColor border = isDark ? QColor(55, 60, 68) : QColor(203, 213, 225);
 
     p.fillRect(rect(), bg);
     p.setPen(border);
@@ -306,13 +306,14 @@ void PhotoStudioViewport::paintEvent(QPaintEvent *)
 
     ThemePreset preset = ThemeManager::currentPreset();
     QColor canvasBg;
-    if (preset == ThemePreset::SystemNative) {
-        bool isDark = palette().windowText().color().value() > palette().window().color().value();
-        canvasBg = isDark ? QColor("#1e2226") : QColor("#e4e7eb");
-    } else if (preset == ThemePreset::DarkSlate) {
+    if (preset == ThemePreset::DarkSlate) {
         canvasBg = QColor("#22262b");
-    } else {
+    } else if (preset == ThemePreset::BreezeDark) {
         canvasBg = QColor("#181b1d");
+    } else if (preset == ThemePreset::ModernLight) {
+        canvasBg = QColor("#f5f5f7");
+    } else { // BreezeLight
+        canvasBg = QColor("#eff0f1");
     }
     p.fillRect(rect(), canvasBg);
 
@@ -643,6 +644,7 @@ PhotoSlider::PhotoSlider(Qt::Orientation orientation, int min, int max, int defa
     : QSlider(orientation, parent)
     , m_defaultVal(defaultVal)
 {
+    setAttribute(Qt::WA_Hover, true);
     setRange(min, max);
     setValue(defaultVal);
     setFocusPolicy(Qt::StrongFocus);
@@ -664,7 +666,7 @@ void PhotoSlider::paintEvent(QPaintEvent *)
     const int range = maximum() - minimum();
     if (range <= 0) return;
 
-    bool isDark = palette().windowText().color().value() > palette().window().color().value();
+    bool isDark = ThemeManager::isDarkTheme();
     QColor trackColor = isDark ? QColor(48, 54, 65) : QColor(210, 215, 222);
     QColor zeroTickColor = isDark ? QColor(110, 125, 145) : QColor(150, 160, 175);
     QColor activeColor = QColor(2, 132, 199); // Crisp blue that fits both light and dark
@@ -760,8 +762,10 @@ void PhotoSlider::mouseMoveEvent(QMouseEvent *event)
         const int grooveWidth = std::max(1, grooveRight - grooveLeft);
         const double ratio = qBound(0.0, static_cast<double>(event->pos().x() - grooveLeft) / grooveWidth, 1.0);
         const int newVal = minimum() + static_cast<int>(std::round(ratio * (maximum() - minimum())));
-        setValue(newVal);
-        update();
+        if (newVal != value()) {
+            setValue(newVal);
+            update();
+        }
         event->accept();
         return;
     }

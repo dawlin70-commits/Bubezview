@@ -1,5 +1,8 @@
 #include "mainwindow.h"
+#include "minimal_header_bar.h"
 #include "theme_manager.h"
+#include "vector_icons.h"
+#include <QWindow>
 #include "image_viewer.h"
 #include "text_viewer.h"
 #include "core/interfaces/i_pdf_viewer.h"
@@ -12,9 +15,9 @@
 #include "app_launcher.h"
 #include "update_manager.h"
 #include "update_dialog.h"
-#include "pdf_merge_dialog.h"
 #include "build_config.h"
 #include "package_manager_helper.h"
+#include "engine_prompt_card.h"
 #include "filmstrip_widget.h"
 #include "preload_cache_manager.h"
 #include "settings_dialog.h"
@@ -32,9 +35,57 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QActionGroup>
+#include <QBitmap>
+#include <QPainter>
+#include <QPainterPath>
+
+namespace {
+/**
+ * @brief Lightweight click-through overlay that renders a smooth antialiased 12px rounded rim
+ *        around the frameless window so outer corners never look jagged or boxy.
+ */
+class FramelessBorderOverlay : public QWidget {
+public:
+    explicit FramelessBorderOverlay(QWidget *parent = nullptr)
+        : QWidget(parent)
+    {
+        setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        setAttribute(Qt::WA_NoSystemBackground, true);
+    }
+
+protected:
+    void paintEvent(QPaintEvent *) override
+    {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing, true);
+
+        const ThemePreset preset = ThemeManager::currentPreset();
+        const bool isLight = (preset == ThemePreset::ModernLight || preset == ThemePreset::BreezeLight);
+
+        const qreal radius = 12.0;
+        const QRectF outerBounds = QRectF(rect());
+        const QRectF innerBounds = outerBounds.adjusted(0.75, 0.75, -0.75, -0.75);
+
+        // Fill exterior corner wedges outside the antialiased curve so the 1-bit window mask edge is invisible
+        QPainterPath fullRectPath;
+        fullRectPath.addRect(outerBounds);
+        QPainterPath roundedPath;
+        roundedPath.addRoundedRect(outerBounds, radius, radius);
+        QColor cornerCutColor = isLight ? QColor(0, 0, 0, 50) : QColor(0, 0, 0, 180);
+        p.fillPath(fullRectPath.subtracted(roundedPath), cornerCutColor);
+
+        // Draw crisp 1.4px antialiased rounded border ring around the window
+        QColor rimColor = isLight ? QColor(0, 0, 0, 42) : QColor(255, 255, 255, 34);
+        p.setPen(QPen(rimColor, 1.4));
+        p.setBrush(Qt::NoBrush);
+        p.drawRoundedRect(innerBounds, radius, radius);
+    }
+};
+} // namespace
 
 MainWindow::MainWindow(QWidget *parent)
     : BaseSkin(parent)
+    , m_minimalHeaderBar(nullptr)
     , m_toolbar(nullptr)
     , m_flippableToolbar(nullptr)
     , m_breadcrumbWidget(nullptr)
@@ -148,31 +199,14 @@ MainWindow::MainWindow(QWidget *parent)
     setupDebugBanner();
     setupUpdateChecker();
 
-    if (m_pdfViewer) {
-        m_pdfViewer->setOnPageChanged([this](int, int) {
-            updateStatusBar();
-            updateContextualMenuStates();
-        });
-        m_pdfViewer->setOnZoomChanged([this](double) {
-            updateStatusBar();
-        });
-        m_pdfViewer->setOnSelectionChanged([this]() {
-            updateContextualMenuStates();
-        });
-        m_pdfViewer->setOnDocumentModified([this](bool) {
-            updateContextualMenuStates();
-        });
-        m_pdfViewer->setOnHistoryChanged([this]() {
-            updateContextualMenuStates();
-        });
-        m_pdfViewer->setOnFileOrganized([this](const QString &newPath) {
-            openFile(newPath);
-        });
-    }
+    setupPdfViewerConnections();
 
     if (m_imageViewer) {
-        connect(m_imageViewer, &ImageViewer::zoomChanged, this, [this](double) {
+        connect(m_imageViewer, &ImageViewer::zoomChanged, this, [this](double factor) {
             updateStatusBar();
+            if (m_minimalHeaderBar) {
+                m_minimalHeaderBar->setZoomFactor(factor);
+            }
         });
         connect(m_imageViewer, &ImageViewer::modificationChanged, this, [this](bool) {
             updateContextualMenuStates();
@@ -188,15 +222,8 @@ MainWindow::MainWindow(QWidget *parent)
         connect(m_imageViewer, &ImageViewer::nextFileRequested, this, &BaseSkin::nextFile);
         connect(m_imageViewer, &ImageViewer::prevFileRequested, this, &BaseSkin::prevFile);
     }
-    if (m_archiveViewer) {
-        m_archiveViewer->setOnArchiveLoaded([this](const QString&, int, qint64) {
-            updateStatusBar();
-        });
-    }
-    connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString&, int, qint64) {
-        updateStatusBar();
-    });
-    connect(m_folderViewer, &FolderViewer::selectionChanged, this, &MainWindow::updateContextualMenuStates);
+    setupArchiveViewerConnections();
+    setupFolderViewerConnections();
 
     if (m_textViewer) {
         connect(m_textViewer, &TextViewer::editModeChanged, this, [this](bool editable) {
@@ -231,16 +258,31 @@ MainWindow::MainWindow(QWidget *parent)
         connect(m_flippableToolbar, &FlippableToolbar::annotationModeExited, this, [this]() {
             if (m_pdfViewer) m_pdfViewer->exitContinuousToolMode();
         });
-        if (m_pdfViewer) {
-            m_pdfViewer->setOnContinuousModeExited([this]() {
-                if (m_flippableToolbar) m_flippableToolbar->flipToMain();
-            });
-        }
+    }
+
+    if (qApp) {
+        qApp->installEventFilter(this);
+    }
+    setEditMode(false);
+    updateFramelessBorderStyle();
+}
+
+MainWindow::~MainWindow()
+{
+    if (m_isBorderCursorSet) {
+        QGuiApplication::restoreOverrideCursor();
+        m_isBorderCursorSet = false;
+    }
+    if (qApp) {
+        qApp->removeEventFilter(this);
     }
 }
 
 void MainWindow::setupUi()
 {
+    if (m_centralContainer) {
+        m_centralContainer->setStyleSheet("#centralContainer { border: none; }");
+    }
     setCentralWidget(m_centralContainer);
 
     // =========================================================================
@@ -490,7 +532,7 @@ void MainWindow::setupUi()
     m_actPdfInsertBlankPage->setShortcut(QKeySequence("Ctrl+Shift+N"));
 
     m_actOrganizePdf = m_menuPdfDocOps->addAction(QIcon::fromTheme("view-pages-overview"), tr("Organize PDF Pages..."), this, [this]() {
-        openPdfPageOrganizer();
+        enterPageOrganizerMode();
     });
 
     m_actMergePdf = m_menuPdfDocOps->addAction(QIcon::fromTheme("document-import"), tr("Merge PDF Documents..."), this, &MainWindow::openPdfMergeDialog);
@@ -642,20 +684,24 @@ void MainWindow::setupUi()
     m_menuView->addSeparator();
 
     m_actToggleToolbar = m_menuView->addAction(tr("Show Toolbar"), this, [this](bool checked) {
-        if (m_flippableToolbar) m_flippableToolbar->setVisible(checked);
+        setEditMode(checked);
     });
     m_actToggleToolbar->setCheckable(true);
-    m_actToggleToolbar->setChecked(true);
+    m_actToggleToolbar->setChecked(false);
     m_actToggleToolbar->setShortcut(QKeySequence("Ctrl+T"));
 
+    QSettings settings;
+    bool showStatusBar = settings.value("ui/show_statusbar", false).toBool();
     QAction *actToggleStatus = m_menuView->addAction(tr("Show Status Bar"), this, [this](bool checked) {
         statusBar()->setVisible(checked);
+        QSettings s;
+        s.setValue("ui/show_statusbar", checked);
     });
     actToggleStatus->setCheckable(true);
-    actToggleStatus->setChecked(true);
+    actToggleStatus->setChecked(showStatusBar);
+    statusBar()->setVisible(showStatusBar);
 
-    QSettings settings;
-    bool showMenuBar = settings.value("ui/show_menubar", true).toBool();
+    bool showMenuBar = settings.value("ui/show_menubar", false).toBool();
 
     QAction *actToggleMenuBar = m_menuView->addAction(tr("Show Menu Bar"), this, [this](bool checked) {
         menuBar()->setVisible(checked);
@@ -774,61 +820,472 @@ void MainWindow::setupUi()
     m_actAbout = m_menuHelp->addAction(QIcon::fromTheme("help-about"), tr("About BubezView"), this, &BaseSkin::showAboutDialog);
 
     // =========================================================================
-    // Flippable Toolbar (KDE Customizable style with 3D Annotation Flip)
+    // Minimal Header Bar (macOS Quick Look style with Canvas-First interface)
     // =========================================================================
-    m_flippableToolbar = new FlippableToolbar(this);
-    m_toolbar = m_flippableToolbar->mainToolBar();
-    m_toolbar->setIconSize(QSize(20, 20));
-
-    // Embed flippable toolbar into top layout of MainWindow
-    auto *topToolBar = addToolBar(tr("Main Toolbar"));
-    topToolBar->setObjectName("MainToolbarDock");
-    topToolBar->setMovable(false);
-    if (topToolBar->layout()) {
-        topToolBar->layout()->setContentsMargins(0, 0, 0, 0);
-        topToolBar->layout()->setSpacing(0);
+    m_minimalHeaderBar = new MinimalHeaderBar(this);
+    m_minimalHeaderBar->applyThemePreset(ThemeManager::currentPreset());
+    bool frameless = settings.value("ui/frameless_window", true).toBool();
+    m_isFrameless = frameless;
+    if (frameless) {
+        setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
+        m_minimalHeaderBar->setWindowControlsVisible(true);
+    } else {
+        m_minimalHeaderBar->setWindowControlsVisible(false);
     }
-    topToolBar->addWidget(m_flippableToolbar);
 
-    int savedStyle = settings.value("toolbar/button_style", static_cast<int>(Qt::ToolButtonIconOnly)).toInt();
-    m_toolbar->setToolButtonStyle(static_cast<Qt::ToolButtonStyle>(savedStyle));
-
-    m_toolbar->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_toolbar, &QToolBar::customContextMenuRequested, this, [this](const QPoint &pos) {
-        QMenu menu(this);
-        menu.addAction(QIcon::fromTheme("configure-toolbars"), tr("Configure Toolbars..."), this, &MainWindow::configureToolbars);
-        menu.addSeparator();
-
-        QMenu *styleMenu = menu.addMenu(tr("Button Style"));
-        auto addStyleAction = [this, styleMenu](const QString &title, Qt::ToolButtonStyle style) {
-            QAction *act = styleMenu->addAction(title);
-            act->setCheckable(true);
-            act->setChecked(m_toolbar->toolButtonStyle() == style);
-            connect(act, &QAction::triggered, this, [this, style]() {
-                m_toolbar->setToolButtonStyle(style);
-                QSettings s;
-                s.setValue("toolbar/button_style", static_cast<int>(style));
-            });
-        };
-
-        addStyleAction(tr("Icons Only"), Qt::ToolButtonIconOnly);
-        addStyleAction(tr("Text Only"), Qt::ToolButtonTextOnly);
-        addStyleAction(tr("Text Beside Icons"), Qt::ToolButtonTextBesideIcon);
-        addStyleAction(tr("Text Under Icons"), Qt::ToolButtonTextUnderIcon);
-
-        menu.addSeparator();
-        QAction *toggleAct = menu.addAction(tr("Show Toolbar"), this, [this](bool visible) {
-            m_flippableToolbar->setVisible(visible);
-            if (m_actToggleToolbar) m_actToggleToolbar->setChecked(visible);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::closeRequested, this, &QWidget::close);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::minimizeRequested, this, &QWidget::showMinimized);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::maximizeRestoreRequested, this, [this]() {
+        if (isMaximized()) showNormal();
+        else showMaximized();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::prevRequested, this, &BaseSkin::prevFile);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::nextRequested, this, &BaseSkin::nextFile);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::galleryRequested, this, &BaseSkin::openCurrentFolderInGallery);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::searchRequested, this, &BaseSkin::searchInDocument);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomInRequested, this, &BaseSkin::zoomInCurrent);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomOutRequested, this, &BaseSkin::zoomOutCurrent);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomFitRequested, this, &BaseSkin::fitCurrent);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomResetRequested, this, &BaseSkin::resetZoomCurrent);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomSetPercentRequested, this, [this](int percent) {
+        double factor = percent / 100.0;
+        if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
+            m_imageViewer->setZoomFactor(factor);
+        } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+            m_pdfViewer->setZoomFactor(factor);
+        } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+            m_officeViewer->pdfViewer()->setZoomFactor(factor);
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::inspectorRequested, this, &BaseSkin::showFileInfo);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::shareRequested, this, &BaseSkin::showShareDialog);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::saveExportRequested, this, &MainWindow::showSaveExportMenu);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::saveAsRequested, this, &BaseSkin::saveAsCurrentFile);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::settingsRequested, this, &BaseSkin::openSettings);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::editToggled, this, &MainWindow::setEditMode);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::discardEditRequested, this, &MainWindow::revertCurrentEdits);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::undoRequested, this, [this]() {
+        if (m_actUndo) m_actUndo->trigger();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::redoRequested, this, [this]() {
+        if (m_actRedo) m_actRedo->trigger();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::historyStepRestoreRequested, this, [this](int idx) {
+        if (m_pdfViewer) {
+            m_pdfViewer->restoreHistoryStep(idx);
+            updateContextualMenuStates();
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::showHistoryTimelineRequested, this, [this]() {
+        if (m_pdfViewer) {
+            m_minimalHeaderBar->setHistorySteps(m_pdfViewer->historySteps());
+        }
+    });
+    if (m_minimalHeaderBar->historyMenu()) {
+        connect(m_minimalHeaderBar->historyMenu(), &QMenu::aboutToShow, this, [this]() {
+            if (m_pdfViewer) {
+                m_minimalHeaderBar->setHistorySteps(m_pdfViewer->historySteps());
+            }
         });
-        toggleAct->setCheckable(true);
-        toggleAct->setChecked(m_flippableToolbar->isVisible());
+    }
 
-        menu.exec(m_toolbar->mapToGlobal(pos));
+    // Direct Contextual Action Bar Text Replacement
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTextReplaceRequested, this, [this](const QString &text, const QFont &font, const QColor &color, bool whiteout) {
+        if (m_pdfViewer) {
+            m_pdfViewer->replaceSelectedText(text, font, color, whiteout);
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTextPropertiesChanged, this, [this](const QFont &font, const QColor &color, bool whiteout) {
+        if (m_pdfViewer) {
+            m_pdfViewer->updateTypewriterProperties(font, color, whiteout);
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTextBgChanged, this, [this](PdfTextBgMode mode, const QColor &color) {
+        if (m_pdfViewer) {
+            m_pdfViewer->updateTextBgProperties(mode, color);
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTextDoneRequested, this, [this]() {
+        if (m_pdfViewer) {
+            m_pdfViewer->commitInPlaceTextEdit();
+        }
     });
 
+    if (m_pdfViewer) {
+        m_pdfViewer->setOnInPlaceTextEditStarted([this](const QString &text, const QFont &font, const QColor &color, PdfTextBgMode bgMode, const QColor &bgColor) {
+            if (!isEditMode()) return;
+            if (m_minimalHeaderBar) {
+                m_minimalHeaderBar->showContextualTextBar(text, font, color, bgMode, bgColor);
+            }
+        });
+        m_pdfViewer->setOnInPlaceTextEditFinished([this]() {
+            if (m_minimalHeaderBar && m_minimalHeaderBar->contextualBar() &&
+                m_minimalHeaderBar->contextualBar()->mode() == ContextBarMode::Text) {
+                m_minimalHeaderBar->hideContextualBar();
+            }
+        });
+        m_pdfViewer->setOnTextSelectedForContextualEdit([this](const QString &text, const QFont &font, const QColor &color, bool whiteout) {
+            if (!isEditMode()) return;
+            if (m_minimalHeaderBar && m_minimalHeaderBar->contextualBar()) {
+                m_minimalHeaderBar->contextualBar()->setTextContent(text);
+                m_minimalHeaderBar->contextualBar()->setTextFont(font);
+                m_minimalHeaderBar->contextualBar()->setTextColor(color);
+                m_minimalHeaderBar->contextualBar()->setWhiteout(whiteout);
+                m_minimalHeaderBar->showContextualTextBar(text, font, color, whiteout ? PdfTextBgMode::Auto : PdfTextBgMode::Transparent);
+            }
+        });
+        m_pdfViewer->setOnStampSelectedForContextualEdit([this](const QString &text, const QColor &color, qreal angle, int style, int fontSize) {
+            if (!isEditMode()) return;
+            if (m_minimalHeaderBar) {
+                m_minimalHeaderBar->showContextualStampBar();
+                auto *cBar = m_minimalHeaderBar->contextualBar();
+                if (cBar) {
+                    cBar->setStampProperties(text, color, angle, style, fontSize);
+                }
+            }
+        });
+    }
+
+    if (m_minimalHeaderBar && m_minimalHeaderBar->contextualBar()) {
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::highlightPropertiesChanged, this, [this](const QColor &color, double opacity, bool /*isSpotlight*/) {
+            if (m_pdfViewer) {
+                m_pdfViewer->updateHighlighterProperties(color, opacity);
+            }
+        });
+    }
+
+    // Contextual Edit Action Connections from MinimalHeaderBar
+    // Image
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::rotateLeftRequested, this, [this]() {
+        if (m_imageViewer) m_imageViewer->rotateCounterClockwise();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::rotateRightRequested, this, [this]() {
+        if (m_imageViewer) m_imageViewer->rotateClockwise();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::flipHRequested, this, [this]() {
+        if (m_imageViewer) m_imageViewer->flipHorizontal();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::flipVRequested, this, [this]() {
+        if (m_imageViewer) m_imageViewer->flipVertical();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::cropRequested, this, [this]() {
+        if (m_imageViewer) m_imageViewer->setCropModeActive(!m_imageViewer->isCropModeActive());
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::photoStudioRequested, this, [this]() {
+        if (m_imageViewer) m_imageViewer->toggleStudioPanel();
+    });
+
+    // PDF Tools - Direct Contextual Actions
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTextToolToggled, this, [this](bool active) {
+        if (!m_pdfViewer) return;
+        if (active) {
+            auto *cBar = m_minimalHeaderBar->contextualBar();
+            if (cBar && m_pdfViewer->hasTextSelection()) {
+                m_pdfViewer->editSelectedTextWithWhiteout();
+            } else if (cBar) {
+                m_pdfViewer->startDirectTypewriter(cBar->textFont(), cBar->textColor(), cBar->isWhiteout());
+            }
+        } else {
+            m_pdfViewer->exitContinuousToolMode();
+        }
+    });
+
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfHighlightToolToggled, this, [this](bool active) {
+        if (!m_pdfViewer) return;
+        if (active) {
+            auto *cBar = m_minimalHeaderBar->contextualBar();
+            m_pdfViewer->startHighlighter(cBar->highlighterColor(), cBar->highlighterOpacity(), cBar->isSpotlight());
+        } else {
+            m_pdfViewer->exitContinuousToolMode();
+        }
+    });
+
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfShapesToolRequested, this, [this](int shapeType) {
+        if (!m_pdfViewer) return;
+        auto *cBar = m_minimalHeaderBar->contextualBar();
+        m_pdfViewer->startShape(shapeType, cBar->strokeWidth(), cBar->strokeColor(), cBar->fillColor());
+    });
+
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRedactToolRequested, this, [this]() {
+        if (!m_pdfViewer) return;
+        auto *cBar = m_minimalHeaderBar->contextualBar();
+        QColor col = (cBar && cBar->redactStyle() == 1) ? Qt::white : Qt::black;
+        bool perm = cBar ? cBar->isRedactPermanent() : false;
+        m_pdfViewer->startRedaction(col, perm);
+    });
+
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfStampToolRequested, this, [this]() {
+        if (!m_pdfViewer) return;
+        auto *cBar = m_minimalHeaderBar->contextualBar();
+        if (cBar) {
+            m_pdfViewer->startWatermark(cBar->stampText(), cBar->stampAngle(), 0.90, cBar->stampColor(),
+                                        QPoint(), cBar->stampStyle(), cBar->stampSize());
+        }
+    });
+
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfDrawingToolRequested, this, [this](int toolId) {
+        if (!m_pdfViewer) return;
+        auto *cBar = m_minimalHeaderBar->contextualBar();
+        if (toolId == 0) { // Highlighter
+            m_pdfViewer->startHighlighter(cBar->highlighterColor(), cBar->highlighterOpacity(), cBar->isSpotlight());
+        } else if (toolId == 5) { // Redact
+            m_pdfViewer->startRedaction();
+        } else {
+            // Shapes: toolId 1=Rect (0), 2=Circle (1), 3=Arrow (2), 4=Line (3)
+            int shapeType = toolId - 1;
+            m_pdfViewer->startShape(shapeType, cBar->strokeWidth(), cBar->strokeColor(), cBar->fillColor());
+        }
+    });
+
+    // Contextual Action Bar property modifications
+    if (m_minimalHeaderBar->contextualBar()) {
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::textPropertiesChanged, this, [this](const QFont &font, const QColor &color, bool whiteout) {
+            if (m_pdfViewer) {
+                m_pdfViewer->updateTypewriterProperties(font, color, whiteout);
+            }
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::textBgChanged, this, [this](PdfTextBgMode mode, const QColor &color) {
+            if (m_pdfViewer) {
+                m_pdfViewer->updateTextBgProperties(mode, color);
+            }
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::textDoneRequested, this, [this]() {
+            if (m_pdfViewer) {
+                m_pdfViewer->commitInPlaceTextEdit();
+            }
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::highlightPropertiesChanged, this, [this](const QColor &color, double opacity, bool isSpotlight) {
+            if (m_pdfViewer) {
+                m_pdfViewer->startHighlighter(color, opacity, isSpotlight);
+            }
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::shapePropertiesChanged, this, [this](int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor) {
+            if (!m_pdfViewer) return;
+            m_pdfViewer->startShape(shapeType, strokeWidth, strokeColor, fillColor);
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::redactPropertiesChanged, this, [this](int style, bool permanent) {
+            if (!m_pdfViewer) return;
+            QColor col = (style == 1) ? Qt::white : Qt::black;
+            m_pdfViewer->startRedaction(col, permanent);
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::stampPropertiesChanged, this, [this](const QString &text, const QColor &color, qreal angle, int style, int fontSize) {
+            if (!m_pdfViewer) return;
+            m_pdfViewer->startWatermark(text, angle, 0.90, color, QPoint(), style, fontSize);
+            m_pdfViewer->updateSelectedStampProperties(text, color, angle, style, fontSize);
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::stampPropertiesCommitted, this, [this]() {
+            if (!m_pdfViewer) return;
+            m_pdfViewer->commitSelectedStampProperties();
+        });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::drawingPropertiesChanged, this, [this](int toolId, int strokeWidth, const QColor &strokeColor, const QColor &fillColor) {
+            if (!m_pdfViewer) return;
+            if (toolId == 0) {
+                auto *cBar = m_minimalHeaderBar->contextualBar();
+                m_pdfViewer->startHighlighter(strokeColor, cBar ? cBar->highlighterOpacity() : 0.40, cBar ? cBar->isSpotlight() : false);
+            } else if (toolId == 5) {
+                m_pdfViewer->startRedaction();
+            } else {
+                m_pdfViewer->updateShapeProperties(strokeWidth, strokeColor, fillColor);
+            }
+        });
+    }
+
+    // Signature Dropdown Actions
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfSignatureRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openSignatureDialog();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfInsertImageRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openInsertImageDialog();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfCryptoSignatureRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openCryptoSignatureDialog(1);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfScanSignatureFieldsRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openCryptoSignatureDialog(0);
+    });
+
+    // Page Dropdown Actions
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRotateClockwiseRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->rotateClockwise();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRotateCounterClockwiseRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->rotateCounterClockwise();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfInsertBlankPageRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->insertBlankPage();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfDeletePageRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->deleteCurrentPage();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfPagesRequested, this, [this]() {
+        if (m_pdfViewer && m_pdfViewer->isPageGridOrganizerActive()) {
+            exitPageOrganizerMode();
+        } else {
+            enterPageOrganizerMode();
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOrganizerBackRequested, this, [this]() {
+        exitPageOrganizerMode();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOrganizerRotateRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->organizerRotate();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOrganizerDeleteRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->organizerDelete();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOrganizerInsertBlankRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->organizerInsertBlank();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOrganizerAddPdfRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->organizerAddPdf();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOrganizerReverseRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->organizerReverse();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOrganizerResetRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->organizerReset();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfMergeRequested, this, &MainWindow::openPdfMergeDialog);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRepairRequested, this, [this]() {
+        openPdfRepairDialog(m_currentFilePath);
+    });
+
+    // Save & Export Dropdown Actions
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfSavePageAsPdfRequested, this, &BaseSkin::saveCurrentPageAsPdf);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfSavePageAsImageRequested, this, &BaseSkin::saveCurrentPageAsImage);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfOcrRequested, this, &BaseSkin::extractOcrCurrentFile);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfExtractImagesRequested, this, [this]() {
+        extractPdfImages(currentActiveTargetFilePath());
+    });
+
+    // Additional PDF Tools & Backwards Compatibility
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfStudioRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->toggleStudioPanel();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfStampRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openWatermarkDialog();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfHighlightRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->startHighlighter(QColor("#fbbf24"), 0.5);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfSelectAreaRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->startSelectArea();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfDrawRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->startSelectArea();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTypewriterRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openTypewriterDialog();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfShapeRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->openShapeDialog();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRedactRequested, this, [this]() {
+        if (m_pdfViewer) m_pdfViewer->startRedaction();
+    });
+
+    // Archive
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::archiveExtractRequested, this, [this]() {
+        if (m_archiveViewer) m_archiveViewer->extractAll();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::archiveAddRequested, this, [this]() {
+        if (m_archiveViewer) m_archiveViewer->addFilesToArchive();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::archiveRemoveRequested, this, [this]() {
+        if (m_archiveViewer) m_archiveViewer->removeSelectedFromArchive();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::archiveTestRequested, this, [this]() {
+        if (m_archiveViewer) m_archiveViewer->testArchiveIntegrity();
+    });
+
+    // Text
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::textLineNumbersToggled, this, [this](bool checked) {
+        if (m_textViewer) m_textViewer->setLineNumbersVisible(checked);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::textSyntaxToggled, this, [this](bool checked) {
+        if (m_textViewer) m_textViewer->setSyntaxHighlightingEnabled(checked);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::textWordWrapToggled, this, [this](bool checked) {
+        if (m_textViewer) m_textViewer->setWordWrapEnabled(checked);
+    });
+
+    // Audio (1=Trim, 2=Filters, 3=Pitch & Ch., 4=Equalizer, 5=Tags, 6=Summary)
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::audioStudioRequested, this, [this]() {
+        if (m_mediaViewer) m_mediaViewer->switchAudioWorkspace(1);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::audioRestoreRequested, this, [this]() {
+        if (m_mediaViewer) m_mediaViewer->switchAudioWorkspace(2);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::audioPitchRequested, this, [this]() {
+        if (m_mediaViewer) m_mediaViewer->switchAudioWorkspace(3);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::audioEqualizerRequested, this, [this]() {
+        if (m_mediaViewer) m_mediaViewer->switchAudioWorkspace(4);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::audioTagsRequested, this, [this]() {
+        if (m_mediaViewer) m_mediaViewer->switchAudioWorkspace(5);
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::audioSummaryRequested, this, [this]() {
+        if (m_mediaViewer) m_mediaViewer->switchAudioWorkspace(6);
+    });
+
+    setupMediaViewerConnections();
+
+    // Embed minimal header bar at top of central container
+    auto *centralLayout = qobject_cast<QVBoxLayout*>(m_centralContainer->layout());
+    if (centralLayout) {
+        centralLayout->insertWidget(0, m_minimalHeaderBar);
+    }
+
+    if (m_toolbar) {
+        int savedStyle = settings.value("toolbar/button_style", static_cast<int>(Qt::ToolButtonIconOnly)).toInt();
+        m_toolbar->setToolButtonStyle(static_cast<Qt::ToolButtonStyle>(savedStyle));
+
+        m_toolbar->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(m_toolbar, &QToolBar::customContextMenuRequested, this, [this](const QPoint &pos) {
+            QMenu menu(this);
+            menu.addAction(QIcon::fromTheme("configure-toolbars"), tr("Configure Toolbars..."), this, &MainWindow::configureToolbars);
+            menu.addSeparator();
+
+            QMenu *styleMenu = menu.addMenu(tr("Button Style"));
+            auto addStyleAction = [this, styleMenu](const QString &title, Qt::ToolButtonStyle style) {
+                QAction *act = styleMenu->addAction(title);
+                act->setCheckable(true);
+                act->setChecked(m_toolbar->toolButtonStyle() == style);
+                connect(act, &QAction::triggered, this, [this, style]() {
+                    if (m_toolbar) {
+                        m_toolbar->setToolButtonStyle(style);
+                        QSettings s;
+                        s.setValue("toolbar/button_style", static_cast<int>(style));
+                    }
+                });
+            };
+
+            addStyleAction(tr("Icons Only"), Qt::ToolButtonIconOnly);
+            addStyleAction(tr("Text Only"), Qt::ToolButtonTextOnly);
+            addStyleAction(tr("Text Beside Icons"), Qt::ToolButtonTextBesideIcon);
+            addStyleAction(tr("Text Under Icons"), Qt::ToolButtonTextUnderIcon);
+
+            menu.addSeparator();
+            QAction *toggleAct = menu.addAction(tr("Show Toolbar"), this, [this](bool visible) {
+                setEditMode(visible);
+            });
+            toggleAct->setCheckable(true);
+            toggleAct->setChecked(m_isEditMode);
+
+            menu.exec(m_toolbar->mapToGlobal(pos));
+        });
+    }
+
     setupToolbarActionsMap();
-    rebuildToolbar();
+    if (m_toolbar) {
+        rebuildToolbar();
+    }
+
+    // Default: Preview Mode (toolbar hidden)
+    if (m_flippableToolbar) {
+        m_flippableToolbar->setVisible(false);
+    }
 
     // Status bar with Breadcrumbs
     QStatusBar *bar = statusBar();
@@ -873,14 +1330,11 @@ void MainWindow::setupUi()
 
 QStringList MainWindow::defaultToolbarActions() const
 {
-    return QStringList() << "prev_file"
-                         << "next_file"
-                         << "folder_view"
-                         << "separator"
-                         << "zoom_tool"
+    return QStringList() << "zoom_tool"
                          << "zoom_reset"
+                         << "zoom_fit"
                          << "separator"
-                         << "fullscreen";
+                         << "filmstrip";
 }
 
 void MainWindow::setupToolbarActionsMap()
@@ -915,7 +1369,6 @@ void MainWindow::setupToolbarActionsMap()
     registerAction("zoom_out", m_actZoomOut, tr("Zoom Out"));
     registerAction("zoom_reset", m_actZoomReset, tr("Zoom 100%"));
     registerAction("zoom_fit", m_actFit, tr("Fit to Window"));
-    registerAction("fullscreen", m_actFullscreen, tr("Fullscreen"));
     registerAction("slideshow", m_actSlideshow, tr("Photo Slideshow"));
     registerAction("filmstrip", m_actFilmstrip, tr("Thumbnail Strip"));
     registerAction("pdf_toc", m_actPdfToc, tr("Document Outline (TOC)"));
@@ -989,6 +1442,7 @@ void MainWindow::setupToolbarActionsMap()
 
 void MainWindow::rebuildToolbar()
 {
+    if (!m_toolbar) return;
     m_toolbar->clear();
 
     QSettings settings;
@@ -1022,11 +1476,134 @@ void MainWindow::configureToolbars()
     dlg.exec();
 }
 
+void MainWindow::setEditMode(bool editMode)
+{
+    const bool wasInEdit = isEditMode();
+
+    if (!editMode && wasInEdit) {
+        // Exiting Edit Mode: prompt to save or discard unsaved changes
+        if (!promptAndSaveIfModified()) {
+            if (m_minimalHeaderBar) {
+                m_minimalHeaderBar->setEditMode(true);
+            }
+            return;
+        }
+    }
+
+    if (editMode && !wasInEdit) {
+        // Save window geometry and maximization state before transitioning to full screen
+        m_wasMaximizedBeforeEdit = isMaximized() || isFullScreen();
+        if (!m_wasMaximizedBeforeEdit) {
+            m_preEditGeometry = geometry();
+            showMaximized();
+        }
+
+        BaseSkin::setEditMode(true);
+
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+            m_minimalHeaderBar->setEditMode(true);
+        }
+
+        if (m_mediaViewer && m_mediaViewer->isAudioOnly()) {
+            if (m_mediaViewer->audioWorkspaceIndex() == 0) {
+                m_mediaViewer->switchAudioWorkspace(1);
+                if (m_minimalHeaderBar) m_minimalHeaderBar->setActiveAudioWorkspace(1);
+            }
+        }
+    } else if (!editMode && wasInEdit) {
+        // First exit edit mode in BaseSkin so viewers hide editing tools and collapse toolbars
+        BaseSkin::setEditMode(false);
+
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+            m_minimalHeaderBar->setEditMode(false);
+        }
+
+        if (m_mediaViewer && m_mediaViewer->isAudioOnly()) {
+            m_mediaViewer->switchAudioWorkspace(0);
+            if (m_minimalHeaderBar) m_minimalHeaderBar->setActiveAudioWorkspace(0);
+        }
+
+        // Flush any pending layout updates so window size hints are clean prior to unmaximizing
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+        if (layout()) {
+            layout()->activate();
+        }
+        if (m_centralContainer && m_centralContainer->layout()) {
+            m_centralContainer->layout()->activate();
+        }
+
+        // Return to compact preview window if not maximized prior to edit mode
+        if (!m_wasMaximizedBeforeEdit && (isMaximized() || isFullScreen())) {
+            const bool isOffscreen = (QGuiApplication::platformName() == QLatin1String("offscreen"));
+            showNormal();
+            // On real X11/Wayland window managers, showNormal() atomically restores the
+            // pre-maximized normalGeometry() now that minimumSizeHint is never inflated.
+            // Calling setGeometry() immediately after showNormal() on X11/Wayland sends a
+            // competing configure request that causes a visible bounce. Only call setGeometry()
+            // in headless offscreen tests or when the window is not yet mapped.
+            if ((isOffscreen || !isVisible()) &&
+                m_preEditGeometry.isValid() && m_preEditGeometry.width() >= 320 && m_preEditGeometry.height() >= 240) {
+                setGeometry(m_preEditGeometry);
+            }
+        }
+    } else {
+        BaseSkin::setEditMode(editMode);
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+            m_minimalHeaderBar->setEditMode(editMode);
+        }
+    }
+
+    if (m_actToggleToolbar) {
+        m_actToggleToolbar->setChecked(editMode);
+    }
+
+    updateContextualMenuStates();
+}
+
+void MainWindow::updateWindowTitle()
+{
+    BaseSkin::updateWindowTitle();
+    if (m_minimalHeaderBar) {
+        if (!m_currentFilePath.isEmpty()) {
+            QFileInfo fi(m_currentFilePath);
+            m_minimalHeaderBar->setTitle(fi.fileName());
+        } else {
+            m_minimalHeaderBar->setTitle(tr("BubezView"));
+        }
+        m_minimalHeaderBar->setIndexBadge(fileIndexText());
+        m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+        m_minimalHeaderBar->setCategory(m_currentCategory);
+        m_minimalHeaderBar->setSearchAvailable(m_currentCategory == FileCategory::Text || m_currentCategory == FileCategory::Pdf || m_currentCategory == FileCategory::Archive);
+    }
+}
+
 void MainWindow::onFileLoaded(const QString &filePath, FileCategory category, const QList<UIActionItem> &actions)
 {
-    Q_UNUSED(filePath);
     Q_UNUSED(category);
     Q_UNUSED(actions);
+
+    if (m_minimalHeaderBar) {
+        if (!filePath.isEmpty()) {
+            QFileInfo fi(filePath);
+            m_minimalHeaderBar->setTitle(fi.fileName());
+        } else {
+            m_minimalHeaderBar->setTitle(tr("BubezView"));
+        }
+        m_minimalHeaderBar->setIndexBadge(fileIndexText());
+        m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+        m_minimalHeaderBar->setCategory(category);
+        m_minimalHeaderBar->setSearchAvailable(category == FileCategory::Text || category == FileCategory::Pdf || category == FileCategory::Archive);
+        if (category == FileCategory::Text && m_textViewer) {
+            m_minimalHeaderBar->setTextEditStates(
+                m_textViewer->isLineNumbersVisible(),
+                m_textViewer->isSyntaxHighlightingEnabled(),
+                m_textViewer->isWordWrapEnabled()
+            );
+        }
+    }
 
     updateStatusBar();
     updateContextualMenuStates();
@@ -1117,6 +1694,10 @@ void MainWindow::updateBreadcrumbs()
 void MainWindow::applyCurrentTheme()
 {
     BaseSkin::applyCurrentTheme();
+    if (m_minimalHeaderBar) {
+        m_minimalHeaderBar->applyThemePreset(ThemeManager::currentPreset());
+    }
+    updateFramelessBorderStyle();
     updateStatusBar();
 }
 
@@ -1166,9 +1747,9 @@ void MainWindow::updateContextualMenuStates()
 
     // 1. FILE MENU
     if (m_actSave) {
-        bool canSave = (isImage && !isFolder && m_imageViewer && m_imageViewer->isModified())
+        bool canSave = m_isEditMode && ((isImage && !isFolder && m_imageViewer && m_imageViewer->isModified())
                     || (isPdf && !isFolder && m_pdfViewer && m_pdfViewer->isModified())
-                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isModified());
+                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isModified()));
         m_actSave->setVisible((isImage || isPdf || isText) && !isFolder);
         m_actSave->setEnabled(canSave);
     }
@@ -1209,24 +1790,24 @@ void MainWindow::updateContextualMenuStates()
     }
 
     if (m_actUndo) {
-        bool canUndo = (isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canUndo())
+        bool canUndo = m_isEditMode && ((isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canUndo())
                     || (isText && !isFolder && m_textViewer && m_textViewer->document()->isUndoAvailable())
-                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canUndo());
+                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canUndo()));
         m_actUndo->setVisible((isPdf || isText || isImage) && !isFolder);
         m_actUndo->setEnabled(canUndo);
     }
 
     if (m_actRedo) {
-        bool canRedo = (isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canRedo())
+        bool canRedo = m_isEditMode && ((isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canRedo())
                     || (isText && !isFolder && m_textViewer && m_textViewer->document()->isRedoAvailable())
-                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canRedo());
+                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canRedo()));
         m_actRedo->setVisible((isPdf || isText || isImage) && !isFolder);
         m_actRedo->setEnabled(canRedo);
     }
 
     if (m_actCut) {
-        bool canCut = (isText && !isFolder && m_textViewer && m_textViewer->textCursor().hasSelection()) ||
-                      (isPdf && !isFolder && m_pdfViewer && (m_pdfViewer->hasTextSelection() || m_pdfViewer->hasAreaSelection()));
+        bool canCut = m_isEditMode && (((isText && !isFolder && m_textViewer && m_textViewer->textCursor().hasSelection()) ||
+                      (isPdf && !isFolder && m_pdfViewer && (m_pdfViewer->hasTextSelection() || m_pdfViewer->hasAreaSelection()))));
         m_actCut->setVisible((isText || isPdf) && !isFolder);
         m_actCut->setEnabled(canCut);
     }
@@ -1240,49 +1821,49 @@ void MainWindow::updateContextualMenuStates()
     if (m_actPaste) {
         const QClipboard *clip = QApplication::clipboard();
         bool hasClipContent = !clip->text().trimmed().isEmpty() || (!clip->image().isNull() && clip->image().width() > 0);
-        bool canPaste = (isText && !isFolder) || (isPdf && !isFolder && hasClipContent);
+        bool canPaste = m_isEditMode && ((isText && !isFolder) || (isPdf && !isFolder && hasClipContent));
         m_actPaste->setVisible((isText || isPdf) && !isFolder);
         m_actPaste->setEnabled(canPaste);
     }
 
     if (m_actRotateRight) {
         m_actRotateRight->setVisible((isImage || isPdf) && !isFolder);
-        m_actRotateRight->setEnabled((isImage || isPdf) && !isFolder);
+        m_actRotateRight->setEnabled(m_isEditMode && (isImage || isPdf) && !isFolder);
     }
     if (m_actRotateLeft) {
         m_actRotateLeft->setVisible((isImage || isPdf) && !isFolder);
-        m_actRotateLeft->setEnabled((isImage || isPdf) && !isFolder);
+        m_actRotateLeft->setEnabled(m_isEditMode && (isImage || isPdf) && !isFolder);
     }
     if (m_actFlipH) {
         m_actFlipH->setVisible(isImage && !isFolder);
-        m_actFlipH->setEnabled(isImage && !isFolder);
+        m_actFlipH->setEnabled(m_isEditMode && isImage && !isFolder);
     }
     if (m_actFlipV) {
         m_actFlipV->setVisible(isImage && !isFolder);
-        m_actFlipV->setEnabled(isImage && !isFolder);
+        m_actFlipV->setEnabled(m_isEditMode && isImage && !isFolder);
     }
 
     bool isImageDoc = (isImage && !isFolder);
     if (m_actImageCrop) {
         m_actImageCrop->setVisible(isImageDoc);
-        m_actImageCrop->setEnabled(isImageDoc && hasFile);
+        m_actImageCrop->setEnabled(m_isEditMode && isImageDoc && hasFile);
         m_actImageCrop->setChecked(m_imageViewer && m_imageViewer->isCropModeActive());
     }
 
     if (m_actImageResize) {
         m_actImageResize->setVisible(isImageDoc);
-        m_actImageResize->setEnabled(isImageDoc && hasFile);
+        m_actImageResize->setEnabled(m_isEditMode && isImageDoc && hasFile);
     }
 
     if (m_actImageAdjust) {
         m_actImageAdjust->setVisible(isImageDoc);
-        m_actImageAdjust->setEnabled(isImageDoc && hasFile);
+        m_actImageAdjust->setEnabled(m_isEditMode && isImageDoc && hasFile);
     }
 
     if (m_actFlattenImage) {
         bool hasAlpha = isImageDoc && hasFile && m_imageViewer && m_imageViewer->originalImage().hasAlphaChannel();
         m_actFlattenImage->setVisible(isImageDoc);
-        m_actFlattenImage->setEnabled(hasAlpha);
+        m_actFlattenImage->setEnabled(m_isEditMode && hasAlpha);
     }
 
     if (m_menuTransparency) {
@@ -1304,15 +1885,15 @@ void MainWindow::updateContextualMenuStates()
 
     if (m_actArchiveAddFiles) {
         m_actArchiveAddFiles->setVisible(isArchiveDoc);
-        m_actArchiveAddFiles->setEnabled(isArchiveDoc);
+        m_actArchiveAddFiles->setEnabled(m_isEditMode && isArchiveDoc);
     }
     if (m_actArchiveAddFolder) {
         m_actArchiveAddFolder->setVisible(isArchiveDoc);
-        m_actArchiveAddFolder->setEnabled(isArchiveDoc);
+        m_actArchiveAddFolder->setEnabled(m_isEditMode && isArchiveDoc);
     }
     if (m_actArchiveRemoveSelected) {
         m_actArchiveRemoveSelected->setVisible(isArchiveDoc);
-        m_actArchiveRemoveSelected->setEnabled(isArchiveDoc);
+        m_actArchiveRemoveSelected->setEnabled(m_isEditMode && isArchiveDoc);
     }
 
     // Text File Editing in Edit Menu
@@ -1334,15 +1915,15 @@ void MainWindow::updateContextualMenuStates()
     }
     if (m_actDuplicateLine) {
         m_actDuplicateLine->setVisible(isTextDoc);
-        m_actDuplicateLine->setEnabled(isTextDoc && m_textViewer && m_textViewer->isEditable());
+        m_actDuplicateLine->setEnabled(m_isEditMode && isTextDoc && m_textViewer && m_textViewer->isEditable());
     }
     if (m_actDeleteLine) {
         m_actDeleteLine->setVisible(isTextDoc);
-        m_actDeleteLine->setEnabled(isTextDoc && m_textViewer && m_textViewer->isEditable());
+        m_actDeleteLine->setEnabled(m_isEditMode && isTextDoc && m_textViewer && m_textViewer->isEditable());
     }
     if (m_actToggleComment) {
         m_actToggleComment->setVisible(isTextDoc);
-        m_actToggleComment->setEnabled(isTextDoc && m_textViewer && m_textViewer->isEditable());
+        m_actToggleComment->setEnabled(m_isEditMode && isTextDoc && m_textViewer && m_textViewer->isEditable());
     }
     if (m_actLineNumbers) {
         m_actLineNumbers->setVisible(isTextDoc);
@@ -1370,43 +1951,43 @@ void MainWindow::updateContextualMenuStates()
 
     if (m_actPdfHighlighter) {
         m_actPdfHighlighter->setVisible(isPdfDoc);
-        m_actPdfHighlighter->setEnabled(isPdfDoc);
+        m_actPdfHighlighter->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_menuPdfMarkup) {
         m_menuPdfMarkup->menuAction()->setVisible(isPdfDoc);
-        m_menuPdfMarkup->menuAction()->setEnabled(isPdfDoc);
+        m_menuPdfMarkup->menuAction()->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_menuPdfDocOps) {
         m_menuPdfDocOps->menuAction()->setVisible(isPdfDoc);
-        m_menuPdfDocOps->menuAction()->setEnabled(isPdfDoc);
+        m_menuPdfDocOps->menuAction()->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfSelectArea) {
         m_actPdfSelectArea->setVisible(isPdfDoc);
-        m_actPdfSelectArea->setEnabled(isPdfDoc);
+        m_actPdfSelectArea->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfTypewriter) {
         m_actPdfTypewriter->setVisible(isPdfDoc);
-        m_actPdfTypewriter->setEnabled(isPdfDoc);
+        m_actPdfTypewriter->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfSignature) {
         m_actPdfSignature->setVisible(isPdfDoc);
-        m_actPdfSignature->setEnabled(isPdfDoc);
+        m_actPdfSignature->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfInsertImage) {
         m_actPdfInsertImage->setVisible(isPdfDoc);
-        m_actPdfInsertImage->setEnabled(isPdfDoc);
+        m_actPdfInsertImage->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfInsertBlankPage) {
         m_actPdfInsertBlankPage->setVisible(isPdfDoc);
-        m_actPdfInsertBlankPage->setEnabled(isPdfDoc);
+        m_actPdfInsertBlankPage->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfWatermark) {
         m_actPdfWatermark->setVisible(isPdfDoc);
-        m_actPdfWatermark->setEnabled(isPdfDoc);
+        m_actPdfWatermark->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfShape) {
         m_actPdfShape->setVisible(isPdfDoc);
-        m_actPdfShape->setEnabled(isPdfDoc);
+        m_actPdfShape->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actPdfSnapshot) {
         m_actPdfSnapshot->setVisible(isPdfDoc);
@@ -1414,27 +1995,37 @@ void MainWindow::updateContextualMenuStates()
     }
     if (m_actPdfRedact) {
         m_actPdfRedact->setVisible(isPdfDoc);
-        m_actPdfRedact->setEnabled(isPdfDoc);
+        m_actPdfRedact->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actMergePdf) {
         m_actMergePdf->setVisible(isPdfDoc);
-        m_actMergePdf->setEnabled(isPdfDoc);
+        m_actMergePdf->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actOrganizePdf) {
         m_actOrganizePdf->setVisible(isPdfDoc);
-        m_actOrganizePdf->setEnabled(isPdfDoc);
+        m_actOrganizePdf->setEnabled(m_isEditMode && isPdfDoc);
     }
     if (m_actRepairPdf) {
         m_actRepairPdf->setVisible(isPdfDoc);
-        m_actRepairPdf->setEnabled(isPdfDoc);
+        m_actRepairPdf->setEnabled(m_isEditMode && isPdfDoc);
     }
 
     // 3. VIEW MENU
     if (m_actFolderView) {
-        m_actFolderView->setVisible(true);
-        m_actFolderView->setEnabled(!isFolder);
+        m_actFolderView->setVisible(!m_isEditMode);
+        m_actFolderView->setEnabled(!m_isEditMode && !isFolder);
     }
-    if (!m_archiveOriginPath.isEmpty() && !m_archiveEntries.isEmpty()) {
+    if (m_isEditMode) {
+        // In Edit Mode, sibling file navigation is categorically disabled and actions are hidden
+        if (m_actPrev) {
+            m_actPrev->setVisible(false);
+            m_actPrev->setEnabled(false);
+        }
+        if (m_actNext) {
+            m_actNext->setVisible(false);
+            m_actNext->setEnabled(false);
+        }
+    } else if (!m_archiveOriginPath.isEmpty() && !m_archiveEntries.isEmpty()) {
         if (m_actPrev) {
             m_actPrev->setVisible(true);
             m_actPrev->setEnabled(true);
@@ -1470,8 +2061,8 @@ void MainWindow::updateContextualMenuStates()
     }
 
     if (m_actSlideshow) {
-        m_actSlideshow->setVisible(isImage && !isFolder);
-        m_actSlideshow->setEnabled(isImage && !isFolder);
+        m_actSlideshow->setVisible(!m_isEditMode && isImage && !isFolder);
+        m_actSlideshow->setEnabled(!m_isEditMode && isImage && !isFolder);
     }
 
     bool canZoom = (isImage || isPdf || isOffice) && !isFolder;
@@ -1538,12 +2129,12 @@ void MainWindow::updateContextualMenuStates()
     }
     if (m_actAudioTrim) {
         m_actAudioTrim->setVisible(isMedia && !isFolder);
-        m_actAudioTrim->setEnabled(isMedia && !isFolder);
+        m_actAudioTrim->setEnabled(m_isEditMode && isMedia && !isFolder);
     }
     if (m_actAudioTags) {
         bool isAudioOnly = isMedia && !isFolder && m_mediaViewer && m_mediaViewer->isAudioOnly();
         m_actAudioTags->setVisible(isAudioOnly);
-        m_actAudioTags->setEnabled(isAudioOnly);
+        m_actAudioTags->setEnabled(m_isEditMode && isAudioOnly);
     }
     if (m_actAudioExtract) {
         bool isVideo = isMedia && !isFolder && m_mediaViewer && !m_mediaViewer->isAudioOnly();
@@ -1832,16 +2423,12 @@ void MainWindow::showUpdateDialog(const ReleaseInfo &info)
 
 void MainWindow::openPdfMergeDialog()
 {
-    QStringList initialFiles;
-    QString targetPath = currentActiveTargetFilePath();
-    if (!targetPath.isEmpty() && targetPath.endsWith(".pdf", Qt::CaseInsensitive)) {
-        initialFiles << targetPath;
+    if (ensurePdfViewerCreated() && m_pdfViewer) {
+        m_pdfViewer->openPdfMergeDialog(this);
+    } else if (m_enginePromptCard) {
+        m_enginePromptCard->setTargetFile(FileCategory::Pdf, currentActiveTargetFilePath());
+        m_stackedWidget->setCurrentWidget(m_enginePromptCard);
     }
-    PdfMergeDialog dlg(initialFiles, this);
-    connect(&dlg, &PdfMergeDialog::fileMerged, this, [this](const QString &outPath) {
-        openFile(outPath);
-    });
-    dlg.exec();
 }
 
 void MainWindow::updateDiscoveryActions()
@@ -1882,6 +2469,523 @@ QString MainWindow::currentActiveTargetFilePath() const
     }
     return m_currentFilePath;
 }
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange) {
+        if (isMaximized() || isFullScreen()) {
+            // Immediately clear rounded mask and border overlay when maximizing
+            updateFramelessBorderStyle();
+        } else {
+            // When unmaximizing on X11/Wayland, WindowStateChange fires before the WM
+            // sends the restored size ConfigureNotify. Avoid applying a full-screen 1-bit
+            // rounded mask while the geometry is still at maximized dimensions; the
+            // subsequent resizeEvent() will apply the mask at the restored compact size.
+            const QScreen *scr = screen() ? screen() : QGuiApplication::primaryScreen();
+            const bool stillAtScreenSize = scr &&
+                (size() == scr->availableGeometry().size() || size() == scr->geometry().size());
+            if (!stillAtScreenSize) {
+                updateFramelessBorderStyle();
+            }
+        }
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->update();
+        }
+    }
+    BaseSkin::changeEvent(event);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    BaseSkin::resizeEvent(event);
+    updateFramelessBorderStyle();
+}
+
+Qt::Edges MainWindow::calculateResizeEdges(const QPoint &globalPos) const
+{
+    if (!m_isFrameless || isMaximized() || isFullScreen()) {
+        return Qt::Edges();
+    }
+
+    QPoint localPos = mapFromGlobal(globalPos);
+    QRect r = rect();
+
+    if (localPos.x() < 0 || localPos.y() < 0 || localPos.x() > r.width() || localPos.y() > r.height()) {
+        return Qt::Edges();
+    }
+
+    Qt::Edges edges;
+    if (localPos.x() <= RESIZE_BORDER_MARGIN) {
+        edges |= Qt::LeftEdge;
+    } else if (localPos.x() >= r.width() - RESIZE_BORDER_MARGIN) {
+        edges |= Qt::RightEdge;
+    }
+
+    if (localPos.y() <= RESIZE_BORDER_MARGIN) {
+        edges |= Qt::TopEdge;
+    } else if (localPos.y() >= r.height() - RESIZE_BORDER_MARGIN) {
+        edges |= Qt::BottomEdge;
+    }
+
+    return edges;
+}
+
+void MainWindow::updateResizeCursor(Qt::Edges edges)
+{
+    if (!edges) {
+        if (m_isBorderCursorSet) {
+            QGuiApplication::restoreOverrideCursor();
+            m_isBorderCursorSet = false;
+        }
+        return;
+    }
+
+    QCursor resizeCursor;
+    if ((edges & Qt::LeftEdge && edges & Qt::TopEdge) ||
+        (edges & Qt::RightEdge && edges & Qt::BottomEdge)) {
+        resizeCursor = Qt::SizeFDiagCursor;
+    } else if ((edges & Qt::RightEdge && edges & Qt::TopEdge) ||
+               (edges & Qt::LeftEdge && edges & Qt::BottomEdge)) {
+        resizeCursor = Qt::SizeBDiagCursor;
+    } else if (edges & (Qt::LeftEdge | Qt::RightEdge)) {
+        resizeCursor = Qt::SizeHorCursor;
+    } else if (edges & (Qt::TopEdge | Qt::BottomEdge)) {
+        resizeCursor = Qt::SizeVerCursor;
+    }
+
+    if (!m_isBorderCursorSet) {
+        QGuiApplication::setOverrideCursor(resizeCursor);
+        m_isBorderCursorSet = true;
+    } else {
+        QGuiApplication::changeOverrideCursor(resizeCursor);
+    }
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (!m_isFrameless || isMaximized() || isFullScreen()) {
+        return BaseSkin::eventFilter(watched, event);
+    }
+
+    QWidget *widget = qobject_cast<QWidget*>(watched);
+    if (!widget || widget->window() != this) {
+        return BaseSkin::eventFilter(watched, event);
+    }
+
+    switch (event->type()) {
+    case QEvent::MouseMove: {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        if (m_isManualResizing && (me->buttons() & Qt::LeftButton)) {
+            performManualResize(me->globalPosition().toPoint());
+            return true;
+        } else if (me->buttons() == Qt::NoButton) {
+            Qt::Edges edges = calculateResizeEdges(me->globalPosition().toPoint());
+            updateResizeCursor(edges);
+        }
+        break;
+    }
+    case QEvent::MouseButtonPress: {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        if (me->button() == Qt::LeftButton) {
+            Qt::Edges edges = calculateResizeEdges(me->globalPosition().toPoint());
+            if (edges) {
+                if (windowHandle() && windowHandle()->startSystemResize(edges)) {
+                    me->accept();
+                    return true;
+                }
+                // Manual resize fallback
+                m_isManualResizing = true;
+                m_manualResizeEdges = edges;
+                m_manualResizeStartPos = me->globalPosition().toPoint();
+                m_manualResizeStartGeom = geometry();
+                me->accept();
+                return true;
+            }
+        }
+        break;
+    }
+    case QEvent::MouseButtonRelease: {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        if (me->button() == Qt::LeftButton && m_isManualResizing) {
+            m_isManualResizing = false;
+            updateResizeCursor(calculateResizeEdges(me->globalPosition().toPoint()));
+            return true;
+        }
+        break;
+    }
+    case QEvent::Leave: {
+        if (watched == this && m_isBorderCursorSet && !m_isManualResizing) {
+            updateResizeCursor(Qt::Edges());
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    return BaseSkin::eventFilter(watched, event);
+}
+
+void MainWindow::performManualResize(const QPoint &globalPos)
+{
+    QPoint delta = globalPos - m_manualResizeStartPos;
+    QRect newGeom = m_manualResizeStartGeom;
+    const int minW = 400;
+    const int minH = 300;
+
+    if (m_manualResizeEdges & Qt::LeftEdge) {
+        int targetWidth = m_manualResizeStartGeom.width() - delta.x();
+        if (targetWidth >= minW) {
+            newGeom.setLeft(m_manualResizeStartGeom.left() + delta.x());
+        } else {
+            newGeom.setLeft(m_manualResizeStartGeom.right() - minW);
+        }
+    }
+    if (m_manualResizeEdges & Qt::RightEdge) {
+        int targetWidth = m_manualResizeStartGeom.width() + delta.x();
+        if (targetWidth >= minW) {
+            newGeom.setRight(m_manualResizeStartGeom.left() + targetWidth);
+        }
+    }
+    if (m_manualResizeEdges & Qt::TopEdge) {
+        int targetHeight = m_manualResizeStartGeom.height() - delta.y();
+        if (targetHeight >= minH) {
+            newGeom.setTop(m_manualResizeStartGeom.top() + delta.y());
+        } else {
+            newGeom.setTop(m_manualResizeStartGeom.bottom() - minH);
+        }
+    }
+    if (m_manualResizeEdges & Qt::BottomEdge) {
+        int targetHeight = m_manualResizeStartGeom.height() + delta.y();
+        if (targetHeight >= minH) {
+            newGeom.setBottom(m_manualResizeStartGeom.top() + targetHeight);
+        }
+    }
+
+    setGeometry(newGeom);
+}
+
+void MainWindow::updateFramelessBorderStyle()
+{
+    if (!m_centralContainer) return;
+
+    if (m_isFrameless && !isMaximized() && !isFullScreen() && width() > 24 && height() > 24) {
+        if (!m_borderOverlay) {
+            m_borderOverlay = new FramelessBorderOverlay(this);
+        }
+
+        // Only regenerate and apply the 12px rounded corner window mask when the window size actually changes
+        if (m_lastMaskSize != size()) {
+            m_lastMaskSize = size();
+            QBitmap maskBmp(size());
+            maskBmp.fill(Qt::color0);
+            {
+                QPainter maskPainter(&maskBmp);
+                maskPainter.setRenderHint(QPainter::Antialiasing, true);
+                maskPainter.setPen(Qt::NoPen);
+                maskPainter.setBrush(Qt::color1);
+                maskPainter.drawRoundedRect(rect(), 12, 12);
+            }
+            setMask(maskBmp);
+        }
+
+        m_borderOverlay->setGeometry(rect());
+        m_borderOverlay->show();
+        m_borderOverlay->raise();
+        m_borderOverlay->update();
+    } else {
+        if (!m_lastMaskSize.isEmpty()) {
+            m_lastMaskSize = QSize();
+            clearMask();
+        }
+        if (m_borderOverlay) {
+            m_borderOverlay->hide();
+        }
+    }
+}
+
+void MainWindow::onViewerInitialized(FileCategory category)
+{
+    switch (category) {
+    case FileCategory::Pdf:
+        setupPdfViewerConnections();
+        break;
+    case FileCategory::Archive:
+        setupArchiveViewerConnections();
+        break;
+    case FileCategory::Media:
+        setupMediaViewerConnections();
+        break;
+    case FileCategory::Folder:
+        setupFolderViewerConnections();
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::setupPdfViewerConnections()
+{
+    if (!m_pdfViewer) return;
+
+    m_pdfViewer->setOnPageChanged([this](int, int) {
+        updateStatusBar();
+        updateContextualMenuStates();
+    });
+    m_pdfViewer->setOnZoomChanged([this](double factor) {
+        updateStatusBar();
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->setZoomFactor(factor);
+        }
+    });
+    m_pdfViewer->setOnSelectionChanged([this]() {
+        updateContextualMenuStates();
+        if (isEditMode() && m_minimalHeaderBar && m_minimalHeaderBar->contextualBar()) {
+            auto *cBar = m_minimalHeaderBar->contextualBar();
+            if (cBar->mode() == ContextBarMode::Text && m_pdfViewer && m_pdfViewer->hasTextSelection()) {
+                cBar->setTextContent(m_pdfViewer->selectedText());
+            }
+        }
+    });
+    m_pdfViewer->setOnDocumentModified([this](bool) {
+        updateWindowTitle();
+        updateStatusBar();
+        updateContextualMenuStates();
+    });
+    m_pdfViewer->setOnHistoryChanged([this]() {
+        updateContextualMenuStates();
+    });
+    m_pdfViewer->setOnFileOrganized([this](const QString &newPath) {
+        openFile(newPath);
+    });
+    m_pdfViewer->setOnContinuousModeExited([this]() {
+        if (m_flippableToolbar) m_flippableToolbar->flipToMain();
+        if (m_minimalHeaderBar) {
+            if (m_minimalHeaderBar->pdfTextButton() && m_minimalHeaderBar->pdfTextButton()->isChecked()) {
+                m_minimalHeaderBar->pdfTextButton()->blockSignals(true);
+                m_minimalHeaderBar->pdfTextButton()->setChecked(false);
+                m_minimalHeaderBar->pdfTextButton()->blockSignals(false);
+            }
+            m_minimalHeaderBar->hideContextualBar();
+        }
+    });
+    m_pdfViewer->setOnSavePageAsPdfRequested([this]() {
+        saveCurrentPageAsPdf();
+    });
+    m_pdfViewer->setOnSavePageAsImageRequested([this]() {
+        saveCurrentPageAsImage();
+    });
+    m_pdfViewer->setOnInPlaceTextEditStarted([this](const QString &text, const QFont &font, const QColor &color, PdfTextBgMode bgMode, const QColor &bgColor) {
+        if (!isEditMode()) return;
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->showContextualTextBar(text, font, color, bgMode, bgColor);
+        }
+    });
+    m_pdfViewer->setOnInPlaceTextEditFinished([this]() {
+        if (m_minimalHeaderBar && m_minimalHeaderBar->contextualBar() &&
+            m_minimalHeaderBar->contextualBar()->mode() == ContextBarMode::Text) {
+            m_minimalHeaderBar->hideContextualBar();
+        }
+    });
+    m_pdfViewer->setOnTextSelectedForContextualEdit([this](const QString &text, const QFont &font, const QColor &color, bool whiteout) {
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->showContextualTextBar(text, font, color, whiteout ? PdfTextBgMode::Auto : PdfTextBgMode::Transparent);
+            auto *cBar = m_minimalHeaderBar->contextualBar();
+            if (cBar) {
+                cBar->setTextContent(text);
+                cBar->setTextFont(font);
+                cBar->setTextColor(color);
+                cBar->setWhiteout(whiteout);
+            }
+        }
+    });
+    m_pdfViewer->setOnStampSelectedForContextualEdit([this](const QString &text, const QColor &color, qreal angle, int style, int fontSize) {
+        if (m_minimalHeaderBar) {
+            m_minimalHeaderBar->showContextualStampBar();
+            auto *cBar = m_minimalHeaderBar->contextualBar();
+            if (cBar) {
+                cBar->setStampProperties(text, color, angle, style, fontSize);
+            }
+        }
+    });
+    m_pdfViewer->setOnPageOrganizerOpened([this]() {
+        if (m_minimalHeaderBar && !m_minimalHeaderBar->isPageOrganizerMode()) {
+            m_wasMaximizedBeforeOrganizer = isMaximized() || isFullScreen();
+            if (!m_wasMaximizedBeforeOrganizer) {
+                m_preOrganizerGeometry = geometry();
+                showMaximized();
+            }
+            m_minimalHeaderBar->setPageOrganizerMode(true);
+        }
+    });
+    m_pdfViewer->setOnPageOrganizerClosed([this](int targetPageIndex) {
+        exitPageOrganizerMode(targetPageIndex);
+    });
+}
+
+void MainWindow::setupArchiveViewerConnections()
+{
+    if (!m_archiveViewer) return;
+
+    m_archiveViewer->setTopBarVisible(false);
+    m_archiveViewer->setOnArchiveLoaded([this](const QString&, int count, qint64 totalSize) {
+        if (m_minimalHeaderBar) {
+            QString sizeStr;
+            if (totalSize >= 1024 * 1024 * 1024) sizeStr = QString("%1 GB").arg(double(totalSize) / (1024.0 * 1024.0 * 1024.0), 0, 'f', 1);
+            else if (totalSize >= 1024 * 1024) sizeStr = QString("%1 MB").arg(double(totalSize) / (1024.0 * 1024.0), 0, 'f', 1);
+            else sizeStr = QString("%1 KB").arg(double(totalSize) / 1024.0, 0, 'f', 1);
+            m_minimalHeaderBar->setIndexBadge(tr("%1 items • %2").arg(count).arg(sizeStr));
+        }
+        updateStatusBar();
+    });
+}
+
+void MainWindow::setupMediaViewerConnections()
+{
+    if (!m_mediaViewer) return;
+
+    m_mediaViewer->setOnAudioWorkspaceChanged([this](int idx) {
+        if (m_minimalHeaderBar) m_minimalHeaderBar->setActiveAudioWorkspace(idx);
+    });
+    m_mediaViewer->setOnAudioWorkspaceModified([this](int idx, bool modified) {
+        if (m_minimalHeaderBar) m_minimalHeaderBar->setAudioWorkspaceModified(idx, modified);
+    });
+}
+
+void MainWindow::setupFolderViewerConnections()
+{
+    if (!m_folderViewer) return;
+
+    connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString&, int, qint64) {
+        updateStatusBar();
+    });
+    connect(m_folderViewer, &FolderViewer::selectionChanged, this, &MainWindow::updateContextualMenuStates);
+}
+
+void MainWindow::revertCurrentEdits()
+{
+    bool isImgMod = (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified());
+    bool isTextMod = (m_stackedWidget->currentIndex() == 1 && m_textViewer && m_textViewer->document()->isModified());
+    bool isPdfMod = (m_stackedWidget->currentIndex() == 2 && m_pdfViewer && m_pdfViewer->isModified());
+    bool isAudMod = (m_mediaViewer && m_mediaViewer->isAudioOnly() && m_mediaViewer->audioWorkspaceIndex() > 0);
+
+    if (isImgMod || isTextMod || isPdfMod || isAudMod) {
+        QMessageBox::StandardButton res = QMessageBox::question(
+            this,
+            tr("Discard Changes"),
+            tr("Are you sure you want to discard all changes made to this document?"),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No
+        );
+        if (res != QMessageBox::Yes) {
+            return;
+        }
+    }
+
+    if (m_imageViewer && isImgMod) {
+        m_imageViewer->loadFile(m_currentFilePath);
+        m_imageViewer->setModified(false);
+    }
+    if (m_textViewer && isTextMod) {
+        m_textViewer->loadFile(m_currentFilePath);
+        m_textViewer->document()->setModified(false);
+    }
+    if (m_pdfViewer && isPdfMod) {
+        m_pdfViewer->loadFile(m_currentFilePath);
+        m_pdfViewer->setModified(false);
+    }
+    if (m_mediaViewer && isAudMod) {
+        m_mediaViewer->switchAudioWorkspace(0);
+    }
+
+    updateWindowTitle();
+    updateStatusBar();
+    updateContextualMenuStates();
+
+    setEditMode(false);
+}
+
+void MainWindow::showSaveExportMenu(const QPoint &globalPos)
+{
+    QMenu menu(this);
+    QColor icColor = ThemeManager::iconColor(ThemeManager::currentPreset());
+
+    QAction *actSave = menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::Save, icColor, 16), tr("Save"), this, &BaseSkin::saveCurrentFile);
+    actSave->setShortcut(QKeySequence::Save);
+
+    QAction *actSaveAs = menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::Save, icColor, 16), tr("Save As..."), this, &BaseSkin::saveAsCurrentFile);
+    actSaveAs->setShortcut(QKeySequence::SaveAs);
+    menu.addSeparator();
+
+    if (m_currentCategory == FileCategory::Pdf && m_pdfViewer) {
+        menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::File, icColor, 16), tr("Save Current Page as PDF..."), this, &BaseSkin::saveCurrentPageAsPdf);
+        menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::File, icColor, 16), tr("Save Current Page as Image..."), this, &BaseSkin::saveCurrentPageAsImage);
+        menu.addSeparator();
+    }
+
+    menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::ExternalLink, icColor, 16), tr("Export in Other Formats..."), this, &BaseSkin::exportCurrentFileAs);
+
+    if (m_currentCategory == FileCategory::Pdf) {
+        menu.addSeparator();
+        menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::Repair, icColor, 16), tr("Repair PDF..."), this, [this]() {
+            openPdfRepairDialog(m_currentFilePath);
+        });
+    }
+
+    menu.addSeparator();
+    QAction *actPrint = menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::File, icColor, 16), tr("Print..."), this, &BaseSkin::printCurrentFile);
+    actPrint->setShortcut(QKeySequence::Print);
+
+    menu.exec(globalPos);
+}
+
+void MainWindow::enterPageOrganizerMode()
+{
+    if (!m_pdfViewer) return;
+    if (m_pdfViewer->isPageGridOrganizerActive()) return;
+
+    m_wasMaximizedBeforeOrganizer = isMaximized() || isFullScreen();
+    if (!m_wasMaximizedBeforeOrganizer) {
+        m_preOrganizerGeometry = geometry();
+        showMaximized();
+    }
+
+    if (m_minimalHeaderBar) {
+        m_minimalHeaderBar->setPageOrganizerMode(true);
+    }
+
+    m_pdfViewer->showPageGridOrganizer();
+}
+
+void MainWindow::exitPageOrganizerMode(int targetPageIndex)
+{
+    if (!m_pdfViewer) return;
+    const bool organizerActive = (m_minimalHeaderBar && m_minimalHeaderBar->isPageOrganizerMode()) ||
+                                 m_pdfViewer->isPageGridOrganizerActive();
+    if (!organizerActive) return;
+
+    if (m_minimalHeaderBar) {
+        m_minimalHeaderBar->setPageOrganizerMode(false);
+    }
+    if (m_pdfViewer->isPageGridOrganizerActive()) {
+        m_pdfViewer->hidePageGridOrganizer(targetPageIndex);
+    }
+
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+    if (layout()) layout()->activate();
+    if (m_centralContainer && m_centralContainer->layout()) m_centralContainer->layout()->activate();
+
+    if (!m_wasMaximizedBeforeOrganizer && (isMaximized() || isFullScreen())) {
+        const bool isOffscreen = (QGuiApplication::platformName() == QLatin1String("offscreen"));
+        showNormal();
+        if ((isOffscreen || !isVisible()) &&
+            m_preOrganizerGeometry.isValid() && m_preOrganizerGeometry.width() >= 320 && m_preOrganizerGeometry.height() >= 240) {
+            setGeometry(m_preOrganizerGeometry);
+        }
+    }
+}
+
+
 
 
 

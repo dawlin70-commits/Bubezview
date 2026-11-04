@@ -10,6 +10,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "viewers/image/image_viewer.h"
+#include "ui/photo_studio_panel.h"
+#include "core/services/theme_manager.h"
 #include "core/services/image_processor.h"
 
 class TestImage : public QObject
@@ -33,6 +35,10 @@ private slots:
     void testImageProcessorPrivacy();
     void testImageProcessorHistogram();
     void testImageProcessorAutoEnhance();
+    void testEditModeDisablesFileNavigation();
+    void testPhotoStudioPanelTabsAndPipeline();
+    void testLazyStudioPanelAndRevert();
+    void testInstantAlpha();
 };
 
 void TestImage::initTestCase()
@@ -530,6 +536,161 @@ void TestImage::testImageProcessorAutoEnhance()
     int centerLumaGlobal = qRed(resGlobal.pixel(30, 30));
     int centerLumaCenter = qRed(resCenter.pixel(30, 30));
     QVERIFY(centerLumaCenter > centerLumaGlobal);
+}
+
+void TestImage::testEditModeDisablesFileNavigation()
+{
+    ImageViewer viewer;
+    viewer.resize(800, 600);
+    viewer.show();
+
+    // Create and load a small image
+    QImage img(200, 200, QImage::Format_ARGB32);
+    img.fill(Qt::blue);
+    viewer.loadImage(img);
+
+    QSignalSpy nextSpy(&viewer, &ImageViewer::nextFileRequested);
+    QSignalSpy prevSpy(&viewer, &ImageViewer::prevFileRequested);
+
+    // 1. With Edit Mode disabled, mouse wheel overscroll triggers navigation
+    viewer.setEditMode(false);
+    QWheelEvent wheelDown(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, -240),
+                          Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QApplication::sendEvent(&viewer, &wheelDown);
+    QCOMPARE(nextSpy.count(), 1);
+
+    // 2. With Edit Mode enabled, mouse wheel must NEVER trigger navigation
+    nextSpy.clear();
+    prevSpy.clear();
+    viewer.setEditMode(true);
+
+    QWheelEvent wheelDownEdit(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, -240),
+                              Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QApplication::sendEvent(&viewer, &wheelDownEdit);
+    QCOMPARE(nextSpy.count(), 0);
+
+    QWheelEvent wheelUpEdit(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, 240),
+                            Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QApplication::sendEvent(&viewer, &wheelUpEdit);
+    QCOMPARE(prevSpy.count(), 0);
+}
+
+void TestImage::testPhotoStudioPanelTabsAndPipeline()
+{
+    ImageViewer viewer;
+    viewer.resize(900, 600);
+    viewer.show();
+
+    QImage img(200, 200, QImage::Format_ARGB32);
+    img.fill(QColor(100, 120, 140));
+    viewer.loadImage(img);
+
+    // 1. Open Studio panel
+    viewer.openStudioPanel();
+    QVERIFY(viewer.isStudioPanelVisible());
+    PhotoStudioPanel *panel = viewer.studioPanel();
+    QVERIFY(panel != nullptr);
+    QVERIFY(panel->testAttribute(Qt::WA_StyledBackground));
+
+    // Test tab navigation and theme updates
+    panel->setCurrentTab(1);
+    QCOMPARE(panel->currentTabIndex(), 1);
+    ThemeManager::setPreset(ThemePreset::ModernLight);
+    panel->updateTheme();
+    ThemeManager::setPreset(ThemePreset::BreezeDark);
+    panel->updateTheme();
+
+    panel->setCurrentTab(2);
+    QCOMPARE(panel->currentTabIndex(), 2);
+    panel->setCurrentTab(3);
+    QCOMPARE(panel->currentTabIndex(), 3);
+
+    // Initial defaults
+    QCOMPARE(panel->brightness(), 0);
+    QCOMPARE(panel->contrast(), 0);
+    QCOMPARE(panel->sharpness(), 0);
+    QCOMPARE(panel->blur(), 0);
+    QCOMPARE(panel->activePreset(), ImageProcessor::FilterPreset::Original);
+    QVERIFY(!panel->isAutoEnhanceEnabled());
+
+    // 2. Test Compare toggling via panel signal
+    emit panel->compareToggled(true);
+    emit panel->compareToggled(false);
+
+    // 3. Test Reset
+    panel->resetAll();
+    QCOMPARE(panel->brightness(), 0);
+    QCOMPARE(panel->activePreset(), ImageProcessor::FilterPreset::Original);
+
+    // 4. Close Studio panel
+    viewer.closeStudioPanel();
+    QVERIFY(!viewer.isStudioPanelVisible());
+}
+
+void TestImage::testLazyStudioPanelAndRevert()
+{
+    ImageViewer viewer;
+    viewer.resize(800, 600);
+    viewer.show();
+
+    // Verify studio panel is initially nullptr (lazy loaded)
+    QCOMPARE(viewer.findChild<PhotoStudioPanel*>(), nullptr);
+    QVERIFY(!viewer.isStudioPanelVisible());
+
+    // Create a test image
+    QImage img(200, 200, QImage::Format_RGB32);
+    img.fill(Qt::blue);
+    viewer.loadImage(img);
+    QVERIFY(!viewer.isModified());
+
+    // Open studio panel -> lazily instantiated
+    viewer.openStudioPanel();
+    QVERIFY(viewer.findChild<PhotoStudioPanel*>() != nullptr);
+    QVERIFY(viewer.isStudioPanelVisible());
+
+    // Modify the image
+    viewer.rotateClockwise();
+    QVERIFY(viewer.isModified());
+
+    // Revert / Discard by reloading original
+    viewer.loadImage(img);
+    viewer.setModified(false);
+    QVERIFY(!viewer.isModified());
+}
+
+void TestImage::testInstantAlpha()
+{
+    // 1. Null image check
+    QImage nullImg;
+    QVERIFY(ImageProcessor::instantAlpha(nullImg).isNull());
+
+    // 2. Create test image: 100x100 white with a black square in the middle (50x50),
+    // and inside that black square, an inner white square (20x20).
+    QImage testImg(100, 100, QImage::Format_ARGB32);
+    testImg.fill(Qt::white);
+    QPainter p(&testImg);
+    p.fillRect(25, 25, 50, 50, Qt::black);
+    p.fillRect(40, 40, 20, 20, Qt::white);
+    p.end();
+
+    // 2a. Global keying (contiguousOnly = false): Both outer white and inner white become transparent!
+    QImage globalAlpha = ImageProcessor::instantAlpha(testImg, Qt::white, 10, false, QPoint(-1, -1), 0);
+    QCOMPARE(qAlpha(globalAlpha.pixel(5, 5)), 0);     // outer white is transparent
+    QCOMPARE(qAlpha(globalAlpha.pixel(30, 30)), 255); // black square is fully opaque
+    QCOMPARE(qAlpha(globalAlpha.pixel(50, 50)), 0);   // inner white is ALSO transparent
+
+    // 2b. Contiguous Flood-Fill (contiguousOnly = true): Outer white becomes transparent,
+    // but inner white loop is protected and remains 100% opaque!
+    QImage floodAlpha = ImageProcessor::instantAlpha(testImg, Qt::white, 10, true, QPoint(0, 0), 0);
+    QCOMPARE(qAlpha(floodAlpha.pixel(5, 5)), 0);     // outer white is transparent
+    QCOMPARE(qAlpha(floodAlpha.pixel(30, 30)), 255); // black square is fully opaque
+    QCOMPARE(qAlpha(floodAlpha.pixel(50, 50)), 255); // inner white loop is PRESERVED and opaque!
+
+    // 3. Tolerance test on off-white paper (#F1F5F9)
+    QImage offWhiteImg(50, 50, QImage::Format_ARGB32);
+    offWhiteImg.fill(QColor(QStringLiteral("#F1F5F9")));
+    QImage keyedOffWhite = ImageProcessor::instantAlpha(offWhiteImg, Qt::white, 20, false);
+    QCOMPARE(qAlpha(keyedOffWhite.pixel(10, 10)), 0);
 }
 
 QTEST_MAIN(TestImage)

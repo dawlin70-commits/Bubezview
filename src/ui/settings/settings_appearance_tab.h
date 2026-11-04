@@ -8,6 +8,7 @@
 #include <QWidget>
 
 class QComboBox;
+class QCheckBox;
 
 /**
  * @class SettingsAppearanceTab
@@ -47,4 +48,6 @@ private:
     QComboBox *m_comboTransition = nullptr;
     QComboBox *m_comboTransparency = nullptr;
     QComboBox *m_comboLanguage = nullptr;
+    QCheckBox *m_chkShowFolders = nullptr;
+    QCheckBox *m_chkRememberGeometry = nullptr;
 };

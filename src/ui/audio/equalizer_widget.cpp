@@ -293,7 +293,7 @@ void EqualizerWidget::setupUi()
     midLayout->addWidget(bandsGroup, 1);
 
     // --- Master & Spatial Tools Section ---
-    auto *masterGroup = new QGroupBox(tr("Master & Output"), this);
+    auto *masterGroup = new QGroupBox(tr("Master && Output"), this);
     auto *masterLayout = new QHBoxLayout(masterGroup);
     masterLayout->setContentsMargins(8, 8, 8, 8);
     masterLayout->setSpacing(10);
@@ -368,6 +368,57 @@ void EqualizerWidget::applyTheme()
         "QSlider::handle:vertical:hover {"
         "    background: #60a5fa;"
         "    border-color: #3b82f6;"
+        "}"
+        "QGroupBox {"
+        "    font-weight: 600;"
+        "    color: #cbd5e1;"
+        "    border: 1px solid rgba(255, 255, 255, 0.12);"
+        "    border-radius: 8px;"
+        "    margin-top: 10px;"
+        "    padding-top: 14px;"
+        "    padding-left: 10px;"
+        "    padding-right: 10px;"
+        "    padding-bottom: 8px;"
+        "}"
+        "QGroupBox::title {"
+        "    subcontrol-origin: margin;"
+        "    left: 14px;"
+        "    padding: 0 4px;"
+        "    color: #cbd5e1;"
+        "}"
+        "QLabel { color: #cbd5e1; }"
+        "QCheckBox { color: #cbd5e1; font-weight: 500; }"
+        "QPushButton {"
+        "    background: rgba(255, 255, 255, 0.06);"
+        "    border: 1px solid rgba(255, 255, 255, 0.15);"
+        "    border-radius: 6px;"
+        "    padding: 4px 10px;"
+        "    color: #f8fafc;"
+        "    font-size: 11px;"
+        "}"
+        "QPushButton:hover {"
+        "    background: rgba(255, 255, 255, 0.12);"
+        "    border-color: rgba(255, 255, 255, 0.25);"
+        "}"
+        "QPushButton:pressed {"
+        "    background: rgba(255, 255, 255, 0.18);"
+        "}"
+        "QPushButton:disabled {"
+        "    opacity: 0.35;"
+        "}"
+        "QComboBox {"
+        "    background: rgba(255, 255, 255, 0.06);"
+        "    border: 1px solid rgba(255, 255, 255, 0.15);"
+        "    border-radius: 6px;"
+        "    padding: 4px 10px;"
+        "    color: #f8fafc;"
+        "    font-size: 12px;"
+        "}"
+        "QComboBox::drop-down { border: none; width: 20px; }"
+        "QComboBox QAbstractItemView {"
+        "    background: #1e1e24;"
+        "    color: #f8fafc;"
+        "    selection-background-color: #2563eb;"
         "}"
     );
 }
@@ -485,6 +536,11 @@ void EqualizerWidget::onResetFlatClicked()
         EqualizerPreset flatPreset;
         applyPreset(flatPreset);
     }
+}
+
+void EqualizerWidget::resetToFlat()
+{
+    onResetFlatClicked();
 }
 
 void EqualizerWidget::onSliderValueChanged()
