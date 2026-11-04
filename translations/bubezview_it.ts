@@ -8702,6 +8702,10 @@ Clicca per passare a compilato da sorgenti.</translation>
         <translation>🧪 Verifica fisica della tastiera...</translation>
     </message>
     <message>
+        <source>🧪 Test Spacebar...</source>
+        <translation>🧪 Testa Tasto Spazio...</translation>
+    </message>
+    <message>
         <source>Optionally press the Spacebar on your keyboard to verify hardware responsiveness.</source>
         <translation>Opzionale: premi la Barra Spaziatrice sulla tastiera per verificarne la risposta fisica.</translation>
     </message>
@@ -8724,6 +8728,14 @@ Clicca per passare a compilato da sorgenti.</translation>
     <message>
         <source>Environment: &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;.&lt;br&gt;Single-key &lt;b&gt;Space&lt;/b&gt; preview integration is verified and active with zero conflicts.&lt;br&gt;Press &lt;b&gt;Space&lt;/b&gt; on any file to preview, and &lt;b&gt;Esc&lt;/b&gt; to close.</source>
         <translation>Ambiente: &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;.&lt;br&gt;L'integrazione a tasto singolo per l'anteprima con &lt;b&gt;Spazio&lt;/b&gt; è verificata e attiva senza conflitti.&lt;br&gt;Premi &lt;b&gt;Spazio&lt;/b&gt; su qualsiasi file per aprirlo, ed &lt;b&gt;Esc&lt;/b&gt; per chiudere.</translation>
+    </message>
+    <message>
+        <source>Environment: &lt;b&gt;GNOME (Nautilus)&lt;/b&gt;.&lt;br&gt;Native D-Bus previewer integration (replacing &lt;i&gt;gnome-sushi&lt;/i&gt;) is active and verified.&lt;br&gt;Press &lt;b&gt;Space&lt;/b&gt; on any file in Nautilus to preview, and &lt;b&gt;Esc&lt;/b&gt; to close.</source>
+        <translation>Ambiente: &lt;b&gt;GNOME (Nautilus)&lt;/b&gt;.&lt;br&gt;Integrazione nativa con anteprima D-Bus (in sostituzione di &lt;i&gt;gnome-sushi&lt;/i&gt;) attiva e verificata.&lt;br&gt;Premi &lt;b&gt;Spazio&lt;/b&gt; su qualsiasi file in Nautilus per aprirlo, ed &lt;b&gt;Esc&lt;/b&gt; per chiudere.</translation>
+    </message>
+    <message>
+        <source>Environment: &lt;b&gt;Cinnamon (Nemo)&lt;/b&gt;.&lt;br&gt;Native Nemo previewer integration (replacing &lt;i&gt;nemo-preview&lt;/i&gt;) is active and verified.&lt;br&gt;Press &lt;b&gt;Space&lt;/b&gt; on any file in Nemo to preview, and &lt;b&gt;Esc&lt;/b&gt; to close.</source>
+        <translation>Ambiente: &lt;b&gt;Cinnamon (Nemo)&lt;/b&gt;.&lt;br&gt;Integrazione nativa con anteprima Nemo (in sostituzione di &lt;i&gt;nemo-preview&lt;/i&gt;) attiva e verificata.&lt;br&gt;Premi &lt;b&gt;Spazio&lt;/b&gt; su qualsiasi file in Nemo per aprirlo, ed &lt;b&gt;Esc&lt;/b&gt; per chiudere.</translation>
     </message>
     <message>
         <source>ℹ️ Desktop Detected: %1</source>

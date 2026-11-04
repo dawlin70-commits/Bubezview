@@ -748,6 +748,10 @@ void TestInteractive::testFilmstripAndPdfDarkMode()
 
 void TestInteractive::testFirstRunWizard()
 {
+    // 1. Test in KDE Plasma / GNOME environment: Spacebar test passes automatically
+    qputenv("XDG_CURRENT_DESKTOP", "KDE");
+    qputenv("DESKTOP_SESSION", "plasma");
+
     FirstRunWizard wizard;
     wizard.resize(740, 540);
     wizard.show();
@@ -759,10 +763,10 @@ void TestInteractive::testFirstRunWizard()
     QTest::qWait(100);
     wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page0_welcome.png");
 
-    // Advance to Page 1 (Dedicated Spacebar Test & Trigger Fallback)
+    // Advance to Page 1 (Dedicated Spacebar Test & Trigger Fallback - Auto Passed)
     wizard.next();
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Spacebar));
-    QTest::qWait(100);
+    QTest::qWait(150);
     wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page1_spacebar.png");
 
     // Advance to Page 2 (Additional Options: Modules, Performance & Navigation)
@@ -772,6 +776,17 @@ void TestInteractive::testFirstRunWizard()
     wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page2_modules.png");
 
     wizard.close();
+
+    // 2. Second test: Generic / Other DE environment (showing fallback trigger script)
+    qputenv("XDG_CURRENT_DESKTOP", "XFCE");
+    qputenv("DESKTOP_SESSION", "xfce");
+    FirstRunWizard wizardFallback;
+    wizardFallback.resize(740, 540);
+    wizardFallback.show();
+    wizardFallback.next();
+    QTest::qWait(150);
+    wizardFallback.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page1_spacebar_fallback.png");
+    wizardFallback.close();
 }
 
 void TestInteractive::testUpdateNotificationUI()
