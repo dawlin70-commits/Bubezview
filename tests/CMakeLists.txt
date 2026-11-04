@@ -173,6 +173,10 @@ add_executable(test_interactive EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_typewriter_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_watermark_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_merge_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_repair_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_image_extract_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_studio_panel.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp

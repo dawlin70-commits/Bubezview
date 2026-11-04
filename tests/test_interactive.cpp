@@ -749,33 +749,27 @@ void TestInteractive::testFilmstripAndPdfDarkMode()
 void TestInteractive::testFirstRunWizard()
 {
     FirstRunWizard wizard;
-    wizard.resize(640, 500);
+    wizard.resize(740, 540);
     wizard.show();
     QVERIFY(QTest::qWaitForWindowExposed(&wizard));
 
-    // Verify all 6 pages exist
-    QCOMPARE(wizard.pageIds().count(), 6);
+    // Verify 3 onboarding wizard pages (Welcome -> Spacebar Test -> Additional Options)
+    QCOMPARE(wizard.pageIds().count(), 3);
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Welcome));
     QTest::qWait(100);
+    wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page0_welcome.png");
 
-    // Advance sequentially through each page
+    // Advance to Page 1 (Dedicated Spacebar Test & Trigger Fallback)
     wizard.next();
-    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_CpuOptimization));
+    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Spacebar));
     QTest::qWait(100);
+    wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page1_spacebar.png");
 
+    // Advance to Page 2 (Additional Options: Modules, Performance & Navigation)
     wizard.next();
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Modules));
     QTest::qWait(100);
-
-    wizard.next();
-    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Appearance));
-
-    wizard.next();
-    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Behavior));
-
-    wizard.next();
-    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Summary));
-    QTest::qWait(100);
+    wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page2_modules.png");
 
     wizard.close();
 }

@@ -8465,6 +8465,238 @@ Clicca per passare a compilato da sorgenti.</translation>
         <source>Click 'Finish &amp; Launch BubezView' to apply these settings and begin!</source>
         <translation>Clicca 'Termina e avvia BubezView' per applicare le preferenze e iniziare!</translation>
     </message>
+    <message>
+        <source>⚡ Quick Start (Recommended)</source>
+        <translation>⚡ Avvio Rapido (Consigliato)</translation>
+    </message>
+    <message>
+        <source>Modules &amp;&amp; Options &gt;</source>
+        <translation>Moduli e Opzioni &gt;</translation>
+    </message>
+    <message>
+        <source>Ultra-fast native Linux file viewer and instant preview studio.</source>
+        <translation>Visualizzatore file nativo ultraveloce e studio di anteprima istantanea per Linux.</translation>
+    </message>
+    <message>
+        <source>&lt;span style='font-size: 14px; font-weight: 700;'&gt;Ready for Instant File Previews&lt;/span&gt;&lt;br&gt;&lt;span style='font-size: 12px;'&gt;Core viewers (PDF, Images, Text, Archives, Audio/Video) work out of the box. Heavy studio tools are installed on demand with a single click only when you need them.&lt;/span&gt;</source>
+        <translation>&lt;span style='font-size: 14px; font-weight: 700;'&gt;Pronto per l'anteprima istantanea dei tuoi file&lt;/span&gt;&lt;br&gt;&lt;span style='font-size: 12px;'&gt;I visualizzatori base (PDF, Immagini, Testo, Archivi, Audio/Video) sono subito pronti. Gli strumenti studio avanzati si installano al volo con un solo clic solo quando ti servono.&lt;/span&gt;</translation>
+    </message>
+    <message>
+        <source>🚀 C++17 / Qt6 Native</source>
+        <translation>🚀 C++17 / Qt6 Nativo</translation>
+    </message>
+    <message>
+        <source>1. Instant Preview Activation (Essential)</source>
+        <translation>1. Attivazione Anteprima Istantanea (Essenziale)</translation>
+    </message>
+    <message>
+        <source>In &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;, press &lt;b&gt;Space&lt;/b&gt; on any file to preview it immediately, and &lt;b&gt;Esc&lt;/b&gt; to close.</source>
+        <translation>In &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;, premi &lt;b&gt;Spazio&lt;/b&gt; su qualsiasi file per aprirne subito l'anteprima, ed &lt;b&gt;Esc&lt;/b&gt; per chiudere.</translation>
+    </message>
+    <message>
+        <source>On &lt;b&gt;%1&lt;/b&gt;, bind your preferred shortcut (e.g. &lt;b&gt;Space&lt;/b&gt; or &lt;b&gt;Ctrl + Space&lt;/b&gt;) in your system keyboard settings to the BubezView trigger script below:</source>
+        <translation>Su &lt;b&gt;%1&lt;/b&gt;, associa la tua scorciatoia preferita (es. &lt;b&gt;Spazio&lt;/b&gt; o &lt;b&gt;Ctrl + Spazio&lt;/b&gt;) nelle impostazioni tastiera di sistema allo script trigger qui sotto:</translation>
+    </message>
+    <message>
+        <source>🧪 Test Spacebar Key...</source>
+        <translation>🧪 Testa Tasto Spazio...</translation>
+    </message>
+    <message>
+        <source>&lt;span style='color:#64748b; font-size:11px;'&gt;Click to verify Spacebar capture and check for Dolphin conflicts.&lt;/span&gt;</source>
+        <translation>&lt;span style='color:#64748b; font-size:11px;'&gt;Clicca per verificare la cattura del tasto Spazio e controllare conflitti in Dolphin.&lt;/span&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;span style='color:#64748b; font-size:11px;'&gt;Optional: test Spacebar responsiveness.&lt;/span&gt;</source>
+        <translation>&lt;span style='color:#64748b; font-size:11px;'&gt;Opzionale: verifica la risposta della barra spaziatrice.&lt;/span&gt;</translation>
+    </message>
+    <message>
+        <source>Use Ctrl + Space fallback via trigger_bubez.sh (if Space is reserved in Dolphin)</source>
+        <translation>Usa fallback Ctrl + Spazio tramite trigger_bubez.sh (se Spazio è riservato in Dolphin)</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Trigger Script:&lt;/b&gt; &lt;code style='color:#0284c7;'&gt;%1&lt;/code&gt;</source>
+        <translation>&lt;b&gt;Script Trigger:&lt;/b&gt; &lt;code style='color:#0284c7;'&gt;%1&lt;/code&gt;</translation>
+    </message>
+    <message>
+        <source>📋 Copy Path</source>
+        <translation>📋 Copia Percorso</translation>
+    </message>
+    <message>
+        <source>✅ Copied!</source>
+        <translation>✅ Copiato!</translation>
+    </message>
+    <message>
+        <source>&lt;b style='color:#f59e0b;'&gt;⚠️ Spacebar conflict reported — trigger fallback enabled below:&lt;/b&gt;</source>
+        <translation>&lt;b style='color:#f59e0b;'&gt;⚠️ Conflitto tasto Spazio rilevato — fallback trigger attivato qui sotto:&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>2. Visual Style &amp;&amp; Theme (Click for Live Preview)</source>
+        <translation>2. Stile Visivo e Tema (Clicca per Anteprima dal Vivo)</translation>
+    </message>
+    <message>
+        <source>🌙 Dark Slate</source>
+        <translation>🌙 Scuro Ardesia</translation>
+    </message>
+    <message>
+        <source>Deep slate (#22262b)</source>
+        <translation>Ardesia scuro (#22262b)</translation>
+    </message>
+    <message>
+        <source>💎 Breeze Dark</source>
+        <translation>💎 Breeze Dark</translation>
+    </message>
+    <message>
+        <source>KDE dark (#181b1d)</source>
+        <translation>Antracite KDE (#181b1d)</translation>
+    </message>
+    <message>
+        <source>☀️ Modern Light</source>
+        <translation>☀️ Chiaro Moderno</translation>
+    </message>
+    <message>
+        <source>Warm silver (#ececf0)</source>
+        <translation>Argento chiaro (#ececf0)</translation>
+    </message>
+    <message>
+        <source>🌤️ Breeze Light</source>
+        <translation>🌤️ Breeze Light</translation>
+    </message>
+    <message>
+        <source>Clean light (#eff0f1)</source>
+        <translation>Chiaro pulito (#eff0f1)</translation>
+    </message>
+    <message>
+        <source>Show bottom thumbnail filmstrip when browsing folders or multi-page PDFs</source>
+        <translation>Mostra la barra inferiore delle miniature (filmstrip) per cartelle o PDF multipagina</translation>
+    </message>
+    <message>
+        <source>Modules, Performance &amp; Navigation</source>
+        <translation>Moduli, Prestazioni e Navigazione</translation>
+    </message>
+    <message>
+        <source>Lightweight by default — extra studio tools are installed on demand when you use them.</source>
+        <translation>Leggero di default — gli strumenti studio extra si installano al volo quando li usi.</translation>
+    </message>
+    <message>
+        <source>1. Functional Modules &amp;&amp; On-Demand Extensions</source>
+        <translation>1. Moduli Funzionali ed Estensioni On-Demand</translation>
+    </message>
+    <message>
+        <source>⚙️ Individual Extensions...</source>
+        <translation>⚙️ Singole Estensioni...</translation>
+    </message>
+    <message>
+        <source>2. Hardware Performance Profile</source>
+        <translation>2. Profilo Prestazioni Hardware</translation>
+    </message>
+    <message>
+        <source>📦 System Packages (Instant, zero compile wait)</source>
+        <translation>📦 Pacchetti di Sistema (Istantaneo, zero attese)</translation>
+    </message>
+    <message>
+        <source>🚀 Native CPU Tuning (-O3 -march=native)</source>
+        <translation>🚀 Ottimizzazione CPU Nativa (-O3 -march=native)</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;✅ Current binary is already built with native -O3 optimizations (zero extra compile wait).&lt;/i&gt;</source>
+        <translation>&lt;i&gt;✅ Il binario attuale è già compilato con ottimizzazioni native -O3 (nessuna attesa).&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;ℹ️ BubezView will compile with aggressive -O3 native tuning for your CPU upon finish.&lt;/i&gt;</source>
+        <translation>&lt;i&gt;ℹ️ BubezView compilerà con ottimizzazioni native -O3 per la tua CPU al termine.&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>3. Navigation &amp;&amp; Window Memory</source>
+        <translation>3. Navigazione e Memoria Finestra</translation>
+    </message>
+    <message>
+        <source>Press Escape (Esc) to close the viewer</source>
+        <translation>Premi Esc per chiudere istantaneamente il visualizzatore</translation>
+    </message>
+    <message>
+        <source>Remember window size and position</source>
+        <translation>Ricorda dimensioni e posizione della finestra</translation>
+    </message>
+    <message>
+        <source>Preload adjacent files for instant browsing</source>
+        <translation>Precarica i file adiacenti per una navigazione istantanea</translation>
+    </message>
+    <message>
+        <source>Release preview cache when idle (save RAM)</source>
+        <translation>Rilascia la cache quando inattivo (risparmia RAM)</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;⚡ Minimal &amp;amp; On-Demand (Active):&lt;/b&gt; Core viewers (&lt;b&gt;PDF, Images, Text, Archives, Audio/Video&lt;/b&gt;) are ready immediately. Extra studio tools (&lt;i&gt;PDF Repair, OCR, LibreOffice, Digital Signatures, 7-Zip, MPV GPU&lt;/i&gt;) remain lightweight and ask for 1-click installation only when you use them.</source>
+        <translation>&lt;b&gt;⚡ Minimo e On-Demand (Attivo):&lt;/b&gt; I visualizzatori base (&lt;b&gt;PDF, Immagini, Testo, Archivi, Audio/Video&lt;/b&gt;) sono subito pronti. Gli strumenti studio extra (&lt;i&gt;Ripara PDF, OCR, LibreOffice, Firme Digitali, 7-Zip, MPV GPU&lt;/i&gt;) restano leggeri e chiedono l'installazione in 1 clic solo quando li usi.</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;🚀 Complete Suite:&lt;/b&gt; All optional studio extensions (&lt;i&gt;LibreOffice, Tesseract OCR, QPDF Repair, Digital Signatures, MPV GPU, 10-Band Equalizer, 7-Zip&lt;/i&gt;) will be verified and installed now.</source>
+        <translation>&lt;b&gt;🚀 Suite Completa:&lt;/b&gt; Tutte le estensioni studio opzionali (&lt;i&gt;LibreOffice, OCR Tesseract, Ripara QPDF, Firme Digitali, MPV GPU, Equalizzatore 10 bande, 7-Zip&lt;/i&gt;) verranno verificate e installate ora.</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;⚙️ Custom Selection:&lt;/b&gt; Pre-installing extensions for: &lt;b&gt;%1&lt;/b&gt;. All other tools remain available on demand.</source>
+        <translation>&lt;b&gt;⚙️ Selezione Personalizzata:&lt;/b&gt; Pre-installazione estensioni per: &lt;b&gt;%1&lt;/b&gt;. Tutti gli altri strumenti restano disponibili on-demand.</translation>
+    </message>
+    <message>
+        <source>⚡ Minimal &amp;&amp; On-Demand (Recommended)</source>
+        <translation>⚡ Minimo e On-Demand (Consigliato)</translation>
+    </message>
+    <message>
+        <source>Additional Options &gt;</source>
+        <translation>Opzioni Aggiuntive &gt;</translation>
+    </message>
+    <message>
+        <source>Instant Preview Setup</source>
+        <translation>Configurazione Anteprima Istantanea</translation>
+    </message>
+    <message>
+        <source>Press Space on any file in your file manager to open an immediate preview.</source>
+        <translation>Premi Spazio su qualunque file nel gestore file per aprire subito l'anteprima.</translation>
+    </message>
+    <message>
+        <source>Spacebar Key Capture Test</source>
+        <translation>Test Cattura Tasto Barra Spaziatrice</translation>
+    </message>
+    <message>
+        <source>In &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;, pressing &lt;b&gt;Space&lt;/b&gt; on any file opens its instant preview, and &lt;b&gt;Esc&lt;/b&gt; closes it.&lt;br&gt;Click below to verify that Spacebar capture is working properly.</source>
+        <translation>In &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;, premendo &lt;b&gt;Spazio&lt;/b&gt; su qualsiasi file ne apri l'anteprima istantanea, ed &lt;b&gt;Esc&lt;/b&gt; la chiude.&lt;br&gt;Fai clic sotto per verificare che la cattura del tasto Spazio funzioni correttamente.</translation>
+    </message>
+    <message>
+        <source>On &lt;b&gt;%1&lt;/b&gt;, click below to verify Spacebar key capture in your session.</source>
+        <translation>Su &lt;b&gt;%1&lt;/b&gt;, fai clic sotto per verificare la cattura del tasto Spazio nella tua sessione.</translation>
+    </message>
+    <message>
+        <source>🧪 Test Spacebar Key</source>
+        <translation>🧪 Testa Tasto Spazio</translation>
+    </message>
+    <message>
+        <source>&lt;span style='color: #64748b; font-size: 11px;'&gt;Click the test button above and press the Spacebar on your keyboard.&lt;/span&gt;</source>
+        <translation>&lt;span style='color: #64748b; font-size: 11px;'&gt;Fai clic sul pulsante sopra e premi la Barra Spaziatrice sulla tastiera.&lt;/span&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Trigger Fallback:&lt;/b&gt; In your system keyboard shortcuts (KDE Plasma / GNOME / XFCE Shortcuts), bind your desired shortcut (e.g. &lt;b&gt;Ctrl + Space&lt;/b&gt;) to this script:</source>
+        <translation>&lt;b&gt;Fallback Trigger:&lt;/b&gt; Nelle scorciatoie da tastiera di sistema (Scorciatoie KDE Plasma / GNOME / XFCE), associa la scorciatoia desiderata (es. &lt;b&gt;Ctrl + Spazio&lt;/b&gt;) a questo script:</translation>
+    </message>
+    <message>
+        <source>&lt;b style='color:#10b981; font-size: 12px;'&gt;✅ Spacebar verified and functioning properly!&lt;/b&gt;</source>
+        <translation>&lt;b style='color:#10b981; font-size: 12px;'&gt;✅ Barra Spaziatrice verificata e funzionante con successo!&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;b style='color:#f59e0b; font-size: 12px;'&gt;⚠️ Spacebar conflict or issue reported — copy the trigger script below to bind in system shortcuts:&lt;/b&gt;</source>
+        <translation>&lt;b style='color:#f59e0b; font-size: 12px;'&gt;⚠️ Conflitto tasto Spazio o problema segnalato — copia lo script trigger qui sotto per associarlo nelle scorciatoie di sistema:&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>💡 &lt;b&gt;Ready to go?&lt;/b&gt; Click &lt;b&gt;⚡ Quick Start (Recommended)&lt;/b&gt; below to launch immediately, or &lt;b&gt;Additional Options &amp;gt;&lt;/b&gt; to customize background modules and CPU tuning.</source>
+        <translation>💡 &lt;b&gt;Pronto per iniziare?&lt;/b&gt; Fai clic su &lt;b&gt;⚡ Avvio Rapido (Consigliato)&lt;/b&gt; qui sotto per avviare subito, oppure su &lt;b&gt;Opzioni Aggiuntive &amp;gt;&lt;/b&gt; per personalizzare i moduli e la CPU.</translation>
+    </message>
+    <message>
+        <source>Fine-tune background modules, CPU optimization, and window behavior.</source>
+        <translation>Personalizza i moduli in background, l'ottimizzazione CPU e il comportamento finestra.</translation>
+    </message>
+    <message>
+        <source>Visual Style &amp;&amp; Theme (Click for Live Preview)</source>
+        <translation>Stile Visivo e Tema (Clicca per Anteprima dal Vivo)</translation>
+    </message>
 </context>
 <context>
     <name>FlippableToolbar</name>

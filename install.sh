@@ -133,6 +133,8 @@ check_dependencies() {
             pacman -Q qt6-svg >/dev/null 2>&1 || missing_pkgs+=("qt6-svg")
             pacman -Q qt6-multimedia >/dev/null 2>&1 || missing_pkgs+=("qt6-multimedia")
             pacman -Q qrencode >/dev/null 2>&1 || missing_pkgs+=("qrencode")
+            pacman -Q poppler-qt6 >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6")
+            pacman -Q libarchive >/dev/null 2>&1 || missing_pkgs+=("libarchive")
             ;;
         apt)
             command -v cmake >/dev/null 2>&1 || missing_pkgs+=("cmake")
@@ -148,6 +150,8 @@ check_dependencies() {
             fi
             dpkg -s qt6-multimedia-dev >/dev/null 2>&1 || missing_pkgs+=("qt6-multimedia-dev")
             dpkg -s libqrencode-dev >/dev/null 2>&1 || missing_pkgs+=("libqrencode-dev")
+            dpkg -s libpoppler-qt6-dev >/dev/null 2>&1 || missing_pkgs+=("libpoppler-qt6-dev")
+            dpkg -s libarchive-dev >/dev/null 2>&1 || missing_pkgs+=("libarchive-dev")
             ;;
         dnf)
             command -v cmake >/dev/null 2>&1 || missing_pkgs+=("cmake")
@@ -157,6 +161,8 @@ check_dependencies() {
             rpm -q qt6-qtsvg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtsvg-devel")
             rpm -q qt6-qtmultimedia-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-qtmultimedia-devel")
             rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
+            rpm -q poppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("poppler-qt6-devel")
+            rpm -q libarchive-devel >/dev/null 2>&1 || missing_pkgs+=("libarchive-devel")
             ;;
         zypper)
             command -v cmake >/dev/null 2>&1 || missing_pkgs+=("cmake")
@@ -166,6 +172,8 @@ check_dependencies() {
             rpm -q qt6-svg-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-svg-devel")
             rpm -q qt6-multimedia-devel >/dev/null 2>&1 || missing_pkgs+=("qt6-multimedia-devel")
             rpm -q qrencode-devel >/dev/null 2>&1 || missing_pkgs+=("qrencode-devel")
+            rpm -q libpoppler-qt6-devel >/dev/null 2>&1 || missing_pkgs+=("libpoppler-qt6-devel")
+            rpm -q libarchive-devel >/dev/null 2>&1 || missing_pkgs+=("libarchive-devel")
             ;;
     esac
 
