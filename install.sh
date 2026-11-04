@@ -6,11 +6,18 @@
 
 set -e
 
+# Ensure valid absolute shell path for sudo in containers / distrobox
+if [ "$SHELL" = "bash" ] || [ "$SHELL" = "sh" ] || [ -z "$SHELL" ]; then
+    export SHELL="/bin/bash"
+fi
+
 APP_NAME="BubezView"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/build"
 if [ -f "/etc/debian_version" ]; then
     BUILD_DIR="${SCRIPT_DIR}/build_deb"
+elif [ -f "/etc/fedora-release" ]; then
+    BUILD_DIR="${SCRIPT_DIR}/build_fedora"
 fi
 
 # UI Mode Detection (GUI dialogs if available, fallback to CLI)
@@ -102,10 +109,10 @@ install_packages() {
     echo -e "${BLUE}${BOLD}[*] Installing dependencies with ${PM}...${NC}"
     if [ "$EUID" -eq 0 ]; then
         bash -c "$install_cmd"
-    elif command -v pkexec >/dev/null 2>&1; then
-        pkexec bash -c "$install_cmd"
     elif command -v sudo >/dev/null 2>&1; then
         sudo bash -c "$install_cmd"
+    elif command -v pkexec >/dev/null 2>&1; then
+        pkexec bash -c "$install_cmd"
     else
         ui_error "Root Privileges Required" "Cannot execute package installation without root or sudo permissions."
         return 1

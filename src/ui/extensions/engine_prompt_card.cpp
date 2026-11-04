@@ -174,6 +174,19 @@ void EnginePromptCard::onActivateBinaryClicked()
             emit engineActivated(m_filePath);
             return;
         }
+
+        // If package was installed but the plugin module needs building, trigger it seamlessly
+        if (PackageManagerHelper::isCompilableEngine(compId)) {
+            m_lblStatus->setText(tr("Compiling engine module..."));
+            if (PackageManagerHelper::triggerEngineCompilation(compId, this)) {
+                PluginManager::instance().discoverPlugins();
+                if (PluginManager::instance().isEngineAvailable(m_category)) {
+                    m_lblStatus->setText(tr("🟢 Engine activated successfully!"));
+                    emit engineActivated(m_filePath);
+                    return;
+                }
+            }
+        }
     }
 
     m_lblStatus->setText(tr("🟡 Engine is not yet active. Check system packages or compile from source."));
