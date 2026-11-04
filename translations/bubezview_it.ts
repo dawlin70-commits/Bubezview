@@ -8697,6 +8697,42 @@ Clicca per passare a compilato da sorgenti.</translation>
         <source>Visual Style &amp;&amp; Theme (Click for Live Preview)</source>
         <translation>Stile Visivo e Tema (Clicca per Anteprima dal Vivo)</translation>
     </message>
+    <message>
+        <source>🧪 Physical Keyboard Check...</source>
+        <translation>🧪 Verifica fisica della tastiera...</translation>
+    </message>
+    <message>
+        <source>Optionally press the Spacebar on your keyboard to verify hardware responsiveness.</source>
+        <translation>Opzionale: premi la Barra Spaziatrice sulla tastiera per verificarne la risposta fisica.</translation>
+    </message>
+    <message>
+        <source>✅ Physical Spacebar Press Verified!</source>
+        <translation>✅ Pressione fisica del tasto Spazio verificata!</translation>
+    </message>
+    <message>
+        <source>Space key capture is confirmed and working on your hardware.</source>
+        <translation>L'intercettazione del tasto Spazio è confermata e funzionante sul tuo hardware.</translation>
+    </message>
+    <message>
+        <source>⚠️ Spacebar conflict reported — fallback trigger enabled below:</source>
+        <translation>⚠️ Conflitto tasto Spazio segnalato — fallback trigger attivato qui sotto:</translation>
+    </message>
+    <message>
+        <source>✅ Automatic Test Passed — Spacebar Ready!</source>
+        <translation>✅ Test automatico superato — Tasto Spazio pronto!</translation>
+    </message>
+    <message>
+        <source>Environment: &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;.&lt;br&gt;Single-key &lt;b&gt;Space&lt;/b&gt; preview integration is verified and active with zero conflicts.&lt;br&gt;Press &lt;b&gt;Space&lt;/b&gt; on any file to preview, and &lt;b&gt;Esc&lt;/b&gt; to close.</source>
+        <translation>Ambiente: &lt;b&gt;KDE Plasma (Dolphin)&lt;/b&gt;.&lt;br&gt;L'integrazione a tasto singolo per l'anteprima con &lt;b&gt;Spazio&lt;/b&gt; è verificata e attiva senza conflitti.&lt;br&gt;Premi &lt;b&gt;Spazio&lt;/b&gt; su qualsiasi file per aprirlo, ed &lt;b&gt;Esc&lt;/b&gt; per chiudere.</translation>
+    </message>
+    <message>
+        <source>ℹ️ Desktop Detected: %1</source>
+        <translation>ℹ️ Ambiente Rilevato: %1</translation>
+    </message>
+    <message>
+        <source>Your desktop environment requires a global keyboard shortcut.&lt;br&gt;The trigger script below has been configured and is ready to copy into your system shortcut settings.</source>
+        <translation>Il tuo ambiente desktop richiede una scorciatoia globale di sistema.&lt;br&gt;Lo script trigger qui sotto è configurato ed è pronto da copiare nelle impostazioni scorciatoie di sistema.</translation>
+    </message>
 </context>
 <context>
     <name>FlippableToolbar</name>

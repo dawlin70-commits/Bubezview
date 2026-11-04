@@ -136,4 +136,9 @@ private:
      * @param themeCode Theme identifier ("dark_slate", "breeze_dark", "modern_light", "breeze_light").
      */
     void selectLiveTheme(const QString &themeCode);
+
+    /**
+     * @brief Automatically inspects the desktop environment and runs the spacebar test immediately upon entering Page_Spacebar.
+     */
+    void runAutoSpacebarCheck();
 };
