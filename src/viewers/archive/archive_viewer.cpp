@@ -36,6 +36,7 @@
 #include <QEventLoop>
 #include <QProcess>
 #include <QStandardPaths>
+#include <QSettings>
 #include <QTemporaryFile>
 #include <QTextStream>
 #include <QSet>
@@ -1477,6 +1478,44 @@ bool isNativeLinuxArchive(const QString &filePath, const QString &formatName, co
 
     return false;
 }
+
+/**
+ * @brief Checks if an archive is in RAR 5 format.
+ * Inspects format name and verifies the 8-byte RAR5 magic signature (0x52 0x61 0x72 0x21 0x1A 0x07 0x01 0x00).
+ */
+bool isRar5Archive(const QString &filePath, const QString &formatName)
+{
+    if (formatName.contains(QStringLiteral("RAR5"), Qt::CaseInsensitive) ||
+        formatName.contains(QStringLiteral("RAR 5"), Qt::CaseInsensitive)) {
+        return true;
+    }
+    if (filePath.endsWith(QStringLiteral(".rar"), Qt::CaseInsensitive)) {
+        QFile file(filePath);
+        if (file.open(QIODevice::ReadOnly)) {
+            QByteArray header = file.read(8);
+            file.close();
+            const char rar5Magic[8] = {'R', 'a', 'r', '!', 0x1A, 0x07, 0x01, 0x00};
+            if (header.size() >= 8 && memcmp(header.constData(), rar5Magic, 8) == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Checks if a 7z archive contains encrypted entries.
+ */
+bool isEncrypted7z(const QString &filePath, const QString &formatName, const QList<ArchiveItemRecord> &entries)
+{
+    const QString lower = filePath.toLower();
+    const bool is7z = lower.endsWith(QStringLiteral(".7z")) || formatName.contains(QStringLiteral("7-Zip"), Qt::CaseInsensitive);
+    if (!is7z) return false;
+    for (const auto &rec : entries) {
+        if (rec.isEncrypted) return true;
+    }
+    return false;
+}
 } // namespace
 
 void ArchiveViewer::extractAll(const QString &destDir)
@@ -1516,12 +1555,15 @@ void ArchiveViewer::extractFiles(const QStringList &filterPaths, const QString &
     }
 
     const bool isLinuxArchive = isNativeLinuxArchive(m_currentArchiveFilePath, m_formatName, m_entries);
+    const bool isMandatory7z = isRar5Archive(m_currentArchiveFilePath, m_formatName) ||
+                               isEncrypted7z(m_currentArchiveFilePath, m_formatName, m_entries);
     QString sevenZBin = find7zBinary();
 
-    if (!isLinuxArchive && sevenZBin.isEmpty()) {
+    // 1. Mandatory 7-Zip requirement: RAR 5 and encrypted archives (cannot be decompressed by libarchive)
+    if (isMandatory7z && sevenZBin.isEmpty()) {
         QMessageBox prompt(this);
-        prompt.setWindowTitle(tr("7-Zip Engine Recommended"));
-        prompt.setIcon(QMessageBox::Information);
+        prompt.setWindowTitle(tr("7-Zip Engine Required"));
+        prompt.setIcon(QMessageBox::Warning);
 
         const QString distro = PackageManagerHelper::distroDisplayName();
         const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("7zip"));
@@ -1529,27 +1571,73 @@ void ArchiveViewer::extractFiles(const QStringList &filterPaths, const QString &
         QString ext = fi.suffix().toUpper();
         if (ext.isEmpty()) ext = tr("this");
 
-        prompt.setText(tr("<h3>7-Zip Engine Recommended</h3>"
-                          "<p>For maximum speed, multi-core extraction, and full compatibility with <b>%1</b> archives, <b>7-Zip</b> (<code>7zz</code>) is recommended.</p>"
+        prompt.setText(tr("<h3>7-Zip Engine Required</h3>"
+                          "<p>This archive uses the <b>%1</b> compression format (RAR 5 or encrypted archive), which requires <b>7-Zip</b> (<code>7zz</code>) to decompress.</p>"
                           "<p>Detected distribution: <b>%2</b></p>"
                           "<p>Manual installation command:<br><code>%3</code></p>")
                           .arg(ext, distro, installCmd));
 
         QPushButton *btnInstall = prompt.addButton(tr("Install 7-Zip"), QMessageBox::AcceptRole);
-        QPushButton *btnContinue = prompt.addButton(tr("Continue with libarchive"), QMessageBox::ActionRole);
         QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
-        Q_UNUSED(btnContinue);
+        Q_UNUSED(btnCancel);
         prompt.setDefaultButton(btnInstall);
 
         prompt.exec();
 
-        if (prompt.clickedButton() == btnCancel) {
-            return;
-        }
-
         if (prompt.clickedButton() == btnInstall) {
             if (PackageManagerHelper::installComponentInteractive(QStringLiteral("7zip"), this)) {
                 sevenZBin = find7zBinary();
+            }
+        }
+
+        if (sevenZBin.isEmpty()) {
+            return;
+        }
+    }
+    // 2. Optional performance recommendation: standard archives (ZIP, TAR, unencrypted 7z, ISO, etc.)
+    else if (!isLinuxArchive && sevenZBin.isEmpty()) {
+        QSettings settings;
+        const bool skipPrompt = settings.value(QStringLiteral("archive/skip_7zip_prompt"), false).toBool();
+        if (!skipPrompt) {
+            QMessageBox prompt(this);
+            prompt.setWindowTitle(tr("7-Zip Engine Recommended"));
+            prompt.setIcon(QMessageBox::Information);
+
+            const QString distro = PackageManagerHelper::distroDisplayName();
+            const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("7zip"));
+            QFileInfo fi(m_currentArchiveFilePath);
+            QString ext = fi.suffix().toUpper();
+            if (ext.isEmpty()) ext = tr("this");
+
+            prompt.setText(tr("<h3>7-Zip Engine Recommended</h3>"
+                              "<p>For maximum speed and multi-core extraction with <b>%1</b> archives, <b>7-Zip</b> (<code>7zz</code>) is recommended.</p>"
+                              "<p>You can install 7-Zip now, or continue extracting immediately with the built-in libarchive engine.</p>"
+                              "<p>Detected distribution: <b>%2</b></p>"
+                              "<p>Manual installation command:<br><code>%3</code></p>")
+                              .arg(ext, distro, installCmd));
+
+            auto *cbDontAsk = new QCheckBox(tr("Don't ask again"), &prompt);
+            prompt.setCheckBox(cbDontAsk);
+
+            QPushButton *btnInstall = prompt.addButton(tr("Install 7-Zip"), QMessageBox::AcceptRole);
+            QPushButton *btnContinue = prompt.addButton(tr("Extract with libarchive"), QMessageBox::ActionRole);
+            QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
+            prompt.setDefaultButton(btnContinue);
+
+            prompt.exec();
+
+            if (cbDontAsk->isChecked()) {
+                settings.setValue(QStringLiteral("archive/skip_7zip_prompt"), true);
+            }
+
+            if (prompt.clickedButton() == btnCancel) {
+                return;
+            }
+
+            if (prompt.clickedButton() == btnInstall) {
+                if (PackageManagerHelper::installComponentInteractive(QStringLiteral("7zip"), this)) {
+                    sevenZBin = find7zBinary();
+                }
             }
         }
     }
@@ -1987,7 +2075,24 @@ QString ArchiveViewer::extractSingleFile(const QString &archivePath, const QStri
     archive_read_free(a);
 
     // Fallback to 7-Zip engine if libarchive could not decrypt or extract the item
-    const QString sevenZBin = find7zBinary();
+    QString sevenZBin = find7zBinary();
+    if (sevenZBin.isEmpty() && isRar5Archive(archivePath, m_formatName)) {
+        QMessageBox prompt(this);
+        prompt.setWindowTitle(tr("7-Zip Engine Required"));
+        prompt.setIcon(QMessageBox::Warning);
+        prompt.setText(tr("<h3>7-Zip Engine Required for RAR 5</h3>"
+                          "<p>Previewing files inside RAR 5 archives requires <b>7-Zip</b> (<code>7zz</code>).</p>"));
+        QPushButton *btnInstall = prompt.addButton(tr("Install 7-Zip"), QMessageBox::AcceptRole);
+        QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
+        Q_UNUSED(btnCancel);
+        prompt.setDefaultButton(btnInstall);
+        prompt.exec();
+        if (prompt.clickedButton() == btnInstall) {
+            if (PackageManagerHelper::installComponentInteractive(QStringLiteral("7zip"), this)) {
+                sevenZBin = find7zBinary();
+            }
+        }
+    }
     if (!sevenZBin.isEmpty()) {
         QStringList args;
         args << QStringLiteral("x")
