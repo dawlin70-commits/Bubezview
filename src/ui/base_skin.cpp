@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include "image_viewer.h"
 #include "text_viewer.h"
+#include "pdf_base_viewer.h"
 #include "core/interfaces/i_pdf_viewer.h"
 #include "core/interfaces/i_archive_viewer.h"
 #include "core/interfaces/i_media_viewer.h"
@@ -465,8 +466,13 @@ IPdfViewer *BaseSkin::ensurePdfViewerCreated()
     if (m_pdfViewer) {
         return m_pdfViewer;
     }
-    auto *pv = PluginManager::instance().createViewer(FileCategory::Pdf, this);
-    m_pdfViewer = dynamic_cast<IPdfViewer*>(pv);
+    // Native Core Base PDF Viewer is always available out-of-the-box
+    auto *basePdf = new PdfBaseViewer(this);
+    connect(basePdf, &PdfBaseViewer::requestStudio, this, [this]() {
+        setEditMode(!isEditMode());
+    });
+    m_pdfViewer = basePdf;
+
     if (m_pdfViewer) {
         QWidget *oldW = m_stackedWidget->widget(2);
         m_stackedWidget->removeWidget(oldW);
@@ -476,6 +482,56 @@ IPdfViewer *BaseSkin::ensurePdfViewerCreated()
         onViewerInitialized(FileCategory::Pdf);
     }
     return m_pdfViewer;
+}
+
+bool BaseSkin::promotePdfViewerToStudio()
+{
+    if (!m_pdfViewer) {
+        ensurePdfViewerCreated();
+    }
+    if (!m_pdfViewer) return false;
+
+    // If it's already the studio plugin viewer (not PdfBaseViewer), nothing to do
+    if (!dynamic_cast<PdfBaseViewer*>(m_pdfViewer)) {
+        return true;
+    }
+
+    // Check if the PDF Studio plugin is available
+    if (!PluginManager::instance().isEngineAvailable(FileCategory::Pdf)) {
+        QMessageBox::information(
+            this,
+            tr("PDF Studio Plugin Required"),
+            tr("<p>The <b>PDF Studio</b> module (<code>bubez_pdf.so</code>) is required for editing, digital signatures, and page management.</p>"
+               "<p>You can compile or install this module from Settings → Extensions.</p>")
+        );
+        return false;
+    }
+
+    int curPage = m_pdfViewer->currentPage();
+    QString curPath = m_currentFilePath;
+
+    IViewerWidget *vw = PluginManager::instance().createViewer(FileCategory::Pdf, this);
+    IPdfViewer *studioPdf = dynamic_cast<IPdfViewer*>(vw);
+    if (!studioPdf) {
+        delete vw;
+        return false;
+    }
+
+    // Replace in stacked widget
+    QWidget *oldW = m_stackedWidget->widget(2);
+    m_stackedWidget->removeWidget(oldW);
+    delete oldW;
+
+    m_pdfViewer = studioPdf;
+    m_stackedWidget->insertWidget(2, m_pdfViewer->widget());
+    m_pdfViewer->updateTheme();
+    onViewerInitialized(FileCategory::Pdf);
+
+    if (!curPath.isEmpty() && QFile::exists(curPath)) {
+        m_pdfViewer->loadFile(curPath);
+        m_pdfViewer->goToPage(curPage);
+    }
+    return true;
 }
 
 IArchiveViewer *BaseSkin::ensureArchiveViewerCreated()
@@ -659,6 +715,12 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         m_stackedWidget->setCurrentIndex(1);
         opened = m_textViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Pdf) {
+        if (!m_isEditMode && m_pdfViewer && !dynamic_cast<PdfBaseViewer*>(m_pdfViewer)) {
+            QWidget *oldW = m_stackedWidget->widget(2);
+            m_stackedWidget->removeWidget(oldW);
+            delete oldW;
+            m_pdfViewer = nullptr;
+        }
         if (!ensurePdfViewerCreated()) {
             m_enginePromptCard->setTargetFile(FileCategory::Pdf, m_currentFilePath);
             m_stackedWidget->setCurrentWidget(m_enginePromptCard);
@@ -2075,6 +2137,12 @@ QString BaseSkin::formatFileSize(qint64 bytes) const
 
 void BaseSkin::setEditMode(bool editMode)
 {
+    if (editMode && m_currentCategory == FileCategory::Pdf) {
+        if (!promotePdfViewerToStudio()) {
+            return;
+        }
+    }
+
     m_isEditMode = editMode;
     if (m_imageViewer) {
         m_imageViewer->setEditMode(editMode);
@@ -2407,7 +2475,7 @@ void BaseSkin::extractPdfImages(const QString &filePath)
     }
     if (target.isEmpty() || !QFile::exists(target)) return;
 
-    if (ensurePdfViewerCreated() && m_pdfViewer) {
+    if (ensurePdfViewerCreated() && promotePdfViewerToStudio() && m_pdfViewer) {
         m_pdfViewer->openPdfImageExtractDialog(target, this);
     } else if (m_enginePromptCard) {
         m_enginePromptCard->setTargetFile(FileCategory::Pdf, target);
@@ -2432,7 +2500,7 @@ void BaseSkin::openPdfRepairDialog(const QString &filePath)
         target = m_currentFilePath;
     }
 
-    if (ensurePdfViewerCreated() && m_pdfViewer) {
+    if (ensurePdfViewerCreated() && promotePdfViewerToStudio() && m_pdfViewer) {
         m_pdfViewer->openPdfRepairDialog(target, this);
     } else if (m_enginePromptCard) {
         m_enginePromptCard->setTargetFile(FileCategory::Pdf, target);
@@ -2455,7 +2523,7 @@ void BaseSkin::openPdfPageOrganizer(const QString &filePath)
     }
     if (target.isEmpty() || !QFile::exists(target)) return;
 
-    if (ensurePdfViewerCreated()) {
+    if (ensurePdfViewerCreated() && promotePdfViewerToStudio() && m_pdfViewer) {
         m_pdfViewer->openPageOrganizer(target, this);
     }
 }

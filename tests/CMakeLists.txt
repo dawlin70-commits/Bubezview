@@ -164,6 +164,34 @@ target_link_libraries(test_pdf_studio PRIVATE
 
 add_test(NAME TestPdfStudio COMMAND test_pdf_studio)
 
+# Automated Native Core PDF Base Viewer test
+add_executable(test_pdf_base
+    test_pdf_base.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_base_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_base_canvas.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+)
+
+target_include_directories(test_pdf_base PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf
+    ${POPPLER_QT6_INCLUDE_DIRS}
+)
+
+target_link_libraries(test_pdf_base PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::PrintSupport
+    Qt6::Test
+    ${POPPLER_QT6_LIBRARIES}
+)
+
+add_test(NAME TestPdfBase COMMAND test_pdf_base)
+
 # Interactive manual test target (excluded from default build and ctest per Rule 2)
 add_executable(test_interactive EXCLUDE_FROM_ALL
     test_interactive.cpp

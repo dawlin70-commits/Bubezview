@@ -128,10 +128,10 @@ bool PluginManager::isNativeSupported(const QString &filePath)
 {
     FileCategory cat = categorizeFile(filePath);
     if (cat == FileCategory::Unknown) return false;
-    if (cat == FileCategory::Image || cat == FileCategory::Text || cat == FileCategory::Folder || cat == FileCategory::Office || cat == FileCategory::Media) {
+    if (cat == FileCategory::Image || cat == FileCategory::Text || cat == FileCategory::Folder || cat == FileCategory::Office || cat == FileCategory::Media || cat == FileCategory::Pdf) {
         return true;
     }
-    // For modular categories (Pdf, Archive), check if engine plugin is available
+    // For modular categories (Archive), check if engine plugin is available
     return instance().isEngineAvailable(cat);
 }
 

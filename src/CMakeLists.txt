@@ -64,8 +64,14 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/syntax_highlighter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/text_viewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media/system_media_viewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_base_canvas.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_base_viewer.cpp
     CACHE INTERNAL "BubezView core application source files"
 )
+
+# Poppler-Qt6 Engine for native Core PDF reading
+pkg_check_modules(POPPLER_QT6 REQUIRED poppler-qt6)
+add_compile_definitions(HAVE_POPPLER_QT6)
 
 # Common include directories for core and viewers
 set(APP_COMMON_INCLUDES
@@ -87,6 +93,8 @@ set(APP_COMMON_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/office
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/folder
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf
+    ${POPPLER_QT6_INCLUDE_DIRS}
     ${LIBARCHIVE_INCLUDE_DIRS}
     ${LIBREVENGE_INCLUDE_DIRS}
     ${LIBQRENCODE_INCLUDE_DIRS}
@@ -120,6 +128,7 @@ target_link_libraries(bubezview PRIVATE
     ${LIBARCHIVE_LIBRARIES}
     ${LIBREVENGE_LIBRARIES}
     ${LIBQRENCODE_LIBRARIES}
+    ${POPPLER_QT6_LIBRARIES}
 )
 
 set_target_properties(bubezview PROPERTIES ENABLE_EXPORTS ON)

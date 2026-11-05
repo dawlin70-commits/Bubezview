@@ -508,26 +508,26 @@ void MainWindow::setupUi()
     });
 
     m_actPdfRedact = m_menuPdfMarkup->addAction(QIcon::fromTheme("edit-clear"), tr("Redact / Blackout..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->startRedaction();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->startRedaction();
     });
 
     m_actPdfWatermark = m_menuPdfMarkup->addAction(QIcon::fromTheme("format-text-strikethrough"), tr("Watermark / Stamp..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openWatermarkDialog();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openWatermarkDialog();
     });
 
     m_actPdfSignature = m_menuPdfMarkup->addAction(QIcon::fromTheme("document-sign"), tr("Signature (Visual & Digital)..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openSignatureDialog();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openSignatureDialog();
     });
 
     m_menuPdfMarkup->addAction(QIcon::fromTheme("security-high"), tr("Cryptographic Digital Signature (PAdES / .p7m)..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openCryptoSignatureDialog(0);
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openCryptoSignatureDialog(0);
     });
 
     // 5. Submenu: PDF Document Structure Operations
     m_menuPdfDocOps = m_menuEdit->addMenu(QIcon::fromTheme("document-properties"), tr("PDF Page & Document Operations"));
 
     m_actPdfInsertBlankPage = m_menuPdfDocOps->addAction(QIcon::fromTheme("document-new"), tr("Insert Blank A4 Page..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->insertBlankPage();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->insertBlankPage();
     });
     m_actPdfInsertBlankPage->setShortcut(QKeySequence("Ctrl+Shift+N"));
 
@@ -1160,28 +1160,28 @@ void MainWindow::setupUi()
 
     // Additional PDF Tools & Backwards Compatibility
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfStudioRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->toggleStudioPanel();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->toggleStudioPanel();
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfStampRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openWatermarkDialog();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openWatermarkDialog();
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfHighlightRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->startHighlighter(QColor("#fbbf24"), 0.5);
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->startHighlighter(QColor("#fbbf24"), 0.5);
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfSelectAreaRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->startSelectArea();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->startSelectArea();
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfDrawRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->startSelectArea();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->startSelectArea();
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTypewriterRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openTypewriterDialog();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openTypewriterDialog();
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfShapeRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openShapeDialog();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openShapeDialog();
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRedactRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->startRedaction();
+        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->startRedaction();
     });
 
     // Archive

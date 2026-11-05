@@ -217,6 +217,7 @@ protected:
     void repositionSearchBar();
 
     IPdfViewer *ensurePdfViewerCreated();
+    bool promotePdfViewerToStudio();
     IArchiveViewer *ensureArchiveViewerCreated();
     IMediaViewer *ensureMediaViewerCreated();
     OfficeViewer *ensureOfficeViewerCreated();
