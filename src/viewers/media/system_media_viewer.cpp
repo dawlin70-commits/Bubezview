@@ -5,6 +5,7 @@
 
 #include "system_media_viewer.h"
 #include "ui/vector_icons.h"
+#include "core/audio/audio_processor.h"
 #include <QUrl>
 #include <QFileInfo>
 #include <QDir>
@@ -14,6 +15,8 @@
 #include <QStandardPaths>
 #include <QSet>
 #include <QSize>
+#include <QPainter>
+#include <QPainterPath>
 
 namespace {
 
@@ -264,8 +267,43 @@ bool SystemMediaViewer::loadFile(const QString &filePath)
     } else {
         m_videoWidget->hide();
         m_audioCard->show();
-        m_lblAudioTitle->setText(fi.fileName());
-        m_lblAudioArtist->setText(tr("Format: %1 | Size: %2 MB").arg(fi.suffix().toUpper()).arg(QString::number(fi.size() / (1024.0 * 1024.0), 'f', 1)));
+
+        // 1. Read metadata tags (Title, Artist, Album)
+        AudioMetadata meta = AudioProcessor::readMetadata(filePath);
+        if (!meta.title.isEmpty()) {
+            m_lblAudioTitle->setText(meta.title);
+        } else {
+            m_lblAudioTitle->setText(fi.fileName());
+        }
+
+        QString artistInfo;
+        if (!meta.artist.isEmpty()) {
+            artistInfo = meta.artist;
+            if (!meta.album.isEmpty()) {
+                artistInfo += QStringLiteral(" — ") + meta.album;
+            }
+        } else {
+            artistInfo = tr("Format: %1 | Size: %2 MB").arg(fi.suffix().toUpper()).arg(QString::number(fi.size() / (1024.0 * 1024.0), 'f', 1));
+        }
+        m_lblAudioArtist->setText(artistInfo);
+
+        // 2. Extract album cover art (from folder: cover.jpg, folder.png, front.jpg, etc., or embedded)
+        QPixmap cover = AudioProcessor::extractCoverArt(filePath, 200);
+        if (!cover.isNull()) {
+            QPixmap rounded(cover.size());
+            rounded.fill(Qt::transparent);
+            {
+                QPainter painter(&rounded);
+                painter.setRenderHint(QPainter::Antialiasing);
+                QPainterPath path;
+                path.addRoundedRect(cover.rect(), 12, 12);
+                painter.setClipPath(path);
+                painter.drawPixmap(0, 0, cover);
+            }
+            m_lblAudioCover->setPixmap(rounded);
+        } else {
+            m_lblAudioCover->setPixmap(VectorIcons::createIcon(VectorIcons::Type::Media).pixmap(72, 72));
+        }
     }
 
     m_sliderPosition->setValue(0);
@@ -284,6 +322,7 @@ void SystemMediaViewer::clear()
     m_lblTime->setText(tr("00:00 / 00:00"));
     m_lblAudioTitle->clear();
     m_lblAudioArtist->clear();
+    m_lblAudioCover->setPixmap(VectorIcons::createIcon(VectorIcons::Type::Media).pixmap(72, 72));
 }
 
 void SystemMediaViewer::stop()

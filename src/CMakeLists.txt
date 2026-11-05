@@ -61,6 +61,8 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/line_number_area.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/syntax_highlighter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/text_viewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/audio/audio_processor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/audio/equalizer_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media/system_media_viewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_base_canvas.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_base_viewer.cpp

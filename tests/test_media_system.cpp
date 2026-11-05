@@ -6,6 +6,9 @@
 #include <QTest>
 #include <QSignalSpy>
 #include <QTemporaryFile>
+#include <QTemporaryDir>
+#include <QLabel>
+#include <QImage>
 #include "viewers/media/system_media_viewer.h"
 
 class TestMediaSystem : public QObject
@@ -18,6 +21,7 @@ private slots:
     void testSiblingFiles();
     void testControlsAndMixerReset();
     void testInvalidFileHandling();
+    void testFolderCoverLoading();
 };
 
 void TestMediaSystem::testInstantiation()
@@ -85,6 +89,33 @@ void TestMediaSystem::testInvalidFileHandling()
     SystemMediaViewer viewer;
     bool loaded = viewer.loadFile(QStringLiteral("/non_existent_folder_xyz/file_123.mp4"));
     QVERIFY(!loaded);
+}
+
+void TestMediaSystem::testFolderCoverLoading()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    // Create a mock audio file
+    QString audioPath = tempDir.filePath("track.mp3");
+    QFile audioFile(audioPath);
+    QVERIFY(audioFile.open(QIODevice::WriteOnly));
+    audioFile.write("MockAudioData");
+    audioFile.close();
+
+    // Create a cover.jpg in the same directory
+    QString coverPath = tempDir.filePath("cover.jpg");
+    QImage mockCover(100, 100, QImage::Format_RGB32);
+    mockCover.fill(Qt::cyan);
+    QVERIFY(mockCover.save(coverPath, "JPG"));
+
+    SystemMediaViewer viewer;
+    QVERIFY(viewer.loadFile(audioPath));
+
+    // Find the cover label
+    QLabel *coverLabel = viewer.widget()->findChild<QLabel*>();
+    QVERIFY(coverLabel != nullptr);
+    viewer.clear();
 }
 
 QTEST_MAIN(TestMediaSystem)

@@ -106,12 +106,15 @@ add_test(NAME TestExif COMMAND test_exif)
 add_executable(test_media_system
     test_media_system.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/media/system_media_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/audio/audio_processor.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/audio/equalizer_manager.cpp
 )
 
 target_include_directories(test_media_system PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/interfaces
+    ${CMAKE_SOURCE_DIR}/src/core/audio
     ${CMAKE_SOURCE_DIR}/src/viewers/media
 )
 
@@ -211,8 +214,6 @@ add_executable(test_interactive EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_viewer.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/archive/archive_viewer.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/audio/audio_processor.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/audio/equalizer_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_tag_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_trim_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/audio/cover_selection_dialog.cpp
