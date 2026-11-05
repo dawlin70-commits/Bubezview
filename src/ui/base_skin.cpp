@@ -2,6 +2,7 @@
 #include <QAbstractSlider>
 #include <QComboBox>
 #include <QKeyEvent>
+#include <QStatusBar>
 #include "image_viewer.h"
 #include "text_viewer.h"
 #include "pdf_base_viewer.h"
@@ -1636,12 +1637,14 @@ void BaseSkin::extractOcrCurrentFile()
     dlg->activateWindow();
 }
 
-void BaseSkin::saveCurrentFile()
+bool BaseSkin::saveCurrentImage(bool silent)
 {
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified()) {
         if (m_currentFilePath.isEmpty()) {
-            QMessageBox::warning(this, tr("Save Error"), tr("No active image file to save."));
-            return;
+            if (!silent) {
+                QMessageBox::warning(this, tr("Save Error"), tr("No active image file to save."));
+            }
+            return false;
         }
 
         QFileInfo fi(m_currentFilePath);
@@ -1663,11 +1666,28 @@ void BaseSkin::saveCurrentFile()
             if (m_folderViewer) {
                 m_folderViewer->updateThumbnail(m_currentFilePath, m_imageViewer->originalImage());
             }
-
-            QMessageBox::information(this, tr("Save"), tr("Image modifications saved successfully!"));
+            updateWindowTitle();
+            updateStatusBar();
+            if (!silent) {
+                QMessageBox::information(this, tr("Save"), tr("Image modifications saved successfully!"));
+            } else if (statusBar()) {
+                statusBar()->showMessage(tr("Image rotated and saved"), 2500);
+            }
+            return true;
         } else {
-            QMessageBox::warning(this, tr("Save Error"), tr("Failed to save image changes to:\n%1\n\nPlease check write permissions or disk space.").arg(m_currentFilePath));
+            if (!silent) {
+                QMessageBox::warning(this, tr("Save Error"), tr("Failed to save image changes to:\n%1\n\nPlease check write permissions or disk space.").arg(m_currentFilePath));
+            }
+            return false;
         }
+    }
+    return false;
+}
+
+void BaseSkin::saveCurrentFile()
+{
+    if (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified()) {
+        saveCurrentImage(false);
     } else if (m_stackedWidget->currentIndex() == 1 && m_textViewer && m_textViewer->document()->isModified()) {
         if (m_textViewer->saveFile()) {
             QMessageBox::information(this, tr("Save"), tr("Text file saved successfully!"));
@@ -2408,6 +2428,13 @@ void BaseSkin::keyPressEvent(QKeyEvent *event)
             return;
         }
         break;
+    case Qt::Key_Delete:
+        if (!m_isEditMode || m_currentCategory != FileCategory::Text) {
+            deleteCurrentFile();
+            event->accept();
+            return;
+        }
+        break;
     case Qt::Key_F11:
         toggleFullscreen();
         event->accept();
@@ -2529,9 +2556,11 @@ void BaseSkin::scrollCurrentView(int direction)
 
 void BaseSkin::rotateCurrentRight()
 {
-    if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->rotateClockwise();
+        if (!m_isEditMode) {
+            saveCurrentImage(true);
+        }
     }
     updateWindowTitle();
     updateStatusBar();
@@ -2539,9 +2568,11 @@ void BaseSkin::rotateCurrentRight()
 
 void BaseSkin::rotateCurrentLeft()
 {
-    if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->rotateCounterClockwise();
+        if (!m_isEditMode) {
+            saveCurrentImage(true);
+        }
     }
     updateWindowTitle();
     updateStatusBar();

@@ -39,6 +39,7 @@ private slots:
     void testPhotoStudioPanelTabsAndPipeline();
     void testLazyStudioPanelAndRevert();
     void testInstantAlpha();
+    void testRotationInViewMode();
 };
 
 void TestImage::initTestCase()
@@ -691,6 +692,26 @@ void TestImage::testInstantAlpha()
     offWhiteImg.fill(QColor(QStringLiteral("#F1F5F9")));
     QImage keyedOffWhite = ImageProcessor::instantAlpha(offWhiteImg, Qt::white, 20, false);
     QCOMPARE(qAlpha(keyedOffWhite.pixel(10, 10)), 0);
+}
+
+void TestImage::testRotationInViewMode()
+{
+    ImageViewer viewer;
+    viewer.setEditMode(false); // In View mode
+
+    QImage img(100, 50, QImage::Format_RGB32);
+    img.fill(Qt::blue);
+    viewer.loadImage(img);
+    QCOMPARE(viewer.imageSize(), QSize(100, 50));
+
+    // Rotate clockwise 90 degrees in View mode
+    viewer.rotateClockwise();
+    QCOMPARE(viewer.imageSize(), QSize(50, 100));
+    QVERIFY(viewer.isModified());
+
+    // Undo rotation
+    viewer.undo();
+    QCOMPARE(viewer.imageSize(), QSize(100, 50));
 }
 
 QTEST_MAIN(TestImage)

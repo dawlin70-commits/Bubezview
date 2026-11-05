@@ -686,7 +686,7 @@ void ImageViewer::setEditMode(bool editMode)
 
 void ImageViewer::rotateClockwise()
 {
-    if (!m_isEditMode || m_originalImage.isNull()) return;
+    if (m_originalImage.isNull()) return;
     pushUndoState();
     QTransform t;
     t.rotate(90);
@@ -699,7 +699,7 @@ void ImageViewer::rotateClockwise()
 
 void ImageViewer::rotateCounterClockwise()
 {
-    if (!m_isEditMode || m_originalImage.isNull()) return;
+    if (m_originalImage.isNull()) return;
     pushUndoState();
     QTransform t;
     t.rotate(-90);
@@ -712,7 +712,7 @@ void ImageViewer::rotateCounterClockwise()
 
 void ImageViewer::flipHorizontal()
 {
-    if (!m_isEditMode || m_originalImage.isNull()) return;
+    if (m_originalImage.isNull()) return;
     pushUndoState();
     m_originalImage = m_originalImage.mirrored(true, false);
     m_sourcePixmap = QPixmap();
@@ -723,7 +723,7 @@ void ImageViewer::flipHorizontal()
 
 void ImageViewer::flipVertical()
 {
-    if (!m_isEditMode || m_originalImage.isNull()) return;
+    if (m_originalImage.isNull()) return;
     pushUndoState();
     m_originalImage = m_originalImage.mirrored(false, true);
     m_sourcePixmap = QPixmap();
@@ -968,7 +968,7 @@ void ImageViewer::pushUndoState()
 
 void ImageViewer::undo()
 {
-    if (!m_isEditMode || m_undoStack.isEmpty()) return;
+    if (m_undoStack.isEmpty()) return;
     m_redoStack.append(m_originalImage);
     m_originalImage = m_undoStack.takeLast();
     m_sourcePixmap = QPixmap();
@@ -980,7 +980,7 @@ void ImageViewer::undo()
 
 void ImageViewer::redo()
 {
-    if (!m_isEditMode || m_redoStack.isEmpty()) return;
+    if (m_redoStack.isEmpty()) return;
     m_undoStack.append(m_originalImage);
     m_originalImage = m_redoStack.takeLast();
     m_sourcePixmap = QPixmap();

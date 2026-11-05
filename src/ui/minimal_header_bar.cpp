@@ -240,6 +240,16 @@ void MinimalHeaderBar::setupUi()
     m_btnZoom->setMenu(m_menuZoom);
     mainLayout->addWidget(m_btnZoom, 0, Qt::AlignVCenter);
 
+    // Quick single Rotate button for image view mode (90° Clockwise)
+    m_btnRotate = new QToolButton(m_primaryBar);
+    m_btnRotate->setFixedSize(34, 32);
+    m_btnRotate->setIconSize(QSize(20, 20));
+    m_btnRotate->setCursor(Qt::PointingHandCursor);
+    m_btnRotate->setToolTip(tr("Rotate 90° Clockwise (R)"));
+    m_btnRotate->setVisible(false);
+    connect(m_btnRotate, &QToolButton::clicked, this, &MinimalHeaderBar::rotateRightRequested);
+    mainLayout->addWidget(m_btnRotate, 0, Qt::AlignVCenter);
+
     m_btnInspector = new QToolButton(m_primaryBar);
     m_btnInspector->setFixedSize(34, 32);
     m_btnInspector->setIconSize(QSize(20, 20));
@@ -543,6 +553,7 @@ void MinimalHeaderBar::setEditMode(bool editMode)
         if (m_btnSearch) m_btnSearch->hide();
         if (m_btnZoom) m_btnZoom->hide();
         if (m_btnZoom) m_btnZoom->setVisible(m_currentCategory == FileCategory::Image || m_currentCategory == FileCategory::Pdf || m_currentCategory == FileCategory::Text || m_currentCategory == FileCategory::Office);
+        if (m_btnRotate) m_btnRotate->setVisible(m_currentCategory == FileCategory::Image);
         if (m_btnInspector) m_btnInspector->show();
         if (m_btnShare) m_btnShare->show();
         if (m_btnSettings) m_btnSettings->show();
@@ -575,6 +586,7 @@ void MinimalHeaderBar::setEditMode(bool editMode)
 
         if (m_btnSearch) m_btnSearch->hide();
         if (m_btnZoom) m_btnZoom->hide();
+        if (m_btnRotate) m_btnRotate->hide();
         if (m_btnInspector) m_btnInspector->hide();
         if (m_btnShare) m_btnShare->hide();
         if (m_btnSettings) m_btnSettings->hide();
@@ -618,6 +630,7 @@ void MinimalHeaderBar::setPageOrganizerMode(bool active)
         if (m_btnGallery) m_btnGallery->hide();
         if (m_btnSearch) m_btnSearch->hide();
         if (m_btnZoom) m_btnZoom->hide();
+        if (m_btnRotate) m_btnRotate->hide();
         if (m_btnInspector) m_btnInspector->hide();
         if (m_btnShare) m_btnShare->hide();
         if (m_btnSettings) m_btnSettings->hide();
@@ -1029,6 +1042,9 @@ void MinimalHeaderBar::updateContextualToolsVisibility()
     if (m_btnZoom && !m_editMode && !m_pageOrganizerMode) {
         m_btnZoom->setVisible(isImg || isPdf || isTxt || (m_currentCategory == FileCategory::Office));
     }
+    if (m_btnRotate && !m_editMode && !m_pageOrganizerMode) {
+        m_btnRotate->setVisible(isImg);
+    }
 }
 
 void MinimalHeaderBar::setWindowControlsVisible(bool visible)
@@ -1107,6 +1123,10 @@ void MinimalHeaderBar::updateButtonStyles()
     if (m_btnZoom) {
         m_btnZoom->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Zoom, iconColor, 20));
         m_btnZoom->setStyleSheet(toolBtnStyle);
+    }
+    if (m_btnRotate) {
+        m_btnRotate->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::RotateRight, iconColor, 20));
+        m_btnRotate->setStyleSheet(toolBtnStyle);
     }
     if (m_btnInspector) {
         m_btnInspector->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Info, iconColor, 20));

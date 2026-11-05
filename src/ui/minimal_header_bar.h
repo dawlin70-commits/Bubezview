@@ -124,6 +124,7 @@ public:
     PdfHistoryWidget *historyWidget() const { return m_historyWidget; }
     void setHistorySteps(const QList<PdfHistoryStep> &steps);
     void showHistoryDialog();
+    QToolButton *rotateButton() const { return m_btnRotate; }
     QToolButton *saveExportButton() const { return m_btnExport; }
     QPushButton *pdfTextButton() const { return m_btnPdfText; }
     QPushButton *pdfHighlightButton() const { return m_btnPdfHighlight; }
@@ -394,6 +395,7 @@ private:
 
     QToolButton *m_btnSearch = nullptr;
     QToolButton *m_btnZoom = nullptr;
+    QToolButton *m_btnRotate = nullptr;
     QMenu *m_menuZoom = nullptr;
     QAction *m_actZoomIn = nullptr;
     QAction *m_actZoomOut = nullptr;

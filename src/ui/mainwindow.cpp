@@ -303,6 +303,8 @@ void MainWindow::setupUi()
 
     m_actTrashFile = m_menuFile->addAction(QIcon::fromTheme("user-trash"), tr("Move to Trash"), this, &BaseSkin::deleteCurrentFile);
     m_actTrashFile->setShortcut(QKeySequence::Delete);
+    m_actTrashFile->setShortcutContext(Qt::WindowShortcut);
+    addAction(m_actTrashFile);
 
     m_menuFile->addSeparator();
 
@@ -342,6 +344,9 @@ void MainWindow::setupUi()
             updateContextualMenuStates();
         } else if (m_imageViewer && m_imageViewer->canUndo()) {
             m_imageViewer->undo();
+            if (!m_isEditMode) {
+                saveCurrentImage(true);
+            }
             updateContextualMenuStates();
         }
     });
@@ -356,6 +361,9 @@ void MainWindow::setupUi()
             updateContextualMenuStates();
         } else if (m_imageViewer && m_imageViewer->canRedo()) {
             m_imageViewer->redo();
+            if (!m_isEditMode) {
+                saveCurrentImage(true);
+            }
             updateContextualMenuStates();
         }
     });
@@ -375,10 +383,14 @@ void MainWindow::setupUi()
     m_menuEdit->addSeparator();
 
     m_actRotateRight = m_menuEdit->addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate 90° Clockwise"), this, &BaseSkin::rotateCurrentRight);
-    m_actRotateRight->setShortcut(QKeySequence("R"));
+    m_actRotateRight->setShortcuts({QKeySequence("R"), QKeySequence("Ctrl+R")});
+    m_actRotateRight->setShortcutContext(Qt::WindowShortcut);
+    addAction(m_actRotateRight);
 
     m_actRotateLeft = m_menuEdit->addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate 90° Counterclockwise"), this, &BaseSkin::rotateCurrentLeft);
-    m_actRotateLeft->setShortcut(QKeySequence("L"));
+    m_actRotateLeft->setShortcuts({QKeySequence("L"), QKeySequence("Ctrl+Shift+R")});
+    m_actRotateLeft->setShortcutContext(Qt::WindowShortcut);
+    addAction(m_actRotateLeft);
 
     m_actFlipH = m_menuEdit->addAction(QIcon::fromTheme("object-flip-horizontal"), tr("Flip Horizontally"), this, &BaseSkin::flipCurrentHorizontal);
     m_actFlipH->setShortcut(QKeySequence("H"));
@@ -396,7 +408,7 @@ void MainWindow::setupUi()
     m_actImageCrop->setCheckable(true);
 
     m_actImageResize = m_menuEdit->addAction(QIcon::fromTheme("transform-scale"), tr("📐 Resize Image..."), this, &BaseSkin::openResizeImageDialog);
-    m_actImageResize->setShortcut(QKeySequence("Ctrl+R"));
+    m_actImageResize->setShortcut(QKeySequence("Ctrl+Alt+R"));
 
     m_actImageAdjust = m_menuEdit->addAction(QIcon::fromTheme("adjustlevels"), tr("🎨 Photo Studio & Filters..."), this, &BaseSkin::openAdjustImageDialog);
     m_actImageAdjust->setShortcut(QKeySequence("Ctrl+B"));
@@ -947,12 +959,8 @@ void MainWindow::setupUi()
 
     // Contextual Edit Action Connections from MinimalHeaderBar
     // Image
-    connect(m_minimalHeaderBar, &MinimalHeaderBar::rotateLeftRequested, this, [this]() {
-        if (m_imageViewer) m_imageViewer->rotateCounterClockwise();
-    });
-    connect(m_minimalHeaderBar, &MinimalHeaderBar::rotateRightRequested, this, [this]() {
-        if (m_imageViewer) m_imageViewer->rotateClockwise();
-    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::rotateLeftRequested, this, &BaseSkin::rotateCurrentLeft);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::rotateRightRequested, this, &BaseSkin::rotateCurrentRight);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::flipHRequested, this, [this]() {
         if (m_imageViewer) m_imageViewer->flipHorizontal();
     });
@@ -1629,11 +1637,11 @@ void MainWindow::updateContextualMenuStates()
 
     if (m_actRotateRight) {
         m_actRotateRight->setVisible(isImage && !isFolder);
-        m_actRotateRight->setEnabled(m_isEditMode && isImage && !isFolder);
+        m_actRotateRight->setEnabled(isImage && !isFolder);
     }
     if (m_actRotateLeft) {
         m_actRotateLeft->setVisible(isImage && !isFolder);
-        m_actRotateLeft->setEnabled(m_isEditMode && isImage && !isFolder);
+        m_actRotateLeft->setEnabled(isImage && !isFolder);
     }
     if (m_actFlipH) {
         m_actFlipH->setVisible(isImage && !isFolder);

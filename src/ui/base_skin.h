@@ -122,6 +122,7 @@ public slots:
     void openWithDefault();
     void openWithOther();
     void saveCurrentFile();
+    bool saveCurrentImage(bool silent = false);
     void saveAsCurrentFile();
     void saveCurrentPageAsPdf();
     void saveCurrentPageAsImage();
