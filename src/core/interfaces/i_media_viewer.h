@@ -117,6 +117,14 @@ public:
     }
 
     /**
+     * @brief Registers callback invoked when user requests upgrade to full Pro (MPV) mode.
+     * @param callback Function to trigger Pro mode activation / installation.
+     */
+    virtual void setOnUpgradeToProRequested(std::function<void()> callback) {
+        m_upgradeToProCallback = callback;
+    }
+
+    /**
      * @brief Updates the audio player responsive layout to match target dimensions.
      * @param forceW Target width override or 0 to use current width.
      * @param forceH Target height override or 0 to use current height.
@@ -130,4 +138,5 @@ protected:
     std::function<void(const QString&)> m_trackChangeCallback;
     std::function<void(int)> m_audioWorkspaceChangedCallback;
     std::function<void(int, bool)> m_audioWorkspaceModifiedCallback;
+    std::function<void()> m_upgradeToProCallback;
 };

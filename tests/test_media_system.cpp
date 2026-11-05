@@ -24,6 +24,7 @@ private slots:
     void testControlsAndMixerReset();
     void testInvalidFileHandling();
     void testFolderCoverLoading();
+    void testProModeUpgradeCallback();
     void testVisualSnapshot();
 };
 
@@ -170,6 +171,23 @@ void TestMediaSystem::testFolderCoverLoading()
     QLabel *coverLabel = viewer.widget()->findChild<QLabel*>();
     QVERIFY(coverLabel != nullptr);
     viewer.clear();
+}
+
+void TestMediaSystem::testProModeUpgradeCallback()
+{
+    SystemMediaViewer viewer;
+    bool callbackInvoked = false;
+    viewer.setOnUpgradeToProRequested([&]() {
+        callbackInvoked = true;
+    });
+
+    QPushButton *btnPro = viewer.proModeButton();
+    QVERIFY(btnPro != nullptr);
+    QVERIFY(!btnPro->text().isEmpty());
+
+    // Clicking the Pro Mode button must trigger the upgrade callback
+    btnPro->click();
+    QVERIFY(callbackInvoked);
 }
 
 void TestMediaSystem::testVisualSnapshot()

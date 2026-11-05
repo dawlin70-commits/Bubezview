@@ -591,6 +591,9 @@ IMediaViewer *BaseSkin::ensureMediaViewerCreated()
         m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
             openFile(path);
         });
+        m_mediaViewer->setOnUpgradeToProRequested([this]() {
+            promoteMediaViewerToStudio();
+        });
         m_mediaViewer->updateTheme();
         onViewerInitialized(FileCategory::Media);
     }
@@ -614,15 +617,15 @@ bool BaseSkin::promoteMediaViewerToStudio()
         const QString distro = PackageManagerHelper::distroDisplayName();
         const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("mpv"));
         QMessageBox prompt(this);
-        prompt.setWindowTitle(tr("Multimedia Studio Module Required"));
-        prompt.setIcon(QMessageBox::Warning);
-        prompt.setText(tr("<h3>Multimedia Studio Module Required</h3>"
-                          "<p>The <b>Multimedia Studio</b> plugin (<code>bubez_media.so</code> / <code>libmpv</code>) is required for audio trimming, filters, pitch shifting, and equalizer tools.</p>"
+        prompt.setWindowTitle(tr("Multimedia Studio (Pro Mode)"));
+        prompt.setIcon(QMessageBox::Information);
+        prompt.setText(tr("<h3>Activate Multimedia Studio (Pro Mode)</h3>"
+                          "<p>The <b>Multimedia Studio (MPV)</b> engine unlocks precision seeking, 64-bit float audio playback, and full audio editing tools (cutter, tags, filters, pitch shifting, and equalizer).</p>"
                           "<p>Detected distribution: <b>%1</b></p>"
-                          "<p>Manual installation command:<br><code>%2</code></p>")
+                          "<p>Installation command:<br><code>%2</code></p>")
                           .arg(distro, installCmd));
 
-        QPushButton *btnInstall = prompt.addButton(tr("Install Media Module"), QMessageBox::AcceptRole);
+        QPushButton *btnInstall = prompt.addButton(tr("⚡ Install & Activate Pro Mode"), QMessageBox::AcceptRole);
         QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
         Q_UNUSED(btnCancel);
         prompt.setDefaultButton(btnInstall);
@@ -630,6 +633,18 @@ bool BaseSkin::promoteMediaViewerToStudio()
 
         if (prompt.clickedButton() == btnInstall) {
             if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
+                // If bubez_media.so has not been compiled yet, attempt to build it
+                QString appDir = QCoreApplication::applicationDirPath();
+                QString pluginPath = appDir + QStringLiteral("/plugins/bubez_media.so");
+                if (!QFile::exists(pluginPath)) {
+                    QProcess configProc;
+                    configProc.start(QStringLiteral("cmake"), {QStringLiteral("-B"), appDir});
+                    configProc.waitForFinished(30000);
+
+                    QProcess buildProc;
+                    buildProc.start(QStringLiteral("cmake"), {QStringLiteral("--build"), appDir, QStringLiteral("--target"), QStringLiteral("bubez_media"), QStringLiteral("-j4")});
+                    buildProc.waitForFinished(60000);
+                }
                 PluginManager::instance().discoverPlugins();
             }
         }
@@ -657,6 +672,9 @@ bool BaseSkin::promoteMediaViewerToStudio()
     m_mediaViewer->setSiblingFiles(m_siblingFiles);
     m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
         openFile(path);
+    });
+    m_mediaViewer->setOnUpgradeToProRequested([this]() {
+        promoteMediaViewerToStudio();
     });
     m_mediaViewer->updateTheme();
     onViewerInitialized(FileCategory::Media);
@@ -859,6 +877,17 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
 
                 if (prompt.clickedButton() == btnInstall) {
                     if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
+                        QString appDir = QCoreApplication::applicationDirPath();
+                        QString pluginPath = appDir + QStringLiteral("/plugins/bubez_media.so");
+                        if (!QFile::exists(pluginPath)) {
+                            QProcess configProc;
+                            configProc.start(QStringLiteral("cmake"), {QStringLiteral("-B"), appDir});
+                            configProc.waitForFinished(30000);
+
+                            QProcess buildProc;
+                            buildProc.start(QStringLiteral("cmake"), {QStringLiteral("--build"), appDir, QStringLiteral("--target"), QStringLiteral("bubez_media"), QStringLiteral("-j4")});
+                            buildProc.waitForFinished(60000);
+                        }
                         PluginManager::instance().discoverPlugins();
                     }
                 }
@@ -868,39 +897,8 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
             }
             promoteMediaViewerToStudio();
         } else {
-            if (!hasMpv) {
-                static bool s_dismissedMpvPromptThisSession = false;
-                QSettings s("Bubez", "BubezView");
-                if (!s_dismissedMpvPromptThisSession && !s.value("media/skip_mpv_prompt", false).toBool()) {
-                    QMessageBox prompt(this);
-                    prompt.setWindowTitle(tr("High-Fidelity Audio Engine Available"));
-                    prompt.setIcon(QMessageBox::Information);
-                    prompt.setText(tr("<h3>High-Fidelity Audio Studio Available</h3>"
-                                      "<p>BubezView can play this file immediately using the built-in system player.</p>"
-                                      "<p>Would you like to install the optional <b>Multimedia Studio (MPV)</b> engine for enhanced studio features including 64-bit float playback, real-time oscilloscope, and audio editing tools (trim, filters, equalizer)?</p>"));
-                    QPushButton *btnInstall = prompt.addButton(tr("Install MPV Engine"), QMessageBox::AcceptRole);
-                    QPushButton *btnContinue = prompt.addButton(tr("Use System Engine"), QMessageBox::RejectRole);
-                    Q_UNUSED(btnContinue);
-                    prompt.setDefaultButton(btnContinue);
-
-                    QCheckBox *dontAskAgain = new QCheckBox(tr("Don't ask again"), &prompt);
-                    prompt.setCheckBox(dontAskAgain);
-
-                    prompt.exec();
-                    s_dismissedMpvPromptThisSession = true;
-
-                    if (dontAskAgain->isChecked()) {
-                        s.setValue("media/skip_mpv_prompt", true);
-                    }
-
-                    if (prompt.clickedButton() == btnInstall) {
-                        if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
-                            PluginManager::instance().discoverPlugins();
-                            promoteMediaViewerToStudio();
-                        }
-                    }
-                }
-            }
+            // Standard audio/video formats play immediately in native system player.
+            // Users can easily upgrade to full MPV studio anytime via the "⚡ Pro Mode" button.
         }
 
         ensureMediaViewerCreated();

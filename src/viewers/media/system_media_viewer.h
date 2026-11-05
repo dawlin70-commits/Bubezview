@@ -145,6 +145,12 @@ public:
      */
     void updateAudioResponsiveLayout(int forceW = 0, int forceH = 0) override;
 
+    /**
+     * @brief Returns a pointer to the Pro Mode activation button.
+     * @return Pointer to the QPushButton triggering Pro Mode upgrade.
+     */
+    QPushButton *proModeButton() const { return m_btnProMode; }
+
 public slots:
     /**
      * @brief Requests a seek to target position, updating UI immediately during drag
@@ -247,6 +253,7 @@ private:
 
     // Transport Controls
     QPushButton *m_btnSpeed = nullptr;
+    QPushButton *m_btnProMode = nullptr;
     QLabel *m_bottomTitleLabel = nullptr;
     QLabel *m_bottomFileLabel = nullptr;
     QPushButton *m_btnShuffle = nullptr;

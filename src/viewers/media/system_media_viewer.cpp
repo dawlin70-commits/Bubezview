@@ -378,6 +378,35 @@ void SystemMediaViewer::setupUi()
     );
     connect(m_btnSpeed, &QPushButton::clicked, this, &SystemMediaViewer::showSpeedMenu);
 
+    m_btnProMode = new QPushButton(tr("⚡ Pro Mode"), leftTrackWidget);
+    m_btnProMode->setObjectName("btnProMode");
+    m_btnProMode->setToolTip(tr("Activate Pro Mode (libmpv engine, precision seeking, cutter, filters & equalizer)"));
+    m_btnProMode->setCursor(Qt::PointingHandCursor);
+    m_btnProMode->setStyleSheet(
+        "QPushButton {"
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #f59e0b, stop:1 #d97706);"
+        "  border: 1px solid rgba(251, 191, 36, 0.5);"
+        "  border-radius: 12px;"
+        "  padding: 2px 10px;"
+        "  font-size: 11px;"
+        "  font-weight: bold;"
+        "  color: #0b0e14;"
+        "}"
+        "QPushButton:hover {"
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #fbbf24, stop:1 #f59e0b);"
+        "  border-color: #fde047;"
+        "  color: #000000;"
+        "}"
+        "QPushButton:pressed {"
+        "  background: #b45309;"
+        "}"
+    );
+    connect(m_btnProMode, &QPushButton::clicked, this, [this]() {
+        if (m_upgradeToProCallback) {
+            m_upgradeToProCallback();
+        }
+    });
+
     m_bottomTitleLabel = new QLabel(leftTrackWidget);
     m_bottomTitleLabel->setStyleSheet("font-size: 12px; font-weight: bold; color: #f8fafc; border: none; background: transparent;");
     m_bottomTitleLabel->setVisible(false);
@@ -390,6 +419,7 @@ void SystemMediaViewer::setupUi()
     m_bottomFileLabel->setMinimumWidth(0);
 
     leftTrackLayout->addWidget(m_btnSpeed);
+    leftTrackLayout->addWidget(m_btnProMode);
     leftTrackLayout->addWidget(m_bottomTitleLabel);
     leftTrackLayout->addWidget(m_bottomFileLabel);
     bottomRow->addWidget(leftTrackWidget, 0, Qt::AlignVCenter);
@@ -1063,15 +1093,25 @@ void SystemMediaViewer::updateTheme()
 
 void SystemMediaViewer::promptMpvRequired(const QString &toolName)
 {
-    QMessageBox::information(
-        this,
-        tr("Multimedia Studio Module Required"),
-        tr("<h3>%1 Requires Multimedia Studio</h3>"
-           "<p>Audio editing tools, pitch shifting, real-time equalizer, and studio filters "
-           "require the <b>Multimedia Studio (MPV)</b> engine.</p>"
-           "<p>Please install <code>libmpv-dev</code> / <code>mpv</code> to unlock full studio features.</p>")
-            .arg(toolName)
-    );
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Multimedia Studio Module Required"));
+    msgBox.setIcon(QMessageBox::Information);
+    msgBox.setText(tr("<h3>%1 Requires Multimedia Studio (Pro)</h3>"
+                      "<p>Advanced media playback, precision seeking, audio trimming, pitch shifting, "
+                      "and equalizer tools require the <b>Multimedia Studio (MPV)</b> engine.</p>"
+                      "<p>Would you like to activate Pro Mode now?</p>")
+                       .arg(toolName));
+
+    QPushButton *btnPro = msgBox.addButton(tr("⚡ Activate Pro Mode"), QMessageBox::AcceptRole);
+    btnPro->setStyleSheet("font-weight: bold; color: #0284c7;");
+    QPushButton *btnCancel = msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    Q_UNUSED(btnCancel);
+    msgBox.setDefaultButton(btnPro);
+
+    msgBox.exec();
+    if (msgBox.clickedButton() == btnPro && m_upgradeToProCallback) {
+        m_upgradeToProCallback();
+    }
 }
 
 void SystemMediaViewer::switchAudioWorkspace(int index)
