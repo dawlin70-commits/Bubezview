@@ -1662,15 +1662,15 @@ void MainWindow::updateContextualMenuStates()
     }
 
     if (m_actArchiveAddFiles) {
-        m_actArchiveAddFiles->setVisible(isArchiveDoc);
+        m_actArchiveAddFiles->setVisible(m_isEditMode && isArchiveDoc);
         m_actArchiveAddFiles->setEnabled(m_isEditMode && isArchiveDoc);
     }
     if (m_actArchiveAddFolder) {
-        m_actArchiveAddFolder->setVisible(isArchiveDoc);
+        m_actArchiveAddFolder->setVisible(m_isEditMode && isArchiveDoc);
         m_actArchiveAddFolder->setEnabled(m_isEditMode && isArchiveDoc);
     }
     if (m_actArchiveRemoveSelected) {
-        m_actArchiveRemoveSelected->setVisible(isArchiveDoc);
+        m_actArchiveRemoveSelected->setVisible(m_isEditMode && isArchiveDoc);
         m_actArchiveRemoveSelected->setEnabled(m_isEditMode && isArchiveDoc);
     }
 

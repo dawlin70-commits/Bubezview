@@ -381,6 +381,7 @@ void ArchiveViewer::setupUi()
     topLayout->addWidget(m_testBtn);
 
     mainLayout->addWidget(m_topBar);
+    m_topBar->setVisible(false);
 
     // Tree Widget (hierarchical clean display)
     m_treeWidget = new QTreeWidget(this);
@@ -1140,19 +1141,21 @@ void ArchiveViewer::onContextMenuRequested(const QPoint &pos)
         menu.addSeparator();
     }
 
-    const bool canEdit = isArchiveEditable();
-    QAction *addFilesAct = menu.addAction(QIcon::fromTheme("list-add"), tr("Add Files to Archive..."));
-    addFilesAct->setEnabled(canEdit);
-    connect(addFilesAct, &QAction::triggered, this, &ArchiveViewer::addFilesToArchive);
+    if (m_isEditMode) {
+        const bool canEdit = isArchiveEditable();
+        QAction *addFilesAct = menu.addAction(QIcon::fromTheme("list-add"), tr("Add Files to Archive..."));
+        addFilesAct->setEnabled(canEdit);
+        connect(addFilesAct, &QAction::triggered, this, &ArchiveViewer::addFilesToArchive);
 
-    QAction *addFolderAct = menu.addAction(QIcon::fromTheme("folder-new"), tr("Add Folder to Archive..."));
-    addFolderAct->setEnabled(canEdit);
-    connect(addFolderAct, &QAction::triggered, this, &ArchiveViewer::addFolderToArchive);
+        QAction *addFolderAct = menu.addAction(QIcon::fromTheme("folder-new"), tr("Add Folder to Archive..."));
+        addFolderAct->setEnabled(canEdit);
+        connect(addFolderAct, &QAction::triggered, this, &ArchiveViewer::addFolderToArchive);
 
-    if (item || !m_treeWidget->selectedItems().isEmpty()) {
-        QAction *removeAct = menu.addAction(QIcon::fromTheme("edit-delete"), tr("Remove Selected from Archive"));
-        removeAct->setEnabled(canEdit);
-        connect(removeAct, &QAction::triggered, this, &ArchiveViewer::removeSelectedFromArchive);
+        if (item || !m_treeWidget->selectedItems().isEmpty()) {
+            QAction *removeAct = menu.addAction(QIcon::fromTheme("edit-delete"), tr("Remove Selected from Archive"));
+            removeAct->setEnabled(canEdit);
+            connect(removeAct, &QAction::triggered, this, &ArchiveViewer::removeSelectedFromArchive);
+        }
     }
 
     menu.exec(m_treeWidget->viewport()->mapToGlobal(pos));

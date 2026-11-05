@@ -317,5 +317,5 @@ private:
     qint64 m_totalSize;
     QString m_formatName;
     QString m_filterName;
-    bool m_isEditMode = true;
+    bool m_isEditMode = false;
 };
