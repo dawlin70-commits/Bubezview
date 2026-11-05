@@ -203,6 +203,11 @@ QString PackageManagerHelper::packageNameForComponent(const QString &componentId
         if (fam == DistroFamily::Gentoo) return "dev-qt/qtimageformats:6";
         return "qt6-imageformats"; // Arch, Void, Alpine, etc.
     }
+    if (id == "media" || id == "mpv" || id == "libmpv") {
+        if (fam == DistroFamily::Debian) return "libmpv-dev libmpv2 mpv";
+        if (fam == DistroFamily::Fedora || fam == DistroFamily::OpenSuse) return "mpv-devel mpv-libs mpv";
+        return "mpv";
+    }
 
     return componentId;
 }
