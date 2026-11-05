@@ -4,13 +4,11 @@
 #include <QImage>
 #include <QPixmap>
 #include <QScrollArea>
-#include <QSplitter>
 #include <QResizeEvent>
 #include <QWheelEvent>
 #include "core/services/image_processor.h"
 
 class ImageCanvasWidget;
-class PhotoStudioPanel;
 
 /**
  * @brief High-performance hardware-accelerated image viewer widget.
@@ -181,18 +179,6 @@ public:
     void confirmCrop();
     void cancelCropMode();
 
-    /**
-     * @brief Toggles visibility of the right-hand Photo Studio adjustments panel.
-     */
-    void toggleStudioPanel();
-    void openStudioPanel();
-    void closeStudioPanel();
-    bool isStudioPanelVisible() const;
-    PhotoStudioPanel *studioPanel() const { return m_studioPanel; }
-
-    bool isEyedropperActive() const { return m_eyedropperActive; }
-    void setEyedropperActive(bool a);
-
     bool isModified() const { return m_isModified; }
     void setModified(bool mod);
 
@@ -248,29 +234,11 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
-    void ensureStudioPanelCreated();
     void updateScaledPixmap();
     void pushUndoState();
-    void onStudioAdjustmentsChanged();
-    void onStudioApply();
-    void onStudioCompareToggled(bool showOriginal);
-    void onStudioEyedropperToggled(bool active);
-    void onStudioPrivacyToolRequested(const QString &mode);
 
-    QSplitter *m_studioSplitter = nullptr;
     QScrollArea *m_scrollArea = nullptr;
     ImageCanvasWidget *m_canvas = nullptr;
-    PhotoStudioPanel *m_studioPanel = nullptr;
-
-    QImage m_preStudioImage;
-    QImage m_studioProxyImage;
-    QImage m_studioAdjustedProxy;
-    QImage m_autoEnhancedProxy;
-    ImageProcessor::AutoEnhanceOptions m_cachedAutoOpts;
-    bool m_autoProxyValid = false;
-    bool m_compareShowingOriginal = false;
-    bool m_eyedropperActive = false;
-    QString m_privacyMode;
 
     QImage m_originalImage;
     QList<QImage> m_undoStack;

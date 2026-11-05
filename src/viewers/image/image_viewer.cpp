@@ -1,5 +1,4 @@
 #include "image_viewer.h"
-#include "ui/photo_studio_panel.h"
 #include "theme_manager.h"
 #include "gpu_acceleration_manager.h"
 #include "core/services/image_processor.h"
@@ -194,21 +193,6 @@ protected:
 
     void mousePressEvent(QMouseEvent *event) override
     {
-        if (m_viewer && m_viewer->isEyedropperActive() && event->button() == Qt::LeftButton) {
-            if (width() > 0 && height() > 0 && !m_viewer->originalImage().isNull()) {
-                double sx = double(m_viewer->originalImage().width()) / double(width());
-                double sy = double(m_viewer->originalImage().height()) / double(height());
-                int imgX = qBound(0, qRound(event->pos().x() * sx), m_viewer->originalImage().width() - 1);
-                int imgY = qBound(0, qRound(event->pos().y() * sy), m_viewer->originalImage().height() - 1);
-                if (m_viewer->studioPanel()) {
-                    m_viewer->studioPanel()->setNeutralSamplePoint(QPoint(imgX, imgY));
-                }
-            }
-            m_viewer->setEyedropperActive(false);
-            event->accept();
-            return;
-        }
-
         if (m_cropActive) {
             if (event->button() == Qt::LeftButton) {
                 m_isSelectingCrop = true;
@@ -362,7 +346,6 @@ ImageViewer::ImageViewer(QWidget *parent)
     : QWidget(parent)
     , m_scrollArea(nullptr)
     , m_canvas(nullptr)
-    , m_studioPanel(nullptr)
     , m_zoomFactor(1.0)
     , m_fitToWindow(true)
     , m_zoomToolActive(false)
@@ -371,18 +354,6 @@ ImageViewer::ImageViewer(QWidget *parent)
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
-
-    m_studioSplitter = new QSplitter(Qt::Horizontal, this);
-    m_studioSplitter->setHandleWidth(4);
-    m_studioSplitter->setStyleSheet(
-        "QSplitter::handle:horizontal {"
-        "   background-color: rgba(255, 255, 255, 0.08);"
-        "   width: 4px;"
-        "}"
-        "QSplitter::handle:horizontal:hover {"
-        "   background-color: #38bdf8;"
-        "}"
-    );
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setAlignment(Qt::AlignCenter);
@@ -395,44 +366,9 @@ ImageViewer::ImageViewer(QWidget *parent)
         m_scrollArea->viewport()->installEventFilter(this);
     }
 
-    m_studioSplitter->addWidget(m_scrollArea);
-    m_studioSplitter->setCollapsible(0, false);
-
-    mainLayout->addWidget(m_studioSplitter);
+    mainLayout->addWidget(m_scrollArea, 1);
 
     updateTheme();
-}
-
-void ImageViewer::ensureStudioPanelCreated()
-{
-    if (m_studioPanel) return;
-
-    // Collapsible & Resizable Photo Studio Right Side Panel
-    m_studioPanel = new PhotoStudioPanel(this);
-    m_studioPanel->setVisible(false);
-    connect(m_studioPanel, &PhotoStudioPanel::adjustmentsChanged, this, &ImageViewer::onStudioAdjustmentsChanged);
-    connect(m_studioPanel, &PhotoStudioPanel::applyRequested, this, &ImageViewer::onStudioApply);
-    connect(m_studioPanel, &PhotoStudioPanel::closeRequested, this, &ImageViewer::closeStudioPanel);
-    connect(m_studioPanel, &PhotoStudioPanel::compareToggled, this, &ImageViewer::onStudioCompareToggled);
-    connect(m_studioPanel, &PhotoStudioPanel::eyedropperToggled, this, &ImageViewer::onStudioEyedropperToggled);
-    connect(m_studioPanel, &PhotoStudioPanel::privacyToolRequested, this, &ImageViewer::onStudioPrivacyToolRequested);
-    connect(m_studioPanel, &PhotoStudioPanel::resetRequested, this, [this]() {
-        if (!m_preStudioImage.isNull()) {
-            m_studioAdjustedProxy = m_studioProxyImage;
-            m_originalImage = m_studioProxyImage;
-            m_sourcePixmap = QPixmap();
-            m_scaledPixmap = QPixmap();
-            updateScaledPixmap();
-            if (m_studioPanel) {
-                m_studioPanel->updateHistogram(m_studioProxyImage);
-            }
-        }
-    });
-
-    if (m_studioSplitter) {
-        m_studioSplitter->addWidget(m_studioPanel);
-        m_studioSplitter->setCollapsible(1, true);
-    }
 }
 
 ImageViewer::~ImageViewer() = default;
@@ -474,9 +410,6 @@ void ImageViewer::setTransparencyMode(TransparencyMode mode)
     settings.setValue("image/transparency_mode", str);
     if (m_canvas) {
         m_canvas->update();
-    }
-    if (m_studioPanel) {
-        m_studioPanel->updateTheme();
     }
 }
 
@@ -521,9 +454,6 @@ void ImageViewer::updateTheme()
     }
     if (m_canvas) {
         m_canvas->update();
-    }
-    if (m_studioPanel) {
-        m_studioPanel->updateTheme();
     }
 }
 
@@ -574,7 +504,6 @@ bool ImageViewer::loadImage(const QImage &image)
 
 void ImageViewer::clear()
 {
-    closeStudioPanel();
     clearUndoRedo();
     m_originalImage = QImage();
     m_sourcePixmap = QPixmap();
@@ -809,15 +738,6 @@ void ImageViewer::resizeEvent(QResizeEvent *event)
 
 void ImageViewer::handleWheel(QWheelEvent *event)
 {
-    // Never zoom or scroll main image when cursor is interacting with the Photo Studio panel
-    if (m_studioPanel && m_studioPanel->isVisible()) {
-        QPoint ptInPanel = m_studioPanel->mapFromGlobal(event->globalPosition().toPoint());
-        if (m_studioPanel->rect().contains(ptInPanel)) {
-            event->accept();
-            return;
-        }
-    }
-
     // 1. Zoom with Mouse Wheel: when Zoom Tool is active or Ctrl key is pressed
     if (m_zoomToolActive || (event->modifiers() & Qt::ControlModifier)) {
         int deltaY = event->angleDelta().y();
@@ -854,8 +774,8 @@ void ImageViewer::handleWheel(QWheelEvent *event)
         qint64 now = QDateTime::currentMSecsSinceEpoch();
 
         if (!canScrollV) {
-            // In Edit Mode, Crop Mode, or Photo Studio, mouse wheel file navigation is strictly disabled
-            if (m_isEditMode || isCropModeActive() || isStudioPanelVisible()) {
+            // In Edit Mode or Crop Mode, mouse wheel file navigation is strictly disabled
+            if (m_isEditMode || isCropModeActive()) {
                 event->accept();
                 return;
             }
@@ -880,7 +800,7 @@ void ImageViewer::handleWheel(QWheelEvent *event)
             // Content is scrollable
             if (deltaY < 0 && vbar->value() >= vbar->maximum()) {
                 // In Edit Mode, hitting the bottom edge must never navigate away
-                if (m_isEditMode || isCropModeActive() || isStudioPanelVisible()) {
+                if (m_isEditMode || isCropModeActive()) {
                     event->accept();
                     return;
                 }
@@ -899,7 +819,7 @@ void ImageViewer::handleWheel(QWheelEvent *event)
                 return;
             } else if (deltaY > 0 && vbar->value() <= vbar->minimum()) {
                 // In Edit Mode, hitting the top edge must never navigate away
-                if (m_isEditMode || isCropModeActive() || isStudioPanelVisible()) {
+                if (m_isEditMode || isCropModeActive()) {
                     event->accept();
                     return;
                 }
@@ -1094,354 +1014,14 @@ void ImageViewer::confirmCrop()
     int ih = qBound(1, qRound(cr.height() * sy), m_originalImage.height() - iy);
     QRect targetRect(ix, iy, iw, ih);
 
-    if (!m_privacyMode.isEmpty()) {
-        pushUndoState();
-
-        QRect fullResRect = targetRect;
-        if (!m_preStudioImage.isNull() && !m_originalImage.isNull() &&
-            m_originalImage.width() > 0 && m_originalImage.height() > 0) {
-            double px = double(m_preStudioImage.width()) / double(m_originalImage.width());
-            double py = double(m_preStudioImage.height()) / double(m_originalImage.height());
-            int ox = qBound(0, qRound(targetRect.x() * px), m_preStudioImage.width() - 1);
-            int oy = qBound(0, qRound(targetRect.y() * py), m_preStudioImage.height() - 1);
-            int ow = qBound(1, qRound(targetRect.width() * px), m_preStudioImage.width() - ox);
-            int oh = qBound(1, qRound(targetRect.height() * py), m_preStudioImage.height() - oy);
-            fullResRect = QRect(ox, oy, ow, oh);
-        }
-
-        if (m_privacyMode == "pixelate") {
-            m_originalImage = ImageProcessor::pixelateRegion(m_originalImage, targetRect);
-            if (!m_preStudioImage.isNull()) {
-                m_preStudioImage = ImageProcessor::pixelateRegion(m_preStudioImage, fullResRect);
-            }
-            if (!m_studioProxyImage.isNull()) {
-                m_studioProxyImage = ImageProcessor::pixelateRegion(m_studioProxyImage, targetRect);
-            }
-        } else if (m_privacyMode == "blur") {
-            m_originalImage = ImageProcessor::blurRegion(m_originalImage, targetRect);
-            if (!m_preStudioImage.isNull()) {
-                m_preStudioImage = ImageProcessor::blurRegion(m_preStudioImage, fullResRect);
-            }
-            if (!m_studioProxyImage.isNull()) {
-                m_studioProxyImage = ImageProcessor::blurRegion(m_studioProxyImage, targetRect);
-            }
-        }
-        m_privacyMode.clear();
-        setCropModeActive(false);
-        setModified(true);
-        m_sourcePixmap = QPixmap();
-        m_scaledPixmap = QPixmap();
-        updateScaledPixmap();
-        return;
-    }
-
     setCropModeActive(false);
     applyCrop(targetRect);
 }
 
 void ImageViewer::cancelCropMode()
 {
-    m_privacyMode.clear();
     setCropModeActive(false);
 }
 
-void ImageViewer::toggleStudioPanel()
-{
-    if (isStudioPanelVisible()) {
-        closeStudioPanel();
-    } else {
-        openStudioPanel();
-    }
-}
-
-void ImageViewer::openStudioPanel()
-{
-    ensureStudioPanelCreated();
-    if (!m_studioPanel || m_originalImage.isNull()) return;
-    m_preStudioImage = m_originalImage;
-
-    int studioW = 340; // breathing room default
-    int canvasW = qMax(200, width() - studioW);
-    int canvasH = qMax(200, height() - 40);
-    QSize targetDisplaySize = m_preStudioImage.size().scaled(QSize(canvasW, canvasH), Qt::KeepAspectRatio);
-    if (targetDisplaySize.width() < 1) targetDisplaySize.setWidth(1);
-    if (targetDisplaySize.height() < 1) targetDisplaySize.setHeight(1);
-
-    // Create fast preview proxy sized to viewport for instantaneous 60fps adjustments
-    if (m_preStudioImage.size() != targetDisplaySize) {
-        m_studioProxyImage = m_preStudioImage.scaled(targetDisplaySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    } else {
-        m_studioProxyImage = m_preStudioImage;
-    }
-    m_studioAdjustedProxy = m_studioProxyImage;
-    m_autoProxyValid = false;
-    m_compareShowingOriginal = false;
-    m_eyedropperActive = false;
-    m_privacyMode.clear();
-
-    m_studioPanel->resetAll();
-    m_studioPanel->updateHistogram(m_studioProxyImage);
-    m_studioPanel->setVisible(true);
-
-    if (m_studioSplitter) {
-        m_studioSplitter->setSizes({canvasW, studioW});
-    }
-}
-
-void ImageViewer::closeStudioPanel()
-{
-    if (!m_studioPanel || !m_studioPanel->isVisible()) return;
-    m_studioPanel->setVisible(false);
-    m_eyedropperActive = false;
-    m_privacyMode.clear();
-    if (m_canvas) {
-        m_canvas->unsetCursor();
-        m_canvas->setCropActive(false);
-    }
-    if (!m_preStudioImage.isNull()) {
-        m_originalImage = m_preStudioImage;
-        m_sourcePixmap = QPixmap();
-        m_scaledPixmap = QPixmap();
-        updateScaledPixmap();
-        m_preStudioImage = QImage();
-    }
-    m_studioProxyImage = QImage();
-    m_studioAdjustedProxy = QImage();
-    m_autoEnhancedProxy = QImage();
-    m_autoProxyValid = false;
-
-    if (m_studioSplitter) {
-        m_studioSplitter->setSizes({width(), 0});
-    }
-}
-
-bool ImageViewer::isStudioPanelVisible() const
-{
-    return m_studioPanel && m_studioPanel->isVisible();
-}
-
-void ImageViewer::setEyedropperActive(bool a)
-{
-    onStudioEyedropperToggled(a);
-}
-
-void ImageViewer::onStudioAdjustmentsChanged()
-{
-    if (m_studioProxyImage.isNull() || !m_studioPanel) return;
-
-    QImage processed = m_studioProxyImage;
-
-    // 1. Auto-Enhance Stage
-    if (m_studioPanel->isAutoEnhanceEnabled()) {
-        ImageProcessor::AutoEnhanceOptions opts = m_studioPanel->autoEnhanceOptions();
-
-        bool optionsMatch = m_autoProxyValid
-            && (m_cachedAutoOpts.profile == opts.profile)
-            && (m_cachedAutoOpts.protectHighlights == opts.protectHighlights)
-            && (m_cachedAutoOpts.recoverShadows == opts.recoverShadows)
-            && (m_cachedAutoOpts.correctWhiteBalance == opts.correctWhiteBalance)
-            && (m_cachedAutoOpts.protectSkinTones == opts.protectSkinTones)
-            && (m_cachedAutoOpts.autoDenoiseShadows == opts.autoDenoiseShadows)
-            && (m_cachedAutoOpts.centerWeighted == opts.centerWeighted)
-            && (m_cachedAutoOpts.neutralSamplePoint == opts.neutralSamplePoint);
-
-        if (!optionsMatch) {
-            ImageProcessor::AutoEnhanceOptions baseOpts = opts;
-            baseOpts.intensity = 100;
-            m_autoEnhancedProxy = ImageProcessor::autoEnhance(m_studioProxyImage, baseOpts);
-            m_cachedAutoOpts = opts;
-            m_autoProxyValid = true;
-        }
-
-        if (opts.intensity == 100) {
-            processed = m_autoEnhancedProxy;
-        } else if (opts.intensity > 0) {
-            processed = ImageProcessor::blend(m_studioProxyImage, m_autoEnhancedProxy, opts.intensity / 100.0);
-        }
-    }
-
-    // 2. Filter Preset Stage
-    if (m_studioPanel->activePreset() != ImageProcessor::FilterPreset::Original) {
-        QImage filtered = ImageProcessor::applyPreset(processed, m_studioPanel->activePreset());
-        int strength = m_studioPanel->presetIntensity();
-        if (strength < 100) {
-            processed = ImageProcessor::blend(processed, filtered, strength / 100.0);
-        } else {
-            processed = filtered;
-        }
-    }
-
-    // 3. Manual Adjustments Stage (Light, Color, Channels)
-    int exp = m_studioPanel->exposure();
-    int b = m_studioPanel->brightness();
-    int c = m_studioPanel->contrast();
-    int hi = m_studioPanel->highlights();
-    int sh = m_studioPanel->shadows();
-    int s = m_studioPanel->saturation();
-    int t = m_studioPanel->temperature();
-    int h = m_studioPanel->tint();
-    int r = m_studioPanel->red();
-    int g = m_studioPanel->green();
-    int bl = m_studioPanel->blue();
-
-    int totalBrightness = qBound(-100, b + exp, 100);
-
-    if (totalBrightness != 0 || c != 0 || s != 0 || h != 0 || t != 0 || r != 0 || g != 0 || bl != 0 || hi != 0 || sh != 0) {
-        processed = ImageProcessor::adjust(processed, totalBrightness, c, s, h, t, r, g, bl, hi, sh);
-    }
-
-    // 4. Detail, Vignette & Invert
-    int sharp = m_studioPanel->sharpness();
-    if (sharp > 0) {
-        processed = ImageProcessor::applySharpen(processed, sharp);
-    }
-
-    int vig = m_studioPanel->vignette();
-    if (vig > 0) {
-        int vigRad = m_studioPanel->vignetteRadius();
-        processed = ImageProcessor::applyVignette(processed, vig, vigRad);
-    }
-
-    if (m_studioPanel->isInvertColors()) {
-        processed = ImageProcessor::applyInvert(processed);
-    }
-
-    m_studioAdjustedProxy = processed;
-
-    // Real-time histogram update
-    m_studioPanel->updateHistogram(processed);
-
-    // Display on canvas
-    if (!m_compareShowingOriginal) {
-        m_originalImage = processed;
-        m_sourcePixmap = QPixmap();
-        m_scaledPixmap = QPixmap();
-        updateScaledPixmap();
-    }
-}
-
-void ImageViewer::onStudioApply()
-{
-    if (m_preStudioImage.isNull() || !m_studioPanel) return;
-
-    // Apply entire pipeline to full-resolution original image
-    QImage processed = m_preStudioImage;
-
-    // 1. Auto-Enhance
-    if (m_studioPanel->isAutoEnhanceEnabled()) {
-        ImageProcessor::AutoEnhanceOptions opts = m_studioPanel->autoEnhanceOptions();
-        if (opts.neutralSamplePoint.x() >= 0 && !m_studioProxyImage.isNull() &&
-            m_studioProxyImage.width() > 0 && m_studioProxyImage.height() > 0) {
-            double px = double(m_preStudioImage.width()) / double(m_studioProxyImage.width());
-            double py = double(m_preStudioImage.height()) / double(m_studioProxyImage.height());
-            opts.neutralSamplePoint = QPoint(
-                qBound(0, qRound(opts.neutralSamplePoint.x() * px), m_preStudioImage.width() - 1),
-                qBound(0, qRound(opts.neutralSamplePoint.y() * py), m_preStudioImage.height() - 1)
-            );
-        }
-        QImage autoImg = ImageProcessor::autoEnhance(m_preStudioImage, opts);
-        if (opts.intensity == 100) {
-            processed = autoImg;
-        } else if (opts.intensity > 0) {
-            processed = ImageProcessor::blend(m_preStudioImage, autoImg, opts.intensity / 100.0);
-        }
-    }
-
-    // 2. Filter Preset
-    if (m_studioPanel->activePreset() != ImageProcessor::FilterPreset::Original) {
-        QImage filtered = ImageProcessor::applyPreset(processed, m_studioPanel->activePreset());
-        int strength = m_studioPanel->presetIntensity();
-        if (strength < 100) {
-            processed = ImageProcessor::blend(processed, filtered, strength / 100.0);
-        } else {
-            processed = filtered;
-        }
-    }
-
-    // 3. Manual Adjustments
-    int exp = m_studioPanel->exposure();
-    int b = m_studioPanel->brightness();
-    int c = m_studioPanel->contrast();
-    int hi = m_studioPanel->highlights();
-    int sh = m_studioPanel->shadows();
-    int s = m_studioPanel->saturation();
-    int t = m_studioPanel->temperature();
-    int h = m_studioPanel->tint();
-    int r = m_studioPanel->red();
-    int g = m_studioPanel->green();
-    int bl = m_studioPanel->blue();
-
-    int totalBrightness = qBound(-100, b + exp, 100);
-    if (totalBrightness != 0 || c != 0 || s != 0 || h != 0 || t != 0 || r != 0 || g != 0 || bl != 0 || hi != 0 || sh != 0) {
-        processed = ImageProcessor::adjust(processed, totalBrightness, c, s, h, t, r, g, bl, hi, sh);
-    }
-
-    // 4. Detail, Vignette & Invert
-    int sharp = m_studioPanel->sharpness();
-    if (sharp > 0) {
-        processed = ImageProcessor::applySharpen(processed, sharp);
-    }
-
-    int vig = m_studioPanel->vignette();
-    if (vig > 0) {
-        int vigRad = m_studioPanel->vignetteRadius();
-        processed = ImageProcessor::applyVignette(processed, vig, vigRad);
-    }
-
-    if (m_studioPanel->isInvertColors()) {
-        processed = ImageProcessor::applyInvert(processed);
-    }
-
-    pushUndoState();
-    m_originalImage = processed;
-    m_preStudioImage = QImage();
-    m_studioProxyImage = QImage();
-    m_studioAdjustedProxy = QImage();
-    m_autoEnhancedProxy = QImage();
-    m_autoProxyValid = false;
-
-    setModified(true);
-    m_sourcePixmap = QPixmap();
-    m_scaledPixmap = QPixmap();
-    updateScaledPixmap();
-
-    m_studioPanel->setVisible(false);
-    if (m_studioSplitter) {
-        m_studioSplitter->setSizes({width(), 0});
-    }
-}
-
-void ImageViewer::onStudioCompareToggled(bool showOriginal)
-{
-    m_compareShowingOriginal = showOriginal;
-    if (m_compareShowingOriginal) {
-        m_originalImage = m_studioProxyImage.isNull() ? m_preStudioImage : m_studioProxyImage;
-    } else {
-        m_originalImage = m_studioAdjustedProxy.isNull() ? m_preStudioImage : m_studioAdjustedProxy;
-    }
-    m_sourcePixmap = QPixmap();
-    m_scaledPixmap = QPixmap();
-    updateScaledPixmap();
-}
-
-void ImageViewer::onStudioEyedropperToggled(bool active)
-{
-    m_eyedropperActive = active;
-    if (m_canvas) {
-        if (active) {
-            m_canvas->setCursor(Qt::CrossCursor);
-        } else {
-            m_canvas->unsetCursor();
-        }
-    }
-}
-
-void ImageViewer::onStudioPrivacyToolRequested(const QString &mode)
-{
-    m_privacyMode = mode;
-    if (m_canvas) {
-        m_canvas->setCropActive(true);
-    }
-}
 
 

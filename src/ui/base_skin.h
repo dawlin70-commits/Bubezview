@@ -147,7 +147,6 @@ public slots:
     void flipCurrentHorizontal();
     void flipCurrentVertical();
     void openResizeImageDialog();
-    void openAdjustImageDialog();
     void togglePdfToc();
     void extractPdfImages(const QString &filePath = QString());
     void openPdfRepairDialog(const QString &filePath = QString());

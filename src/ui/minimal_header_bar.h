@@ -204,7 +204,6 @@ signals:
     void flipHRequested();
     void flipVRequested();
     void cropRequested();
-    void photoStudioRequested();
 
     // PDF
     void pdfStudioRequested();
@@ -336,7 +335,6 @@ private:
     QToolButton *m_btnImgFlipH = nullptr;
     QToolButton *m_btnImgFlipV = nullptr;
     QToolButton *m_btnImgCrop = nullptr;
-    QPushButton *m_btnImgStudio = nullptr;
 
     // PDF Clean 5-Pill Editing Cluster
     QPushButton *m_btnPdfText = nullptr;

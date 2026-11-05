@@ -313,15 +313,6 @@ QList<UIActionItem> ActionRegistry::getActionsForCategory(FileCategory category,
         resizeAct.trigger = [skin]() { skin->openResizeImageDialog(); };
         actions.append(resizeAct);
 
-        UIActionItem adjustAct;
-        adjustAct.id = "image_adjust";
-        adjustAct.label = QObject::tr("🎨 Photo Studio & Filters");
-        adjustAct.iconName = "adjustlevels";
-        adjustAct.shortcut = QKeySequence("Ctrl+B");
-        adjustAct.category = "edit";
-        adjustAct.trigger = [skin]() { skin->openAdjustImageDialog(); };
-        actions.append(adjustAct);
-
         UIActionItem inspectorAct;
         inspectorAct.id = "image_inspector";
         inspectorAct.label = QObject::tr("ℹ️ Properties & EXIF");

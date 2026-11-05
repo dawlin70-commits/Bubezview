@@ -10,7 +10,6 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "viewers/image/image_viewer.h"
-#include "ui/photo_studio_panel.h"
 #include "core/services/theme_manager.h"
 #include "core/services/image_processor.h"
 
@@ -36,8 +35,6 @@ private slots:
     void testImageProcessorHistogram();
     void testImageProcessorAutoEnhance();
     void testEditModeDisablesFileNavigation();
-    void testPhotoStudioPanelTabsAndPipeline();
-    void testLazyStudioPanelAndRevert();
     void testInstantAlpha();
     void testRotationInViewMode();
 };
@@ -574,89 +571,6 @@ void TestImage::testEditModeDisablesFileNavigation()
                             Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
     QApplication::sendEvent(&viewer, &wheelUpEdit);
     QCOMPARE(prevSpy.count(), 0);
-}
-
-void TestImage::testPhotoStudioPanelTabsAndPipeline()
-{
-    ImageViewer viewer;
-    viewer.resize(900, 600);
-    viewer.show();
-
-    QImage img(200, 200, QImage::Format_ARGB32);
-    img.fill(QColor(100, 120, 140));
-    viewer.loadImage(img);
-
-    // 1. Open Studio panel
-    viewer.openStudioPanel();
-    QVERIFY(viewer.isStudioPanelVisible());
-    PhotoStudioPanel *panel = viewer.studioPanel();
-    QVERIFY(panel != nullptr);
-    QVERIFY(panel->testAttribute(Qt::WA_StyledBackground));
-
-    // Test tab navigation and theme updates
-    panel->setCurrentTab(1);
-    QCOMPARE(panel->currentTabIndex(), 1);
-    ThemeManager::setPreset(ThemePreset::ModernLight);
-    panel->updateTheme();
-    ThemeManager::setPreset(ThemePreset::BreezeDark);
-    panel->updateTheme();
-
-    panel->setCurrentTab(2);
-    QCOMPARE(panel->currentTabIndex(), 2);
-    panel->setCurrentTab(3);
-    QCOMPARE(panel->currentTabIndex(), 3);
-
-    // Initial defaults
-    QCOMPARE(panel->brightness(), 0);
-    QCOMPARE(panel->contrast(), 0);
-    QCOMPARE(panel->sharpness(), 0);
-    QCOMPARE(panel->blur(), 0);
-    QCOMPARE(panel->activePreset(), ImageProcessor::FilterPreset::Original);
-    QVERIFY(!panel->isAutoEnhanceEnabled());
-
-    // 2. Test Compare toggling via panel signal
-    emit panel->compareToggled(true);
-    emit panel->compareToggled(false);
-
-    // 3. Test Reset
-    panel->resetAll();
-    QCOMPARE(panel->brightness(), 0);
-    QCOMPARE(panel->activePreset(), ImageProcessor::FilterPreset::Original);
-
-    // 4. Close Studio panel
-    viewer.closeStudioPanel();
-    QVERIFY(!viewer.isStudioPanelVisible());
-}
-
-void TestImage::testLazyStudioPanelAndRevert()
-{
-    ImageViewer viewer;
-    viewer.resize(800, 600);
-    viewer.show();
-
-    // Verify studio panel is initially nullptr (lazy loaded)
-    QCOMPARE(viewer.findChild<PhotoStudioPanel*>(), nullptr);
-    QVERIFY(!viewer.isStudioPanelVisible());
-
-    // Create a test image
-    QImage img(200, 200, QImage::Format_RGB32);
-    img.fill(Qt::blue);
-    viewer.loadImage(img);
-    QVERIFY(!viewer.isModified());
-
-    // Open studio panel -> lazily instantiated
-    viewer.openStudioPanel();
-    QVERIFY(viewer.findChild<PhotoStudioPanel*>() != nullptr);
-    QVERIFY(viewer.isStudioPanelVisible());
-
-    // Modify the image
-    viewer.rotateClockwise();
-    QVERIFY(viewer.isModified());
-
-    // Revert / Discard by reloading original
-    viewer.loadImage(img);
-    viewer.setModified(false);
-    QVERIFY(!viewer.isModified());
 }
 
 void TestImage::testInstantAlpha()

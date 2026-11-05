@@ -162,7 +162,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_actMergePdf(nullptr)
     , m_actImageCrop(nullptr)
     , m_actImageResize(nullptr)
-    , m_actImageAdjust(nullptr)
     , m_actFlattenImage(nullptr)
     , m_menuTransparency(nullptr)
     , m_grpTransparency(nullptr)
@@ -409,9 +408,6 @@ void MainWindow::setupUi()
 
     m_actImageResize = m_menuEdit->addAction(QIcon::fromTheme("transform-scale"), tr("📐 Resize Image..."), this, &BaseSkin::openResizeImageDialog);
     m_actImageResize->setShortcut(QKeySequence("Ctrl+Alt+R"));
-
-    m_actImageAdjust = m_menuEdit->addAction(QIcon::fromTheme("adjustlevels"), tr("🎨 Photo Studio & Filters..."), this, &BaseSkin::openAdjustImageDialog);
-    m_actImageAdjust->setShortcut(QKeySequence("Ctrl+B"));
 
     m_actFlattenImage = m_menuEdit->addAction(QIcon::fromTheme("fill-color"), tr("✨ Flatten Image (Remove Transparency)..."), this, [this]() {
         if (m_imageViewer && m_imageViewer->originalImage().hasAlphaChannel()) {
@@ -969,9 +965,6 @@ void MainWindow::setupUi()
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::cropRequested, this, [this]() {
         if (m_imageViewer) m_imageViewer->setCropModeActive(!m_imageViewer->isCropModeActive());
-    });
-    connect(m_minimalHeaderBar, &MinimalHeaderBar::photoStudioRequested, this, [this]() {
-        if (m_imageViewer) m_imageViewer->toggleStudioPanel();
     });
 
     // PDF Tools - Direct Contextual Actions
@@ -1662,11 +1655,6 @@ void MainWindow::updateContextualMenuStates()
     if (m_actImageResize) {
         m_actImageResize->setVisible(isImageDoc);
         m_actImageResize->setEnabled(m_isEditMode && isImageDoc && hasFile);
-    }
-
-    if (m_actImageAdjust) {
-        m_actImageAdjust->setVisible(isImageDoc);
-        m_actImageAdjust->setEnabled(m_isEditMode && isImageDoc && hasFile);
     }
 
     if (m_actFlattenImage) {

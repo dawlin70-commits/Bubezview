@@ -305,7 +305,7 @@ void BaseStudioPanel::updateTheme()
     qss.reserve(4096);
 
     // Root panel background & border (supports both BaseStudioPanel and derived classes)
-    qss += "#BaseStudioPanel, #PhotoStudioPanel, #PdfStudioPanel { background-color: " + bgHex + "; border-left: 1px solid " + borderHex + "; }\n";
+    qss += "#BaseStudioPanel, #PdfStudioPanel { background-color: " + bgHex + "; border-left: 1px solid " + borderHex + "; }\n";
 
     // Stacked widget, scroll areas, and scroll viewports MUST be transparent
     qss += "QStackedWidget, "

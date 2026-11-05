@@ -780,12 +780,9 @@ void MinimalHeaderBar::setupEditTools()
 
     makeSeparator(m_sepImg1);
 
-    // Cluster 2: Crop & Photo Studio
+    // Cluster 2: Crop
     makeToolBtn(m_btnImgCrop, tr("Crop Selection (C)"));
     connect(m_btnImgCrop, &QToolButton::clicked, this, &MinimalHeaderBar::cropRequested);
-
-    makePillBtn(m_btnImgStudio, tr("Studio"), tr("Photo Studio & Adjustments (Ctrl+B)"));
-    connect(m_btnImgStudio, &QPushButton::clicked, this, &MinimalHeaderBar::photoStudioRequested);
 
     // --- PDF Tools: 5 Clean Central Pills ---
     // Pill 1: Text
@@ -999,7 +996,6 @@ void MinimalHeaderBar::updateContextualToolsVisibility()
     if (m_btnImgFlipH) m_btnImgFlipH->setVisible(isImg);
     if (m_btnImgFlipV) m_btnImgFlipV->setVisible(isImg);
     if (m_btnImgCrop) m_btnImgCrop->setVisible(isImg);
-    if (m_btnImgStudio) m_btnImgStudio->setVisible(isImg);
 
     if (m_btnPdfText) m_btnPdfText->setVisible(isPdf);
     if (m_btnPdfHighlight) m_btnPdfHighlight->setVisible(false);
@@ -1331,10 +1327,6 @@ void MinimalHeaderBar::updateButtonStyles()
     if (m_btnImgCrop) {
         m_btnImgCrop->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Crop, iconColor, 21));
         m_btnImgCrop->setStyleSheet(editToolBtnStyle);
-    }
-    if (m_btnImgStudio) {
-        m_btnImgStudio->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Palette, isLight ? QColor("#0284c7") : QColor("#38bdf8"), 20));
-        m_btnImgStudio->setStyleSheet(contextualPillStyle);
     }
 
     // New PDF Clean 4-Pill cluster styles (height 34px, 8px radius)

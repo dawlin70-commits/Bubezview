@@ -55,9 +55,6 @@ add_test(NAME TestGpu COMMAND test_gpu)
 add_executable(test_image
     test_image.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/image/image_viewer.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/base_studio_panel.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/photo_studio_panel.cpp
-    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/photo_studio_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/system/gpu_acceleration_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp

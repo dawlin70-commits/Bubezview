@@ -106,7 +106,6 @@ public:
 #include "filmstrip_widget.h"
 #include "image_inspector_dialog.h"
 #include "image_resize_dialog.h"
-#include "photo_studio_dialog.h"
 #include <QVariantAnimation>
 #include <QPainterPath>
 
@@ -2609,23 +2608,6 @@ void BaseSkin::openResizeImageDialog()
         m_imageViewer->resizeImage(dlg.targetWidth(), dlg.targetHeight(), dlg.transformationMode());
         updateWindowTitle();
         updateStatusBar();
-    }
-}
-
-void BaseSkin::openAdjustImageDialog()
-{
-    if (!m_imageViewer || m_stackedWidget->currentIndex() != 0) return;
-    const QImage &img = m_imageViewer->originalImage();
-    if (img.isNull()) return;
-
-    PhotoStudioDialog dlg(img, this);
-    if (dlg.exec() == QDialog::Accepted) {
-        QImage res = dlg.resultImage();
-        if (!res.isNull()) {
-            m_imageViewer->applyModifiedImage(res);
-            updateWindowTitle();
-            updateStatusBar();
-        }
     }
 }
 
