@@ -24,7 +24,7 @@ private slots:
     void testInitialState();
     void testLoadSamplePdf();
     void testNavigation();
-    void testZoomAndRotation();
+    void testZoom();
     void testTextExtractionAndSearch();
     void testOcrRendering();
     void testPageExport();
@@ -109,7 +109,7 @@ void TestPdfBase::testNavigation()
     QCOMPARE(viewer.currentPage(), 0);
 }
 
-void TestPdfBase::testZoomAndRotation()
+void TestPdfBase::testZoom()
 {
     PdfBaseViewer viewer;
     QVERIFY(viewer.loadFile(m_testPdfPath));
@@ -120,10 +120,6 @@ void TestPdfBase::testZoomAndRotation()
 
     viewer.zoomOut();
     viewer.resetZoom();
-    QCOMPARE(viewer.zoomFactor(), 1.0);
-
-    viewer.rotateClockwise();
-    viewer.rotateCounterClockwise();
     QCOMPARE(viewer.zoomFactor(), 1.0);
 }
 

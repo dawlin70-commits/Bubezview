@@ -25,11 +25,10 @@ PdfBaseCanvas::PdfBaseCanvas(QWidget *parent)
     setFocusPolicy(Qt::StrongFocus);
 }
 
-void PdfBaseCanvas::setDocument(Poppler::Document *doc, double zoom, int rotation, int availWidth)
+void PdfBaseCanvas::setDocument(Poppler::Document *doc, double zoom, int availWidth)
 {
     m_doc = doc;
     m_zoomFactor = zoom;
-    m_rotation = rotation;
     m_availWidth = availWidth;
     m_pageCache.clear();
     layoutPages();
@@ -96,11 +95,6 @@ void PdfBaseCanvas::paintEvent(QPaintEvent *event)
     const QRect visibleRect = visibleRegion().boundingRect();
     const double dpr = devicePixelRatioF();
 
-    Poppler::Page::Rotation popplerRot = Poppler::Page::Rotate0;
-    if (m_rotation == 90) popplerRot = Poppler::Page::Rotate90;
-    else if (m_rotation == 180) popplerRot = Poppler::Page::Rotate180;
-    else if (m_rotation == 270) popplerRot = Poppler::Page::Rotate270;
-
     for (int i = 0; i < m_pageRects.size(); ++i) {
         const QRect &pRect = m_pageRects[i];
         if (!pRect.intersects(visibleRect)) {
@@ -117,7 +111,7 @@ void PdfBaseCanvas::paintEvent(QPaintEvent *event)
             std::unique_ptr<Poppler::Page> page(m_doc->page(i));
             if (page) {
                 const double dpi = std::clamp(72.0 * m_zoomFactor * dpr, 36.0, 450.0);
-                img = page->renderToImage(dpi, dpi, -1, -1, -1, -1, popplerRot);
+                img = page->renderToImage(dpi, dpi, -1, -1, -1, -1, Poppler::Page::Rotate0);
                 if (!img.isNull()) {
                     m_pageCache.insert(i, img);
                 }
@@ -226,9 +220,6 @@ void PdfBaseCanvas::contextMenuEvent(QContextMenuEvent *event)
     QAction *actFitWidth = menu.addAction(tr("↔ Fit to Width"));
     connect(actFitWidth, &QAction::triggered, this, &PdfBaseCanvas::fitWidthRequested);
 
-    QAction *actRotate = menu.addAction(tr("⟳ Rotate View (90°)"));
-    connect(actRotate, &QAction::triggered, this, &PdfBaseCanvas::rotateRequested);
-
     menu.addSeparator();
     QAction *actInfo = menu.addAction(tr("ℹ️ Document Info..."));
     connect(actInfo, &QAction::triggered, this, &PdfBaseCanvas::showInfoRequested);
@@ -257,10 +248,6 @@ void PdfBaseCanvas::layoutPages()
         if (!p) continue;
 
         QSizeF pSize = p->pageSize();
-        if (m_rotation == 90 || m_rotation == 270) {
-            pSize.transpose();
-        }
-
         int w = std::max(100, (int)std::round(pSize.width() * m_zoomFactor));
         int h = std::max(100, (int)std::round(pSize.height() * m_zoomFactor));
 

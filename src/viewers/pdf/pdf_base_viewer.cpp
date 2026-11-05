@@ -103,7 +103,6 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
     });
     connect(m_canvas, &PdfBaseCanvas::showInfoRequested, this, &PdfBaseViewer::showDocumentInfo);
     connect(m_canvas, &PdfBaseCanvas::printRequested, this, &PdfBaseViewer::printDocument);
-    connect(m_canvas, &PdfBaseCanvas::rotateRequested, this, &PdfBaseViewer::rotateClockwise);
     connect(m_canvas, &PdfBaseCanvas::fitWidthRequested, this, &PdfBaseViewer::fitToWidth);
 
     connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int value) {
@@ -177,9 +176,6 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
     m_btnFitWidth = createPillBtn(QStringLiteral("↔"), tr("Fit to Viewport Width"));
     connect(m_btnFitWidth, &QToolButton::clicked, this, &PdfBaseViewer::fitToWidth);
 
-    m_btnRotate = createPillBtn(QStringLiteral("⟳"), tr("Rotate 90° Clockwise"));
-    connect(m_btnRotate, &QToolButton::clicked, this, &PdfBaseViewer::rotateClockwise);
-
     m_btnInfo = createPillBtn(QStringLiteral("ℹ️"), tr("Document Metadata & Information"));
     connect(m_btnInfo, &QToolButton::clicked, this, &PdfBaseViewer::showDocumentInfo);
 
@@ -212,7 +208,6 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
     hudLayout->addWidget(m_btnZoomIn);
     hudLayout->addWidget(m_btnFitWidth);
     addSep();
-    hudLayout->addWidget(m_btnRotate);
     hudLayout->addWidget(m_btnInfo);
     hudLayout->addWidget(m_btnPrint);
     hudLayout->addWidget(m_btnToc);
@@ -260,7 +255,6 @@ bool PdfBaseViewer::loadFile(const QString &filePath)
 
     m_pageCount = m_doc->numPages();
     m_currentPage = 0;
-    m_rotationDegrees = 0;
     m_zoomFactor = 1.0;
     m_fitToWidthMode = true;
 
@@ -356,10 +350,6 @@ void PdfBaseViewer::fitToWidth()
     if (!p) return;
 
     QSizeF pSize = p->pageSize();
-    if (m_rotationDegrees == 90 || m_rotationDegrees == 270) {
-        pSize.transpose();
-    }
-
     int viewW = std::max(200, m_scrollArea->viewport()->width() - 48);
     double targetZoom = (double)viewW / std::max(10.0, pSize.width());
     setZoomFactor(std::clamp(targetZoom, 0.25, 4.0));
@@ -374,10 +364,6 @@ void PdfBaseViewer::fitToPage()
     if (!p) return;
 
     QSizeF pSize = p->pageSize();
-    if (m_rotationDegrees == 90 || m_rotationDegrees == 270) {
-        pSize.transpose();
-    }
-
     int viewW = std::max(200, m_scrollArea->viewport()->width() - 48);
     int viewH = std::max(200, m_scrollArea->viewport()->height() - 48);
 
@@ -391,27 +377,7 @@ void PdfBaseViewer::setZoomFactor(double factor)
     m_zoomFactor = std::clamp(factor, 0.15, 6.0);
     if (m_canvas && m_scrollArea) {
         int availW = m_scrollArea->viewport()->width();
-        m_canvas->setDocument(m_doc.get(), m_zoomFactor, m_rotationDegrees, availW);
-    }
-    showHud(true);
-}
-
-void PdfBaseViewer::rotateClockwise()
-{
-    m_rotationDegrees = (m_rotationDegrees + 90) % 360;
-    if (m_canvas && m_scrollArea) {
-        int availW = m_scrollArea->viewport()->width();
-        m_canvas->setDocument(m_doc.get(), m_zoomFactor, m_rotationDegrees, availW);
-    }
-    showHud(true);
-}
-
-void PdfBaseViewer::rotateCounterClockwise()
-{
-    m_rotationDegrees = (m_rotationDegrees + 270) % 360;
-    if (m_canvas && m_scrollArea) {
-        int availW = m_scrollArea->viewport()->width();
-        m_canvas->setDocument(m_doc.get(), m_zoomFactor, m_rotationDegrees, availW);
+        m_canvas->setDocument(m_doc.get(), m_zoomFactor, availW);
     }
     showHud(true);
 }
@@ -529,12 +495,7 @@ QImage PdfBaseViewer::renderPageForOcr(int pageIndex, int dpi) const
     std::unique_ptr<Poppler::Page> page(m_doc->page(pageIndex));
     if (!page) return QImage();
 
-    Poppler::Page::Rotation r = Poppler::Page::Rotate0;
-    if (m_rotationDegrees == 90) r = Poppler::Page::Rotate90;
-    else if (m_rotationDegrees == 180) r = Poppler::Page::Rotate180;
-    else if (m_rotationDegrees == 270) r = Poppler::Page::Rotate270;
-
-    return page->renderToImage(dpi, dpi, -1, -1, -1, -1, r);
+    return page->renderToImage(dpi, dpi, -1, -1, -1, -1, Poppler::Page::Rotate0);
 }
 
 QImage PdfBaseViewer::renderCurrentPageForOcr(int dpi) const
@@ -658,9 +619,6 @@ bool PdfBaseViewer::saveCurrentPageAsPdf(const QString &outputPath, QString *err
     }
 
     QSizeF pSizePoints = page->pageSize();
-    if (m_rotationDegrees == 90 || m_rotationDegrees == 270) {
-        pSizePoints.transpose();
-    }
 
     QPdfWriter writer(outputPath);
     writer.setPageSize(QPageSize(pSizePoints, QPageSize::Point));

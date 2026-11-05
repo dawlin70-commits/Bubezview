@@ -72,7 +72,7 @@ public:
     void goToPage(int page) override;
     void scrollToPage(int page);
 
-    // --- Zoom & Orientation ---
+    // --- Zoom ---
     void zoomIn() override;
     void zoomOut() override;
     void resetZoom() override;
@@ -80,8 +80,8 @@ public:
     void fitToPage();
     void setZoomFactor(double factor) override;
     double zoomFactor() const override { return m_zoomFactor; }
-    void rotateClockwise() override;
-    void rotateCounterClockwise() override;
+    void rotateClockwise() override {}
+    void rotateCounterClockwise() override {}
 
     // --- Outlines & Bookmarks ---
     void toggleTocSidebar() override;
@@ -178,7 +178,6 @@ private:
     int m_pageCount = 0;
     double m_zoomFactor = 1.0;
     bool m_fitToWidthMode = true;
-    int m_rotationDegrees = 0;
     bool m_hasOutline = false;
 
     // UI Structure
@@ -204,7 +203,6 @@ private:
     QToolButton *m_btnZoomReset = nullptr;
     QToolButton *m_btnZoomIn = nullptr;
     QToolButton *m_btnFitWidth = nullptr;
-    QToolButton *m_btnRotate = nullptr;
     QToolButton *m_btnInfo = nullptr;
     QToolButton *m_btnPrint = nullptr;
     QToolButton *m_btnToc = nullptr;

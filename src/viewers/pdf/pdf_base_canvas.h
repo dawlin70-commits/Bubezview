@@ -37,13 +37,12 @@ public:
     ~PdfBaseCanvas() override = default;
 
     /**
-     * @brief Configures document, zoom, rotation and viewport layout.
+     * @brief Configures document, zoom, and viewport layout.
      * @param doc Poppler Document pointer (non-owning).
      * @param zoom Display scale factor (1.0 = 100%).
-     * @param rotation Clockwise rotation degrees (0, 90, 180, 270).
      * @param availWidth Total available viewport pixel width for centering.
      */
-    void setDocument(Poppler::Document *doc, double zoom, int rotation, int availWidth);
+    void setDocument(Poppler::Document *doc, double zoom, int availWidth);
 
     /**
      * @brief Clears document layout and frees cached rendered page bitmaps.
@@ -91,7 +90,6 @@ signals:
     void zoomWheelRequested(double factor);
     void showInfoRequested();
     void printRequested();
-    void rotateRequested();
     void fitWidthRequested();
 
 protected:
@@ -108,7 +106,6 @@ private:
 
     Poppler::Document *m_doc = nullptr;
     double m_zoomFactor = 1.0;
-    int m_rotation = 0;
     int m_availWidth = 600;
 
     QVector<QRect> m_pageRects;
