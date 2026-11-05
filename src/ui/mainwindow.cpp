@@ -86,8 +86,6 @@ protected:
 MainWindow::MainWindow(QWidget *parent)
     : BaseSkin(parent)
     , m_minimalHeaderBar(nullptr)
-    , m_toolbar(nullptr)
-    , m_flippableToolbar(nullptr)
     , m_breadcrumbWidget(nullptr)
     , m_breadcrumbLayout(nullptr)
     , m_fileIndexLabel(nullptr)
@@ -176,7 +174,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_actInspector(nullptr)
     , m_actPdfPrevPage(nullptr)
     , m_actPdfNextPage(nullptr)
-    , m_actConfigureToolbars(nullptr)
     , m_actToggleToolbar(nullptr)
     , m_actSettings(nullptr)
     , m_actCheckUpdates(nullptr)
@@ -244,19 +241,6 @@ MainWindow::MainWindow(QWidget *parent)
         });
         connect(m_textViewer->document(), &QTextDocument::redoAvailable, this, [this](bool) {
             updateContextualMenuStates();
-        });
-    }
-
-    // FlippableToolbar annotation synchronization
-    if (m_flippableToolbar) {
-        connect(m_flippableToolbar, &FlippableToolbar::highlighterParamsChanged, this, [this](const QColor &c, double op) {
-            if (m_pdfViewer) m_pdfViewer->startHighlighter(c, op);
-        });
-        connect(m_flippableToolbar, &FlippableToolbar::shapeParamsChanged, this, [this](int type, int width, const QColor &stroke, const QColor &fill) {
-            if (m_pdfViewer) m_pdfViewer->startShape(type, width, stroke, fill);
-        });
-        connect(m_flippableToolbar, &FlippableToolbar::annotationModeExited, this, [this]() {
-            if (m_pdfViewer) m_pdfViewer->exitContinuousToolMode();
         });
     }
 
@@ -495,15 +479,15 @@ void MainWindow::setupUi()
     m_menuPdfMarkup = m_menuEdit->addMenu(QIcon::fromTheme("document-edit"), tr("Annotations & Markup Tools"));
 
     m_actPdfHighlighter = m_menuPdfMarkup->addAction(QIcon::fromTheme("draw-highlight"), tr("Highlighter..."), this, [this]() {
-        if (m_flippableToolbar) {
-            m_flippableToolbar->flipToHighlighter();
+        if (promotePdfViewerToStudio() && m_pdfViewer) {
+            m_pdfViewer->startHighlighter();
         }
     });
     m_actPdfHighlighter->setShortcut(QKeySequence("Ctrl+Shift+H"));
 
     m_actPdfShape = m_menuPdfMarkup->addAction(QIcon::fromTheme("draw-rectangle"), tr("Shapes & Arrows..."), this, [this]() {
-        if (m_flippableToolbar) {
-            m_flippableToolbar->flipToShapes();
+        if (promotePdfViewerToStudio() && m_pdfViewer) {
+            m_pdfViewer->openShapeDialog();
         }
     });
 
@@ -683,7 +667,7 @@ void MainWindow::setupUi()
 
     m_menuView->addSeparator();
 
-    m_actToggleToolbar = m_menuView->addAction(tr("Show Toolbar"), this, [this](bool checked) {
+    m_actToggleToolbar = m_menuView->addAction(tr("Show Edit Tools"), this, [this](bool checked) {
         setEditMode(checked);
     });
     m_actToggleToolbar->setCheckable(true);
@@ -795,8 +779,6 @@ void MainWindow::setupUi()
     // 5. SETTINGS MENU
     // =========================================================================
     m_menuSettings = menuBar()->addMenu(tr("&Settings"));
-    m_actConfigureToolbars = m_menuSettings->addAction(QIcon::fromTheme("configure-toolbars"), tr("Configure Toolbars..."), this, &MainWindow::configureToolbars);
-    m_menuSettings->addSeparator();
     m_menuSettings->addAction(tr("🎨 Appearance..."), this, &BaseSkin::openAppearanceSettings);
     m_menuSettings->addAction(tr("🐧 Desktop Integration..."), this, &BaseSkin::openSettings);
     m_menuSettings->addSeparator();
@@ -1105,12 +1087,6 @@ void MainWindow::setupUi()
     });
 
     // Page Dropdown Actions
-    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRotateClockwiseRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->rotateClockwise();
-    });
-    connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfRotateCounterClockwiseRequested, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->rotateCounterClockwise();
-    });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfInsertBlankPageRequested, this, [this]() {
         if (m_pdfViewer) m_pdfViewer->insertBlankPage();
     });
@@ -1237,56 +1213,6 @@ void MainWindow::setupUi()
         centralLayout->insertWidget(0, m_minimalHeaderBar);
     }
 
-    if (m_toolbar) {
-        int savedStyle = settings.value("toolbar/button_style", static_cast<int>(Qt::ToolButtonIconOnly)).toInt();
-        m_toolbar->setToolButtonStyle(static_cast<Qt::ToolButtonStyle>(savedStyle));
-
-        m_toolbar->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(m_toolbar, &QToolBar::customContextMenuRequested, this, [this](const QPoint &pos) {
-            QMenu menu(this);
-            menu.addAction(QIcon::fromTheme("configure-toolbars"), tr("Configure Toolbars..."), this, &MainWindow::configureToolbars);
-            menu.addSeparator();
-
-            QMenu *styleMenu = menu.addMenu(tr("Button Style"));
-            auto addStyleAction = [this, styleMenu](const QString &title, Qt::ToolButtonStyle style) {
-                QAction *act = styleMenu->addAction(title);
-                act->setCheckable(true);
-                act->setChecked(m_toolbar->toolButtonStyle() == style);
-                connect(act, &QAction::triggered, this, [this, style]() {
-                    if (m_toolbar) {
-                        m_toolbar->setToolButtonStyle(style);
-                        QSettings s;
-                        s.setValue("toolbar/button_style", static_cast<int>(style));
-                    }
-                });
-            };
-
-            addStyleAction(tr("Icons Only"), Qt::ToolButtonIconOnly);
-            addStyleAction(tr("Text Only"), Qt::ToolButtonTextOnly);
-            addStyleAction(tr("Text Beside Icons"), Qt::ToolButtonTextBesideIcon);
-            addStyleAction(tr("Text Under Icons"), Qt::ToolButtonTextUnderIcon);
-
-            menu.addSeparator();
-            QAction *toggleAct = menu.addAction(tr("Show Toolbar"), this, [this](bool visible) {
-                setEditMode(visible);
-            });
-            toggleAct->setCheckable(true);
-            toggleAct->setChecked(m_isEditMode);
-
-            menu.exec(m_toolbar->mapToGlobal(pos));
-        });
-    }
-
-    setupToolbarActionsMap();
-    if (m_toolbar) {
-        rebuildToolbar();
-    }
-
-    // Default: Preview Mode (toolbar hidden)
-    if (m_flippableToolbar) {
-        m_flippableToolbar->setVisible(false);
-    }
-
     // Status bar with Breadcrumbs
     QStatusBar *bar = statusBar();
 
@@ -1326,154 +1252,6 @@ void MainWindow::setupUi()
     bar->addWidget(m_fileInfoLabel, 1);
     bar->addPermanentWidget(m_btnUpdateNotification);
     bar->addPermanentWidget(m_statusLabel);
-}
-
-QStringList MainWindow::defaultToolbarActions() const
-{
-    return QStringList() << "zoom_tool"
-                         << "zoom_reset"
-                         << "zoom_fit"
-                         << "separator"
-                         << "filmstrip";
-}
-
-void MainWindow::setupToolbarActionsMap()
-{
-    m_idToActionMap.clear();
-    m_toolbarActionInfoMap.clear();
-
-    auto registerAction = [this](const QString &id, QAction *act, const QString &customLabel = QString()) {
-        if (!act) return;
-        m_idToActionMap[id] = act;
-        ToolbarActionInfo info;
-        info.id = id;
-        info.text = customLabel.isEmpty() ? act->text().remove('&') : customLabel;
-        info.icon = act->icon();
-        QString shortcutStr = act->shortcut().toString(QKeySequence::NativeText);
-        info.tooltip = shortcutStr.isEmpty() ? info.text : QString("%1 (%2)").arg(info.text, shortcutStr);
-        m_toolbarActionInfoMap[id] = info;
-    };
-
-    // Universal navigation
-    registerAction("prev_file", m_actPrev, tr("Previous (◀)"));
-    registerAction("next_file", m_actNext, tr("Next (▶)"));
-    registerAction("folder_view", m_actFolderView, tr("Folder Gallery View"));
-
-    // PDF page navigation
-    registerAction("pdf_prev_page", m_actPdfPrevPage, tr("Previous Page (PDF)"));
-    registerAction("pdf_next_page", m_actPdfNextPage, tr("Next Page (PDF)"));
-
-    // Zoom & view
-    registerAction("zoom_tool", m_actZoomTool, tr("Zoom Tool (Mouse Wheel)"));
-    registerAction("zoom_in", m_actZoomIn, tr("Zoom In"));
-    registerAction("zoom_out", m_actZoomOut, tr("Zoom Out"));
-    registerAction("zoom_reset", m_actZoomReset, tr("Zoom 100%"));
-    registerAction("zoom_fit", m_actFit, tr("Fit to Window"));
-    registerAction("slideshow", m_actSlideshow, tr("Photo Slideshow"));
-    registerAction("filmstrip", m_actFilmstrip, tr("Thumbnail Strip"));
-    registerAction("pdf_toc", m_actPdfToc, tr("Document Outline (TOC)"));
-    registerAction("file_info", m_actInspector, tr("File Properties / Info"));
-
-    // File
-    registerAction("open_file", m_actOpenFile, tr("Open File..."));
-    registerAction("open_folder", m_actOpenFolder, tr("Open Folder..."));
-    registerAction("open_with_default", m_actOpenWith, tr("Open with Default Application"));
-    registerAction("save_file", m_actSave, tr("Save Changes"));
-    registerAction("save_as", m_actSaveAs, tr("Save Copy As..."));
-    registerAction("export_as", m_actExportAs, tr("Export As..."));
-    registerAction("print_file", m_actPrint, tr("Print..."));
-    registerAction("copy_path", m_actCopyPath, tr("Copy File Path"));
-    registerAction("delete_file", m_actTrashFile, tr("Move to Trash"));
-
-    // Edit & Transform
-    registerAction("undo", m_actUndo, tr("Undo"));
-    registerAction("redo", m_actRedo, tr("Redo"));
-    registerAction("cut", m_actCut, tr("Cut"));
-    registerAction("copy", m_actCopy, tr("Copy"));
-    registerAction("paste", m_actPaste, tr("Paste"));
-    registerAction("rotate_right", m_actRotateRight, tr("Rotate 90° Clockwise"));
-    registerAction("rotate_left", m_actRotateLeft, tr("Rotate 90° Counterclockwise"));
-    registerAction("flip_h", m_actFlipH, tr("Flip Horizontally"));
-    registerAction("flip_v", m_actFlipV, tr("Flip Vertically"));
-
-    // Native Image Crop
-    registerAction("image_crop", m_actImageCrop, tr("✂️ Crop Image"));
-
-    // Folder actions
-    registerAction("folder_rename", m_actFolderRename, tr("Rename Folder Item"));
-    registerAction("folder_trash", m_actFolderTrash, tr("Move Item to Trash"));
-    registerAction("folder_new", m_actFolderNew, tr("New Folder"));
-
-    // Text Editor actions
-    registerAction("edit_text", m_actToggleTextEdit, tr("Edit Text Mode"));
-    registerAction("line_numbers", m_actLineNumbers, tr("Line Numbers"));
-    registerAction("syntax_highlight", m_actSyntaxHighlight, tr("Syntax Highlighting"));
-    registerAction("word_wrap", m_actWordWrap, tr("Word Wrap"));
-    registerAction("show_whitespace", m_actShowWhitespace, tr("Show Whitespace Characters"));
-    registerAction("goto_line", m_actGotoLine, tr("Go to Line"));
-    registerAction("find_replace", m_actFindReplace, tr("Find & Replace"));
-    registerAction("duplicate_line", m_actDuplicateLine, tr("Duplicate Current Line"));
-    registerAction("delete_line", m_actDeleteLine, tr("Delete Current Line"));
-    registerAction("toggle_comment", m_actToggleComment, tr("Toggle Comment"));
-
-    // PDF Annotation & Tools
-    registerAction("search_doc", m_actSearch, tr("Find in Document"));
-    registerAction("ocr", m_actOcr, tr("Extract Text (OCR)"));
-    registerAction("extract_images", m_actExtractImages, tr("Extract Images from PDF"));
-    registerAction("pdf_cut_text", m_actCut, tr("Cut (Text / Area)"));
-    registerAction("pdf_highlighter", m_actPdfHighlighter, tr("Highlighter"));
-    registerAction("pdf_select_area", m_actPdfSelectArea, tr("Select Area"));
-    registerAction("pdf_typewriter", m_actPdfTypewriter, tr("Typewriter / Text Insert"));
-    registerAction("pdf_signature", m_actPdfSignature, tr("Signature"));
-    registerAction("pdf_watermark", m_actPdfWatermark, tr("Watermark / Stamp"));
-    registerAction("pdf_shape", m_actPdfShape, tr("Shapes & Arrows"));
-    registerAction("pdf_insert_image", m_actPdfInsertImage, tr("Insert Image"));
-    registerAction("pdf_snapshot", m_actPdfSnapshot, tr("Snapshot (300 DPI)"));
-    registerAction("pdf_redact", m_actPdfRedact, tr("Redact / Blackout"));
-    registerAction("pdf_merge", m_actMergePdf, tr("Merge PDF Documents"));
-    registerAction("pdf_organize", m_actOrganizePdf, tr("Organize PDF Pages"));
-    registerAction("pdf_repair", m_actRepairPdf, tr("Repair PDF Document"));
-
-    // Media
-    registerAction("audio_trim", m_actAudioTrim, tr("Trim Audio Clip"));
-    registerAction("audio_tags", m_actAudioTags, tr("Edit Audio Tags"));
-    registerAction("audio_extract", m_actAudioExtract, tr("Extract Audio Track"));
-}
-
-void MainWindow::rebuildToolbar()
-{
-    if (!m_toolbar) return;
-    m_toolbar->clear();
-
-    QSettings settings;
-    if (m_configuredToolbarActionIds.isEmpty()) {
-        m_configuredToolbarActionIds = settings.value("toolbar/actions", defaultToolbarActions()).toStringList();
-    }
-
-    for (const QString &id : m_configuredToolbarActionIds) {
-        if (id == "separator") {
-            m_toolbar->addSeparator();
-        } else if (m_idToActionMap.contains(id)) {
-            m_toolbar->addAction(m_idToActionMap[id]);
-        }
-    }
-}
-
-void MainWindow::configureToolbars()
-{
-    QSettings settings;
-    QStringList currentIds = settings.value("toolbar/actions", defaultToolbarActions()).toStringList();
-    ConfigureToolbarDialog dlg(m_toolbarActionInfoMap, currentIds, defaultToolbarActions(), this);
-
-    connect(&dlg, &ConfigureToolbarDialog::applied, this, [this](const QStringList &actionIds) {
-        m_configuredToolbarActionIds = actionIds;
-        QSettings s;
-        s.setValue("toolbar/actions", actionIds);
-        rebuildToolbar();
-        updateContextualMenuStates();
-    });
-
-    dlg.exec();
 }
 
 void MainWindow::setEditMode(bool editMode)
@@ -1827,12 +1605,12 @@ void MainWindow::updateContextualMenuStates()
     }
 
     if (m_actRotateRight) {
-        m_actRotateRight->setVisible((isImage || isPdf) && !isFolder);
-        m_actRotateRight->setEnabled(m_isEditMode && (isImage || isPdf) && !isFolder);
+        m_actRotateRight->setVisible(isImage && !isFolder);
+        m_actRotateRight->setEnabled(m_isEditMode && isImage && !isFolder);
     }
     if (m_actRotateLeft) {
-        m_actRotateLeft->setVisible((isImage || isPdf) && !isFolder);
-        m_actRotateLeft->setEnabled(m_isEditMode && (isImage || isPdf) && !isFolder);
+        m_actRotateLeft->setVisible(isImage && !isFolder);
+        m_actRotateLeft->setEnabled(m_isEditMode && isImage && !isFolder);
     }
     if (m_actFlipH) {
         m_actFlipH->setVisible(isImage && !isFolder);
@@ -2759,7 +2537,6 @@ void MainWindow::setupPdfViewerConnections()
         openFile(newPath);
     });
     m_pdfViewer->setOnContinuousModeExited([this]() {
-        if (m_flippableToolbar) m_flippableToolbar->flipToMain();
         if (m_minimalHeaderBar) {
             if (m_minimalHeaderBar->pdfTextButton() && m_minimalHeaderBar->pdfTextButton()->isChecked()) {
                 m_minimalHeaderBar->pdfTextButton()->blockSignals(true);

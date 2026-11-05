@@ -23,7 +23,6 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/build_console_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/build_options_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/compiler_wizard_dialog.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/configure_toolbar_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/custom_source_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/engine_prompt_card.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/extension_feature_model.cpp
@@ -31,7 +30,6 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/fallback_notice_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/filmstrip_widget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/first_run_wizard.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/flippable_toolbar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/goto_folder_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/gallery_zoom_transition.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/photo_studio_dialog.cpp

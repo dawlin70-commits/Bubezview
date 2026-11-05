@@ -2379,10 +2379,6 @@ void BaseSkin::rotateCurrentRight()
     if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->rotateClockwise();
-    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
-        m_pdfViewer->rotateClockwise();
-    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
-        m_officeViewer->pdfViewer()->rotateClockwise();
     }
     updateWindowTitle();
     updateStatusBar();
@@ -2393,10 +2389,6 @@ void BaseSkin::rotateCurrentLeft()
     if (!m_isEditMode) return;
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
         m_imageViewer->rotateCounterClockwise();
-    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
-        m_pdfViewer->rotateCounterClockwise();
-    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
-        m_officeViewer->pdfViewer()->rotateCounterClockwise();
     }
     updateWindowTitle();
     updateStatusBar();
@@ -3205,10 +3197,6 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
         }
     } else if (activeCategory == FileCategory::Pdf) {
         if (m_currentCategory != FileCategory::Folder) {
-            if (m_isEditMode) {
-                menu.addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate Clockwise"), this, &BaseSkin::rotateCurrentRight);
-                menu.addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate Counterclockwise"), this, &BaseSkin::rotateCurrentLeft);
-            }
             menu.addAction(QIcon::fromTheme("zoom-fit-best"), tr("Fit to Width"), this, &BaseSkin::fitCurrent);
             menu.addAction(QIcon::fromTheme("zoom-original"), tr("Original Size (100%)"), this, &BaseSkin::resetZoomCurrent);
             menu.addSeparator();

@@ -17,9 +17,6 @@
  * - Interactive breadcrumb path navigation bar in the status bar.
  * - Dynamic Open With application integration.
  */
-#include "configure_toolbar_dialog.h"
-#include "flippable_toolbar.h"
-
 class MinimalHeaderBar;
 
 class MainWindow : public BaseSkin {
@@ -73,20 +70,12 @@ protected:
 
 public slots:
     void applyCurrentTheme() override;
-    void configureToolbars();
-    void rebuildToolbar();
-
-public:
-    QStringList defaultToolbarActions() const;
 
 private:
     void setupUi();
     void updateStatusBar() override;
-    void setupToolbarActionsMap();
 
     MinimalHeaderBar *m_minimalHeaderBar;
-    QToolBar *m_toolbar;
-    FlippableToolbar *m_flippableToolbar;
     QWidget *m_breadcrumbWidget;
     QHBoxLayout *m_breadcrumbLayout;
     QLabel *m_fileIndexLabel;
@@ -187,16 +176,11 @@ private:
     QAction *m_actInspector;
     QAction *m_actPdfPrevPage;
     QAction *m_actPdfNextPage;
-    QAction *m_actConfigureToolbars;
     QAction *m_actToggleToolbar;
     QAction *m_actSettings;
     QAction *m_actCheckUpdates;
     QAction *m_actShortcuts;
     QAction *m_actAbout;
-
-    QMap<QString, ToolbarActionInfo> m_toolbarActionInfoMap;
-    QMap<QString, QAction*> m_idToActionMap;
-    QStringList m_configuredToolbarActionIds;
 
     // View toggles: discovery mode & unsupported files
     QAction *m_actShowUninstalledFeatures;

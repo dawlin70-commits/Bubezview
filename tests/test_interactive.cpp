@@ -22,7 +22,6 @@
 #include "cpu_info.h"
 #include "compiler_wizard_dialog.h"
 #include "build_config.h"
-#include "configure_toolbar_dialog.h"
 #include "package_manager_helper.h"
 #include "ocr_manager.h"
 #include "ocr_dialog.h"
@@ -39,7 +38,6 @@
 #include "pdf_signature_dialog.h"
 #include "pdf_typewriter_dialog.h"
 #include "pdf_watermark_dialog.h"
-#include "flippable_toolbar.h"
 #include "pdf_canvas_tools.h"
 #include "ocr_snipper_overlay.h"
 #include "plugin_manager.h"
@@ -66,7 +64,7 @@ private slots:
     void testTextAdvancedFeatures();
     void testPdfSearchForwardAndWrap();
     void testAppLauncher();
-    void testImageAndPdfRotation();
+    void testImageRotation();
     // Office tests disabled as requested (user tests manually)
     // void testOfficeSamplesAllFiles();
     // void testOfficeLibreOfficeHeadlessConversion();
@@ -85,7 +83,7 @@ private slots:
     void testPdfRepairAndPageOrganizer();
     void testHighContrastScrollbarsAndZoomPan();
     void testPdfAnnotationsAndTools();
-    void testToolbarCustomizationAndPdfWheelScroll();
+    void testPdfWheelScrollAndZoom();
     void testFolderInspectorAndTextThumbnail();
     void testArchiveNavigationAndFolderGalleryReturn();
     void testModuleCompilationAndFallbackPlan();
@@ -519,7 +517,7 @@ void TestInteractive::testAppLauncher()
     QVERIFY(pdfApps.size() >= 0);
 }
 
-void TestInteractive::testImageAndPdfRotation()
+void TestInteractive::testImageRotation()
 {
     ImageViewer imgViewer;
     QSignalSpy modSpy(&imgViewer, &ImageViewer::modificationChanged);
@@ -1928,22 +1926,7 @@ void TestInteractive::testPdfAnnotationsAndTools()
         presViewer.show();
         QVERIFY(presViewer.loadFile(presPdf));
 
-        // 1. Verify FlippableToolbar 3D flip card operations
-        FlippableToolbar flippableBar;
-        flippableBar.resize(900, 36);
-        flippableBar.show();
-        QCOMPARE(flippableBar.currentMode(), FlippableToolbarMode::Main);
-
-        flippableBar.flipToHighlighter(QColor(255, 235, 59), 0.40);
-        QCOMPARE(flippableBar.targetMode(), FlippableToolbarMode::Highlighter);
-        QTRY_COMPARE_WITH_TIMEOUT(flippableBar.currentMode(), FlippableToolbarMode::Highlighter, 1000);
-
-        flippableBar.flipToShapes(2, 3, Qt::red, Qt::transparent);
-        QCOMPARE(flippableBar.targetMode(), FlippableToolbarMode::Shapes);
-        QTRY_COMPARE_WITH_TIMEOUT(flippableBar.currentMode(), FlippableToolbarMode::Shapes, 1000);
-        QCOMPARE(flippableBar.shapeType(), 2);
-
-        // Verify shape stamp rendering for Arrow (shapeType 2) and Line (shapeType 3) with exact vector coordinates
+        // 1. Verify shape stamp rendering for Arrow (shapeType 2) and Line (shapeType 3) with exact vector coordinates
         QImage arrowUpLeft = PdfCanvasTools::renderShapeStamp(2, 2, Qt::red, Qt::transparent, QSize(120, 120), QPoint(100, 100), QPoint(20, 20));
         QVERIFY(!arrowUpLeft.isNull());
         QCOMPARE(arrowUpLeft.size(), QSize(120, 120));
@@ -1987,10 +1970,6 @@ void TestInteractive::testPdfAnnotationsAndTools()
         QVERIFY(PdfCanvasTools::hitTestShape(1, ellipseRect, QPoint(-1, -1), QPoint(-1, -1), 2, Qt::transparent, QPoint(50, 100), 6));
         QVERIFY(!PdfCanvasTools::hitTestShape(1, ellipseRect, QPoint(-1, -1), QPoint(-1, -1), 2, Qt::transparent, QPoint(100, 100), 6));
 
-        flippableBar.flipToMain();
-        QCOMPARE(flippableBar.targetMode(), FlippableToolbarMode::Main);
-        QTRY_COMPARE_WITH_TIMEOUT(flippableBar.currentMode(), FlippableToolbarMode::Main, 1000);
-
         // 2. Verify PdfTransformBox applyAndContinue (Stamp Again)
         auto *pw = presViewer.findChild<PdfPageWidget*>();
         QVERIFY(pw != nullptr);
@@ -2007,50 +1986,9 @@ void TestInteractive::testPdfAnnotationsAndTools()
     }
 }
 
-void TestInteractive::testToolbarCustomizationAndPdfWheelScroll()
+void TestInteractive::testPdfWheelScrollAndZoom()
 {
-    // 1. Verify default toolbar layout in MainWindow
-    MainWindow window;
-    window.resize(900, 600);
-    window.show();
-    QVERIFY(QTest::qWaitForWindowExposed(&window));
-
-    QStringList expectedDefaults = {"zoom_tool", "zoom_reset", "zoom_fit", "separator", "filmstrip"};
-    QCOMPARE(window.defaultToolbarActions(), expectedDefaults);
-    QCOMPARE(window.isFilmstripVisible(), false);
-
-    // 2. Verify ConfigureToolbarDialog operations
-    QMap<QString, ToolbarActionInfo> mockActions;
-    ToolbarActionInfo a1{"prev_file", "Previous", QIcon(), "Previous File"};
-    ToolbarActionInfo a2{"next_file", "Next", QIcon(), "Next File"};
-    ToolbarActionInfo a_fv{"folder_view", "Folder Gallery View", QIcon(), "Folder Gallery View"};
-    ToolbarActionInfo a_zt{"zoom_tool", "Zoom Tool", QIcon(), "Zoom Tool"};
-    ToolbarActionInfo a3{"zoom_in", "Zoom In", QIcon(), "Zoom In"};
-    ToolbarActionInfo a4{"zoom_out", "Zoom Out", QIcon(), "Zoom Out"};
-    ToolbarActionInfo a5{"zoom_reset", "Zoom 100%", QIcon(), "Zoom 100%"};
-    ToolbarActionInfo a_zf{"zoom_fit", "Fit to Window", QIcon(), "Fit to Window"};
-    ToolbarActionInfo a_fs{"filmstrip", "Thumbnail Strip", QIcon(), "Thumbnail Strip"};
-    ToolbarActionInfo a6{"fullscreen", "Fullscreen", QIcon(), "Fullscreen"};
-    mockActions["prev_file"] = a1;
-    mockActions["next_file"] = a2;
-    mockActions["folder_view"] = a_fv;
-    mockActions["zoom_tool"] = a_zt;
-    mockActions["zoom_in"] = a3;
-    mockActions["zoom_out"] = a4;
-    mockActions["zoom_reset"] = a5;
-    mockActions["zoom_fit"] = a_zf;
-    mockActions["filmstrip"] = a_fs;
-    mockActions["fullscreen"] = a6;
-
-    QStringList currentIds = {"prev_file", "next_file"};
-    ConfigureToolbarDialog dlg(mockActions, currentIds, expectedDefaults, &window);
-    QCOMPARE(dlg.selectedActionIds(), currentIds);
-
-    // Test restoring defaults in dialog
-    QMetaObject::invokeMethod(&dlg, "onRestoreDefaultsClicked");
-    QCOMPARE(dlg.selectedActionIds(), expectedDefaults);
-
-    // 3. Verify PDF mouse wheel page navigation and smooth zoom
+    // Verify PDF mouse wheel page navigation and smooth zoom
     PdfViewer pdfViewer;
     pdfViewer.resize(600, 800);
     pdfViewer.show();

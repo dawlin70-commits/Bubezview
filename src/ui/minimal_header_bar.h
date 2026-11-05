@@ -227,8 +227,6 @@ signals:
     void pdfInsertImageRequested();
     void pdfCryptoSignatureRequested();
     void pdfScanSignatureFieldsRequested();
-    void pdfRotateClockwiseRequested();
-    void pdfRotateCounterClockwiseRequested();
     void pdfInsertBlankPageRequested();
     void pdfDeletePageRequested();
     void pdfMergeRequested();
