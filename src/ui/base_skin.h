@@ -220,6 +220,7 @@ protected:
     bool promotePdfViewerToStudio();
     IArchiveViewer *ensureArchiveViewerCreated();
     IMediaViewer *ensureMediaViewerCreated();
+    bool promoteMediaViewerToStudio();
     OfficeViewer *ensureOfficeViewerCreated();
     FolderViewer *ensureFolderViewerCreated();
     virtual void onViewerInitialized(FileCategory category) { Q_UNUSED(category); }

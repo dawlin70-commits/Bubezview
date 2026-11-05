@@ -1285,7 +1285,10 @@ bool MediaViewer::loadFile(const QString &filePath)
     m_lastReportedSec = -1;
 
     QString ext = fi.suffix().toLower();
-    QStringList audioExts = {"mp3", "wav", "flac", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "wv", "dsf", "dff", "mpc"};
+    QStringList audioExts = {
+        "mp3", "wav", "flac", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "mac", "wv",
+        "dsf", "dff", "dsd", "mpc", "mod", "xm", "it", "s3m", "ac3", "eac3", "dts"
+    };
     m_isAudioOnly = audioExts.contains(ext);
 
     if (m_isAudioOnly) {
@@ -1631,7 +1634,8 @@ void MediaViewer::setSiblingFiles(const QStringList &files)
     m_siblingFiles = files;
     m_audioSiblingFiles.clear();
     static const QStringList audioExts = {
-        "mp3", "wav", "flac", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "wv", "dsf", "dff", "mpc"
+        "mp3", "wav", "flac", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "mac", "wv",
+        "dsf", "dff", "dsd", "mpc", "mod", "xm", "it", "s3m", "ac3", "eac3", "dts"
     };
     for (const QString &f : files) {
         QFileInfo fi(f);
@@ -1652,7 +1656,8 @@ void MediaViewer::scanAudioSiblings()
     QFileInfo fi(m_currentFilePath);
     QDir dir = fi.dir();
     static const QStringList audioExts = {
-        "mp3", "flac", "wav", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "wv", "dsf", "dff", "mpc"
+        "mp3", "flac", "wav", "ogg", "m4a", "aac", "wma", "opus", "aiff", "ape", "mac", "wv",
+        "dsf", "dff", "dsd", "mpc", "mod", "xm", "it", "s3m", "ac3", "eac3", "dts"
     };
 
     // List all files in the folder with natural numeric collation

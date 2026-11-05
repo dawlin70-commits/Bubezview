@@ -47,7 +47,9 @@ const QStringList PluginManager::s_archiveExtensions = {
 
 const QStringList PluginManager::s_mediaExtensions = {
     "mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "m4v", "3gp",
-    "mp3", "wav", "flac", "ogg", "m4a", "aac", "wma", "opus"
+    "mp3", "wav", "flac", "ogg", "m4a", "aac", "wma", "opus",
+    "dsf", "dff", "dsd", "ape", "mac", "wv",
+    "mod", "xm", "it", "s3m", "ac3", "eac3", "dts", "mpc"
 };
 
 const QStringList PluginManager::s_officeExtensions = {

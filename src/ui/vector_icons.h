@@ -422,7 +422,8 @@ inline Type detectType(const QString &fileName, bool isDir) {
     };
     if (imageExts.contains(ext)) return Type::Image;
     static const QStringList mediaExts = {
-        "mp3", "wav", "flac", "ogg", "m4a", "aac", "opus", "mp4", "mkv", "avi", "mov", "webm"
+        "mp3", "wav", "flac", "ogg", "m4a", "aac", "opus", "mp4", "mkv", "avi", "mov", "webm",
+        "dsf", "dff", "dsd", "ape", "mac", "wv", "mod", "xm", "it", "s3m", "ac3", "eac3", "dts", "mpc"
     };
     if (mediaExts.contains(ext)) return Type::Media;
     if (ext == "pdf") return Type::Pdf;

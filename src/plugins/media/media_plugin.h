@@ -34,7 +34,11 @@ public:
             QStringLiteral("wmv"), QStringLiteral("m4v"), QStringLiteral("3gp"),
             QStringLiteral("mp3"), QStringLiteral("wav"), QStringLiteral("flac"),
             QStringLiteral("ogg"), QStringLiteral("m4a"), QStringLiteral("aac"),
-            QStringLiteral("wma"), QStringLiteral("opus")
+            QStringLiteral("wma"), QStringLiteral("opus"),
+            QStringLiteral("dsf"), QStringLiteral("dff"), QStringLiteral("dsd"),
+            QStringLiteral("ape"), QStringLiteral("mac"), QStringLiteral("wv"),
+            QStringLiteral("mod"), QStringLiteral("xm"), QStringLiteral("it"), QStringLiteral("s3m"),
+            QStringLiteral("ac3"), QStringLiteral("eac3"), QStringLiteral("dts"), QStringLiteral("mpc")
         };
     }
 

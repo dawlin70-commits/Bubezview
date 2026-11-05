@@ -29,6 +29,7 @@
 #include "build_config.h"
 #include "package_manager_helper.h"
 #include <QProgressDialog>
+#include <QCheckBox>
 #include <QFileIconProvider>
 #include <QMimeDatabase>
 #include <QMimeType>
@@ -596,6 +597,76 @@ IMediaViewer *BaseSkin::ensureMediaViewerCreated()
     return m_mediaViewer;
 }
 
+bool BaseSkin::promoteMediaViewerToStudio()
+{
+    if (!m_mediaViewer) {
+        ensureMediaViewerCreated();
+    }
+    if (!m_mediaViewer) return false;
+
+    // If it's already the MPV studio plugin (not SystemMediaViewer), nothing to do
+    if (!dynamic_cast<SystemMediaViewer*>(m_mediaViewer)) {
+        return true;
+    }
+
+    // Check if the Media Studio plugin is available
+    if (!PluginManager::instance().isEngineAvailable(FileCategory::Media)) {
+        const QString distro = PackageManagerHelper::distroDisplayName();
+        const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("mpv"));
+        QMessageBox prompt(this);
+        prompt.setWindowTitle(tr("Multimedia Studio Module Required"));
+        prompt.setIcon(QMessageBox::Warning);
+        prompt.setText(tr("<h3>Multimedia Studio Module Required</h3>"
+                          "<p>The <b>Multimedia Studio</b> plugin (<code>bubez_media.so</code> / <code>libmpv</code>) is required for audio trimming, filters, pitch shifting, and equalizer tools.</p>"
+                          "<p>Detected distribution: <b>%1</b></p>"
+                          "<p>Manual installation command:<br><code>%2</code></p>")
+                          .arg(distro, installCmd));
+
+        QPushButton *btnInstall = prompt.addButton(tr("Install Media Module"), QMessageBox::AcceptRole);
+        QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
+        Q_UNUSED(btnCancel);
+        prompt.setDefaultButton(btnInstall);
+        prompt.exec();
+
+        if (prompt.clickedButton() == btnInstall) {
+            if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
+                PluginManager::instance().discoverPlugins();
+            }
+        }
+        if (!PluginManager::instance().isEngineAvailable(FileCategory::Media)) {
+            return false;
+        }
+    }
+
+    QString curPath = m_currentFilePath;
+
+    IViewerWidget *vw = PluginManager::instance().createViewer(FileCategory::Media, this);
+    IMediaViewer *studioMv = dynamic_cast<IMediaViewer*>(vw);
+    if (!studioMv) {
+        delete vw;
+        return false;
+    }
+
+    m_mediaViewer->stop();
+    QWidget *oldW = m_stackedWidget->widget(4);
+    m_stackedWidget->removeWidget(oldW);
+    delete oldW;
+
+    m_mediaViewer = studioMv;
+    m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
+    m_mediaViewer->setSiblingFiles(m_siblingFiles);
+    m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
+        openFile(path);
+    });
+    m_mediaViewer->updateTheme();
+    onViewerInitialized(FileCategory::Media);
+
+    if (!curPath.isEmpty() && QFile::exists(curPath)) {
+        m_mediaViewer->loadFile(curPath);
+    }
+    return true;
+}
+
 OfficeViewer *BaseSkin::ensureOfficeViewerCreated()
 {
     if (m_officeViewer) {
@@ -753,6 +824,83 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         m_stackedWidget->setCurrentIndex(3);
         opened = m_archiveViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Media) {
+        const QString ext = QFileInfo(m_currentFilePath).suffix().toLower();
+        static const QSet<QString> s_exoticMediaExtensions = {
+            QStringLiteral("dsf"), QStringLiteral("dff"), QStringLiteral("dsd"),
+            QStringLiteral("ape"), QStringLiteral("mac"),
+            QStringLiteral("wv"),
+            QStringLiteral("mod"), QStringLiteral("xm"), QStringLiteral("it"), QStringLiteral("s3m"),
+            QStringLiteral("med"), QStringLiteral("okt"), QStringLiteral("669"), QStringLiteral("mtm"),
+            QStringLiteral("ac3"), QStringLiteral("eac3"), QStringLiteral("dts"), QStringLiteral("dtshd"),
+            QStringLiteral("mpc"), QStringLiteral("mp+"), QStringLiteral("mpp"),
+            QStringLiteral("tta"), QStringLiteral("tak")
+        };
+        const bool isExotic = s_exoticMediaExtensions.contains(ext);
+        const bool hasMpv = PluginManager::instance().isEngineAvailable(FileCategory::Media);
+
+        if (isExotic) {
+            if (!hasMpv) {
+                const QString distro = PackageManagerHelper::distroDisplayName();
+                const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("mpv"));
+                QMessageBox prompt(this);
+                prompt.setWindowTitle(tr("Multimedia Studio Module Required"));
+                prompt.setIcon(QMessageBox::Warning);
+                prompt.setText(tr("<h3>Advanced Media Engine Required</h3>"
+                                  "<p>The audio format <b>.%1</b> requires the <b>Multimedia Studio</b> engine (<code>bubez_media.so</code> / <code>libmpv</code>) for decoding and playback.</p>"
+                                  "<p>Detected distribution: <b>%2</b></p>"
+                                  "<p>Manual installation command:<br><code>%3</code></p>")
+                                  .arg(ext.toUpper(), distro, installCmd));
+
+                QPushButton *btnInstall = prompt.addButton(tr("Install MPV Engine"), QMessageBox::AcceptRole);
+                QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
+                Q_UNUSED(btnCancel);
+                prompt.setDefaultButton(btnInstall);
+                prompt.exec();
+
+                if (prompt.clickedButton() == btnInstall) {
+                    if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
+                        PluginManager::instance().discoverPlugins();
+                    }
+                }
+                if (!PluginManager::instance().isEngineAvailable(FileCategory::Media)) {
+                    return OpenResult::Failed;
+                }
+            }
+            promoteMediaViewerToStudio();
+        } else {
+            if (!hasMpv) {
+                QSettings s("Bubez", "BubezView");
+                if (!s.value("media/skip_mpv_prompt", false).toBool()) {
+                    QMessageBox prompt(this);
+                    prompt.setWindowTitle(tr("High-Fidelity Audio Engine Available"));
+                    prompt.setIcon(QMessageBox::Information);
+                    prompt.setText(tr("<h3>High-Fidelity Audio Engine Available</h3>"
+                                      "<p>BubezView can play this file immediately using the built-in system player.</p>"
+                                      "<p>Would you like to install the optional <b>Multimedia Studio (MPV)</b> engine for enhanced features including 64-bit float playback, turntable visualization, real-time oscilloscope, and waveform scrubbing?</p>"));
+                    QPushButton *btnInstall = prompt.addButton(tr("Install MPV Engine"), QMessageBox::AcceptRole);
+                    QPushButton *btnContinue = prompt.addButton(tr("Use System Engine"), QMessageBox::RejectRole);
+                    Q_UNUSED(btnContinue);
+                    prompt.setDefaultButton(btnContinue);
+
+                    QCheckBox *dontAskAgain = new QCheckBox(tr("Don't ask again"), &prompt);
+                    prompt.setCheckBox(dontAskAgain);
+
+                    prompt.exec();
+
+                    if (dontAskAgain->isChecked()) {
+                        s.setValue("media/skip_mpv_prompt", true);
+                    }
+
+                    if (prompt.clickedButton() == btnInstall) {
+                        if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
+                            PluginManager::instance().discoverPlugins();
+                            promoteMediaViewerToStudio();
+                        }
+                    }
+                }
+            }
+        }
+
         ensureMediaViewerCreated();
         m_stackedWidget->setCurrentIndex(4);
         m_mediaViewer->setSiblingFiles(m_siblingFiles);
@@ -2139,6 +2287,11 @@ void BaseSkin::setEditMode(bool editMode)
 {
     if (editMode && m_currentCategory == FileCategory::Pdf) {
         if (!promotePdfViewerToStudio()) {
+            return;
+        }
+    }
+    if (editMode && m_currentCategory == FileCategory::Media) {
+        if (!promoteMediaViewerToStudio()) {
             return;
         }
     }

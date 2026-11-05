@@ -732,15 +732,24 @@ void MainWindow::setupUi()
     });
 
     m_actAudioTrim = m_menuTools->addAction(QIcon::fromTheme("edit-cut"), tr("Trim / Cut Audio Clip..."), this, [this]() {
+        if (m_currentCategory == FileCategory::Media && !promoteMediaViewerToStudio()) {
+            return;
+        }
         if (m_mediaViewer) m_mediaViewer->openAudioTrimDialog();
     });
     m_actAudioTrim->setShortcut(QKeySequence("Ctrl+Shift+T"));
 
     m_actAudioTags = m_menuTools->addAction(QIcon::fromTheme("tag"), tr("Edit Audio Tags & Cover..."), this, [this]() {
+        if (m_currentCategory == FileCategory::Media && !promoteMediaViewerToStudio()) {
+            return;
+        }
         if (m_mediaViewer) m_mediaViewer->openAudioTagDialog();
     });
 
     m_actAudioExtract = m_menuTools->addAction(QIcon::fromTheme("audio-x-generic"), tr("Extract Audio Track from Video..."), this, [this]() {
+        if (m_currentCategory == FileCategory::Media && !promoteMediaViewerToStudio()) {
+            return;
+        }
         if (m_mediaViewer) m_mediaViewer->extractAudioTrack();
     });
 
@@ -1277,6 +1286,20 @@ void MainWindow::setEditMode(bool editMode)
         }
 
         BaseSkin::setEditMode(true);
+        if (!isEditMode()) {
+            if (m_minimalHeaderBar) {
+                m_minimalHeaderBar->setEditMode(false);
+            }
+            if (!m_wasMaximizedBeforeEdit && (isMaximized() || isFullScreen())) {
+                const bool isOffscreen = (QGuiApplication::platformName() == QLatin1String("offscreen"));
+                showNormal();
+                if ((isOffscreen || !isVisible()) &&
+                    m_preEditGeometry.isValid() && m_preEditGeometry.width() >= 320 && m_preEditGeometry.height() >= 240) {
+                    setGeometry(m_preEditGeometry);
+                }
+            }
+            return;
+        }
 
         if (m_minimalHeaderBar) {
             m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
@@ -1294,7 +1317,7 @@ void MainWindow::setEditMode(bool editMode)
         BaseSkin::setEditMode(false);
 
         if (m_minimalHeaderBar) {
-            m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+            m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(false);
             m_minimalHeaderBar->setEditMode(false);
         }
 
@@ -1329,7 +1352,7 @@ void MainWindow::setEditMode(bool editMode)
     } else {
         BaseSkin::setEditMode(editMode);
         if (m_minimalHeaderBar) {
-            m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+            m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_isEditMode && m_mediaViewer && m_mediaViewer->isAudioOnly());
             m_minimalHeaderBar->setEditMode(editMode);
         }
     }
@@ -1352,7 +1375,7 @@ void MainWindow::updateWindowTitle()
             m_minimalHeaderBar->setTitle(tr("BubezView"));
         }
         m_minimalHeaderBar->setIndexBadge(fileIndexText());
-        m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+        m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_isEditMode && m_mediaViewer && m_mediaViewer->isAudioOnly());
         m_minimalHeaderBar->setCategory(m_currentCategory);
         m_minimalHeaderBar->setSearchAvailable(m_currentCategory == FileCategory::Text || m_currentCategory == FileCategory::Pdf || m_currentCategory == FileCategory::Archive);
     }
@@ -1371,7 +1394,7 @@ void MainWindow::onFileLoaded(const QString &filePath, FileCategory category, co
             m_minimalHeaderBar->setTitle(tr("BubezView"));
         }
         m_minimalHeaderBar->setIndexBadge(fileIndexText());
-        m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
+        m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_isEditMode && m_mediaViewer && m_mediaViewer->isAudioOnly());
         m_minimalHeaderBar->setCategory(category);
         m_minimalHeaderBar->setSearchAvailable(category == FileCategory::Text || category == FileCategory::Pdf || category == FileCategory::Archive);
         if (category == FileCategory::Text && m_textViewer) {
@@ -1906,18 +1929,18 @@ void MainWindow::updateContextualMenuStates()
         m_actRepairPdf->setEnabled(isPdf && hasQpdf && hasFile);
     }
     if (m_actAudioTrim) {
-        m_actAudioTrim->setVisible(isMedia && !isFolder);
+        m_actAudioTrim->setVisible(m_isEditMode && isMedia && !isFolder);
         m_actAudioTrim->setEnabled(m_isEditMode && isMedia && !isFolder);
     }
     if (m_actAudioTags) {
         bool isAudioOnly = isMedia && !isFolder && m_mediaViewer && m_mediaViewer->isAudioOnly();
-        m_actAudioTags->setVisible(isAudioOnly);
+        m_actAudioTags->setVisible(m_isEditMode && isAudioOnly);
         m_actAudioTags->setEnabled(m_isEditMode && isAudioOnly);
     }
     if (m_actAudioExtract) {
         bool isVideo = isMedia && !isFolder && m_mediaViewer && !m_mediaViewer->isAudioOnly();
-        m_actAudioExtract->setVisible(isVideo);
-        m_actAudioExtract->setEnabled(isVideo);
+        m_actAudioExtract->setVisible(m_isEditMode && isVideo);
+        m_actAudioExtract->setEnabled(m_isEditMode && isVideo);
     }
     if (m_actToolsExportAs) {
         m_actToolsExportAs->setVisible((isImage || isPdf || isText || isOffice) && !isFolder);

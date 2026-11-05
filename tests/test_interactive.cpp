@@ -115,6 +115,11 @@ void TestInteractive::initTestCase()
 
     QSettings settings("BubezView", "bubezview");
     settings.remove("Gallery/ShowFolders");
+
+    QSettings appSettings("Bubez", "BubezView");
+    appSettings.setValue("modules/mpv_enabled", true);
+    appSettings.setValue("media/skip_mpv_prompt", true);
+    appSettings.setValue("archive/skip_7zip_prompt", true);
 }
 
 void TestInteractive::testFolderLoadingAndRules()
