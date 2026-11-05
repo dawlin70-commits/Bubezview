@@ -48,6 +48,9 @@ void SmoothWaveformScrubber::loadAudioWaveform(const QString &filePath)
     QPointer<SmoothWaveformScrubber> guard(this);
     QString targetPath = filePath;
     QThreadPool::globalInstance()->start([guard, targetPath]() {
+        if (!guard || guard->m_currentFilePath != targetPath) {
+            return;
+        }
         QVector<float> rawPeaks = AudioProcessor::generateWaveformPeaks(targetPath, 110);
         // Check if real non-flat peaks were extracted
         float maxPeak = 0.0f;
@@ -92,9 +95,11 @@ void SmoothWaveformScrubber::loadAudioWaveform(const QString &filePath)
 
 void SmoothWaveformScrubber::setPlaybackPosition(qint64 currentMs, qint64 totalDurationMs)
 {
+    if (totalDurationMs > 0) {
+        m_totalDurationMs = totalDurationMs;
+    }
     if (m_isDragging) return;
     m_currentMs = currentMs;
-    m_totalDurationMs = totalDurationMs;
     if (m_totalDurationMs > 0) {
         m_progress = std::clamp(static_cast<double>(m_currentMs) / static_cast<double>(m_totalDurationMs), 0.0, 1.0);
     } else {
@@ -127,6 +132,7 @@ void SmoothWaveformScrubber::mousePressEvent(QMouseEvent *event)
         m_isDragging = true;
         qint64 targetMs = calculateSeekMs(event->pos().x());
         if (targetMs >= 0) {
+            m_currentMs = targetMs;
             m_progress = std::clamp(static_cast<double>(event->pos().x()) / std::max(1, width()), 0.0, 1.0);
             update();
             emit seekRequested(targetMs, false);
@@ -140,6 +146,7 @@ void SmoothWaveformScrubber::mouseMoveEvent(QMouseEvent *event)
     if ((event->buttons() & Qt::LeftButton) && m_isDragging && m_totalDurationMs > 0) {
         qint64 targetMs = calculateSeekMs(event->pos().x());
         if (targetMs >= 0) {
+            m_currentMs = targetMs;
             m_progress = std::clamp(static_cast<double>(event->pos().x()) / std::max(1, width()), 0.0, 1.0);
             update();
             emit seekRequested(targetMs, false);
@@ -154,6 +161,7 @@ void SmoothWaveformScrubber::mouseReleaseEvent(QMouseEvent *event)
         m_isDragging = false;
         qint64 targetMs = calculateSeekMs(event->pos().x());
         if (targetMs >= 0) {
+            m_currentMs = targetMs;
             m_progress = std::clamp(static_cast<double>(event->pos().x()) / std::max(1, width()), 0.0, 1.0);
             update();
             emit seekRequested(targetMs, true);

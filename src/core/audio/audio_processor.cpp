@@ -348,14 +348,15 @@ QVector<float> AudioProcessor::generateWaveformPeaks(const QString &filePath, in
         return peaks;
     }
 
-    // Fast 8kHz 8-bit mono raw audio dump via ffmpeg for instant peak computing
+    // Fast 2kHz 8-bit mono single-threaded raw audio dump via ffmpeg for non-contending peak computing
     QProcess proc;
     QStringList args;
     args << "-v" << "quiet"
+         << "-threads" << "1"
          << "-i" << filePath
          << "-vn"
          << "-ac" << "1"
-         << "-ar" << "8000"
+         << "-ar" << "2000"
          << "-f" << "u8"
          << "-";
 

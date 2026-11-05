@@ -19,6 +19,8 @@ private slots:
     void testInstantiation();
     void testAudioOnlyDetection();
     void testSiblingFiles();
+    void testAudioSiblingFilteringAndRewind();
+    void testSeekDragAndRelease();
     void testControlsAndMixerReset();
     void testInvalidFileHandling();
     void testFolderCoverLoading();
@@ -74,6 +76,57 @@ void TestMediaSystem::testSiblingFiles()
     QMetaObject::invokeMethod(&viewer, "playNextTrack");
     QVERIFY(callbackInvoked);
     QCOMPARE(receivedTrack, QStringLiteral("/path/to/track1.mp3"));
+}
+
+void TestMediaSystem::testAudioSiblingFilteringAndRewind()
+{
+    SystemMediaViewer viewer;
+    QStringList mixedSiblings = {
+        QStringLiteral("/path/to/00_info.txt"),
+        QStringLiteral("/path/to/01_song.flac"),
+        QStringLiteral("/path/to/cover.jpg"),
+        QStringLiteral("/path/to/02_song.mp3"),
+        QStringLiteral("/path/to/playlist.m3u")
+    };
+    viewer.setSiblingFiles(mixedSiblings);
+
+    QStringList visited;
+    viewer.setOnTrackChangeRequested([&](const QString &track) {
+        visited.append(track);
+    });
+
+    // Advancing tracks in audio mode must skip non-audio files (.txt, .jpg, .m3u)
+    QMetaObject::invokeMethod(&viewer, "playNextTrack");
+    QMetaObject::invokeMethod(&viewer, "playNextTrack");
+    QMetaObject::invokeMethod(&viewer, "playNextTrack");
+
+    QCOMPARE(visited.size(), 3);
+    QCOMPARE(visited[0], QStringLiteral("/path/to/01_song.flac"));
+    QCOMPARE(visited[1], QStringLiteral("/path/to/02_song.mp3"));
+    QCOMPARE(visited[2], QStringLiteral("/path/to/01_song.flac"));
+
+    // Seek past 3 seconds and verify playPreviousTrack rewinds to 0 instead of switching tracks
+    visited.clear();
+    viewer.requestSeek(5000, false);
+    QMetaObject::invokeMethod(&viewer, "playPreviousTrack");
+    QVERIFY(visited.isEmpty());
+
+    // Now at 0ms, playPreviousTrack should switch to the previous audio track
+    QMetaObject::invokeMethod(&viewer, "playPreviousTrack");
+    QCOMPARE(visited.size(), 1);
+    QCOMPARE(visited[0], QStringLiteral("/path/to/02_song.mp3"));
+}
+
+void TestMediaSystem::testSeekDragAndRelease()
+{
+    SystemMediaViewer viewer;
+    // Simulate rapid drag updates (exact = false) followed by mouse release (exact = true)
+    for (int i = 1; i <= 10; ++i) {
+        viewer.requestSeek(i * 1000, false);
+    }
+    viewer.requestSeek(10000, true);
+    viewer.toggleTracklistDrawer();
+    viewer.toggleTracklistDrawer();
 }
 
 void TestMediaSystem::testControlsAndMixerReset()

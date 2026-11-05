@@ -869,8 +869,9 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
             promoteMediaViewerToStudio();
         } else {
             if (!hasMpv) {
+                static bool s_dismissedMpvPromptThisSession = false;
                 QSettings s("Bubez", "BubezView");
-                if (!s.value("media/skip_mpv_prompt", false).toBool()) {
+                if (!s_dismissedMpvPromptThisSession && !s.value("media/skip_mpv_prompt", false).toBool()) {
                     QMessageBox prompt(this);
                     prompt.setWindowTitle(tr("High-Fidelity Audio Engine Available"));
                     prompt.setIcon(QMessageBox::Information);
@@ -886,6 +887,7 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
                     prompt.setCheckBox(dontAskAgain);
 
                     prompt.exec();
+                    s_dismissedMpvPromptThisSession = true;
 
                     if (dontAskAgain->isChecked()) {
                         s.setValue("media/skip_mpv_prompt", true);

@@ -22,6 +22,8 @@
 #include <QFrame>
 #include <QMenu>
 #include <QAction>
+#include <QListWidget>
+#include <QTimer>
 #include "core/interfaces/i_media_viewer.h"
 #include "vinyl_sleeve_widget.h"
 #include "smooth_waveform_scrubber.h"
@@ -136,9 +138,35 @@ public:
      */
     bool isCompactAudioLayout() const { return m_isCompactAudioLayout; }
 
+    /**
+     * @brief Dynamically adjusts audio player elements between wide and compact modes.
+     * @param forceW Optional width override.
+     * @param forceH Optional height override.
+     */
+    void updateAudioResponsiveLayout(int forceW = 0, int forceH = 0) override;
+
+public slots:
+    /**
+     * @brief Requests a seek to target position, updating UI immediately during drag
+     * and committing the pipeline seek on release/click (exact == true).
+     * @param targetMs Target position in milliseconds.
+     * @param exact True when the user releases the mouse or clicks to commit the seek.
+     */
+    void requestSeek(qint64 targetMs, bool exact = false);
+
+    /**
+     * @brief Toggles the collapsible audio tracklist drawer.
+     */
+    void toggleTracklistDrawer();
+
+    /**
+     * @brief Refreshes the audio tracklist drawer with sibling audio files in the current folder.
+     */
+    void updateTracklistDrawer();
+
 protected:
     /**
-     * @brief Intercepts keyboard events for media control shortcuts (Space, Left/Right arrows, Up/Down).
+     * @brief Intercepts keyboard events and slider clicks for media control shortcuts.
      */
     bool eventFilter(QObject *watched, QEvent *event) override;
 
@@ -160,14 +188,17 @@ private slots:
     void playPreviousTrack();
     void toggleLoop();
     void toggleShuffle();
+    void toggleAutoAdvance();
     void showSpeedMenu();
     void setPlaybackSpeed(double rate);
 
 private:
     void setupUi();
     void updatePlayPauseUi(bool isPlaying);
+    void updateLoopButtonStyle();
+    void updateAutoAdvanceUi();
     void updateTimeLabel(qint64 currentMs, qint64 totalMs);
-    void updateAudioResponsiveLayout(int forceW = -1, int forceH = -1);
+    void scanAudioSiblings();
     void promptMpvRequired(const QString &toolName);
     static QString formatTime(qint64 ms);
 
@@ -185,6 +216,8 @@ private:
     VinylSleeveWidget *m_vinylSleeveWidget = nullptr;
     QFrame *m_metaCard = nullptr;
     QVBoxLayout *m_metaLayout = nullptr;
+    QHBoxLayout *m_badgeLayout = nullptr;
+    QLabel *m_audioQualityBadge = nullptr;
     QLabel *m_audioTitleLabel = nullptr;
     QLabel *m_audioArtistLabel = nullptr;
     QLabel *m_audioAlbumLabel = nullptr;
@@ -197,6 +230,7 @@ private:
     QLabel *m_badgeTrack = nullptr;
     QLabel *m_badgeDate = nullptr;
     QLabel *m_badgeTech = nullptr;
+    QLabel *m_badgeComment = nullptr;
 
     // Timeline Scrubber
     QWidget *m_controlsWidget = nullptr;
@@ -221,17 +255,28 @@ private:
     QPushButton *m_btnStop = nullptr;
     QPushButton *m_btnNext = nullptr;
     QPushButton *m_btnLoop = nullptr;
+    QPushButton *m_btnAutoAdvance = nullptr;
+    QPushButton *m_btnTracklist = nullptr;
+    QFrame *m_tracklistDrawer = nullptr;
+    QListWidget *m_tracklistWidget = nullptr;
     QPushButton *m_btnMute = nullptr;
     QSlider *m_sliderVolume = nullptr;
 
     // State Tracking
     QString m_currentFilePath;
     QStringList m_siblingFiles;
+    QStringList m_audioSiblingFiles;
     int m_currentIndex = -1;
     qint64 m_durationMs = 0;
     qint64 m_currentPositionMs = 0;
+    qint64 m_lastReportedSec = -1;
+    qint64 m_lastSeekTargetMs = -1;
+    qint64 m_postSeekObservedPos = -1;
+    QTimer *m_seekGraceTimer = nullptr;
+    QTimer *m_seekWatchdogTimer = nullptr;
     bool m_isAudioOnly = true;
     bool m_isLooping = false;
+    bool m_isAutoAdvance = true;
     bool m_isShuffle = false;
     bool m_isSeeking = false;
     bool m_isEditMode = false;
