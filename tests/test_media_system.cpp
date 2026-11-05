@@ -22,6 +22,7 @@ private slots:
     void testControlsAndMixerReset();
     void testInvalidFileHandling();
     void testFolderCoverLoading();
+    void testVisualSnapshot();
 };
 
 void TestMediaSystem::testInstantiation()
@@ -116,6 +117,54 @@ void TestMediaSystem::testFolderCoverLoading()
     QLabel *coverLabel = viewer.widget()->findChild<QLabel*>();
     QVERIFY(coverLabel != nullptr);
     viewer.clear();
+}
+
+void TestMediaSystem::testVisualSnapshot()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    QString audioPath = tempDir.filePath("sample_track.mp3");
+    QFile audioFile(audioPath);
+    QVERIFY(audioFile.open(QIODevice::WriteOnly));
+    audioFile.write("MockAudioData");
+    audioFile.close();
+
+    // Create an elegant cover image
+    QString coverPath = tempDir.filePath("cover.jpg");
+    QImage mockCover(400, 400, QImage::Format_RGB32);
+    mockCover.fill(QColor("#0369a1"));
+    {
+        QPainter p(&mockCover);
+        p.setRenderHint(QPainter::Antialiasing);
+        QLinearGradient grad(0, 0, 400, 400);
+        grad.setColorAt(0.0, QColor("#38bdf8"));
+        grad.setColorAt(0.5, QColor("#0284c7"));
+        grad.setColorAt(1.0, QColor("#0f172a"));
+        p.fillRect(mockCover.rect(), grad);
+        p.setPen(Qt::white);
+        QFont f = p.font();
+        f.setPixelSize(48);
+        f.setBold(true);
+        p.setFont(f);
+        p.drawText(mockCover.rect(), Qt::AlignCenter, QStringLiteral("ALBUM\nART"));
+    }
+    QVERIFY(mockCover.save(coverPath, "JPG"));
+
+    SystemMediaViewer viewer;
+    viewer.resize(820, 520);
+    viewer.loadFile(audioPath);
+    viewer.show();
+    QCoreApplication::processEvents();
+
+    QPixmap pixmap = viewer.grab();
+    pixmap.save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/media_viewer_restored.png", "PNG");
+
+    // Compact layout snapshot
+    viewer.resize(520, 420);
+    QCoreApplication::processEvents();
+    QPixmap compactPix = viewer.grab();
+    compactPix.save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/media_viewer_restored_compact.png", "PNG");
 }
 
 QTEST_MAIN(TestMediaSystem)

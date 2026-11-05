@@ -106,6 +106,8 @@ add_test(NAME TestExif COMMAND test_exif)
 add_executable(test_media_system
     test_media_system.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/media/system_media_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/media/vinyl_sleeve_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/media/smooth_waveform_scrubber.cpp
     ${CMAKE_SOURCE_DIR}/src/core/audio/audio_processor.cpp
     ${CMAKE_SOURCE_DIR}/src/core/audio/equalizer_manager.cpp
 )

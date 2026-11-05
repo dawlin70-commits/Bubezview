@@ -1,10 +1,10 @@
 /**
  * @file system_media_viewer.h
- * @brief Native audio and video playback widget utilizing Qt6 Multimedia and operating system codecs.
+ * @brief Unified audio and video playback widget utilizing Qt6 Multimedia.
  *
- * Serves as the lightweight, zero-dependency media engine for BubezView. When the high-performance
- * MPV GPU player is not installed or enabled, SystemMediaViewer seamlessly plays audio and video
- * using platform decoders (GStreamer, PipeWire, ALSA, FFmpeg).
+ * Provides the identical, high-fidelity BubezView media player user interface
+ * (vinyl record sleeve, centered album art, typography, waveform scrubber, and transport controls)
+ * powered by Qt6 Multimedia when libmpv is unavailable.
  */
 
 #pragma once
@@ -18,11 +18,18 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QBoxLayout>
+#include <QFrame>
+#include <QMenu>
+#include <QAction>
 #include "core/interfaces/i_media_viewer.h"
+#include "vinyl_sleeve_widget.h"
+#include "smooth_waveform_scrubber.h"
 
 /**
  * @class SystemMediaViewer
- * @brief Native media viewer providing audio and video playback via Qt6 Multimedia.
+ * @brief Native media viewer providing audio and video playback via Qt6 Multimedia
+ * while sharing the exact same visual design system as the primary MediaViewer.
  */
 class SystemMediaViewer : public QWidget, public IMediaViewer
 {
@@ -72,7 +79,7 @@ public:
      * @brief Determines whether the active track is purely audio (no video stream).
      * @return True if audio only, false if video stream is present.
      */
-    bool isAudioOnly() const override;
+    bool isAudioOnly() const override { return m_isAudioOnly; }
 
     /**
      * @brief Sets the list of sibling media files in the current directory for playlist traversal.
@@ -80,26 +87,26 @@ public:
      */
     void setSiblingFiles(const QStringList &files) override;
 
+    /**
+     * @brief Sets or checks edit mode state.
+     */
     void setEditMode(bool editMode) override { m_isEditMode = editMode; }
     bool isEditMode() const override { return m_isEditMode; }
 
     /**
-     * @brief Audio trim placeholder for system playback mode.
+     * @brief Switches the active audio workspace page.
+     * In system mode, workspaces > 0 require the MPV multimedia engine.
      */
-    void switchAudioWorkspace(int index) override { Q_UNUSED(index); }
+    void switchAudioWorkspace(int index) override;
     int audioWorkspaceIndex() const override { return 0; }
+
+    /**
+     * @brief Studio tool actions prompt for MPV module installation.
+     */
     void openAudioTrimDialog() override;
     void toggleAudioStudio() override { openAudioTrimDialog(); }
     bool isAudioStudioActive() const override { return false; }
-
-    /**
-     * @brief Audio tag editor placeholder or dispatch for system playback mode.
-     */
     void openAudioTagDialog() override;
-
-    /**
-     * @brief Audio extraction placeholder or dispatch for system playback mode.
-     */
     void extractAudioTrack() override;
 
     /**
@@ -119,44 +126,49 @@ public:
      */
     void resetMixer() override;
 
+    /**
+     * @brief Updates widget and control stylesheets to match current theme preset.
+     */
+    void updateTheme() override;
+
+    /**
+     * @brief Returns whether the audio player is currently in compact stacked layout.
+     */
+    bool isCompactAudioLayout() const { return m_isCompactAudioLayout; }
+
 protected:
     /**
      * @brief Intercepts keyboard events for media control shortcuts (Space, Left/Right arrows, Up/Down).
      */
     bool eventFilter(QObject *watched, QEvent *event) override;
 
+    /**
+     * @brief Handles window resize to adjust between horizontal and compact responsive layouts.
+     */
+    void resizeEvent(QResizeEvent *event) override;
+
 private slots:
-    /** @brief Updates the timeline slider and timestamp label when playback position advances. */
     void onPositionChanged(qint64 position);
-    /** @brief Updates the timeline slider range when total media duration is resolved. */
     void onDurationChanged(qint64 duration);
-    /** @brief Updates the play/pause button icon when playback state transitions. */
     void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
-    /** @brief Handles end-of-media looping or automatic track advancement. */
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
-    /** @brief Switches between video canvas and audio metadata card based on video stream presence. */
     void onHasVideoChanged(bool hasVideo);
-    /** @brief Seeks to the specified playback position in milliseconds. */
-    void seekTo(int positionMs);
-    /** @brief Adjusts audio output volume percentage (0..100). */
+    void seekTo(qint64 positionMs);
     void setVolume(int volumePercent);
-    /** @brief Toggles audio output mute state. */
     void toggleMute();
-    /** @brief Advances to the next media file in the current directory playlist. */
     void playNextTrack();
-    /** @brief Returns to the previous media file in the current directory playlist. */
     void playPreviousTrack();
-    /** @brief Toggles single-track repeat loop mode. */
     void toggleLoop();
+    void toggleShuffle();
+    void showSpeedMenu();
+    void setPlaybackSpeed(double rate);
 
 private:
-    /** @brief Constructs the video surface, audio card, and bottom transport bar. */
     void setupUi();
-    /** @brief Updates the play/pause button icon to match current state. */
     void updatePlayPauseUi(bool isPlaying);
-    /** @brief Updates the formatted current/total duration readout label. */
     void updateTimeLabel(qint64 currentMs, qint64 totalMs);
-    /** @brief Formats a duration in milliseconds as MM:SS or HH:MM:SS. */
+    void updateAudioResponsiveLayout(int forceW = -1, int forceH = -1);
+    void promptMpvRequired(const QString &toolName);
     static QString formatTime(qint64 ms);
 
     // Qt Multimedia Core
@@ -164,31 +176,66 @@ private:
     QAudioOutput *m_audioOutput = nullptr;
     QVideoWidget *m_videoWidget = nullptr;
 
-    // UI Widgets
+    // Visual Canvas Container
     QWidget *m_canvasContainer = nullptr;
-    QWidget *m_audioCard = nullptr;
-    QLabel *m_lblAudioCover = nullptr;
-    QLabel *m_lblAudioTitle = nullptr;
-    QLabel *m_lblAudioArtist = nullptr;
-    QLabel *m_lblEngineBadge = nullptr;
 
-    QWidget *m_controlsBar = nullptr;
+    // Audio Player Mode (Vinyl Sleeve + Metadata)
+    QWidget *m_audioCoverWidget = nullptr;
+    QBoxLayout *m_audioTopLayout = nullptr;
+    VinylSleeveWidget *m_vinylSleeveWidget = nullptr;
+    QFrame *m_metaCard = nullptr;
+    QVBoxLayout *m_metaLayout = nullptr;
+    QLabel *m_audioTitleLabel = nullptr;
+    QLabel *m_audioArtistLabel = nullptr;
+    QLabel *m_audioAlbumLabel = nullptr;
+    QLabel *m_audioSpecsLabel = nullptr;
+
+    // Badges Container
+    QWidget *m_tagsBadgeContainer = nullptr;
+    QHBoxLayout *m_tagsBadgeLayout = nullptr;
+    QLabel *m_badgeGenre = nullptr;
+    QLabel *m_badgeTrack = nullptr;
+    QLabel *m_badgeDate = nullptr;
+    QLabel *m_badgeTech = nullptr;
+
+    // Timeline Scrubber
+    QWidget *m_controlsWidget = nullptr;
+    QFrame *m_waveformContainer = nullptr;
+    QLabel *m_waveTimeLeftLabel = nullptr;
+    SmoothWaveformScrubber *m_waveformScrubber = nullptr;
+    QLabel *m_waveTimeRightLabel = nullptr;
+
+    // Video Slider Row
+    QWidget *m_videoSliderWidget = nullptr;
+    QLabel *m_timeLeftLabel = nullptr;
+    QSlider *m_sliderPosition = nullptr;
+    QLabel *m_timeRightLabel = nullptr;
+
+    // Transport Controls
+    QPushButton *m_btnSpeed = nullptr;
+    QLabel *m_bottomTitleLabel = nullptr;
+    QLabel *m_bottomFileLabel = nullptr;
+    QPushButton *m_btnShuffle = nullptr;
     QPushButton *m_btnPrev = nullptr;
     QPushButton *m_btnPlayPause = nullptr;
     QPushButton *m_btnStop = nullptr;
     QPushButton *m_btnNext = nullptr;
     QPushButton *m_btnLoop = nullptr;
     QPushButton *m_btnMute = nullptr;
-    QSlider *m_sliderPosition = nullptr;
     QSlider *m_sliderVolume = nullptr;
-    QLabel *m_lblTime = nullptr;
 
     // State Tracking
     QString m_currentFilePath;
     QStringList m_siblingFiles;
     int m_currentIndex = -1;
+    qint64 m_durationMs = 0;
+    qint64 m_currentPositionMs = 0;
+    bool m_isAudioOnly = true;
     bool m_isLooping = false;
+    bool m_isShuffle = false;
     bool m_isSeeking = false;
-    float m_previousVolume = 1.0f;
     bool m_isEditMode = false;
+    bool m_isCompactAudioLayout = false;
+    float m_previousVolume = 1.0f;
+    double m_playbackRate = 1.0;
 };

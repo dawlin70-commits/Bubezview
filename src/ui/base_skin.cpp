@@ -874,9 +874,9 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
                     QMessageBox prompt(this);
                     prompt.setWindowTitle(tr("High-Fidelity Audio Engine Available"));
                     prompt.setIcon(QMessageBox::Information);
-                    prompt.setText(tr("<h3>High-Fidelity Audio Engine Available</h3>"
+                    prompt.setText(tr("<h3>High-Fidelity Audio Studio Available</h3>"
                                       "<p>BubezView can play this file immediately using the built-in system player.</p>"
-                                      "<p>Would you like to install the optional <b>Multimedia Studio (MPV)</b> engine for enhanced features including 64-bit float playback, turntable visualization, real-time oscilloscope, and waveform scrubbing?</p>"));
+                                      "<p>Would you like to install the optional <b>Multimedia Studio (MPV)</b> engine for enhanced studio features including 64-bit float playback, real-time oscilloscope, and audio editing tools (trim, filters, equalizer)?</p>"));
                     QPushButton *btnInstall = prompt.addButton(tr("Install MPV Engine"), QMessageBox::AcceptRole);
                     QPushButton *btnContinue = prompt.addButton(tr("Use System Engine"), QMessageBox::RejectRole);
                     Q_UNUSED(btnContinue);

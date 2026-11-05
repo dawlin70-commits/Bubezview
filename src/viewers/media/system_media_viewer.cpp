@@ -1,37 +1,33 @@
 /**
  * @file system_media_viewer.cpp
- * @brief Implementation of the native Qt6 Multimedia fallback player.
+ * @brief Implementation of the unified Qt6 Multimedia media player.
  */
 
 #include "system_media_viewer.h"
 #include "ui/vector_icons.h"
 #include "core/audio/audio_processor.h"
-#include <QUrl>
 #include <QFileInfo>
 #include <QDir>
+#include <QUrl>
 #include <QKeyEvent>
+#include <QResizeEvent>
 #include <QMessageBox>
-#include <QProcess>
-#include <QStandardPaths>
-#include <QSet>
-#include <QSize>
-#include <QPainter>
-#include <QPainterPath>
+#include <QApplication>
+#include <QRandomGenerator>
+#include <algorithm>
+#include <cmath>
 
 namespace {
 
-/**
- * @brief Checks if a lowercase file suffix corresponds to a known video container format.
- */
-bool isVideoExtension(const QString &suffix)
+bool isVideoExtension(const QString &ext)
 {
-    static const QSet<QString> videoExts = {
+    static const QStringList videoExts = {
         QStringLiteral("mp4"), QStringLiteral("mkv"), QStringLiteral("avi"),
         QStringLiteral("mov"), QStringLiteral("webm"), QStringLiteral("flv"),
-        QStringLiteral("wmv"), QStringLiteral("m4v"), QStringLiteral("ts"),
-        QStringLiteral("mpg"), QStringLiteral("mpeg"), QStringLiteral("vob")
+        QStringLiteral("wmv"), QStringLiteral("m4v"), QStringLiteral("mpg"),
+        QStringLiteral("mpeg"), QStringLiteral("ts"), QStringLiteral("3gp")
     };
-    return videoExts.contains(suffix.toLower());
+    return videoExts.contains(ext.toLower());
 }
 
 } // namespace
@@ -39,14 +35,17 @@ bool isVideoExtension(const QString &suffix)
 SystemMediaViewer::SystemMediaViewer(QWidget *parent)
     : QWidget(parent)
 {
-    setupUi();
+    setStyleSheet("background-color: #0b0e14;");
 
+    // Initialize Qt Multimedia player and audio output pipeline
     m_player = new QMediaPlayer(this);
     m_audioOutput = new QAudioOutput(this);
-    m_player->setAudioOutput(m_audioOutput);
-    m_player->setVideoOutput(m_videoWidget);
-
     m_audioOutput->setVolume(1.0f);
+    m_player->setAudioOutput(m_audioOutput);
+
+    setupUi();
+
+    m_player->setVideoOutput(m_videoWidget);
 
     connect(m_player, &QMediaPlayer::positionChanged, this, &SystemMediaViewer::onPositionChanged);
     connect(m_player, &QMediaPlayer::durationChanged, this, &SystemMediaViewer::onDurationChanged);
@@ -75,74 +74,185 @@ void SystemMediaViewer::setupUi()
     m_canvasContainer->setStyleSheet("background-color: #0b0f19;");
     QVBoxLayout *canvasLayout = new QVBoxLayout(m_canvasContainer);
     canvasLayout->setContentsMargins(0, 0, 0, 0);
+    canvasLayout->setSpacing(0);
 
-    // Video Surface
+    // 1A. Video Surface (QVideoWidget)
     m_videoWidget = new QVideoWidget(m_canvasContainer);
     m_videoWidget->setStyleSheet("background-color: #000000;");
     canvasLayout->addWidget(m_videoWidget, 1);
 
-    // Audio Visual Card (displayed when media has no video stream)
-    m_audioCard = new QWidget(m_canvasContainer);
-    m_audioCard->setStyleSheet("background-color: #0b0f19;");
-    QVBoxLayout *audioCardLayout = new QVBoxLayout(m_audioCard);
-    audioCardLayout->setAlignment(Qt::AlignCenter);
-    audioCardLayout->setSpacing(16);
+    // 1B. Audio Player Widget (Vinyl Record Sleeve + Studio Typography)
+    m_audioCoverWidget = new QWidget(m_canvasContainer);
+    m_audioCoverWidget->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #111621, stop:1 #0d1118);");
+    QVBoxLayout *audioRootLayout = new QVBoxLayout(m_audioCoverWidget);
+    audioRootLayout->setContentsMargins(16, 8, 16, 4);
+    audioRootLayout->setSpacing(6);
 
-    QFrame *cardFrame = new QFrame(m_audioCard);
-    cardFrame->setStyleSheet(
-        "QFrame { background-color: rgba(30, 41, 59, 0.75); border: 1px solid rgba(148, 163, 184, 0.25); "
-        "border-radius: 16px; padding: 24px; min-width: 440px; max-width: 520px; }"
-    );
-    QVBoxLayout *frameLayout = new QVBoxLayout(cardFrame);
-    frameLayout->setAlignment(Qt::AlignCenter);
-    frameLayout->setSpacing(12);
+    // Top Row: Vinyl Sleeve (Left) + Borderless Typography (Right)
+    m_audioTopLayout = new QBoxLayout(QBoxLayout::LeftToRight);
+    m_audioTopLayout->setContentsMargins(0, 0, 0, 0);
+    m_audioTopLayout->setSpacing(14);
 
-    m_lblAudioCover = new QLabel(cardFrame);
-    m_lblAudioCover->setAlignment(Qt::AlignCenter);
-    m_lblAudioCover->setPixmap(VectorIcons::createIcon(VectorIcons::Type::Media).pixmap(72, 72));
-    frameLayout->addWidget(m_lblAudioCover);
+    // 1. Analog Vinyl Sleeve with Peeking Grooved Record
+    m_vinylSleeveWidget = new VinylSleeveWidget(m_audioCoverWidget);
+    m_audioTopLayout->addWidget(m_vinylSleeveWidget, 0, Qt::AlignVCenter);
 
-    m_lblAudioTitle = new QLabel(cardFrame);
-    m_lblAudioTitle->setAlignment(Qt::AlignCenter);
-    m_lblAudioTitle->setStyleSheet("font-size: 18px; font-weight: bold; color: #f8fafc;");
-    m_lblAudioTitle->setWordWrap(true);
-    frameLayout->addWidget(m_lblAudioTitle);
+    // 2. Clean Borderless Metadata Column on the Right
+    m_metaCard = new QFrame(m_audioCoverWidget);
+    m_metaCard->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    m_metaCard->setMinimumWidth(0);
+    m_metaCard->setStyleSheet("QFrame { background: transparent; border: none; }");
+    m_metaLayout = new QVBoxLayout(m_metaCard);
+    m_metaLayout->setContentsMargins(4, 8, 4, 8);
+    m_metaLayout->setSpacing(6);
+    m_metaLayout->setAlignment(Qt::AlignVCenter);
 
-    m_lblAudioArtist = new QLabel(cardFrame);
-    m_lblAudioArtist->setAlignment(Qt::AlignCenter);
-    m_lblAudioArtist->setStyleSheet("font-size: 13px; color: #94a3b8;");
-    frameLayout->addWidget(m_lblAudioArtist);
+    // Track Title (21px bold white)
+    m_audioTitleLabel = new QLabel(m_metaCard);
+    m_audioTitleLabel->setStyleSheet("font-size: 21px; font-weight: bold; color: #ffffff; border: none; background: transparent; padding: 0px;");
+    m_audioTitleLabel->setWordWrap(true);
+    m_audioTitleLabel->setMaximumHeight(58);
+    m_audioTitleLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    m_audioTitleLabel->setMinimumWidth(0);
+    m_metaLayout->addWidget(m_audioTitleLabel);
 
-    m_lblEngineBadge = new QLabel(cardFrame);
-    m_lblEngineBadge->setAlignment(Qt::AlignCenter);
-    m_lblEngineBadge->setStyleSheet(
-        "background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); "
-        "padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: bold;"
-    );
-    m_lblEngineBadge->setText(tr("⚡ Native System Audio (OS Codecs)"));
-    frameLayout->addWidget(m_lblEngineBadge);
+    // Artist (14px demibold cyan)
+    m_audioArtistLabel = new QLabel(m_metaCard);
+    m_audioArtistLabel->setStyleSheet("font-size: 14px; font-weight: 600; color: #38bdf8; border: none; background: transparent; padding: 0px;");
+    m_audioArtistLabel->setWordWrap(false);
+    m_audioArtistLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    m_audioArtistLabel->setMinimumWidth(0);
+    m_metaLayout->addWidget(m_audioArtistLabel);
 
-    audioCardLayout->addWidget(cardFrame);
-    canvasLayout->addWidget(m_audioCard, 1);
-    m_audioCard->hide();
+    // Album (11.5px light slate)
+    m_audioAlbumLabel = new QLabel(m_metaCard);
+    m_audioAlbumLabel->setStyleSheet("font-size: 11px; font-weight: normal; color: #cbd5e1; border: none; background: transparent; padding: 0px;");
+    m_audioAlbumLabel->setWordWrap(false);
+    m_audioAlbumLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    m_audioAlbumLabel->setMinimumWidth(0);
+    m_metaLayout->addWidget(m_audioAlbumLabel);
 
+    // Specs Line (10px slate)
+    m_audioSpecsLabel = new QLabel(m_metaCard);
+    m_audioSpecsLabel->setStyleSheet("font-size: 10px; font-weight: normal; color: #64748b; border: none; background: transparent; padding-top: 2px;");
+    m_audioSpecsLabel->setWordWrap(false);
+    m_audioSpecsLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    m_audioSpecsLabel->setMinimumWidth(0);
+    m_metaLayout->addWidget(m_audioSpecsLabel);
+
+    // Tag Inspector Badge Chips (Genre, Track #, Year, Audio Specs)
+    m_tagsBadgeContainer = new QWidget(m_metaCard);
+    m_tagsBadgeContainer->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    m_tagsBadgeContainer->setMinimumWidth(0);
+    m_tagsBadgeLayout = new QHBoxLayout(m_tagsBadgeContainer);
+    m_tagsBadgeLayout->setContentsMargins(0, 4, 0, 0);
+    m_tagsBadgeLayout->setSpacing(6);
+    m_tagsBadgeLayout->setAlignment(Qt::AlignLeft);
+
+    const QString badgeStyle = "QLabel {"
+                               "  background-color: rgba(255, 255, 255, 0.08);"
+                               "  border: 1px solid rgba(255, 255, 255, 0.12);"
+                               "  border-radius: 9px;"
+                               "  padding: 2px 8px;"
+                               "  font-size: 11px;"
+                               "  color: #cbd5e1;"
+                               "  font-weight: 500;"
+                               "}";
+
+    m_badgeGenre = new QLabel(m_tagsBadgeContainer);
+    m_badgeGenre->setStyleSheet(badgeStyle);
+    m_badgeGenre->setVisible(false);
+
+    m_badgeTrack = new QLabel(m_tagsBadgeContainer);
+    m_badgeTrack->setStyleSheet(badgeStyle);
+    m_badgeTrack->setVisible(false);
+
+    m_badgeDate = new QLabel(m_tagsBadgeContainer);
+    m_badgeDate->setStyleSheet(badgeStyle);
+    m_badgeDate->setVisible(false);
+
+    m_badgeTech = new QLabel(m_tagsBadgeContainer);
+    m_badgeTech->setStyleSheet("QLabel {"
+                               "  background-color: rgba(56, 189, 248, 0.12);"
+                               "  border: 1px solid rgba(56, 189, 248, 0.25);"
+                               "  border-radius: 9px;"
+                               "  padding: 2px 8px;"
+                               "  font-size: 11px;"
+                               "  color: #38bdf8;"
+                               "  font-weight: 600;"
+                               "}");
+    m_badgeTech->setVisible(false);
+
+    m_tagsBadgeLayout->addWidget(m_badgeGenre);
+    m_tagsBadgeLayout->addWidget(m_badgeTrack);
+    m_tagsBadgeLayout->addWidget(m_badgeDate);
+    m_tagsBadgeLayout->addWidget(m_badgeTech);
+
+    m_metaLayout->addWidget(m_tagsBadgeContainer);
+    m_audioTopLayout->addWidget(m_metaCard, 1, Qt::AlignVCenter);
+    audioRootLayout->addLayout(m_audioTopLayout, 1);
+
+    canvasLayout->addWidget(m_audioCoverWidget, 1);
     mainLayout->addWidget(m_canvasContainer, 1);
 
-    // 2. Playback Control Bar
-    m_controlsBar = new QWidget(this);
-    m_controlsBar->setFixedHeight(80);
-    m_controlsBar->setStyleSheet(
-        "QWidget { background-color: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(148, 163, 184, 0.2); }"
+    // 2. Bottom Timeline & Transport Controls Bar
+    m_controlsWidget = new QWidget(this);
+    m_controlsWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_controlsWidget->setMinimumWidth(0);
+    m_controlsWidget->setStyleSheet(
+        "QWidget {"
+        "   background-color: #0b0e14;"
+        "   border: none;"
+        "}"
+        "QFrame#WaveformContainer {"
+        "   background-color: rgba(255, 255, 255, 0.025);"
+        "   border: 1px solid rgba(255, 255, 255, 0.075);"
+        "   border-radius: 14px;"
+        "}"
     );
-    QVBoxLayout *barLayout = new QVBoxLayout(m_controlsBar);
-    barLayout->setContentsMargins(16, 6, 16, 8);
-    barLayout->setSpacing(4);
+    QVBoxLayout *ctrlRootLayout = new QVBoxLayout(m_controlsWidget);
+    ctrlRootLayout->setContentsMargins(12, 2, 12, 6);
+    ctrlRootLayout->setSpacing(8);
 
-    // Progress / Seek row
-    QHBoxLayout *seekLayout = new QHBoxLayout();
-    seekLayout->setSpacing(8);
+    // 2A. Smooth Spline Waveform Scrubber (for Audio Mode)
+    m_waveformContainer = new QFrame(m_controlsWidget);
+    m_waveformContainer->setObjectName("WaveformContainer");
+    m_waveformContainer->setFixedHeight(64);
+    QHBoxLayout *waveLayout = new QHBoxLayout(m_waveformContainer);
+    waveLayout->setContentsMargins(14, 8, 14, 8);
+    waveLayout->setSpacing(12);
 
-    m_sliderPosition = new QSlider(Qt::Horizontal, m_controlsBar);
+    m_waveTimeLeftLabel = new QLabel("00:00", m_waveformContainer);
+    m_waveTimeLeftLabel->setFixedWidth(48);
+    m_waveTimeLeftLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    m_waveTimeLeftLabel->setStyleSheet("font-size: 10px; font-weight: bold; font-family: monospace; color: #38bdf8; border: none; background: transparent;");
+
+    m_waveformScrubber = new SmoothWaveformScrubber(m_waveformContainer);
+    connect(m_waveformScrubber, &SmoothWaveformScrubber::seekRequested, this, [this](qint64 targetMs, bool /*exact*/) {
+        seekTo(targetMs);
+    });
+
+    m_waveTimeRightLabel = new QLabel("-00:00", m_waveformContainer);
+    m_waveTimeRightLabel->setFixedWidth(52);
+    m_waveTimeRightLabel->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+    m_waveTimeRightLabel->setStyleSheet("font-size: 10px; font-weight: bold; font-family: monospace; color: #64748b; border: none; background: transparent;");
+
+    waveLayout->addWidget(m_waveTimeLeftLabel);
+    waveLayout->addWidget(m_waveformScrubber, 1);
+    waveLayout->addWidget(m_waveTimeRightLabel);
+    ctrlRootLayout->addWidget(m_waveformContainer);
+
+    // 2B. Standard Time Slider Row (for Video Mode)
+    m_videoSliderWidget = new QWidget(m_controlsWidget);
+    m_videoSliderWidget->setStyleSheet("background: transparent; border: none;");
+    QHBoxLayout *sliderRow = new QHBoxLayout(m_videoSliderWidget);
+    sliderRow->setContentsMargins(0, 0, 0, 0);
+    sliderRow->setSpacing(10);
+
+    m_timeLeftLabel = new QLabel("00:00 / 00:00", m_videoSliderWidget);
+    m_timeLeftLabel->setStyleSheet("font-size: 11px; font-family: monospace; color: #94a3b8; border: none; background: transparent;");
+
+    m_sliderPosition = new QSlider(Qt::Horizontal, m_videoSliderWidget);
     m_sliderPosition->setRange(0, 0);
     m_sliderPosition->setCursor(Qt::PointingHandCursor);
     m_sliderPosition->setStyleSheet(
@@ -158,92 +268,156 @@ void SystemMediaViewer::setupUi()
         seekTo(m_sliderPosition->value());
     });
 
-    m_lblTime = new QLabel(tr("00:00 / 00:00"), m_controlsBar);
-    m_lblTime->setStyleSheet("color: #94a3b8; font-size: 11px; font-family: monospace;");
+    m_timeRightLabel = new QLabel("-00:00", m_videoSliderWidget);
+    m_timeRightLabel->setStyleSheet("font-size: 11px; font-family: monospace; color: #94a3b8; border: none; background: transparent;");
 
-    seekLayout->addWidget(m_sliderPosition, 1);
-    seekLayout->addWidget(m_lblTime);
-    barLayout->addLayout(seekLayout);
+    sliderRow->addWidget(m_timeLeftLabel);
+    sliderRow->addWidget(m_sliderPosition, 1);
+    sliderRow->addWidget(m_timeRightLabel);
+    ctrlRootLayout->addWidget(m_videoSliderWidget);
 
-    // Buttons and volume row
-    QHBoxLayout *btnLayout = new QHBoxLayout();
-    btnLayout->setSpacing(10);
+    // 2C. Bottom Row of Transport Controls
+    QHBoxLayout *bottomRow = new QHBoxLayout();
+    bottomRow->setSpacing(10);
 
-    auto makeBtn = [this](const QIcon &icon, const QString &tooltip) {
-        QPushButton *btn = new QPushButton(m_controlsBar);
+    // Zone 1 (Left): Playback speed pill + Hi-Fi track indicator
+    QWidget *leftTrackWidget = new QWidget(m_controlsWidget);
+    leftTrackWidget->setStyleSheet("background: transparent; border: none;");
+    leftTrackWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    leftTrackWidget->setMinimumWidth(0);
+    QHBoxLayout *leftTrackLayout = new QHBoxLayout(leftTrackWidget);
+    leftTrackLayout->setContentsMargins(0, 0, 0, 0);
+    leftTrackLayout->setSpacing(4);
+
+    m_btnSpeed = new QPushButton("1.0x", leftTrackWidget);
+    m_btnSpeed->setToolTip(tr("Playback speed"));
+    m_btnSpeed->setCursor(Qt::PointingHandCursor);
+    m_btnSpeed->setStyleSheet(
+        "QPushButton { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); "
+        "border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: bold; color: #cbd5e1; }"
+        "QPushButton:hover { background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #38bdf8; }"
+    );
+    connect(m_btnSpeed, &QPushButton::clicked, this, &SystemMediaViewer::showSpeedMenu);
+
+    m_bottomTitleLabel = new QLabel(leftTrackWidget);
+    m_bottomTitleLabel->setStyleSheet("font-size: 12px; font-weight: bold; color: #f8fafc; border: none; background: transparent;");
+    m_bottomTitleLabel->setVisible(false);
+
+    m_bottomFileLabel = new QLabel(leftTrackWidget);
+    m_bottomFileLabel->setStyleSheet("font-size: 10px; font-weight: 600; color: #94a3b8; border: none; background: transparent;");
+
+    leftTrackLayout->addWidget(m_btnSpeed);
+    leftTrackLayout->addWidget(m_bottomTitleLabel);
+    leftTrackLayout->addWidget(m_bottomFileLabel);
+    bottomRow->addWidget(leftTrackWidget, 0, Qt::AlignVCenter);
+
+    bottomRow->addStretch(1);
+
+    // Zone 2 (Center): Playback Controls Cluster with Large Circular Play Button
+    QHBoxLayout *centerCluster = new QHBoxLayout();
+    centerCluster->setSpacing(4);
+    centerCluster->setAlignment(Qt::AlignCenter);
+
+    auto makeNavBtn = [this](const QIcon &icon, const QString &tooltip) {
+        QPushButton *btn = new QPushButton(m_controlsWidget);
+        btn->setFixedSize(32, 32);
         btn->setIcon(icon);
-        btn->setIconSize(QSize(18, 18));
         btn->setToolTip(tooltip);
         btn->setCursor(Qt::PointingHandCursor);
-        btn->setFixedSize(34, 30);
         btn->setStyleSheet(
-            "QPushButton { background: rgba(51, 65, 85, 0.6); color: #f8fafc; border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 6px; }"
-            "QPushButton:hover { background: rgba(71, 85, 105, 0.8); border-color: rgba(148, 163, 184, 0.5); }"
+            "QPushButton { background: transparent; border: none; border-radius: 16px; padding: 4px; }"
+            "QPushButton:hover { background: rgba(255, 255, 255, 0.08); }"
         );
         return btn;
     };
 
-    m_btnPrev = makeBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Previous, QColor("#cbd5e1"), 18), tr("Previous track"));
+    m_btnShuffle = makeNavBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Shuffle, QColor("#94a3b8"), 16), tr("Shuffle"));
+    connect(m_btnShuffle, &QPushButton::clicked, this, &SystemMediaViewer::toggleShuffle);
+
+    m_btnPrev = makeNavBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Previous, QColor("#cbd5e1"), 18), tr("Previous track"));
     connect(m_btnPrev, &QPushButton::clicked, this, &SystemMediaViewer::playPreviousTrack);
 
-    m_btnPlayPause = makeBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Play, QColor("#ffffff"), 20), tr("Play / Pause"));
-    m_btnPlayPause->setIconSize(QSize(20, 20));
+    // Large circular 42x42 Play/Pause button
+    m_btnPlayPause = new QPushButton(m_controlsWidget);
+    m_btnPlayPause->setFixedSize(42, 42);
+    m_btnPlayPause->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Play, QColor("#ffffff"), 20));
+    m_btnPlayPause->setToolTip(tr("Play / Pause"));
+    m_btnPlayPause->setCursor(Qt::PointingHandCursor);
     m_btnPlayPause->setStyleSheet(
-        "QPushButton { background: #0284c7; color: white; border: none; border-radius: 6px; }"
-        "QPushButton:hover { background: #0369a1; }"
+        "QPushButton {"
+        "   background: qradialgradient(cx:0.5, cy:0.35, radius:0.8, fx:0.5, fy:0.35, stop:0 #38bdf8, stop:1 #0284c7);"
+        "   border: 1px solid rgba(255, 255, 255, 0.25);"
+        "   border-radius: 21px;"
+        "   padding: 0px;"
+        "}"
+        "QPushButton:hover {"
+        "   background: qradialgradient(cx:0.5, cy:0.35, radius:0.8, fx:0.5, fy:0.35, stop:0 #7dd3fc, stop:1 #0ea5e9);"
+        "   border: 1px solid rgba(255, 255, 255, 0.45);"
+        "}"
+        "QPushButton:pressed {"
+        "   background: #0284c7;"
+        "}"
     );
     connect(m_btnPlayPause, &QPushButton::clicked, this, &SystemMediaViewer::togglePlayPause);
 
-    m_btnStop = new QPushButton(QStringLiteral("■"), m_controlsBar);
+    m_btnStop = new QPushButton(QStringLiteral("■"), m_controlsWidget);
     m_btnStop->setToolTip(tr("Stop"));
     m_btnStop->setCursor(Qt::PointingHandCursor);
-    m_btnStop->setFixedSize(34, 30);
+    m_btnStop->setFixedSize(30, 30);
     m_btnStop->setStyleSheet(
-        "QPushButton { background: rgba(51, 65, 85, 0.6); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 6px; font-size: 13px; }"
-        "QPushButton:hover { background: rgba(71, 85, 105, 0.8); border-color: rgba(148, 163, 184, 0.5); }"
+        "QPushButton { background: transparent; border: none; border-radius: 15px; color: #94a3b8; font-size: 13px; }"
+        "QPushButton:hover { background: rgba(255, 255, 255, 0.08); color: #cbd5e1; }"
     );
     connect(m_btnStop, &QPushButton::clicked, this, &SystemMediaViewer::stop);
 
-    m_btnNext = makeBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Next, QColor("#cbd5e1"), 18), tr("Next track"));
+    m_btnNext = makeNavBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Next, QColor("#cbd5e1"), 18), tr("Next track"));
     connect(m_btnNext, &QPushButton::clicked, this, &SystemMediaViewer::playNextTrack);
 
-    m_btnLoop = makeBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Repeat, QColor("#94a3b8"), 16), tr("Toggle repeat loop"));
+    m_btnLoop = makeNavBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Repeat, QColor("#94a3b8"), 16), tr("Loop playback"));
     connect(m_btnLoop, &QPushButton::clicked, this, &SystemMediaViewer::toggleLoop);
 
-    btnLayout->addWidget(m_btnPrev);
-    btnLayout->addWidget(m_btnPlayPause);
-    btnLayout->addWidget(m_btnStop);
-    btnLayout->addWidget(m_btnNext);
-    btnLayout->addWidget(m_btnLoop);
+    centerCluster->addWidget(m_btnShuffle);
+    centerCluster->addWidget(m_btnPrev);
+    centerCluster->addWidget(m_btnPlayPause);
+    centerCluster->addWidget(m_btnStop);
+    centerCluster->addWidget(m_btnNext);
+    centerCluster->addWidget(m_btnLoop);
+    bottomRow->addLayout(centerCluster);
 
-    btnLayout->addSpacing(16);
+    bottomRow->addStretch(1);
 
-    QLabel *badgeSystem = new QLabel(tr("⚡ OS Native Codecs"), m_controlsBar);
-    badgeSystem->setStyleSheet("color: #64748b; font-size: 11px; font-weight: 500;");
-    btnLayout->addWidget(badgeSystem);
+    // Zone 3 (Right): Mute & Volume Slider
+    QHBoxLayout *rightCluster = new QHBoxLayout();
+    rightCluster->setSpacing(6);
+    rightCluster->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-    btnLayout->addStretch(1);
-
-    m_btnMute = makeBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Volume, QColor("#cbd5e1"), 18), tr("Mute / Unmute"));
+    m_btnMute = makeNavBtn(VectorIcons::createUiIcon(VectorIcons::UiIcon::Volume, QColor("#cbd5e1"), 18), tr("Volume / Mute"));
     connect(m_btnMute, &QPushButton::clicked, this, &SystemMediaViewer::toggleMute);
-    btnLayout->addWidget(m_btnMute);
 
-    m_sliderVolume = new QSlider(Qt::Horizontal, m_controlsBar);
+    m_sliderVolume = new QSlider(Qt::Horizontal, m_controlsWidget);
     m_sliderVolume->setRange(0, 100);
     m_sliderVolume->setValue(100);
-    m_sliderVolume->setFixedWidth(100);
+    m_sliderVolume->setFixedWidth(90);
     m_sliderVolume->setCursor(Qt::PointingHandCursor);
     m_sliderVolume->setStyleSheet(
         "QSlider::groove:horizontal { height: 4px; background: rgba(100, 116, 139, 0.3); border-radius: 2px; }"
-        "QSlider::sub-page:horizontal { background: #10b981; border-radius: 2px; }"
-        "QSlider::handle:horizontal { background: #34d399; width: 12px; margin-top: -4px; margin-bottom: -4px; border-radius: 6px; }"
+        "QSlider::sub-page:horizontal { background: #38bdf8; border-radius: 2px; }"
+        "QSlider::handle:horizontal { background: #f8fafc; width: 12px; margin-top: -4px; margin-bottom: -4px; border-radius: 6px; }"
     );
     connect(m_sliderVolume, &QSlider::valueChanged, this, &SystemMediaViewer::setVolume);
-    btnLayout->addWidget(m_sliderVolume);
 
-    barLayout->addLayout(btnLayout);
+    rightCluster->addWidget(m_btnMute);
+    rightCluster->addWidget(m_sliderVolume);
+    bottomRow->addLayout(rightCluster);
 
-    mainLayout->addWidget(m_controlsBar, 0);
+    ctrlRootLayout->addLayout(bottomRow);
+    mainLayout->addWidget(m_controlsWidget, 0);
+
+    // Initial visual state
+    m_videoWidget->hide();
+    m_audioCoverWidget->show();
+    m_waveformContainer->show();
+    m_videoSliderWidget->hide();
 }
 
 bool SystemMediaViewer::loadFile(const QString &filePath)
@@ -258,52 +432,91 @@ bool SystemMediaViewer::loadFile(const QString &filePath)
         m_currentIndex = m_siblingFiles.indexOf(filePath);
     }
 
-    // Determine initial visual mode based on file extension
     bool isVideoExt = isVideoExtension(fi.suffix());
+    m_isAudioOnly = !isVideoExt;
 
-    if (isVideoExt) {
-        m_videoWidget->show();
-        m_audioCard->hide();
-    } else {
+    if (m_isAudioOnly) {
         m_videoWidget->hide();
-        m_audioCard->show();
+        m_audioCoverWidget->show();
+        m_waveformContainer->show();
+        m_videoSliderWidget->hide();
 
-        // 1. Read metadata tags (Title, Artist, Album)
+        // 1. Read metadata tags
         AudioMetadata meta = AudioProcessor::readMetadata(filePath);
         if (!meta.title.isEmpty()) {
-            m_lblAudioTitle->setText(meta.title);
+            m_audioTitleLabel->setText(meta.title);
         } else {
-            m_lblAudioTitle->setText(fi.fileName());
+            m_audioTitleLabel->setText(fi.completeBaseName());
         }
 
-        QString artistInfo;
         if (!meta.artist.isEmpty()) {
-            artistInfo = meta.artist;
-            if (!meta.album.isEmpty()) {
-                artistInfo += QStringLiteral(" — ") + meta.album;
-            }
+            m_audioArtistLabel->setText(meta.artist);
+            m_audioArtistLabel->setVisible(true);
         } else {
-            artistInfo = tr("Format: %1 | Size: %2 MB").arg(fi.suffix().toUpper()).arg(QString::number(fi.size() / (1024.0 * 1024.0), 'f', 1));
+            m_audioArtistLabel->setText(tr("Unknown Artist"));
+            m_audioArtistLabel->setVisible(true);
         }
-        m_lblAudioArtist->setText(artistInfo);
 
-        // 2. Extract album cover art (from folder: cover.jpg, folder.png, front.jpg, etc., or embedded)
-        QPixmap cover = AudioProcessor::extractCoverArt(filePath, 200);
-        if (!cover.isNull()) {
-            QPixmap rounded(cover.size());
-            rounded.fill(Qt::transparent);
-            {
-                QPainter painter(&rounded);
-                painter.setRenderHint(QPainter::Antialiasing);
-                QPainterPath path;
-                path.addRoundedRect(cover.rect(), 12, 12);
-                painter.setClipPath(path);
-                painter.drawPixmap(0, 0, cover);
-            }
-            m_lblAudioCover->setPixmap(rounded);
+        if (!meta.album.isEmpty()) {
+            m_audioAlbumLabel->setText(meta.album);
+            m_audioAlbumLabel->setVisible(true);
         } else {
-            m_lblAudioCover->setPixmap(VectorIcons::createIcon(VectorIcons::Type::Media).pixmap(72, 72));
+            m_audioAlbumLabel->setVisible(false);
         }
+
+        // Combined Specs Summary Line
+        QString specs;
+        if (!meta.year.isEmpty()) specs += meta.year + QStringLiteral(" • ");
+        specs += fi.suffix().toUpper();
+        if (meta.bitRate > 0) specs += QStringLiteral(" %1 kbps").arg(meta.bitRate);
+        specs += QStringLiteral(" • %1 MB").arg(QString::number(fi.size() / (1024.0 * 1024.0), 'f', 1));
+        m_audioSpecsLabel->setText(specs);
+
+        // Update Tag Badges
+        if (!meta.genre.isEmpty()) {
+            m_badgeGenre->setText(meta.genre);
+            m_badgeGenre->setVisible(true);
+        } else {
+            m_badgeGenre->setVisible(false);
+        }
+
+        if (!meta.trackNumber.isEmpty()) {
+            m_badgeTrack->setText(tr("Track %1").arg(meta.trackNumber));
+            m_badgeTrack->setVisible(true);
+        } else {
+            m_badgeTrack->setVisible(false);
+        }
+
+        if (!meta.year.isEmpty()) {
+            m_badgeDate->setText(meta.year);
+            m_badgeDate->setVisible(true);
+        } else {
+            m_badgeDate->setVisible(false);
+        }
+
+        if (meta.sampleRate > 0) {
+            m_badgeTech->setText(QStringLiteral("%1 kHz").arg(meta.sampleRate / 1000.0, 0, 'f', 1));
+            m_badgeTech->setVisible(true);
+        } else {
+            m_badgeTech->setVisible(false);
+        }
+
+        // 2. Extract album cover art and vinyl label
+        QPixmap sleeveCover = AudioProcessor::extractCoverArt(filePath, 260);
+        QPixmap vinylLabel = AudioProcessor::extractVinylLabelArt(filePath, 160);
+        m_vinylSleeveWidget->setArtwork(sleeveCover, vinylLabel);
+
+        // 3. Load smooth waveform scrubber
+        m_waveformScrubber->loadAudioWaveform(filePath);
+    } else {
+        m_audioCoverWidget->hide();
+        m_videoWidget->show();
+        m_waveformContainer->hide();
+        m_videoSliderWidget->show();
+    }
+
+    if (m_bottomFileLabel) {
+        m_bottomFileLabel->setText(fi.fileName());
     }
 
     m_sliderPosition->setValue(0);
@@ -311,6 +524,7 @@ bool SystemMediaViewer::loadFile(const QString &filePath)
     m_player->play();
 
     updatePlayPauseUi(true);
+    updateAudioResponsiveLayout();
     return true;
 }
 
@@ -318,11 +532,18 @@ void SystemMediaViewer::clear()
 {
     stop();
     m_currentFilePath.clear();
-    m_sliderPosition->setRange(0, 0);
-    m_lblTime->setText(tr("00:00 / 00:00"));
-    m_lblAudioTitle->clear();
-    m_lblAudioArtist->clear();
-    m_lblAudioCover->setPixmap(VectorIcons::createIcon(VectorIcons::Type::Media).pixmap(72, 72));
+    m_vinylSleeveWidget->clearArtwork();
+    m_waveformScrubber->reset();
+    m_audioTitleLabel->clear();
+    m_audioArtistLabel->clear();
+    m_audioAlbumLabel->clear();
+    m_audioSpecsLabel->clear();
+    m_badgeGenre->setVisible(false);
+    m_badgeTrack->setVisible(false);
+    m_badgeDate->setVisible(false);
+    m_badgeTech->setVisible(false);
+    m_sliderPosition->setValue(0);
+    updateTimeLabel(0, 0);
 }
 
 void SystemMediaViewer::stop()
@@ -336,21 +557,11 @@ void SystemMediaViewer::stop()
 void SystemMediaViewer::togglePlayPause()
 {
     if (!m_player) return;
-
     if (m_player->playbackState() == QMediaPlayer::PlayingState) {
         m_player->pause();
     } else {
         m_player->play();
     }
-}
-
-bool SystemMediaViewer::isAudioOnly() const
-{
-    if (m_player && m_player->hasVideo()) {
-        return false;
-    }
-    QFileInfo fi(m_currentFilePath);
-    return !isVideoExtension(fi.suffix());
 }
 
 void SystemMediaViewer::setSiblingFiles(const QStringList &files)
@@ -366,67 +577,64 @@ void SystemMediaViewer::resetMixer()
     if (m_audioOutput) {
         m_audioOutput->setMuted(false);
         m_audioOutput->setVolume(1.0f);
-        if (m_sliderVolume) m_sliderVolume->setValue(100);
-        if (m_btnMute) {
-            m_btnMute->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Volume, QColor("#cbd5e1"), 18));
-        }
+    }
+}
+
+void SystemMediaViewer::updateTheme()
+{
+    if (m_audioCoverWidget) {
+        m_audioCoverWidget->setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #111621, stop:1 #0d1118);");
+    }
+    if (m_metaCard) {
+        m_metaCard->setStyleSheet("QFrame { background: transparent; border: none; }");
+    }
+    if (m_audioTitleLabel) {
+        m_audioTitleLabel->setStyleSheet("font-size: 21px; font-weight: bold; color: #ffffff; border: none; background: transparent; padding: 0px;");
+    }
+    if (m_audioArtistLabel) {
+        m_audioArtistLabel->setStyleSheet("font-size: 14px; font-weight: 600; color: #38bdf8; border: none; background: transparent; padding: 0px;");
+    }
+    if (m_vinylSleeveWidget) {
+        m_vinylSleeveWidget->update();
+    }
+    if (m_waveformScrubber) {
+        m_waveformScrubber->update();
+    }
+}
+
+void SystemMediaViewer::promptMpvRequired(const QString &toolName)
+{
+    QMessageBox::information(
+        this,
+        tr("Multimedia Studio Module Required"),
+        tr("<h3>%1 Requires Multimedia Studio</h3>"
+           "<p>Audio editing tools, pitch shifting, real-time equalizer, and studio filters "
+           "require the <b>Multimedia Studio (MPV)</b> engine.</p>"
+           "<p>Please install <code>libmpv-dev</code> / <code>mpv</code> to unlock full studio features.</p>")
+           .arg(toolName)
+    );
+}
+
+void SystemMediaViewer::switchAudioWorkspace(int index)
+{
+    if (index > 0) {
+        promptMpvRequired(tr("Audio Studio"));
     }
 }
 
 void SystemMediaViewer::openAudioTrimDialog()
 {
-    if (!m_isEditMode) return;
-    QMessageBox::information(
-        this,
-        tr("Audio Trimmer"),
-        tr("The interactive lossless audio trimmer requires the Complete Suite or MPV Multimedia Plugin.")
-    );
+    promptMpvRequired(tr("Audio Cutter / Trim"));
 }
 
 void SystemMediaViewer::openAudioTagDialog()
 {
-    if (!m_isEditMode) return;
-    QMessageBox::information(
-        this,
-        tr("Audio Tag Editor"),
-        tr("Audio metadata editing requires the TagLib plugin available in the Complete Suite.")
-    );
+    promptMpvRequired(tr("Audio Tag Editor"));
 }
 
 void SystemMediaViewer::extractAudioTrack()
 {
-    if (m_currentFilePath.isEmpty()) return;
-
-    QString ffmpeg = QStandardPaths::findExecutable("ffmpeg");
-    if (ffmpeg.isEmpty()) {
-        QMessageBox::information(
-            this,
-            tr("Extract Audio"),
-            tr("Audio stream extraction requires 'ffmpeg' installed on your system.")
-        );
-        return;
-    }
-
-    QFileInfo fi(m_currentFilePath);
-    QString outPath = fi.dir().filePath(fi.baseName() + "_audio.mp3");
-
-    QStringList args;
-    args << "-y" << "-i" << m_currentFilePath << "-vn" << "-acodec" << "libmp3lame" << "-q:a" << "2" << outPath;
-
-    bool ok = QProcess::startDetached(ffmpeg, args);
-    if (ok) {
-        QMessageBox::information(
-            this,
-            tr("Extract Audio"),
-            tr("Audio extraction started successfully:\n%1").arg(outPath)
-        );
-    } else {
-        QMessageBox::warning(
-            this,
-            tr("Extract Audio"),
-            tr("Failed to start ffmpeg process.")
-        );
-    }
+    promptMpvRequired(tr("Audio Track Extraction"));
 }
 
 bool SystemMediaViewer::eventFilter(QObject *watched, QEvent *event)
@@ -436,37 +644,170 @@ bool SystemMediaViewer::eventFilter(QObject *watched, QEvent *event)
         if (ke->key() == Qt::Key_Space) {
             togglePlayPause();
             return true;
-        } else if (ke->key() == Qt::Key_Left) {
-            if (m_player) seekTo(qMax<qint64>(0, m_player->position() - 5000));
+        }
+        if (ke->key() == Qt::Key_Left) {
+            seekTo(std::max<qint64>(0, m_currentPositionMs - 5000));
             return true;
-        } else if (ke->key() == Qt::Key_Right) {
-            if (m_player) seekTo(qMin<qint64>(m_player->duration(), m_player->position() + 5000));
+        }
+        if (ke->key() == Qt::Key_Right) {
+            seekTo(std::min<qint64>(m_durationMs, m_currentPositionMs + 5000));
             return true;
-        } else if (ke->key() == Qt::Key_Up) {
-            if (m_sliderVolume) m_sliderVolume->setValue(qMin(100, m_sliderVolume->value() + 5));
+        }
+        if (ke->key() == Qt::Key_Up) {
+            setVolume(std::min(100, m_sliderVolume->value() + 5));
             return true;
-        } else if (ke->key() == Qt::Key_Down) {
-            if (m_sliderVolume) m_sliderVolume->setValue(qMax(0, m_sliderVolume->value() - 5));
+        }
+        if (ke->key() == Qt::Key_Down) {
+            setVolume(std::max(0, m_sliderVolume->value() - 5));
+            return true;
+        }
+        if (ke->key() == Qt::Key_M) {
+            toggleMute();
             return true;
         }
     }
     return QWidget::eventFilter(watched, event);
 }
 
+void SystemMediaViewer::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    if (m_isAudioOnly) {
+        updateAudioResponsiveLayout();
+    }
+}
+
+void SystemMediaViewer::updateAudioResponsiveLayout(int forceW, int forceH)
+{
+    if (!m_isAudioOnly || !m_audioTopLayout || !m_metaCard || !m_vinylSleeveWidget) {
+        return;
+    }
+
+    const int w = (forceW > 0) ? forceW : width();
+    const int h = (forceH > 0) ? forceH : height();
+    if (w <= 0) return;
+
+    // Responsive Breakpoint: below 660px, switch from horizontal to centered vertical layout
+    const bool isCompact = (w < 660);
+
+    if (isCompact) {
+        m_isCompactAudioLayout = true;
+        m_audioTopLayout->setDirection(QBoxLayout::TopToBottom);
+        m_audioTopLayout->setSpacing(4);
+
+        m_vinylSleeveWidget->setCompactMode(true);
+        m_vinylSleeveWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        const int maxCoverH = (h > 0 && h < 460) ? 120 : 150;
+        m_vinylSleeveWidget->setMaximumSize(280, maxCoverH);
+        m_vinylSleeveWidget->setMinimumSize(60, 60);
+        m_audioTopLayout->setAlignment(m_vinylSleeveWidget, Qt::AlignHCenter);
+        m_audioTopLayout->setAlignment(m_metaCard, Qt::Alignment());
+
+        if (m_metaCard) {
+            m_metaCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        }
+        if (m_metaLayout) {
+            m_metaLayout->setAlignment(Qt::AlignCenter);
+            m_metaLayout->setContentsMargins(0, 2, 0, 2);
+            m_metaLayout->setSpacing(3);
+        }
+
+        if (m_audioTitleLabel) {
+            m_audioTitleLabel->setAlignment(Qt::AlignCenter);
+            m_audioTitleLabel->setStyleSheet(QStringLiteral("font-size: 15px; font-weight: bold; color: #ffffff; border: none; background: transparent; padding: 0px;"));
+            m_audioTitleLabel->setMaximumHeight(48);
+            m_audioTitleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        }
+
+        if (m_audioArtistLabel) {
+            m_audioArtistLabel->setAlignment(Qt::AlignCenter);
+            m_audioArtistLabel->setStyleSheet(QStringLiteral("font-size: 13px; font-weight: 600; color: #38bdf8; border: none; background: transparent; padding: 0px;"));
+            m_audioArtistLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        }
+
+        if (m_audioAlbumLabel) {
+            m_audioAlbumLabel->setAlignment(Qt::AlignCenter);
+            m_audioAlbumLabel->setStyleSheet(QStringLiteral("font-size: 11px; font-weight: normal; color: #cbd5e1; border: none; background: transparent; padding: 0px;"));
+            m_audioAlbumLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        }
+
+        if (m_audioSpecsLabel) {
+            m_audioSpecsLabel->setAlignment(Qt::AlignCenter);
+            m_audioSpecsLabel->setStyleSheet(QStringLiteral("font-size: 10px; font-weight: normal; color: #64748b; border: none; background: transparent; padding-top: 1px;"));
+            m_audioSpecsLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        }
+
+        if (m_tagsBadgeLayout) {
+            m_tagsBadgeLayout->setAlignment(Qt::AlignCenter);
+        }
+    } else {
+        m_isCompactAudioLayout = false;
+        m_audioTopLayout->setDirection(QBoxLayout::LeftToRight);
+        m_audioTopLayout->setSpacing(14);
+
+        m_vinylSleeveWidget->setCompactMode(false);
+        m_vinylSleeveWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        m_vinylSleeveWidget->setMinimumSize(200, 130);
+        m_vinylSleeveWidget->setMaximumSize(400, 280);
+        m_audioTopLayout->setAlignment(m_vinylSleeveWidget, Qt::AlignVCenter);
+        m_audioTopLayout->setAlignment(m_metaCard, Qt::AlignVCenter);
+
+        if (m_metaCard) {
+            m_metaCard->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        }
+        if (m_metaLayout) {
+            m_metaLayout->setAlignment(Qt::AlignVCenter);
+            m_metaLayout->setContentsMargins(4, 8, 4, 8);
+            m_metaLayout->setSpacing(6);
+        }
+
+        if (m_audioTitleLabel) {
+            m_audioTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            m_audioTitleLabel->setStyleSheet(QStringLiteral("font-size: 21px; font-weight: bold; color: #ffffff; border: none; background: transparent; padding: 0px;"));
+            m_audioTitleLabel->setMaximumHeight(58);
+            m_audioTitleLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        }
+
+        if (m_audioArtistLabel) {
+            m_audioArtistLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            m_audioArtistLabel->setStyleSheet(QStringLiteral("font-size: 14px; font-weight: 600; color: #38bdf8; border: none; background: transparent; padding: 0px;"));
+            m_audioArtistLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        }
+
+        if (m_audioAlbumLabel) {
+            m_audioAlbumLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            m_audioAlbumLabel->setStyleSheet(QStringLiteral("font-size: 11px; font-weight: normal; color: #cbd5e1; border: none; background: transparent; padding: 0px;"));
+            m_audioAlbumLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        }
+
+        if (m_audioSpecsLabel) {
+            m_audioSpecsLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            m_audioSpecsLabel->setStyleSheet(QStringLiteral("font-size: 10px; font-weight: normal; color: #64748b; border: none; background: transparent; padding-top: 2px;"));
+            m_audioSpecsLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        }
+
+        if (m_tagsBadgeLayout) {
+            m_tagsBadgeLayout->setAlignment(Qt::AlignLeft);
+        }
+    }
+}
+
 void SystemMediaViewer::onPositionChanged(qint64 position)
 {
-    if (!m_isSeeking && m_sliderPosition) {
+    m_currentPositionMs = position;
+    if (!m_isSeeking) {
         m_sliderPosition->setValue(static_cast<int>(position));
+        m_waveformScrubber->setPlaybackPosition(position, m_durationMs);
     }
-    updateTimeLabel(position, m_player ? m_player->duration() : 0);
+    updateTimeLabel(position, m_durationMs);
 }
 
 void SystemMediaViewer::onDurationChanged(qint64 duration)
 {
-    if (m_sliderPosition) {
-        m_sliderPosition->setRange(0, static_cast<int>(duration));
-    }
-    updateTimeLabel(m_player ? m_player->position() : 0, duration);
+    m_durationMs = duration;
+    m_sliderPosition->setRange(0, static_cast<int>(duration));
+    m_waveformScrubber->setPlaybackPosition(m_currentPositionMs, duration);
+    updateTimeLabel(m_currentPositionMs, duration);
 }
 
 void SystemMediaViewer::onPlaybackStateChanged(QMediaPlayer::PlaybackState state)
@@ -488,16 +829,21 @@ void SystemMediaViewer::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 
 void SystemMediaViewer::onHasVideoChanged(bool hasVideo)
 {
+    m_isAudioOnly = !hasVideo;
     if (hasVideo) {
+        m_audioCoverWidget->hide();
         m_videoWidget->show();
-        m_audioCard->hide();
+        m_waveformContainer->hide();
+        m_videoSliderWidget->show();
     } else {
         m_videoWidget->hide();
-        m_audioCard->show();
+        m_audioCoverWidget->show();
+        m_waveformContainer->show();
+        m_videoSliderWidget->hide();
     }
 }
 
-void SystemMediaViewer::seekTo(int positionMs)
+void SystemMediaViewer::seekTo(qint64 positionMs)
 {
     if (m_player) {
         m_player->setPosition(positionMs);
@@ -507,63 +853,63 @@ void SystemMediaViewer::seekTo(int positionMs)
 void SystemMediaViewer::setVolume(int volumePercent)
 {
     if (m_audioOutput) {
-        float vol = static_cast<float>(volumePercent) / 100.0f;
-        m_audioOutput->setVolume(vol);
-        if (m_btnMute) {
-            m_btnMute->setIcon(VectorIcons::createUiIcon(
-                volumePercent == 0 ? VectorIcons::UiIcon::VolumeMute : VectorIcons::UiIcon::Volume,
-                QColor("#cbd5e1"),
-                18
-            ));
+        float norm = std::clamp(volumePercent / 100.0f, 0.0f, 1.0f);
+        m_audioOutput->setVolume(norm);
+        if (norm > 0.0f && m_audioOutput->isMuted()) {
+            m_audioOutput->setMuted(false);
         }
+    }
+    if (m_sliderVolume && m_sliderVolume->value() != volumePercent) {
+        m_sliderVolume->setValue(volumePercent);
     }
 }
 
 void SystemMediaViewer::toggleMute()
 {
     if (!m_audioOutput) return;
-
-    if (m_audioOutput->isMuted()) {
-        m_audioOutput->setMuted(false);
-        if (m_btnMute) {
-            m_btnMute->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Volume, QColor("#cbd5e1"), 18));
-        }
-        if (m_sliderVolume) m_sliderVolume->setValue(static_cast<int>(m_previousVolume * 100));
-    } else {
+    bool isMuted = m_audioOutput->isMuted();
+    m_audioOutput->setMuted(!isMuted);
+    if (!isMuted) {
         m_previousVolume = m_audioOutput->volume();
-        m_audioOutput->setMuted(true);
-        if (m_btnMute) {
-            m_btnMute->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::VolumeMute, QColor("#cbd5e1"), 18));
-        }
-        if (m_sliderVolume) m_sliderVolume->setValue(0);
+        m_btnMute->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Volume, QColor("#ef4444"), 18));
+    } else {
+        m_btnMute->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Volume, QColor("#cbd5e1"), 18));
     }
 }
 
 void SystemMediaViewer::playNextTrack()
 {
-    if (m_isEditMode || m_siblingFiles.isEmpty()) return;
-
-    int nextIdx = (m_currentIndex + 1) % m_siblingFiles.size();
-    QString nextFile = m_siblingFiles.at(nextIdx);
-
-    if (m_trackChangeCallback) {
-        m_trackChangeCallback(nextFile);
+    if (m_siblingFiles.isEmpty()) return;
+    if (m_isShuffle && m_siblingFiles.size() > 1) {
+        int nextIdx = m_currentIndex;
+        while (nextIdx == m_currentIndex) {
+            nextIdx = QRandomGenerator::global()->bounded(m_siblingFiles.size());
+        }
+        m_currentIndex = nextIdx;
     } else {
-        loadFile(nextFile);
+        m_currentIndex = (m_currentIndex + 1) % m_siblingFiles.size();
+    }
+    QString nextTrack = m_siblingFiles.value(m_currentIndex);
+    if (!nextTrack.isEmpty()) {
+        if (m_trackChangeCallback) {
+            m_trackChangeCallback(nextTrack);
+        } else {
+            loadFile(nextTrack);
+        }
     }
 }
 
 void SystemMediaViewer::playPreviousTrack()
 {
-    if (m_isEditMode || m_siblingFiles.isEmpty()) return;
-
-    int prevIdx = (m_currentIndex <= 0) ? (m_siblingFiles.size() - 1) : (m_currentIndex - 1);
-    QString prevFile = m_siblingFiles.at(prevIdx);
-
-    if (m_trackChangeCallback) {
-        m_trackChangeCallback(prevFile);
-    } else {
-        loadFile(prevFile);
+    if (m_siblingFiles.isEmpty()) return;
+    m_currentIndex = (m_currentIndex - 1 + m_siblingFiles.size()) % m_siblingFiles.size();
+    QString prevTrack = m_siblingFiles.value(m_currentIndex);
+    if (!prevTrack.isEmpty()) {
+        if (m_trackChangeCallback) {
+            m_trackChangeCallback(prevTrack);
+        } else {
+            loadFile(prevTrack);
+        }
     }
 }
 
@@ -571,16 +917,48 @@ void SystemMediaViewer::toggleLoop()
 {
     m_isLooping = !m_isLooping;
     if (m_btnLoop) {
-        m_btnLoop->setIcon(VectorIcons::createUiIcon(
-            VectorIcons::UiIcon::Repeat,
-            m_isLooping ? QColor("#38bdf8") : QColor("#94a3b8"),
-            16
-        ));
-        m_btnLoop->setStyleSheet(
-            m_isLooping
-                ? "QPushButton { background: rgba(2, 132, 199, 0.4); border: 1px solid #0284c7; border-radius: 6px; }"
-                : "QPushButton { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 6px; }"
-        );
+        m_btnLoop->setStyleSheet(m_isLooping
+            ? "QPushButton { background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; border-radius: 16px; padding: 4px; }"
+            : "QPushButton { background: transparent; border: none; border-radius: 16px; padding: 4px; } QPushButton:hover { background: rgba(255, 255, 255, 0.08); }");
+    }
+}
+
+void SystemMediaViewer::toggleShuffle()
+{
+    m_isShuffle = !m_isShuffle;
+    if (m_btnShuffle) {
+        m_btnShuffle->setStyleSheet(m_isShuffle
+            ? "QPushButton { background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; border-radius: 16px; padding: 4px; }"
+            : "QPushButton { background: transparent; border: none; border-radius: 16px; padding: 4px; } QPushButton:hover { background: rgba(255, 255, 255, 0.08); }");
+    }
+}
+
+void SystemMediaViewer::showSpeedMenu()
+{
+    QMenu speedMenu(this);
+    const QList<double> speeds = {0.5, 0.75, 1.0, 1.25, 1.5, 2.0};
+    for (double rate : speeds) {
+        QString text = QString("%1x").arg(rate, 0, 'f', (rate == 1.0 || rate == 2.0 || rate == 0.5) ? 1 : 2);
+        QAction *act = speedMenu.addAction(text);
+        if (std::abs(m_playbackRate - rate) < 0.01) {
+            act->setCheckable(true);
+            act->setChecked(true);
+        }
+        connect(act, &QAction::triggered, this, [this, rate]() {
+            setPlaybackSpeed(rate);
+        });
+    }
+    speedMenu.exec(m_btnSpeed->mapToGlobal(QPoint(0, -speedMenu.sizeHint().height())));
+}
+
+void SystemMediaViewer::setPlaybackSpeed(double rate)
+{
+    m_playbackRate = rate;
+    if (m_player) {
+        m_player->setPlaybackRate(rate);
+    }
+    if (m_btnSpeed) {
+        m_btnSpeed->setText(QString("%1x").arg(rate, 0, 'f', 1));
     }
 }
 
@@ -597,25 +975,30 @@ void SystemMediaViewer::updatePlayPauseUi(bool isPlaying)
 
 void SystemMediaViewer::updateTimeLabel(qint64 currentMs, qint64 totalMs)
 {
-    if (m_lblTime) {
-        m_lblTime->setText(QString("%1 / %2").arg(formatTime(currentMs), formatTime(totalMs)));
-    }
+    QString curStr = formatTime(currentMs);
+    QString totStr = formatTime(totalMs);
+    qint64 remaining = std::max<qint64>(0, totalMs - currentMs);
+    QString remStr = "-" + formatTime(remaining);
+
+    if (m_waveTimeLeftLabel) m_waveTimeLeftLabel->setText(curStr);
+    if (m_waveTimeRightLabel) m_waveTimeRightLabel->setText(remStr);
+    if (m_timeLeftLabel) m_timeLeftLabel->setText(curStr + " / " + totStr);
+    if (m_timeRightLabel) m_timeRightLabel->setText(remStr);
 }
 
 QString SystemMediaViewer::formatTime(qint64 ms)
 {
     qint64 totalSec = ms / 1000;
-    qint64 sec = totalSec % 60;
-    qint64 min = (totalSec / 60) % 60;
-    qint64 hr = totalSec / 3600;
-
-    if (hr > 0) {
+    qint64 h = totalSec / 3600;
+    qint64 m = (totalSec % 3600) / 60;
+    qint64 s = totalSec % 60;
+    if (h > 0) {
         return QString("%1:%2:%3")
-            .arg(hr, 2, 10, QLatin1Char('0'))
-            .arg(min, 2, 10, QLatin1Char('0'))
-            .arg(sec, 2, 10, QLatin1Char('0'));
+            .arg(h)
+            .arg(m, 2, 10, QChar('0'))
+            .arg(s, 2, 10, QChar('0'));
     }
     return QString("%1:%2")
-        .arg(min, 2, 10, QLatin1Char('0'))
-        .arg(sec, 2, 10, QLatin1Char('0'));
+        .arg(m, 2, 10, QChar('0'))
+        .arg(s, 2, 10, QChar('0'));
 }

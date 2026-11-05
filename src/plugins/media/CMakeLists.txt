@@ -16,6 +16,8 @@ if(MPV_FOUND)
         ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_trim_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/ui/audio/cover_selection_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/ui/audio/equalizer_widget.cpp
+        ${CMAKE_SOURCE_DIR}/src/viewers/media/vinyl_sleeve_widget.cpp
+        ${CMAKE_SOURCE_DIR}/src/viewers/media/smooth_waveform_scrubber.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/media/media_viewer.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/media/mpv_video_widget.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/media/stereo_oscilloscope_widget.cpp
