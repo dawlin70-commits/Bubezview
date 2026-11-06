@@ -91,98 +91,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_fileIndexLabel(nullptr)
     , m_fileInfoLabel(nullptr)
     , m_statusLabel(nullptr)
-    , m_shareManager(nullptr)
-    , m_menuShare(nullptr)
-    , m_menuOpenWith(nullptr)
-    , m_menuFile(nullptr)
-    , m_menuEdit(nullptr)
-    , m_menuView(nullptr)
-    , m_menuTools(nullptr)
-    , m_menuSettings(nullptr)
-    , m_menuHelp(nullptr)
-    , m_actSave(nullptr)
-    , m_actSaveAs(nullptr)
-    , m_actExportAs(nullptr)
-    , m_actTrashFile(nullptr)
-    , m_actPrint(nullptr)
-    , m_actUndo(nullptr)
-    , m_actRedo(nullptr)
-    , m_actCut(nullptr)
-    , m_actCopy(nullptr)
-    , m_actPaste(nullptr)
-    , m_actRotateRight(nullptr)
-    , m_actRotateLeft(nullptr)
-    , m_actFlipH(nullptr)
-    , m_actFlipV(nullptr)
-    , m_actFolderRename(nullptr)
-    , m_actFolderTrash(nullptr)
-    , m_actFolderNew(nullptr)
-    , m_actCreateArchive(nullptr)
-    , m_actArchiveAddFiles(nullptr)
-    , m_actArchiveAddFolder(nullptr)
-    , m_actArchiveRemoveSelected(nullptr)
-    , m_actToggleTextEdit(nullptr)
-    , m_actLineNumbers(nullptr)
-    , m_actSyntaxHighlight(nullptr)
-    , m_actWordWrap(nullptr)
-    , m_actShowWhitespace(nullptr)
-    , m_actGotoLine(nullptr)
-    , m_actFindReplace(nullptr)
-    , m_actDuplicateLine(nullptr)
-    , m_actDeleteLine(nullptr)
-    , m_actToggleComment(nullptr)
-    , m_actOcr(nullptr)
-    , m_actSearch(nullptr)
-    , m_actPdfToc(nullptr)
-    , m_actExtractImages(nullptr)
-    , m_actToolsExportAs(nullptr)
-    , m_actPrev(nullptr)
-    , m_actNext(nullptr)
-    , m_actFolderView(nullptr)
-    , m_actZoomIn(nullptr)
-    , m_actZoomOut(nullptr)
-    , m_actZoomReset(nullptr)
-    , m_actFit(nullptr)
-    , m_actZoomTool(nullptr)
-    , m_actSlideshow(nullptr)
-    , m_actFilmstrip(nullptr)
-    , m_actPdfHighlighter(nullptr)
-    , m_actPdfTypewriter(nullptr)
-    , m_actPdfSignature(nullptr)
-    , m_actPdfWatermark(nullptr)
-    , m_actPdfShape(nullptr)
-    , m_actPdfSnapshot(nullptr)
-    , m_actPdfSelectArea(nullptr)
-    , m_actPdfRedact(nullptr)
-    , m_menuPdfMarkup(nullptr)
-    , m_menuPdfDocOps(nullptr)
-    , m_actAudioTrim(nullptr)
-    , m_actAudioTags(nullptr)
-    , m_actAudioExtract(nullptr)
-    , m_actMergePdf(nullptr)
-    , m_actImageCrop(nullptr)
-    , m_actImageResize(nullptr)
-    , m_actFlattenImage(nullptr)
-    , m_menuTransparency(nullptr)
-    , m_grpTransparency(nullptr)
-    , m_actOpenFile(nullptr)
-    , m_actOpenFolder(nullptr)
-    , m_actOpenWith(nullptr)
-    , m_actCopyPath(nullptr)
-    , m_actFullscreen(nullptr)
-    , m_actInspector(nullptr)
-    , m_actPdfPrevPage(nullptr)
-    , m_actPdfNextPage(nullptr)
-    , m_actToggleToolbar(nullptr)
-    , m_actSettings(nullptr)
-    , m_actCheckUpdates(nullptr)
-    , m_actShortcuts(nullptr)
-    , m_actAbout(nullptr)
-    , m_actShowUninstalledFeatures(nullptr)
-    , m_actShowUnsupportedFiles(nullptr)
-    , m_actOfficeDiscovery(nullptr)
-    , m_actQpdfDiscovery(nullptr)
-    , m_actPdfimagesDiscovery(nullptr)
     , m_btnUpdateNotification(nullptr)
     , m_updateBlinkTimer(nullptr)
     , m_updateBlinkState(false)
@@ -190,6 +98,10 @@ MainWindow::MainWindow(QWidget *parent)
     , m_lblUpdateBannerText(nullptr)
 {
     setAttribute(Qt::WA_TranslucentBackground, false);
+    if (menuBar()) {
+        menuBar()->hide();
+        menuBar()->setEnabled(false);
+    }
     setupUi();
     setupUpdateBanner();
     setupDebugBanner();
@@ -205,39 +117,21 @@ MainWindow::MainWindow(QWidget *parent)
             }
         });
         connect(m_imageViewer, &ImageViewer::modificationChanged, this, [this](bool) {
-            updateContextualMenuStates();
             updateStatusBar();
             updateWindowTitle();
         });
-        connect(m_imageViewer, &ImageViewer::undoAvailabilityChanged, this, [this](bool, bool) {
-            updateContextualMenuStates();
-        });
-        connect(m_imageViewer, &ImageViewer::cropModeChanged, this, [this](bool) {
-            updateContextualMenuStates();
-        });
+        connect(m_imageViewer, &ImageViewer::contextMenuRequested, this, &BaseSkin::showContextMenuAt);
     }
     setupArchiveViewerConnections();
     setupFolderViewerConnections();
 
     if (m_textViewer) {
-        connect(m_textViewer, &TextViewer::editModeChanged, this, [this](bool editable) {
-            if (m_actToggleTextEdit) {
-                m_actToggleTextEdit->setChecked(editable);
-            }
+        connect(m_textViewer, &TextViewer::editModeChanged, this, [this](bool) {
             updateStatusBar();
-            updateContextualMenuStates();
         });
         connect(m_textViewer, &TextViewer::modificationChanged, this, [this](bool) {
-            updateContextualMenuStates();
             updateStatusBar();
             updateWindowTitle();
-        });
-        connect(m_textViewer, &QPlainTextEdit::selectionChanged, this, &MainWindow::updateContextualMenuStates);
-        connect(m_textViewer->document(), &QTextDocument::undoAvailable, this, [this](bool) {
-            updateContextualMenuStates();
-        });
-        connect(m_textViewer->document(), &QTextDocument::redoAvailable, this, [this](bool) {
-            updateContextualMenuStates();
         });
     }
 
@@ -266,559 +160,12 @@ void MainWindow::setupUi()
     }
     setCentralWidget(m_centralContainer);
 
-    // =========================================================================
-    // 1. FILE MENU
-    // =========================================================================
-    m_menuFile = menuBar()->addMenu(tr("&File"));
-    
-    m_actOpenFile = m_menuFile->addAction(QIcon::fromTheme("document-open"), tr("Open File..."), this, &BaseSkin::openFileDialog);
-    m_actOpenFile->setShortcut(QKeySequence::Open);
-
-    m_actOpenFolder = m_menuFile->addAction(QIcon::fromTheme("folder-open"), tr("Open Folder..."), this, &BaseSkin::openFolderDialog);
-    m_actOpenFolder->setShortcuts({QKeySequence("Ctrl+Shift+O"), QKeySequence("Ctrl+G")});
-
-    m_menuFile->addSeparator();
-
-    m_actOpenWith = m_menuFile->addAction(QIcon::fromTheme("system-run"), tr("Open with Default Application"), this, &BaseSkin::openWithDefault);
-    m_actOpenWith->setShortcut(QKeySequence("Ctrl+Return"));
-
-    m_menuOpenWith = m_menuFile->addMenu(QIcon::fromTheme("system-run"), tr("Open With..."));
-    connect(m_menuOpenWith, &QMenu::aboutToShow, this, &MainWindow::populateOpenWithMenu);
-
-    m_actSave = m_menuFile->addAction(QIcon::fromTheme("document-save"), tr("Save Changes"), this, &BaseSkin::saveCurrentFile);
-    m_actSave->setShortcut(QKeySequence("Ctrl+S"));
-    m_actSave->setEnabled(false);
-
-    m_actExportAs = m_menuFile->addAction(QIcon::fromTheme("document-export"), tr("Export As..."), this, &BaseSkin::exportCurrentFileAs);
-    m_actExportAs->setShortcut(QKeySequence("Ctrl+E"));
-
-    m_actSaveAs = m_menuFile->addAction(QIcon::fromTheme("document-save-as"), tr("Save Copy As..."), this, &BaseSkin::saveAsCurrentFile);
-    m_actSaveAs->setShortcut(QKeySequence("Ctrl+Shift+S"));
-
-    m_actCreateArchive = m_menuFile->addAction(QIcon::fromTheme("package-x-generic"), tr("Compress / Create Archive..."), this, &BaseSkin::openCreateArchiveDialog);
-    m_actCreateArchive->setShortcut(QKeySequence("Ctrl+Alt+C"));
-
-    m_actTrashFile = m_menuFile->addAction(QIcon::fromTheme("user-trash"), tr("Move to Trash"), this, &BaseSkin::deleteCurrentFile);
-    m_actTrashFile->setShortcut(QKeySequence::Delete);
-    m_actTrashFile->setShortcutContext(Qt::WindowShortcut);
-    addAction(m_actTrashFile);
-
-    m_menuFile->addSeparator();
-
-    m_actPrint = m_menuFile->addAction(QIcon::fromTheme("document-print"), tr("Print..."), this, &BaseSkin::printCurrentFile);
-    m_actPrint->setShortcut(QKeySequence("Ctrl+P"));
-
-    // Share Submenu
-    m_menuShare = m_menuFile->addMenu(QIcon::fromTheme("document-share"), tr("Share"));
-    m_shareManager = new ShareManager(this, [this]() { return currentShareFilePath(); });
-    m_shareManager->populateMenu(m_menuShare);
-    connect(m_menuShare, &QMenu::aboutToShow, this, [this]() {
-        m_shareManager->populateMenu(m_menuShare);
-    });
-
-    m_actCopyPath = m_menuFile->addAction(QIcon::fromTheme("edit-copy-path"), tr("Copy Path"), this, &BaseSkin::copyPathToClipboard);
-    m_actCopyPath->setShortcut(QKeySequence("Ctrl+Shift+C"));
-
-    m_menuFile->addSeparator();
-
-    connect(m_menuFile, &QMenu::aboutToShow, this, &MainWindow::updateContextualMenuStates);
-
-    QAction *actClose = m_menuFile->addAction(QIcon::fromTheme("application-exit"), tr("Exit"), this, &QWidget::close);
-
-    actClose->setShortcut(QKeySequence("Ctrl+Q"));
-
-    // =========================================================================
-    // 2. EDIT MENU (Actions altering file/content with clipboard triad)
-    // =========================================================================
-    m_menuEdit = menuBar()->addMenu(tr("&Edit"));
-
-    m_actUndo = m_menuEdit->addAction(QIcon::fromTheme("edit-undo"), tr("Undo"), this, [this]() {
-        if (m_pdfViewer && m_pdfViewer->canUndo()) {
-            m_pdfViewer->undo();
-            updateContextualMenuStates();
-        } else if (m_textViewer && m_textViewer->document()->isUndoAvailable()) {
-            m_textViewer->undo();
-            updateContextualMenuStates();
-        } else if (m_imageViewer && m_imageViewer->canUndo()) {
-            m_imageViewer->undo();
-            if (!m_isEditMode) {
-                saveCurrentImage(true);
-            }
-            updateContextualMenuStates();
-        }
-    });
-    m_actUndo->setShortcut(QKeySequence::Undo);
-
-    m_actRedo = m_menuEdit->addAction(QIcon::fromTheme("edit-redo"), tr("Redo"), this, [this]() {
-        if (m_pdfViewer && m_pdfViewer->canRedo()) {
-            m_pdfViewer->redo();
-            updateContextualMenuStates();
-        } else if (m_textViewer && m_textViewer->document()->isRedoAvailable()) {
-            m_textViewer->redo();
-            updateContextualMenuStates();
-        } else if (m_imageViewer && m_imageViewer->canRedo()) {
-            m_imageViewer->redo();
-            if (!m_isEditMode) {
-                saveCurrentImage(true);
-            }
-            updateContextualMenuStates();
-        }
-    });
-    m_actRedo->setShortcut(QKeySequence::Redo);
-
-    m_menuEdit->addSeparator();
-
-    m_actCut = m_menuEdit->addAction(QIcon::fromTheme("edit-cut"), tr("Cut"), this, &BaseSkin::cutToClipboard);
-    m_actCut->setShortcut(QKeySequence("Ctrl+X"));
-
-    m_actCopy = m_menuEdit->addAction(QIcon::fromTheme("edit-copy"), tr("Copy"), this, &BaseSkin::copyToClipboard);
-    m_actCopy->setShortcut(QKeySequence("Ctrl+C"));
-
-    m_actPaste = m_menuEdit->addAction(QIcon::fromTheme("edit-paste"), tr("Paste"), this, &BaseSkin::pasteFromClipboard);
-    m_actPaste->setShortcut(QKeySequence("Ctrl+V"));
-
-    m_menuEdit->addSeparator();
-
-    m_actRotateRight = m_menuEdit->addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate 90° Clockwise"), this, &BaseSkin::rotateCurrentRight);
-    m_actRotateRight->setShortcuts({QKeySequence("R"), QKeySequence("Ctrl+R")});
-    m_actRotateRight->setShortcutContext(Qt::WindowShortcut);
-    addAction(m_actRotateRight);
-
-    m_actRotateLeft = m_menuEdit->addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate 90° Counterclockwise"), this, &BaseSkin::rotateCurrentLeft);
-    m_actRotateLeft->setShortcuts({QKeySequence("L"), QKeySequence("Ctrl+Shift+R")});
-    m_actRotateLeft->setShortcutContext(Qt::WindowShortcut);
-    addAction(m_actRotateLeft);
-
-    m_actFlipH = m_menuEdit->addAction(QIcon::fromTheme("object-flip-horizontal"), tr("Flip Horizontally"), this, &BaseSkin::flipCurrentHorizontal);
-    m_actFlipH->setShortcut(QKeySequence("H"));
-
-    m_actFlipV = m_menuEdit->addAction(QIcon::fromTheme("object-flip-vertical"), tr("Flip Vertically"), this, &BaseSkin::flipCurrentVertical);
-    m_actFlipV->setShortcut(QKeySequence("V"));
-
-    m_actImageCrop = m_menuEdit->addAction(QIcon::fromTheme("transform-crop-and-resize"), tr("✂️ Crop Image (Canvas Selection)..."), this, [this]() {
-        if (m_imageViewer) {
-            m_imageViewer->setCropModeActive(!m_imageViewer->isCropModeActive());
-            updateContextualMenuStates();
-        }
-    });
-    m_actImageCrop->setShortcut(QKeySequence("C"));
-    m_actImageCrop->setCheckable(true);
-
-    m_actImageResize = m_menuEdit->addAction(QIcon::fromTheme("transform-scale"), tr("📐 Resize Image..."), this, &BaseSkin::openResizeImageDialog);
-    m_actImageResize->setShortcut(QKeySequence("Ctrl+Alt+R"));
-
-    m_actFlattenImage = m_menuEdit->addAction(QIcon::fromTheme("fill-color"), tr("✨ Flatten Image (Remove Transparency)..."), this, [this]() {
-        if (m_imageViewer && m_imageViewer->originalImage().hasAlphaChannel()) {
-            m_imageViewer->removeTransparency(Qt::white);
-            updateContextualMenuStates();
-        }
-    });
-
-    m_menuEdit->addSeparator();
-
-    m_actFolderRename = m_menuEdit->addAction(QIcon::fromTheme("edit-rename"), tr("Rename Item..."), this, &BaseSkin::renameCurrentFolderItem);
-    m_actFolderRename->setShortcut(QKeySequence("F2"));
-
-    m_actFolderTrash = m_menuEdit->addAction(QIcon::fromTheme("user-trash"), tr("Move to Trash"), this, &BaseSkin::deleteCurrentFile);
-    m_actFolderTrash->setShortcut(QKeySequence::Delete);
-
-    m_actFolderNew = m_menuEdit->addAction(QIcon::fromTheme("folder-new"), tr("New Folder..."), this, &BaseSkin::createFolderInCurrentFolder);
-    m_actFolderNew->setShortcut(QKeySequence("F7"));
-
-    // Archive modification actions (visible in Edit menu only when viewing an Archive)
-    m_actArchiveAddFiles = m_menuEdit->addAction(QIcon::fromTheme("list-add"), tr("Add Files to Archive..."), this, &BaseSkin::addFilesToCurrentArchive);
-    m_actArchiveAddFolder = m_menuEdit->addAction(QIcon::fromTheme("folder-new"), tr("Add Folder to Archive..."), this, &BaseSkin::addFolderToCurrentArchive);
-    m_actArchiveRemoveSelected = m_menuEdit->addAction(QIcon::fromTheme("edit-delete"), tr("Remove Selected from Archive"), this, &BaseSkin::removeSelectedFromCurrentArchive);
-
-    m_menuEdit->addSeparator();
-
-    // Text File Edit Mode
-    m_actToggleTextEdit = m_menuEdit->addAction(QIcon::fromTheme("document-edit"), tr("Edit Text Mode"), this, [this]() {
-        if (m_textViewer) {
-            m_textViewer->setEditable(!m_textViewer->isEditable());
-        }
-    });
-    m_actToggleTextEdit->setCheckable(true);
-    m_actToggleTextEdit->setShortcut(QKeySequence("F4"));
-
-    m_actFindReplace = m_menuEdit->addAction(QIcon::fromTheme("edit-find-replace"), tr("Find & Replace..."), this, &BaseSkin::showFindReplace);
-    m_actFindReplace->setShortcut(QKeySequence("Ctrl+H"));
-
-    m_actGotoLine = m_menuEdit->addAction(QIcon::fromTheme("go-jump"), tr("Go to Line..."), this, &BaseSkin::gotoLineInDocument);
-    m_actGotoLine->setShortcut(QKeySequence("Ctrl+G"));
-
-    m_actDuplicateLine = m_menuEdit->addAction(QIcon::fromTheme("edit-copy"), tr("Duplicate Current Line"), this, [this]() {
-        if (m_textViewer) m_textViewer->duplicateCurrentLine();
-    });
-    m_actDuplicateLine->setShortcut(QKeySequence("Ctrl+D"));
-
-    m_actDeleteLine = m_menuEdit->addAction(QIcon::fromTheme("edit-delete"), tr("Delete Current Line"), this, [this]() {
-        if (m_textViewer) m_textViewer->deleteCurrentLine();
-    });
-    m_actDeleteLine->setShortcut(QKeySequence("Ctrl+Shift+K"));
-
-    m_actToggleComment = m_menuEdit->addAction(QIcon::fromTheme("code-context"), tr("Toggle Comment"), this, [this]() {
-        if (m_textViewer) m_textViewer->toggleComment();
-    });
-    m_actToggleComment->setShortcut(QKeySequence("Ctrl+/"));
-
-    m_menuEdit->addSeparator();
-
-    // 1. Select Area (draw rectangular selection on canvas)
-    m_actPdfSelectArea = m_menuEdit->addAction(QIcon::fromTheme("edit-select"), tr("Select Area..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->startSelectArea();
-    });
-    m_actPdfSelectArea->setShortcut(QKeySequence("Ctrl+Shift+A"));
-    addAction(m_actPdfSelectArea);
-
-    // 2. Insert Image directly into PDF
-    m_actPdfInsertImage = m_menuEdit->addAction(QIcon::fromTheme("insert-image"), tr("Insert Image..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openInsertImageDialog();
-    });
-
-    // 3. Typewriter / Text insertion
-    m_actPdfTypewriter = m_menuEdit->addAction(QIcon::fromTheme("insert-text"), tr("Typewriter / Text Insert..."), this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->openTypewriterDialog();
-    });
-
-    // 4. Submenu: Direct shortcuts to individual markup tools
-    m_menuPdfMarkup = m_menuEdit->addMenu(QIcon::fromTheme("document-edit"), tr("Annotations & Markup Tools"));
-
-    m_actPdfHighlighter = m_menuPdfMarkup->addAction(QIcon::fromTheme("draw-highlight"), tr("Highlighter..."), this, [this]() {
-        if (promotePdfViewerToStudio() && m_pdfViewer) {
-            m_pdfViewer->startHighlighter();
-        }
-    });
-    m_actPdfHighlighter->setShortcut(QKeySequence("Ctrl+Shift+H"));
-
-    m_actPdfShape = m_menuPdfMarkup->addAction(QIcon::fromTheme("draw-rectangle"), tr("Shapes & Arrows..."), this, [this]() {
-        if (promotePdfViewerToStudio() && m_pdfViewer) {
-            m_pdfViewer->openShapeDialog();
-        }
-    });
-
-    m_actPdfRedact = m_menuPdfMarkup->addAction(QIcon::fromTheme("edit-clear"), tr("Redact / Blackout..."), this, [this]() {
-        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->startRedaction();
-    });
-
-    m_actPdfWatermark = m_menuPdfMarkup->addAction(QIcon::fromTheme("format-text-strikethrough"), tr("Watermark / Stamp..."), this, [this]() {
-        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openWatermarkDialog();
-    });
-
-    m_actPdfSignature = m_menuPdfMarkup->addAction(QIcon::fromTheme("document-sign"), tr("Signature (Visual & Digital)..."), this, [this]() {
-        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openSignatureDialog();
-    });
-
-    m_menuPdfMarkup->addAction(QIcon::fromTheme("security-high"), tr("Cryptographic Digital Signature (PAdES / .p7m)..."), this, [this]() {
-        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->openCryptoSignatureDialog(0);
-    });
-
-    // 5. Submenu: PDF Document Structure Operations
-    m_menuPdfDocOps = m_menuEdit->addMenu(QIcon::fromTheme("document-properties"), tr("PDF Page & Document Operations"));
-
-    m_actPdfInsertBlankPage = m_menuPdfDocOps->addAction(QIcon::fromTheme("document-new"), tr("Insert Blank A4 Page..."), this, [this]() {
-        if (promotePdfViewerToStudio() && m_pdfViewer) m_pdfViewer->insertBlankPage();
-    });
-    m_actPdfInsertBlankPage->setShortcut(QKeySequence("Ctrl+Shift+N"));
-
-    m_actOrganizePdf = m_menuPdfDocOps->addAction(QIcon::fromTheme("view-pages-overview"), tr("Organize PDF Pages..."), this, [this]() {
-        enterPageOrganizerMode();
-    });
-
-    m_actMergePdf = m_menuPdfDocOps->addAction(QIcon::fromTheme("document-import"), tr("Merge PDF Documents..."), this, &MainWindow::openPdfMergeDialog);
-
-    m_actRepairPdf = m_menuPdfDocOps->addAction(QIcon::fromTheme("tools-check-spelling"), tr("Repair PDF Document..."), this, [this]() {
-        openPdfRepairDialog();
-    });
-
-    connect(m_menuEdit, &QMenu::aboutToShow, this, &MainWindow::updateContextualMenuStates);
-
-    // =========================================================================
-    // 3. VIEW MENU
-    // =========================================================================
-    m_menuView = menuBar()->addMenu(tr("&View"));
-
-    m_actFolderView = m_menuView->addAction(QIcon::fromTheme("folder-open"), tr("Folder Gallery View"), this, &BaseSkin::openCurrentFolderInGallery);
-    m_actFolderView->setShortcut(QKeySequence("Alt+Up"));
-
-    m_menuView->addSeparator();
-
-    m_actPrev = m_menuView->addAction(QIcon::fromTheme("go-previous"), "◀", this, &BaseSkin::prevFile);
-    m_actPrev->setToolTip(tr("Previous File (Left Arrow)"));
-    m_actPrev->setShortcut(QKeySequence(Qt::Key_Left));
-
-    m_actNext = m_menuView->addAction(QIcon::fromTheme("go-next"), "▶", this, &BaseSkin::nextFile);
-    m_actNext->setToolTip(tr("Next File (Right Arrow)"));
-    m_actNext->setShortcut(QKeySequence(Qt::Key_Right));
-
-    m_menuView->addSeparator();
-
-    m_actFullscreen = m_menuView->addAction(QIcon::fromTheme("view-fullscreen"), tr("Fullscreen"), this, &BaseSkin::toggleFullscreen);
-    m_actFullscreen->setShortcut(QKeySequence("F11"));
-
-    m_actSlideshow = m_menuView->addAction(QIcon::fromTheme("media-playback-start"), tr("Photo Slideshow"), this, &BaseSkin::toggleSlideshow);
-    m_actSlideshow->setShortcut(QKeySequence("F5"));
-
-    m_actInspector = m_menuView->addAction(QIcon::fromTheme("document-properties"), tr("Inspector / Properties"), this, &BaseSkin::showFileInfo);
-    m_actInspector->setShortcuts({QKeySequence("Alt+Return"), QKeySequence("Ctrl+I")});
-
-    // PDF page navigation actions (for toolbar / shortcuts)
-    m_actPdfPrevPage = new QAction(QIcon::fromTheme("go-up"), tr("▲ Prev Page"), this);
-    m_actPdfPrevPage->setShortcut(QKeySequence(Qt::Key_PageUp));
-    connect(m_actPdfPrevPage, &QAction::triggered, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->prevPage();
-        else if (m_officeViewer && m_officeViewer->isPdfMode()) m_officeViewer->pdfViewer()->prevPage();
-    });
-    addAction(m_actPdfPrevPage);
-
-    m_actPdfNextPage = new QAction(QIcon::fromTheme("go-down"), tr("▼ Next Page"), this);
-    m_actPdfNextPage->setShortcut(QKeySequence(Qt::Key_PageDown));
-    connect(m_actPdfNextPage, &QAction::triggered, this, [this]() {
-        if (m_pdfViewer) m_pdfViewer->nextPage();
-        else if (m_officeViewer && m_officeViewer->isPdfMode()) m_officeViewer->pdfViewer()->nextPage();
-    });
-    addAction(m_actPdfNextPage);
-
-    m_menuView->addSeparator();
-
-    m_actZoomTool = m_menuView->addAction(QIcon::fromTheme("zoom-fit-best"), tr("Zoom Tool (Mouse Wheel)"), this, &BaseSkin::toggleZoomTool);
-    m_actZoomTool->setCheckable(true);
-    m_actZoomTool->setChecked(false);
-    m_actZoomTool->setToolTip(tr("Toggle mouse wheel functionality between scrolling and zooming"));
-
-    m_actZoomIn = m_menuView->addAction(QIcon::fromTheme("zoom-in"), tr("Zoom In"), this, &BaseSkin::zoomInCurrent);
-    m_actZoomIn->setShortcut(QKeySequence("Ctrl++"));
-
-    m_actZoomOut = m_menuView->addAction(QIcon::fromTheme("zoom-out"), tr("Zoom Out"), this, &BaseSkin::zoomOutCurrent);
-    m_actZoomOut->setShortcut(QKeySequence("Ctrl+-"));
-
-    m_actZoomReset = m_menuView->addAction(QIcon::fromTheme("zoom-original"), tr("Zoom 100%"), this, &BaseSkin::resetZoomCurrent);
-    m_actZoomReset->setShortcut(QKeySequence("Ctrl+0"));
-
-    m_actFit = m_menuView->addAction(QIcon::fromTheme("zoom-fit-best"), tr("Fit to Window"), this, &BaseSkin::fitCurrent);
-    m_actFit->setShortcut(QKeySequence("Ctrl+9"));
-
-    m_menuView->addSeparator();
-
-    m_actFilmstrip = m_menuView->addAction(QIcon::fromTheme("view-preview"), tr("Thumbnail Strip"), this, &BaseSkin::toggleFilmstrip);
-    m_actFilmstrip->setCheckable(true);
-    m_actFilmstrip->setChecked(m_filmstripWanted);
-    m_actFilmstrip->setShortcut(QKeySequence("F4"));
-
-    m_actPdfToc = m_menuView->addAction(QIcon::fromTheme("view-list-tree"), tr("Document Outline (TOC)"), this, &BaseSkin::togglePdfToc);
-    m_actPdfToc->setCheckable(true);
-    m_actPdfToc->setShortcut(QKeySequence("F3"));
-
-    m_actLineNumbers = m_menuView->addAction(QIcon::fromTheme("format-list-ordered"), tr("Line Numbers"), this, [this](bool checked) {
-        if (m_textViewer) m_textViewer->setLineNumbersVisible(checked);
-    });
-    m_actLineNumbers->setCheckable(true);
-    m_actLineNumbers->setShortcut(QKeySequence("F8"));
-
-    m_actSyntaxHighlight = m_menuView->addAction(QIcon::fromTheme("code-class"), tr("Syntax Highlighting"), this, [this](bool checked) {
-        if (m_textViewer) m_textViewer->setSyntaxHighlightingEnabled(checked);
-    });
-    m_actSyntaxHighlight->setCheckable(true);
-    m_actSyntaxHighlight->setShortcut(QKeySequence("F9"));
-
-    m_actWordWrap = m_menuView->addAction(QIcon::fromTheme("format-justify-fill"), tr("Word Wrap"), this, [this](bool checked) {
-        if (m_textViewer) m_textViewer->setWordWrapEnabled(checked);
-    });
-    m_actWordWrap->setCheckable(true);
-    m_actWordWrap->setShortcut(QKeySequence("Alt+Z"));
-
-    m_actShowWhitespace = m_menuView->addAction(QIcon::fromTheme("draw-text"), tr("Show Whitespace Characters"), this, [this](bool checked) {
-        if (m_textViewer) m_textViewer->setShowWhitespace(checked);
-    });
-    m_actShowWhitespace->setCheckable(true);
-
-    m_menuView->addSeparator();
-    m_menuTransparency = m_menuView->addMenu(QIcon::fromTheme("fill-color"), tr("Transparency Background"));
-    m_grpTransparency = new QActionGroup(this);
-
-    auto addTranspAction = [this](const QString &title, ImageViewer::TransparencyMode mode, const QString &modeStr) {
-        QAction *act = m_menuTransparency->addAction(title, this, [this, mode]() {
-            if (m_imageViewer) {
-                m_imageViewer->setTransparencyMode(mode);
-            }
-        });
-        act->setCheckable(true);
-        m_grpTransparency->addAction(act);
-        connect(m_menuTransparency, &QMenu::aboutToShow, this, [this, act, modeStr]() {
-            QSettings settings("Bubez", "BubezView");
-            act->setChecked(settings.value("image/transparency_mode", "white").toString() == modeStr);
-        });
-        return act;
-    };
-
-    addTranspAction(tr("Solid White (Removes Transparency)"), ImageViewer::TransparencyMode::White, "white");
-    addTranspAction(tr("Checkerboard Pattern"), ImageViewer::TransparencyMode::Checkerboard, "checkerboard");
-    addTranspAction(tr("Interface Theme Color"), ImageViewer::TransparencyMode::Theme, "theme");
-    addTranspAction(tr("Solid Black"), ImageViewer::TransparencyMode::Black, "black");
-
-    connect(m_menuView, &QMenu::aboutToShow, this, [this]() {
-        updateContextualMenuStates();
-        if (m_actFilmstrip) m_actFilmstrip->setChecked(isFilmstripVisible());
-        if (m_pdfViewer) {
-            m_actPdfToc->setChecked(m_pdfViewer->isTocVisible());
-            m_actPdfToc->setEnabled(m_pdfViewer->hasOutline());
-        }
-        if (m_textViewer) {
-            if (m_actLineNumbers) m_actLineNumbers->setChecked(m_textViewer->isLineNumbersVisible());
-            if (m_actSyntaxHighlight) m_actSyntaxHighlight->setChecked(m_textViewer->isSyntaxHighlightingEnabled());
-            if (m_actWordWrap) m_actWordWrap->setChecked(m_textViewer->isWordWrapEnabled());
-            if (m_actShowWhitespace) m_actShowWhitespace->setChecked(m_textViewer->isShowWhitespace());
-        }
-    });
-
-    m_menuView->addSeparator();
-
-    m_actToggleToolbar = m_menuView->addAction(tr("Show Edit Tools"), this, [this](bool checked) {
-        setEditMode(checked);
-    });
-    m_actToggleToolbar->setCheckable(true);
-    m_actToggleToolbar->setChecked(false);
-    m_actToggleToolbar->setShortcut(QKeySequence("Ctrl+T"));
-
-    QSettings settings;
-    bool showStatusBar = settings.value("ui/show_statusbar", false).toBool();
-    QAction *actToggleStatus = m_menuView->addAction(tr("Show Status Bar"), this, [this](bool checked) {
-        statusBar()->setVisible(checked);
-        QSettings s;
-        s.setValue("ui/show_statusbar", checked);
-    });
-    actToggleStatus->setCheckable(true);
-    actToggleStatus->setChecked(showStatusBar);
-    statusBar()->setVisible(showStatusBar);
-
-    bool showMenuBar = settings.value("ui/show_menubar", false).toBool();
-
-    QAction *actToggleMenuBar = m_menuView->addAction(tr("Show Menu Bar"), this, [this](bool checked) {
-        menuBar()->setVisible(checked);
-        QSettings s;
-        s.setValue("ui/show_menubar", checked);
-    });
-    actToggleMenuBar->setCheckable(true);
-    actToggleMenuBar->setChecked(showMenuBar);
-    actToggleMenuBar->setShortcut(QKeySequence("Ctrl+M"));
-    addAction(actToggleMenuBar);
-    menuBar()->setVisible(showMenuBar);
-
-    m_menuView->addSeparator();
-
-    m_actShowUninstalledFeatures = m_menuView->addAction(tr("Show Uninstalled Features"), this, [this](bool checked) {
-        BuildConfig::setShowUninstalledFeatures(checked);
-        updateDiscoveryActions();
-    });
-    m_actShowUninstalledFeatures->setCheckable(true);
-    m_actShowUninstalledFeatures->setChecked(BuildConfig::showUninstalledFeatures());
-
-    m_actShowUnsupportedFiles = m_menuView->addAction(tr("Show Unsupported Files"), this, [this](bool checked) {
-        BuildConfig::setShowUnsupportedFiles(checked);
-        if (!m_currentFilePath.isEmpty()) {
-            scanDirectory(m_currentFilePath);
-            m_filmstrip->setFiles(m_siblingFiles, m_currentIndex);
-        }
-    });
-    m_actShowUnsupportedFiles->setCheckable(true);
-    m_actShowUnsupportedFiles->setChecked(BuildConfig::showUnsupportedFiles());
-
-
-    // =========================================================================
-    // 4. TOOLS MENU
-    // =========================================================================
-    m_menuTools = menuBar()->addMenu(tr("&Tools"));
-
-    m_actSearch = m_menuTools->addAction(QIcon::fromTheme("edit-find"), tr("Find in Document..."), this, &BaseSkin::searchInDocument);
-    m_actSearch->setShortcut(QKeySequence("Ctrl+F"));
-
-    m_actOcr = m_menuTools->addAction(QIcon::fromTheme("scanner"), tr("Extract Text (OCR Tesseract)..."), this, &BaseSkin::extractOcrCurrentFile);
-    m_actExtractImages = m_menuTools->addAction(QIcon::fromTheme("image-x-generic"), tr("Extract Images from PDF..."), this, [this]() {
-        extractPdfImages(currentActiveTargetFilePath());
-    });
-
-    m_actAudioTrim = m_menuTools->addAction(QIcon::fromTheme("edit-cut"), tr("Trim / Cut Audio Clip..."), this, [this]() {
-        if (m_currentCategory == FileCategory::Media && !promoteMediaViewerToStudio()) {
-            return;
-        }
-        if (m_mediaViewer) m_mediaViewer->openAudioTrimDialog();
-    });
-    m_actAudioTrim->setShortcut(QKeySequence("Ctrl+Shift+T"));
-
-    m_actAudioTags = m_menuTools->addAction(QIcon::fromTheme("tag"), tr("Edit Audio Tags & Cover..."), this, [this]() {
-        if (m_currentCategory == FileCategory::Media && !promoteMediaViewerToStudio()) {
-            return;
-        }
-        if (m_mediaViewer) m_mediaViewer->openAudioTagDialog();
-    });
-
-    m_actAudioExtract = m_menuTools->addAction(QIcon::fromTheme("audio-x-generic"), tr("Extract Audio Track from Video..."), this, [this]() {
-        if (m_currentCategory == FileCategory::Media && !promoteMediaViewerToStudio()) {
-            return;
-        }
-        if (m_mediaViewer) m_mediaViewer->extractAudioTrack();
-    });
-
-    m_menuTools->addSeparator();
-
-    // Discovery placeholder items for uninstalled features
-    m_actOfficeDiscovery = m_menuTools->addAction(QIcon::fromTheme("document-open"), tr("⚙️ Internal Office Viewer [Inactive]..."), this, [this]() {
-        if (PackageManagerHelper::installComponentInteractive("office", this)) {
-            updateDiscoveryActions();
-        }
-    });
-
-    m_actQpdfDiscovery = m_menuTools->addAction(QIcon::fromTheme("document-save"), tr("⚙️ Advanced PDF Tools (QPDF) [Not installed]..."), this, [this]() {
-        if (PackageManagerHelper::installComponentInteractive("qpdf", this)) {
-            updateDiscoveryActions();
-        }
-    });
-
-    m_actPdfimagesDiscovery = m_menuTools->addAction(QIcon::fromTheme("image-x-generic"), tr("⚙️ Extract Images from PDF [pdfimages missing]..."), this, [this]() {
-        if (PackageManagerHelper::installComponentInteractive("pdfimages", this)) {
-            updateDiscoveryActions();
-        }
-    });
-
-    updateDiscoveryActions();
-
-    m_menuTools->addSeparator();
-
-    m_menuTools->addAction(QIcon::fromTheme("dialog-information"), tr("File Metadata & Properties..."), this, &BaseSkin::showFileInfo);
-    m_actToolsExportAs = m_menuTools->addAction(QIcon::fromTheme("document-export"), tr("Export As..."), this, &BaseSkin::exportCurrentFileAs);
-    m_menuTools->addAction(QIcon::fromTheme("system-run"), tr("Open with Other Application..."), this, &BaseSkin::openWithOther);
-
-    connect(m_menuTools, &QMenu::aboutToShow, this, &MainWindow::updateContextualMenuStates);
-
-    // =========================================================================
-    // 5. SETTINGS MENU
-    // =========================================================================
-    m_menuSettings = menuBar()->addMenu(tr("&Settings"));
-    m_menuSettings->addAction(tr("🎨 Appearance..."), this, &BaseSkin::openAppearanceSettings);
-    m_menuSettings->addAction(tr("🐧 Desktop Integration..."), this, &BaseSkin::openSettings);
-    m_menuSettings->addSeparator();
-    m_menuSettings->addAction(tr("⚙️ Configure BubezView..."), this, &BaseSkin::openAppearanceSettings);
-
-    // =========================================================================
-    // 6. HELP MENU
-    // =========================================================================
-    m_menuHelp = menuBar()->addMenu(tr("&Help"));
-    m_actCheckUpdates = m_menuHelp->addAction(QIcon::fromTheme("system-software-update"), tr("Check for Updates..."), this, &BaseSkin::checkForUpdates);
-    m_menuHelp->addSeparator();
-
-    m_actShortcuts = m_menuHelp->addAction(QIcon::fromTheme("help-browser"), tr("Keyboard Shortcuts Guide"), this, &BaseSkin::showShortcutsDialog);
-    m_actShortcuts->setShortcut(QKeySequence("F1"));
-
-    m_menuHelp->addAction(QIcon::fromTheme("tools-report-bug"), tr("Report an Issue / Bug Tracker..."), this, []() {
-        QDesktopServices::openUrl(QUrl("https://github.com/davide-bubez/BubezView/issues"));
-    });
-
-    m_menuHelp->addSeparator();
-    m_actAbout = m_menuHelp->addAction(QIcon::fromTheme("help-about"), tr("About BubezView"), this, &BaseSkin::showAboutDialog);
+    setupGlobalShortcuts();
 
     // =========================================================================
     // Minimal Header Bar (macOS Quick Look style with Canvas-First interface)
     // =========================================================================
+    QSettings settings;
     m_minimalHeaderBar = new MinimalHeaderBar(this);
     m_minimalHeaderBar->applyThemePreset(ThemeManager::currentPreset());
     bool frameless = settings.value("ui/frameless_window", true).toBool();
@@ -862,16 +209,11 @@ void MainWindow::setupUi()
     connect(m_minimalHeaderBar, &MinimalHeaderBar::settingsRequested, this, &BaseSkin::openSettings);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::editToggled, this, &MainWindow::setEditMode);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::discardEditRequested, this, &MainWindow::revertCurrentEdits);
-    connect(m_minimalHeaderBar, &MinimalHeaderBar::undoRequested, this, [this]() {
-        if (m_actUndo) m_actUndo->trigger();
-    });
-    connect(m_minimalHeaderBar, &MinimalHeaderBar::redoRequested, this, [this]() {
-        if (m_actRedo) m_actRedo->trigger();
-    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::undoRequested, this, &MainWindow::undo);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::redoRequested, this, &MainWindow::redo);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::historyStepRestoreRequested, this, [this](int idx) {
         if (m_pdfViewer) {
             m_pdfViewer->restoreHistoryStep(idx);
-            updateContextualMenuStates();
         }
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::showHistoryTimelineRequested, this, [this]() {
@@ -1356,12 +698,116 @@ void MainWindow::setEditMode(bool editMode)
             m_minimalHeaderBar->setEditMode(editMode);
         }
     }
+}
 
-    if (m_actToggleToolbar) {
-        m_actToggleToolbar->setChecked(editMode);
+void MainWindow::setupGlobalShortcuts()
+{
+    auto addWindowAction = [this](const QKeySequence &shortcut, auto slot) -> QAction* {
+        QAction *act = new QAction(this);
+        act->setShortcut(shortcut);
+        act->setShortcutContext(Qt::WindowShortcut);
+        connect(act, &QAction::triggered, this, slot);
+        addAction(act);
+        return act;
+    };
+
+    auto addWindowActionMulti = [this](const QList<QKeySequence> &shortcuts, auto slot) -> QAction* {
+        QAction *act = new QAction(this);
+        act->setShortcuts(shortcuts);
+        act->setShortcutContext(Qt::WindowShortcut);
+        connect(act, &QAction::triggered, this, slot);
+        addAction(act);
+        return act;
+    };
+
+    // File Operations
+    addWindowAction(QKeySequence::Open, &BaseSkin::openFileDialog);
+    addWindowActionMulti({QKeySequence("Ctrl+Shift+O"), QKeySequence("Ctrl+G")}, &BaseSkin::openFolderDialog);
+    addWindowAction(QKeySequence::Save, &BaseSkin::saveCurrentFile);
+    addWindowAction(QKeySequence::SaveAs, &BaseSkin::saveAsCurrentFile);
+    addWindowAction(QKeySequence("Ctrl+E"), &BaseSkin::exportCurrentFileAs);
+    addWindowAction(QKeySequence::Print, &BaseSkin::printCurrentFile);
+    addWindowAction(QKeySequence("Ctrl+Shift+C"), &BaseSkin::copyPathToClipboard);
+    addWindowAction(QKeySequence("Ctrl+Return"), &BaseSkin::openWithDefault);
+    addWindowAction(QKeySequence::Delete, &BaseSkin::deleteCurrentFile);
+    addWindowAction(QKeySequence("Ctrl+Q"), &QWidget::close);
+    addWindowAction(QKeySequence("Ctrl+,"), &BaseSkin::openSettings);
+
+    // Edit Operations
+    addWindowAction(QKeySequence::Undo, &MainWindow::undo);
+    addWindowActionMulti({QKeySequence::Redo, QKeySequence("Ctrl+Shift+Z")}, &MainWindow::redo);
+    addWindowAction(QKeySequence("Ctrl+X"), &BaseSkin::cutToClipboard);
+    addWindowAction(QKeySequence("Ctrl+C"), &BaseSkin::copyToClipboard);
+    addWindowAction(QKeySequence("Ctrl+V"), &BaseSkin::pasteFromClipboard);
+
+    // Image / Canvas Transformations
+    addWindowActionMulti({QKeySequence("R"), QKeySequence("Ctrl+R")}, &BaseSkin::rotateCurrentRight);
+    addWindowActionMulti({QKeySequence("L"), QKeySequence("Ctrl+Shift+R")}, &BaseSkin::rotateCurrentLeft);
+    addWindowAction(QKeySequence("H"), &BaseSkin::flipCurrentHorizontal);
+    addWindowAction(QKeySequence("V"), &BaseSkin::flipCurrentVertical);
+    addWindowAction(QKeySequence("C"), [this]() {
+        if (m_imageViewer) {
+            m_imageViewer->setCropModeActive(!m_imageViewer->isCropModeActive());
+        }
+    });
+
+    // View & Navigation
+    addWindowAction(QKeySequence(Qt::Key_Left), &BaseSkin::prevFile);
+    addWindowAction(QKeySequence(Qt::Key_Right), &BaseSkin::nextFile);
+    addWindowAction(QKeySequence(Qt::Key_PageUp), [this]() {
+        if (m_pdfViewer) m_pdfViewer->prevPage();
+        else if (m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) m_officeViewer->pdfViewer()->prevPage();
+    });
+    addWindowAction(QKeySequence(Qt::Key_PageDown), [this]() {
+        if (m_pdfViewer) m_pdfViewer->nextPage();
+        else if (m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) m_officeViewer->pdfViewer()->nextPage();
+    });
+    addWindowAction(QKeySequence("Alt+Up"), &BaseSkin::openCurrentFolderInGallery);
+    addWindowAction(QKeySequence("F11"), &BaseSkin::toggleFullscreen);
+    addWindowAction(QKeySequence("F5"), &BaseSkin::toggleSlideshow);
+    addWindowAction(QKeySequence("F4"), &BaseSkin::toggleFilmstrip);
+    addWindowActionMulti({QKeySequence("Alt+Return"), QKeySequence("Ctrl+I")}, &BaseSkin::showFileInfo);
+
+    // Zoom
+    addWindowActionMulti({QKeySequence("Ctrl++"), QKeySequence("Ctrl+=")}, &BaseSkin::zoomInCurrent);
+    addWindowAction(QKeySequence("Ctrl+-"), &BaseSkin::zoomOutCurrent);
+    addWindowAction(QKeySequence("Ctrl+0"), &BaseSkin::resetZoomCurrent);
+    addWindowAction(QKeySequence("Ctrl+9"), &BaseSkin::fitCurrent);
+
+    // Search & Tools
+    addWindowAction(QKeySequence("Ctrl+F"), &BaseSkin::searchInDocument);
+    addWindowAction(QKeySequence("F1"), &BaseSkin::showShortcutsDialog);
+    addWindowAction(QKeySequence("Ctrl+T"), [this]() {
+        setEditMode(!isEditMode());
+    });
+}
+
+void MainWindow::undo()
+{
+    if (m_pdfViewer && m_pdfViewer->canUndo()) {
+        m_pdfViewer->undo();
+    } else if (m_textViewer && m_textViewer->document()->isUndoAvailable()) {
+        m_textViewer->undo();
+    } else if (m_imageViewer && m_imageViewer->canUndo()) {
+        m_imageViewer->undo();
+        if (!m_isEditMode) {
+            saveCurrentImage(true);
+        }
     }
+}
 
-    updateContextualMenuStates();
+void MainWindow::redo()
+{
+    if (m_pdfViewer && m_pdfViewer->canRedo()) {
+        m_pdfViewer->redo();
+    } else if (m_textViewer && m_textViewer->document()->isRedoAvailable()) {
+        m_textViewer->redo();
+    } else if (m_imageViewer && m_imageViewer->canRedo()) {
+        m_imageViewer->redo();
+        if (!m_isEditMode) {
+            saveCurrentImage(true);
+        }
+    }
 }
 
 void MainWindow::updateWindowTitle()
@@ -1381,11 +827,8 @@ void MainWindow::updateWindowTitle()
     }
 }
 
-void MainWindow::onFileLoaded(const QString &filePath, FileCategory category, const QList<UIActionItem> &actions)
+void MainWindow::onFileLoaded(const QString &filePath, FileCategory category)
 {
-    Q_UNUSED(category);
-    Q_UNUSED(actions);
-
     if (m_minimalHeaderBar) {
         if (!filePath.isEmpty()) {
             QFileInfo fi(filePath);
@@ -1407,7 +850,6 @@ void MainWindow::onFileLoaded(const QString &filePath, FileCategory category, co
     }
 
     updateStatusBar();
-    updateContextualMenuStates();
 }
 
 void MainWindow::updateStatusBar()
@@ -1500,448 +942,6 @@ void MainWindow::applyCurrentTheme()
     }
     updateFramelessBorderStyle();
     updateStatusBar();
-}
-
-void MainWindow::populateOpenWithMenu()
-{
-    m_menuOpenWith->clear();
-    if (m_currentFilePath.isEmpty() || !QFile::exists(m_currentFilePath)) {
-        QAction *noneAct = m_menuOpenWith->addAction(tr("No file currently open"));
-        noneAct->setEnabled(false);
-        return;
-    }
-
-    QList<AppInfo> apps = AppLauncher::getAssociatedApps(m_currentFilePath);
-    int count = 0;
-    for (const AppInfo &app : apps) {
-        if (count >= 6) break;
-        QAction *act = m_menuOpenWith->addAction(app.icon(), app.name);
-        connect(act, &QAction::triggered, this, [this, app]() {
-            AppLauncher::launchApp(app, m_currentFilePath);
-        });
-        count++;
-    }
-
-    if (count > 0) {
-        m_menuOpenWith->addSeparator();
-    }
-
-    m_menuOpenWith->addAction(QIcon::fromTheme("system-run"), tr("Other Application..."), this, &BaseSkin::openWithOther);
-}
-
-void MainWindow::updateContextualMenuStates()
-{
-    QString targetPath = currentActiveTargetFilePath();
-    FileCategory activeCategory = m_currentCategory;
-    if (m_currentCategory == FileCategory::Folder && !targetPath.isEmpty()) {
-        activeCategory = PluginManager::categorizeFile(targetPath);
-    }
-
-    bool isImage = (activeCategory == FileCategory::Image);
-    bool isText = (activeCategory == FileCategory::Text);
-    bool isPdf = (activeCategory == FileCategory::Pdf);
-    bool isArchive = (activeCategory == FileCategory::Archive);
-    bool isMedia = (activeCategory == FileCategory::Media);
-    bool isOffice = (activeCategory == FileCategory::Office);
-    bool isFolder = (m_currentCategory == FileCategory::Folder);
-    bool hasFile = !targetPath.isEmpty() && QFile::exists(targetPath);
-
-    // 1. FILE MENU
-    if (m_actSave) {
-        bool canSave = m_isEditMode && ((isImage && !isFolder && m_imageViewer && m_imageViewer->isModified())
-                    || (isPdf && !isFolder && m_pdfViewer && m_pdfViewer->isModified())
-                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isModified()));
-        m_actSave->setVisible((isImage || isPdf || isText) && !isFolder);
-        m_actSave->setEnabled(canSave);
-    }
-
-    if (m_actSaveAs) {
-        m_actSaveAs->setVisible((isImage || isText || isPdf || isOffice) && !isFolder);
-        m_actSaveAs->setEnabled(hasFile && !isFolder);
-    }
-
-    if (m_actCreateArchive) {
-        m_actCreateArchive->setVisible(true);
-        m_actCreateArchive->setEnabled(true);
-    }
-
-    if (m_actExportAs) {
-        m_actExportAs->setVisible((isImage || isPdf || isText || isOffice) && !isFolder);
-        m_actExportAs->setEnabled(hasFile && !isFolder);
-    }
-
-    if (m_actTrashFile) {
-        m_actTrashFile->setVisible(hasFile || isFolder);
-        m_actTrashFile->setEnabled(hasFile || isFolder);
-    }
-
-    if (m_actPrint) {
-        m_actPrint->setVisible((isImage || isText || isPdf || isOffice) && !isFolder);
-        m_actPrint->setEnabled(hasFile && !isFolder);
-    }
-
-    if (m_menuShare) {
-        m_menuShare->menuAction()->setVisible(hasFile || isFolder);
-    }
-
-    // 2. EDIT MENU
-    bool isArchiveDoc = (isArchive && !isFolder);
-    if (m_menuEdit) {
-        m_menuEdit->menuAction()->setVisible(isFolder || isArchiveDoc || !isMedia);
-    }
-
-    if (m_actUndo) {
-        bool canUndo = m_isEditMode && ((isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canUndo())
-                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isUndoAvailable())
-                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canUndo()));
-        m_actUndo->setVisible((isPdf || isText || isImage) && !isFolder);
-        m_actUndo->setEnabled(canUndo);
-    }
-
-    if (m_actRedo) {
-        bool canRedo = m_isEditMode && ((isPdf && !isFolder && m_pdfViewer && m_pdfViewer->canRedo())
-                    || (isText && !isFolder && m_textViewer && m_textViewer->document()->isRedoAvailable())
-                    || (isImage && !isFolder && m_imageViewer && m_imageViewer->canRedo()));
-        m_actRedo->setVisible((isPdf || isText || isImage) && !isFolder);
-        m_actRedo->setEnabled(canRedo);
-    }
-
-    if (m_actCut) {
-        bool canCut = m_isEditMode && (((isText && !isFolder && m_textViewer && m_textViewer->textCursor().hasSelection()) ||
-                      (isPdf && !isFolder && m_pdfViewer && (m_pdfViewer->hasTextSelection() || m_pdfViewer->hasAreaSelection()))));
-        m_actCut->setVisible((isText || isPdf) && !isFolder);
-        m_actCut->setEnabled(canCut);
-    }
-
-    if (m_actCopy) {
-        m_actCopy->setVisible(isImage || isText || isPdf || isFolder);
-        bool canCopy = (isImage || isText || isFolder || (isPdf && (!isFolder ? (m_pdfViewer && (m_pdfViewer->hasTextSelection() || m_pdfViewer->pageCount() > 0)) : hasFile)));
-        m_actCopy->setEnabled(canCopy);
-    }
-
-    if (m_actPaste) {
-        const QClipboard *clip = QApplication::clipboard();
-        bool hasClipContent = !clip->text().trimmed().isEmpty() || (!clip->image().isNull() && clip->image().width() > 0);
-        bool canPaste = m_isEditMode && ((isText && !isFolder) || (isPdf && !isFolder && hasClipContent));
-        m_actPaste->setVisible((isText || isPdf) && !isFolder);
-        m_actPaste->setEnabled(canPaste);
-    }
-
-    if (m_actRotateRight) {
-        m_actRotateRight->setVisible(isImage && !isFolder);
-        m_actRotateRight->setEnabled(isImage && !isFolder);
-    }
-    if (m_actRotateLeft) {
-        m_actRotateLeft->setVisible(isImage && !isFolder);
-        m_actRotateLeft->setEnabled(isImage && !isFolder);
-    }
-    if (m_actFlipH) {
-        m_actFlipH->setVisible(isImage && !isFolder);
-        m_actFlipH->setEnabled(m_isEditMode && isImage && !isFolder);
-    }
-    if (m_actFlipV) {
-        m_actFlipV->setVisible(isImage && !isFolder);
-        m_actFlipV->setEnabled(m_isEditMode && isImage && !isFolder);
-    }
-
-    bool isImageDoc = (isImage && !isFolder);
-    if (m_actImageCrop) {
-        m_actImageCrop->setVisible(isImageDoc);
-        m_actImageCrop->setEnabled(m_isEditMode && isImageDoc && hasFile);
-        m_actImageCrop->setChecked(m_imageViewer && m_imageViewer->isCropModeActive());
-    }
-
-    if (m_actImageResize) {
-        m_actImageResize->setVisible(isImageDoc);
-        m_actImageResize->setEnabled(m_isEditMode && isImageDoc && hasFile);
-    }
-
-    if (m_actFlattenImage) {
-        bool hasAlpha = isImageDoc && hasFile && m_imageViewer && m_imageViewer->originalImage().hasAlphaChannel();
-        m_actFlattenImage->setVisible(isImageDoc);
-        m_actFlattenImage->setEnabled(m_isEditMode && hasAlpha);
-    }
-
-    if (m_menuTransparency) {
-        m_menuTransparency->menuAction()->setVisible(isImageDoc);
-    }
-
-    if (m_actFolderRename) {
-        m_actFolderRename->setVisible(isFolder);
-        m_actFolderRename->setEnabled(isFolder && hasFile);
-    }
-    if (m_actFolderTrash) {
-        m_actFolderTrash->setVisible(isFolder);
-        m_actFolderTrash->setEnabled(isFolder && hasFile);
-    }
-    if (m_actFolderNew) {
-        m_actFolderNew->setVisible(isFolder);
-        m_actFolderNew->setEnabled(isFolder);
-    }
-
-    if (m_actArchiveAddFiles) {
-        m_actArchiveAddFiles->setVisible(m_isEditMode && isArchiveDoc);
-        m_actArchiveAddFiles->setEnabled(m_isEditMode && isArchiveDoc);
-    }
-    if (m_actArchiveAddFolder) {
-        m_actArchiveAddFolder->setVisible(m_isEditMode && isArchiveDoc);
-        m_actArchiveAddFolder->setEnabled(m_isEditMode && isArchiveDoc);
-    }
-    if (m_actArchiveRemoveSelected) {
-        m_actArchiveRemoveSelected->setVisible(m_isEditMode && isArchiveDoc);
-        m_actArchiveRemoveSelected->setEnabled(m_isEditMode && isArchiveDoc);
-    }
-
-    // Text File Editing in Edit Menu
-    bool isTextDoc = (isText && !isFolder);
-    if (m_actToggleTextEdit) {
-        m_actToggleTextEdit->setVisible(isTextDoc);
-        m_actToggleTextEdit->setEnabled(isTextDoc);
-        if (m_textViewer) {
-            m_actToggleTextEdit->setChecked(m_textViewer->isEditable());
-        }
-    }
-    if (m_actFindReplace) {
-        m_actFindReplace->setVisible(isTextDoc);
-        m_actFindReplace->setEnabled(isTextDoc);
-    }
-    if (m_actGotoLine) {
-        m_actGotoLine->setVisible(isTextDoc);
-        m_actGotoLine->setEnabled(isTextDoc);
-    }
-    if (m_actDuplicateLine) {
-        m_actDuplicateLine->setVisible(isTextDoc);
-        m_actDuplicateLine->setEnabled(m_isEditMode && isTextDoc && m_textViewer && m_textViewer->isEditable());
-    }
-    if (m_actDeleteLine) {
-        m_actDeleteLine->setVisible(isTextDoc);
-        m_actDeleteLine->setEnabled(m_isEditMode && isTextDoc && m_textViewer && m_textViewer->isEditable());
-    }
-    if (m_actToggleComment) {
-        m_actToggleComment->setVisible(isTextDoc);
-        m_actToggleComment->setEnabled(m_isEditMode && isTextDoc && m_textViewer && m_textViewer->isEditable());
-    }
-    if (m_actLineNumbers) {
-        m_actLineNumbers->setVisible(isTextDoc);
-        m_actLineNumbers->setEnabled(isTextDoc);
-        if (m_textViewer) m_actLineNumbers->setChecked(m_textViewer->isLineNumbersVisible());
-    }
-    if (m_actSyntaxHighlight) {
-        m_actSyntaxHighlight->setVisible(isTextDoc);
-        m_actSyntaxHighlight->setEnabled(isTextDoc);
-        if (m_textViewer) m_actSyntaxHighlight->setChecked(m_textViewer->isSyntaxHighlightingEnabled());
-    }
-    if (m_actWordWrap) {
-        m_actWordWrap->setVisible(isTextDoc);
-        m_actWordWrap->setEnabled(isTextDoc);
-        if (m_textViewer) m_actWordWrap->setChecked(m_textViewer->isWordWrapEnabled());
-    }
-    if (m_actShowWhitespace) {
-        m_actShowWhitespace->setVisible(isTextDoc);
-        m_actShowWhitespace->setEnabled(isTextDoc);
-        if (m_textViewer) m_actShowWhitespace->setChecked(m_textViewer->isShowWhitespace());
-    }
-
-    // PDF Tools in Edit Menu
-    bool isPdfDoc = (isPdf && !isFolder);
-
-    if (m_actPdfHighlighter) {
-        m_actPdfHighlighter->setVisible(isPdfDoc);
-        m_actPdfHighlighter->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_menuPdfMarkup) {
-        m_menuPdfMarkup->menuAction()->setVisible(isPdfDoc);
-        m_menuPdfMarkup->menuAction()->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_menuPdfDocOps) {
-        m_menuPdfDocOps->menuAction()->setVisible(isPdfDoc);
-        m_menuPdfDocOps->menuAction()->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfSelectArea) {
-        m_actPdfSelectArea->setVisible(isPdfDoc);
-        m_actPdfSelectArea->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfTypewriter) {
-        m_actPdfTypewriter->setVisible(isPdfDoc);
-        m_actPdfTypewriter->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfSignature) {
-        m_actPdfSignature->setVisible(isPdfDoc);
-        m_actPdfSignature->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfInsertImage) {
-        m_actPdfInsertImage->setVisible(isPdfDoc);
-        m_actPdfInsertImage->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfInsertBlankPage) {
-        m_actPdfInsertBlankPage->setVisible(isPdfDoc);
-        m_actPdfInsertBlankPage->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfWatermark) {
-        m_actPdfWatermark->setVisible(isPdfDoc);
-        m_actPdfWatermark->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfShape) {
-        m_actPdfShape->setVisible(isPdfDoc);
-        m_actPdfShape->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actPdfSnapshot) {
-        m_actPdfSnapshot->setVisible(isPdfDoc);
-        m_actPdfSnapshot->setEnabled(isPdfDoc);
-    }
-    if (m_actPdfRedact) {
-        m_actPdfRedact->setVisible(isPdfDoc);
-        m_actPdfRedact->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actMergePdf) {
-        m_actMergePdf->setVisible(isPdfDoc);
-        m_actMergePdf->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actOrganizePdf) {
-        m_actOrganizePdf->setVisible(isPdfDoc);
-        m_actOrganizePdf->setEnabled(m_isEditMode && isPdfDoc);
-    }
-    if (m_actRepairPdf) {
-        m_actRepairPdf->setVisible(isPdfDoc);
-        m_actRepairPdf->setEnabled(m_isEditMode && isPdfDoc);
-    }
-
-    // 3. VIEW MENU
-    if (m_actFolderView) {
-        m_actFolderView->setVisible(!m_isEditMode);
-        m_actFolderView->setEnabled(!m_isEditMode && !isFolder);
-    }
-    if (m_isEditMode) {
-        // In Edit Mode, sibling file navigation is categorically disabled and actions are hidden
-        if (m_actPrev) {
-            m_actPrev->setVisible(false);
-            m_actPrev->setEnabled(false);
-        }
-        if (m_actNext) {
-            m_actNext->setVisible(false);
-            m_actNext->setEnabled(false);
-        }
-    } else if (!m_archiveOriginPath.isEmpty() && !m_archiveEntries.isEmpty()) {
-        if (m_actPrev) {
-            m_actPrev->setVisible(true);
-            m_actPrev->setEnabled(true);
-            m_actPrev->setToolTip(m_archiveCurrentEntryIndex == 0
-                ? tr("Return to Archive (Left Arrow / Backspace)")
-                : tr("Previous File (Left Arrow)"));
-        }
-        if (m_actNext) {
-            m_actNext->setVisible(true);
-            m_actNext->setEnabled(m_archiveCurrentEntryIndex < m_archiveEntries.size() - 1);
-            m_actNext->setToolTip(tr("Next File (Right Arrow)"));
-        }
-    } else {
-        if (m_actPrev) {
-            m_actPrev->setVisible(true);
-            m_actPrev->setEnabled(!isFolder && m_currentIndex > 0);
-            m_actPrev->setToolTip(tr("Previous File (Left Arrow)"));
-        }
-        if (m_actNext) {
-            m_actNext->setVisible(true);
-            m_actNext->setEnabled(!isFolder && m_currentIndex >= 0 && m_currentIndex < m_siblingFiles.size() - 1);
-            m_actNext->setToolTip(tr("Next File (Right Arrow)"));
-        }
-    }
-    if (m_actPdfPrevPage) {
-        m_actPdfPrevPage->setEnabled(isPdfDoc && m_pdfViewer && m_pdfViewer->currentPage() > 0);
-    }
-    if (m_actPdfNextPage) {
-        m_actPdfNextPage->setEnabled(isPdfDoc && m_pdfViewer && m_pdfViewer->currentPage() < m_pdfViewer->pageCount() - 1);
-    }
-    if (m_actFullscreen) {
-        m_actFullscreen->setEnabled(true);
-    }
-
-    if (m_actSlideshow) {
-        m_actSlideshow->setVisible(!m_isEditMode && isImage && !isFolder);
-        m_actSlideshow->setEnabled(!m_isEditMode && isImage && !isFolder);
-    }
-
-    bool canZoom = (isImage || isPdf || isOffice) && !isFolder;
-    if (m_actZoomIn) {
-        m_actZoomIn->setVisible(true);
-        m_actZoomIn->setEnabled(canZoom);
-    }
-    if (m_actZoomOut) {
-        m_actZoomOut->setVisible(true);
-        m_actZoomOut->setEnabled(canZoom);
-    }
-    if (m_actZoomReset) {
-        m_actZoomReset->setVisible(true);
-        m_actZoomReset->setEnabled(canZoom);
-    }
-    if (m_actFit) {
-        m_actFit->setVisible(true);
-        m_actFit->setEnabled(canZoom);
-    }
-    if (m_actZoomTool) {
-        m_actZoomTool->setVisible(true);
-        m_actZoomTool->setEnabled(canZoom);
-        m_actZoomTool->setChecked(isZoomToolActive());
-    }
-
-    if (m_actFilmstrip) {
-        m_actFilmstrip->setVisible(!isFolder);
-        m_actFilmstrip->setEnabled(!isFolder && !m_siblingFiles.isEmpty());
-    }
-
-    if (m_actPdfToc) {
-        m_actPdfToc->setVisible(isPdf && !isFolder);
-        m_actPdfToc->setEnabled(isPdf && !isFolder && m_pdfViewer && m_pdfViewer->hasOutline());
-        if (m_pdfViewer) m_actPdfToc->setChecked(m_pdfViewer->isTocVisible());
-    }
-
-
-    // 4. TOOLS MENU
-    if (m_actSearch) {
-        m_actSearch->setVisible((isText || isPdf) && !isFolder);
-        m_actSearch->setEnabled((isText || isPdf) && !isFolder);
-    }
-    if (m_actOcr) {
-        m_actOcr->setVisible(isImage || isPdf);
-        m_actOcr->setEnabled(hasFile);
-    }
-    bool hasPdfimages = BuildConfig::isPdfimagesAvailable();
-    if (m_actExtractImages) {
-        m_actExtractImages->setVisible(isPdf && hasPdfimages);
-        m_actExtractImages->setEnabled(isPdf && hasPdfimages && hasFile);
-    }
-    bool hasQpdf = BuildConfig::isQpdfAvailable();
-    if (m_actOrganizePdf) {
-        m_actOrganizePdf->setVisible(isPdf && hasQpdf);
-        m_actOrganizePdf->setEnabled(isPdf && hasQpdf && hasFile);
-    }
-    if (m_actMergePdf) {
-        m_actMergePdf->setVisible(isPdf && hasQpdf);
-        m_actMergePdf->setEnabled(isPdf && hasQpdf && hasFile);
-    }
-    if (m_actRepairPdf) {
-        m_actRepairPdf->setVisible(isPdf && hasQpdf);
-        m_actRepairPdf->setEnabled(isPdf && hasQpdf && hasFile);
-    }
-    if (m_actAudioTrim) {
-        m_actAudioTrim->setVisible(m_isEditMode && isMedia && !isFolder);
-        m_actAudioTrim->setEnabled(m_isEditMode && isMedia && !isFolder);
-    }
-    if (m_actAudioTags) {
-        bool isAudioOnly = isMedia && !isFolder && m_mediaViewer && m_mediaViewer->isAudioOnly();
-        m_actAudioTags->setVisible(m_isEditMode && isAudioOnly);
-        m_actAudioTags->setEnabled(m_isEditMode && isAudioOnly);
-    }
-    if (m_actAudioExtract) {
-        bool isVideo = isMedia && !isFolder && m_mediaViewer && !m_mediaViewer->isAudioOnly();
-        m_actAudioExtract->setVisible(m_isEditMode && isVideo);
-        m_actAudioExtract->setEnabled(m_isEditMode && isVideo);
-    }
-    if (m_actToolsExportAs) {
-        m_actToolsExportAs->setVisible((isImage || isPdf || isText || isOffice) && !isFolder);
-        m_actToolsExportAs->setEnabled(hasFile && !isFolder);
-    }
-    updateDiscoveryActions();
 }
 
 void MainWindow::setupUpdateBanner()
@@ -2227,34 +1227,6 @@ void MainWindow::openPdfMergeDialog()
     }
 }
 
-void MainWindow::updateDiscoveryActions()
-{
-    bool showUninstalled = BuildConfig::showUninstalledFeatures();
-
-    QString targetPath = currentActiveTargetFilePath();
-    FileCategory activeCat = m_currentCategory;
-    if (m_currentCategory == FileCategory::Folder && !targetPath.isEmpty()) {
-        activeCat = PluginManager::categorizeFile(targetPath);
-    }
-    bool isPdf = (activeCat == FileCategory::Pdf);
-    bool isOffice = (activeCat == FileCategory::Office);
-
-    if (m_actOfficeDiscovery) {
-        bool officeActive = BuildConfig::instance().enableInternalOffice();
-        m_actOfficeDiscovery->setVisible(showUninstalled && isOffice && !officeActive);
-    }
-
-    if (m_actQpdfDiscovery) {
-        bool qpdfAvail = BuildConfig::isQpdfAvailable();
-        m_actQpdfDiscovery->setVisible(showUninstalled && isPdf && !qpdfAvail);
-    }
-
-    if (m_actPdfimagesDiscovery) {
-        bool pdfimgAvail = BuildConfig::isPdfimagesAvailable();
-        m_actPdfimagesDiscovery->setVisible(showUninstalled && isPdf && !pdfimgAvail);
-    }
-}
-
 QString MainWindow::currentActiveTargetFilePath() const
 {
     if (m_currentCategory == FileCategory::Folder && m_folderViewer) {
@@ -2526,7 +1498,6 @@ void MainWindow::setupPdfViewerConnections()
 
     m_pdfViewer->setOnPageChanged([this](int, int) {
         updateStatusBar();
-        updateContextualMenuStates();
     });
     m_pdfViewer->setOnZoomChanged([this](double factor) {
         updateStatusBar();
@@ -2535,7 +1506,6 @@ void MainWindow::setupPdfViewerConnections()
         }
     });
     m_pdfViewer->setOnSelectionChanged([this]() {
-        updateContextualMenuStates();
         if (isEditMode() && m_minimalHeaderBar && m_minimalHeaderBar->contextualBar()) {
             auto *cBar = m_minimalHeaderBar->contextualBar();
             if (cBar->mode() == ContextBarMode::Text && m_pdfViewer && m_pdfViewer->hasTextSelection()) {
@@ -2546,10 +1516,6 @@ void MainWindow::setupPdfViewerConnections()
     m_pdfViewer->setOnDocumentModified([this](bool) {
         updateWindowTitle();
         updateStatusBar();
-        updateContextualMenuStates();
-    });
-    m_pdfViewer->setOnHistoryChanged([this]() {
-        updateContextualMenuStates();
     });
     m_pdfViewer->setOnFileOrganized([this](const QString &newPath) {
         openFile(newPath);
@@ -2654,7 +1620,7 @@ void MainWindow::setupFolderViewerConnections()
     connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString&, int, qint64) {
         updateStatusBar();
     });
-    connect(m_folderViewer, &FolderViewer::selectionChanged, this, &MainWindow::updateContextualMenuStates);
+    connect(m_folderViewer, &FolderViewer::selectionChanged, this, &MainWindow::updateStatusBar);
 }
 
 void MainWindow::revertCurrentEdits()
@@ -2695,7 +1661,6 @@ void MainWindow::revertCurrentEdits()
 
     updateWindowTitle();
     updateStatusBar();
-    updateContextualMenuStates();
 
     setEditMode(false);
 }

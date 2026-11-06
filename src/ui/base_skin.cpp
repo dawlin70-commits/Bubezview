@@ -17,7 +17,6 @@
 #include "gallery_zoom_transition.h"
 #include "theme_manager.h"
 #include "settings_dialog.h"
-#include "action_registry.h"
 #include "search_bar_widget.h"
 #include "open_with_dialog.h"
 #include "app_launcher.h"
@@ -934,8 +933,7 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
             }
         }
 
-        QList<UIActionItem> actions = ActionRegistry::getActionsForCategory(m_currentCategory, this);
-        onFileLoaded(m_currentFilePath, m_currentCategory, actions);
+        onFileLoaded(m_currentFilePath, m_currentCategory);
 
         // Asynchronously prefetch adjacent candidate files into memory
         if (!m_siblingFiles.isEmpty() && m_currentIndex >= 0) {
@@ -964,16 +962,14 @@ void BaseSkin::openArchiveFile(const QString &extractedFilePath, const QString &
 
     if (res == OpenResult::Success) {
         updateWindowTitle();
-        QList<UIActionItem> actions = ActionRegistry::getActionsForCategory(m_currentCategory, this);
-        onFileLoaded(extractedFilePath, m_currentCategory, actions);
+        onFileLoaded(extractedFilePath, m_currentCategory);
     }
 }
 
-void BaseSkin::onFileLoaded(const QString &filePath, FileCategory category, const QList<UIActionItem> &actions)
+void BaseSkin::onFileLoaded(const QString &filePath, FileCategory category)
 {
     Q_UNUSED(filePath);
     Q_UNUSED(category);
-    Q_UNUSED(actions);
     // Base implementation does nothing; overridden by derived skins
 }
 

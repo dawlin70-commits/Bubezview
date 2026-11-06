@@ -1539,31 +1539,21 @@ void TestInteractive::testPdfRepairAndPageOrganizer()
         }
     }
 
-    // 3. Test MainWindow menu bar default visibility and contextual tool states
-    QSettings settings;
-    bool showMenuBar = settings.value("ui/show_menubar", false).toBool();
+    // 3. Test MainWindow modern Canvas-First UI (menu bar permanently removed/hidden, MinimalHeaderBar active)
     MainWindow window;
     window.resize(1000, 700);
     window.openFile(samplePdf);
     window.show();
-    QCOMPARE(window.menuBar()->isVisible(), showMenuBar);
+    QCOMPARE(window.menuBar()->isVisible(), false);
+    QVERIFY(window.minimalHeaderBar() != nullptr);
+    QVERIFY(window.minimalHeaderBar()->isVisible());
+    QCOMPARE(window.minimalHeaderBar()->category(), FileCategory::Pdf);
 
-    // Contextual tools: on PDF, repair action should be visible
-    QAction *repairAct = nullptr;
-    for (QAction *act : window.findChildren<QAction*>()) {
-        if (act->text().contains("Repair", Qt::CaseInsensitive)) {
-            repairAct = act;
-            break;
-        }
-    }
-    QVERIFY(repairAct != nullptr);
-    QVERIFY(repairAct->isVisible());
-
-    // Switch to image file: repair action must become hidden
+    // Switch to image file: header bar updates category to Image
     QString sampleImage = m_testDirPath + "/img/sample.jpg";
     if (QFile::exists(sampleImage)) {
         window.openFile(sampleImage);
-        QVERIFY(!repairAct->isVisible());
+        QCOMPARE(window.minimalHeaderBar()->category(), FileCategory::Image);
     }
 
     QPixmap winPix = window.grab();

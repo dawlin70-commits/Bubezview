@@ -218,6 +218,12 @@ signals:
      */
     void zoomChanged(double factor);
 
+    /**
+     * @brief Emitted when the user right-clicks on the canvas or viewport to request a context menu.
+     * @param globalPos Mouse position in global screen coordinates.
+     */
+    void contextMenuRequested(const QPoint &globalPos);
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;

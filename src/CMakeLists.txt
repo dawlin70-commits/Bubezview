@@ -18,7 +18,6 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/theme_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/update_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/accordion_extension_card.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/action_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/base_skin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/build_console_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/build_options_dialog.cpp

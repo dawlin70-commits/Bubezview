@@ -296,6 +296,20 @@ protected:
         }
     }
 
+    void contextMenuEvent(QContextMenuEvent *event) override
+    {
+        if (m_cropActive || (m_viewer && m_viewer->isZoomToolActive())) {
+            event->ignore();
+            return;
+        }
+        if (m_viewer) {
+            emit m_viewer->contextMenuRequested(event->globalPos());
+            event->accept();
+            return;
+        }
+        QWidget::contextMenuEvent(event);
+    }
+
     void mouseDoubleClickEvent(QMouseEvent *event) override
     {
         if (m_cropActive && !m_cropRect.isEmpty() && m_cropRect.contains(event->pos())) {
@@ -796,10 +810,17 @@ void ImageViewer::wheelEvent(QWheelEvent *event)
 
 bool ImageViewer::eventFilter(QObject *watched, QEvent *event)
 {
-    if (m_scrollArea && watched == m_scrollArea->viewport() && event->type() == QEvent::Wheel) {
-        auto *we = static_cast<QWheelEvent*>(event);
-        handleWheel(we);
-        return we->isAccepted();
+    if (m_scrollArea && watched == m_scrollArea->viewport()) {
+        if (event->type() == QEvent::Wheel) {
+            auto *we = static_cast<QWheelEvent*>(event);
+            handleWheel(we);
+            return we->isAccepted();
+        }
+        if (event->type() == QEvent::ContextMenu) {
+            auto *ce = static_cast<QContextMenuEvent*>(event);
+            emit contextMenuRequested(ce->globalPos());
+            return true;
+        }
     }
     return QWidget::eventFilter(watched, event);
 }

@@ -7,7 +7,6 @@
 #include <QFileInfo>
 #include <QKeyEvent>
 #include "plugin_manager.h"
-#include "action_registry.h"
 
 class ImageViewer;
 class TextViewer;
@@ -227,9 +226,9 @@ protected:
 
     /**
      * @brief Hook invoked whenever a new file is loaded.
-     * Derived skins can override this to update toolbars and context menus.
+     * Derived skins can override this to update header bars and state.
      */
-    virtual void onFileLoaded(const QString &filePath, FileCategory category, const QList<UIActionItem> &actions);
+    virtual void onFileLoaded(const QString &filePath, FileCategory category);
 
     void scanDirectory(const QString &currentFilePath);
     void startTransitionAnimation(bool forward);

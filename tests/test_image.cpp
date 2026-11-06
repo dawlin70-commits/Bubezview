@@ -37,6 +37,7 @@ private slots:
     void testWheelScrollingDoesNotNavigateFiles();
     void testInstantAlpha();
     void testRotationInViewMode();
+    void testContextMenuRequested();
 };
 
 void TestImage::initTestCase()
@@ -612,6 +613,30 @@ void TestImage::testRotationInViewMode()
     // Undo rotation
     viewer.undo();
     QCOMPARE(viewer.imageSize(), QSize(100, 50));
+}
+
+void TestImage::testContextMenuRequested()
+{
+    ImageViewer viewer;
+    viewer.resize(400, 300);
+    viewer.show();
+
+    QImage img(200, 200, QImage::Format_RGB32);
+    img.fill(Qt::green);
+    viewer.loadImage(img);
+
+    QSignalSpy spy(&viewer, &ImageViewer::contextMenuRequested);
+
+    // Send context menu event to the canvas
+    QWidget *canvas = viewer.canvasWidget();
+    QVERIFY(canvas != nullptr);
+
+    QContextMenuEvent contextEv(QContextMenuEvent::Mouse, QPoint(100, 100), QPoint(150, 150));
+    QApplication::sendEvent(canvas, &contextEv);
+
+    QCOMPARE(spy.count(), 1);
+    QList<QVariant> args = spy.takeFirst();
+    QCOMPARE(args.at(0).toPoint(), QPoint(150, 150));
 }
 
 QTEST_MAIN(TestImage)
