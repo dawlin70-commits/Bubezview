@@ -218,16 +218,6 @@ signals:
      */
     void zoomChanged(double factor);
 
-    /**
-     * @brief Emitted when mouse wheel scrolling requests navigating to the next image file.
-     */
-    void nextFileRequested();
-
-    /**
-     * @brief Emitted when mouse wheel scrolling requests navigating to the previous image file.
-     */
-    void prevFileRequested();
-
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
@@ -250,7 +240,5 @@ private:
     bool m_zoomToolActive;
     bool m_isModified;
 
-    int m_wheelNavAccumulator = 0;
-    qint64 m_lastNavTime = 0;
     bool m_isEditMode = true;
 };

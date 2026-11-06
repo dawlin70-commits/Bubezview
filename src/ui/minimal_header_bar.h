@@ -125,6 +125,7 @@ public:
     void setHistorySteps(const QList<PdfHistoryStep> &steps);
     void showHistoryDialog();
     QToolButton *rotateButton() const { return m_btnRotate; }
+    QToolButton *trashButton() const { return m_btnTrash; }
     QToolButton *saveExportButton() const { return m_btnExport; }
     QPushButton *pdfTextButton() const { return m_btnPdfText; }
     QPushButton *pdfHighlightButton() const { return m_btnPdfHighlight; }
@@ -189,6 +190,7 @@ signals:
     void inspectorRequested();
     void editToggled(bool editMode);
     void discardEditRequested();
+    void trashRequested();
     void shareRequested();
     void saveExportRequested(const QPoint &globalPos);
     void saveAsRequested();
@@ -394,6 +396,7 @@ private:
     QToolButton *m_btnSearch = nullptr;
     QToolButton *m_btnZoom = nullptr;
     QToolButton *m_btnRotate = nullptr;
+    QToolButton *m_btnTrash = nullptr;
     QMenu *m_menuZoom = nullptr;
     QAction *m_actZoomIn = nullptr;
     QAction *m_actZoomOut = nullptr;

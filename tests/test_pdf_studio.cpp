@@ -571,6 +571,15 @@ void TestPdfStudio::testZoomSystem()
 
     bar.zoomResetAction()->trigger();
     QCOMPARE(spyReset.count(), 1);
+
+    // 4. Verify Trash button in view mode
+    QVERIFY(bar.trashButton() != nullptr);
+    QSignalSpy spyTrash(&bar, &MinimalHeaderBar::trashRequested);
+    bar.setTitle("test_file.png");
+    bar.setEditMode(false);
+    QVERIFY(bar.trashButton()->isVisible());
+    bar.trashButton()->click();
+    QCOMPARE(spyTrash.count(), 1);
 }
 
 void TestPdfStudio::testSignatureDialogUnifiedFlow()

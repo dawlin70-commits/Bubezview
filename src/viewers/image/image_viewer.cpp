@@ -766,84 +766,20 @@ void ImageViewer::handleWheel(QWheelEvent *event)
         }
     }
 
-    // 3. Normal Vertical Scrolling & Edge/Fitted Sibling File Navigation
+    // 3. Normal Vertical Scrolling (File navigation via mouse wheel is disabled)
     int deltaY = event->angleDelta().y();
     if (deltaY != 0) {
         QScrollBar *vbar = m_scrollArea ? m_scrollArea->verticalScrollBar() : nullptr;
-        bool canScrollV = (vbar && vbar->maximum() > vbar->minimum());
-        qint64 now = QDateTime::currentMSecsSinceEpoch();
-
-        if (!canScrollV) {
-            // In Edit Mode or Crop Mode, mouse wheel file navigation is strictly disabled
-            if (m_isEditMode || isCropModeActive()) {
-                event->accept();
-                return;
-            }
-            // Whole image fits vertically: navigate sibling files on mouse wheel
-            if (now - m_lastNavTime < 250) {
-                event->accept();
-                return;
-            }
-            m_wheelNavAccumulator += deltaY;
-            if (m_wheelNavAccumulator <= -120) {
-                m_wheelNavAccumulator = 0;
-                m_lastNavTime = now;
-                emit nextFileRequested();
-            } else if (m_wheelNavAccumulator >= 120) {
-                m_wheelNavAccumulator = 0;
-                m_lastNavTime = now;
-                emit prevFileRequested();
-            }
+        if (vbar && vbar->maximum() > vbar->minimum()) {
+            int step = (event->pixelDelta().y() != 0) ? event->pixelDelta().y() : qRound(deltaY * 0.75);
+            if (step == 0 && deltaY != 0) step = (deltaY > 0 ? 1 : -1);
+            vbar->setValue(vbar->value() - step);
             event->accept();
             return;
         } else {
-            // Content is scrollable
-            if (deltaY < 0 && vbar->value() >= vbar->maximum()) {
-                // In Edit Mode, hitting the bottom edge must never navigate away
-                if (m_isEditMode || isCropModeActive()) {
-                    event->accept();
-                    return;
-                }
-                // At bottom edge: deliberate overscroll navigates to next file
-                if (now - m_lastNavTime < 250) {
-                    event->accept();
-                    return;
-                }
-                m_wheelNavAccumulator += deltaY;
-                if (m_wheelNavAccumulator <= -180) {
-                    m_wheelNavAccumulator = 0;
-                    m_lastNavTime = now;
-                    emit nextFileRequested();
-                }
-                event->accept();
-                return;
-            } else if (deltaY > 0 && vbar->value() <= vbar->minimum()) {
-                // In Edit Mode, hitting the top edge must never navigate away
-                if (m_isEditMode || isCropModeActive()) {
-                    event->accept();
-                    return;
-                }
-                // At top edge: deliberate overscroll navigates to previous file
-                if (now - m_lastNavTime < 250) {
-                    event->accept();
-                    return;
-                }
-                m_wheelNavAccumulator += deltaY;
-                if (m_wheelNavAccumulator >= 180) {
-                    m_wheelNavAccumulator = 0;
-                    m_lastNavTime = now;
-                    emit prevFileRequested();
-                }
-                event->accept();
-                return;
-            } else {
-                m_wheelNavAccumulator = 0;
-                int step = (event->pixelDelta().y() != 0) ? event->pixelDelta().y() : qRound(deltaY * 0.75);
-                if (step == 0 && deltaY != 0) step = (deltaY > 0 ? 1 : -1);
-                vbar->setValue(vbar->value() - step);
-                event->accept();
-                return;
-            }
+            // Whole image fits vertically: consume event without navigating files
+            event->accept();
+            return;
         }
     }
 

@@ -34,7 +34,7 @@ private slots:
     void testImageProcessorPrivacy();
     void testImageProcessorHistogram();
     void testImageProcessorAutoEnhance();
-    void testEditModeDisablesFileNavigation();
+    void testWheelScrollingDoesNotNavigateFiles();
     void testInstantAlpha();
     void testRotationInViewMode();
 };
@@ -536,7 +536,7 @@ void TestImage::testImageProcessorAutoEnhance()
     QVERIFY(centerLumaCenter > centerLumaGlobal);
 }
 
-void TestImage::testEditModeDisablesFileNavigation()
+void TestImage::testWheelScrollingDoesNotNavigateFiles()
 {
     ImageViewer viewer;
     viewer.resize(800, 600);
@@ -547,30 +547,16 @@ void TestImage::testEditModeDisablesFileNavigation()
     img.fill(Qt::blue);
     viewer.loadImage(img);
 
-    QSignalSpy nextSpy(&viewer, &ImageViewer::nextFileRequested);
-    QSignalSpy prevSpy(&viewer, &ImageViewer::prevFileRequested);
-
-    // 1. With Edit Mode disabled, mouse wheel overscroll triggers navigation
-    viewer.setEditMode(false);
+    // Mouse wheel scrolling on fitted image must be consumed cleanly without navigation
     QWheelEvent wheelDown(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, -240),
                           Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
     QApplication::sendEvent(&viewer, &wheelDown);
-    QCOMPARE(nextSpy.count(), 1);
+    QVERIFY(wheelDown.isAccepted());
 
-    // 2. With Edit Mode enabled, mouse wheel must NEVER trigger navigation
-    nextSpy.clear();
-    prevSpy.clear();
-    viewer.setEditMode(true);
-
-    QWheelEvent wheelDownEdit(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, -240),
-                              Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
-    QApplication::sendEvent(&viewer, &wheelDownEdit);
-    QCOMPARE(nextSpy.count(), 0);
-
-    QWheelEvent wheelUpEdit(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, 240),
-                            Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
-    QApplication::sendEvent(&viewer, &wheelUpEdit);
-    QCOMPARE(prevSpy.count(), 0);
+    QWheelEvent wheelUp(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, 240),
+                        Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QApplication::sendEvent(&viewer, &wheelUp);
+    QVERIFY(wheelUp.isAccepted());
 }
 
 void TestImage::testInstantAlpha()

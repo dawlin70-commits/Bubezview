@@ -250,6 +250,16 @@ void MinimalHeaderBar::setupUi()
     connect(m_btnRotate, &QToolButton::clicked, this, &MinimalHeaderBar::rotateRightRequested);
     mainLayout->addWidget(m_btnRotate, 0, Qt::AlignVCenter);
 
+    // Direct Trash button to quickly discard/move files to trash
+    m_btnTrash = new QToolButton(m_primaryBar);
+    m_btnTrash->setFixedSize(34, 32);
+    m_btnTrash->setIconSize(QSize(20, 20));
+    m_btnTrash->setCursor(Qt::PointingHandCursor);
+    m_btnTrash->setToolTip(tr("Move to Trash (Delete)"));
+    m_btnTrash->setVisible(false);
+    connect(m_btnTrash, &QToolButton::clicked, this, &MinimalHeaderBar::trashRequested);
+    mainLayout->addWidget(m_btnTrash, 0, Qt::AlignVCenter);
+
     m_btnInspector = new QToolButton(m_primaryBar);
     m_btnInspector->setFixedSize(34, 32);
     m_btnInspector->setIconSize(QSize(20, 20));
@@ -340,6 +350,9 @@ void MinimalHeaderBar::setTitle(const QString &title)
 {
     m_rawTitle = title;
     updateDisplayTitle();
+    if (m_btnTrash && !m_editMode && !m_pageOrganizerMode) {
+        m_btnTrash->setVisible(!m_rawTitle.isEmpty());
+    }
 }
 
 void MinimalHeaderBar::updateDisplayTitle()
@@ -554,6 +567,7 @@ void MinimalHeaderBar::setEditMode(bool editMode)
         if (m_btnZoom) m_btnZoom->hide();
         if (m_btnZoom) m_btnZoom->setVisible(m_currentCategory == FileCategory::Image || m_currentCategory == FileCategory::Pdf || m_currentCategory == FileCategory::Text || m_currentCategory == FileCategory::Office);
         if (m_btnRotate) m_btnRotate->setVisible(m_currentCategory == FileCategory::Image);
+        if (m_btnTrash) m_btnTrash->setVisible(!m_rawTitle.isEmpty());
         if (m_btnInspector) m_btnInspector->show();
         if (m_btnShare) m_btnShare->show();
         if (m_btnSettings) m_btnSettings->show();
@@ -587,6 +601,7 @@ void MinimalHeaderBar::setEditMode(bool editMode)
         if (m_btnSearch) m_btnSearch->hide();
         if (m_btnZoom) m_btnZoom->hide();
         if (m_btnRotate) m_btnRotate->hide();
+        if (m_btnTrash) m_btnTrash->hide();
         if (m_btnInspector) m_btnInspector->hide();
         if (m_btnShare) m_btnShare->hide();
         if (m_btnSettings) m_btnSettings->hide();
@@ -631,6 +646,7 @@ void MinimalHeaderBar::setPageOrganizerMode(bool active)
         if (m_btnSearch) m_btnSearch->hide();
         if (m_btnZoom) m_btnZoom->hide();
         if (m_btnRotate) m_btnRotate->hide();
+        if (m_btnTrash) m_btnTrash->hide();
         if (m_btnInspector) m_btnInspector->hide();
         if (m_btnShare) m_btnShare->hide();
         if (m_btnSettings) m_btnSettings->hide();
@@ -1041,6 +1057,9 @@ void MinimalHeaderBar::updateContextualToolsVisibility()
     if (m_btnRotate && !m_editMode && !m_pageOrganizerMode) {
         m_btnRotate->setVisible(isImg);
     }
+    if (m_btnTrash && !m_editMode && !m_pageOrganizerMode) {
+        m_btnTrash->setVisible(!m_rawTitle.isEmpty());
+    }
 }
 
 void MinimalHeaderBar::setWindowControlsVisible(bool visible)
@@ -1123,6 +1142,10 @@ void MinimalHeaderBar::updateButtonStyles()
     if (m_btnRotate) {
         m_btnRotate->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::RotateRight, iconColor, 20));
         m_btnRotate->setStyleSheet(toolBtnStyle);
+    }
+    if (m_btnTrash) {
+        m_btnTrash->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Trash, iconColor, 20));
+        m_btnTrash->setStyleSheet(toolBtnStyle);
     }
     if (m_btnInspector) {
         m_btnInspector->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Info, iconColor, 20));

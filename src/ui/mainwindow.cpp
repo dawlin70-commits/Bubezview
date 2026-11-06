@@ -215,8 +215,6 @@ MainWindow::MainWindow(QWidget *parent)
         connect(m_imageViewer, &ImageViewer::cropModeChanged, this, [this](bool) {
             updateContextualMenuStates();
         });
-        connect(m_imageViewer, &ImageViewer::nextFileRequested, this, &BaseSkin::nextFile);
-        connect(m_imageViewer, &ImageViewer::prevFileRequested, this, &BaseSkin::prevFile);
     }
     setupArchiveViewerConnections();
     setupFolderViewerConnections();
@@ -857,6 +855,7 @@ void MainWindow::setupUi()
         }
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::inspectorRequested, this, &BaseSkin::showFileInfo);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::trashRequested, this, &BaseSkin::deleteCurrentFile);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::shareRequested, this, &BaseSkin::showShareDialog);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::saveExportRequested, this, &MainWindow::showSaveExportMenu);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::saveAsRequested, this, &BaseSkin::saveAsCurrentFile);
