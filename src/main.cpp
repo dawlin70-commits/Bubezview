@@ -35,6 +35,8 @@
 #include <iostream>
 #include <memory>
 #include <clocale>
+#include <sys/stat.h>
+#include <unistd.h>
 
 static std::unique_ptr<QFile> s_debugLogFile;
 static std::unique_ptr<QTextStream> s_debugLogStream;
@@ -114,6 +116,33 @@ int main(int argc, char *argv[])
 
     // Setup high-performance OpenGL surface format (VSync, DoubleBuffering, 4x MSAA)
     GpuAccelerationManager::setupSurfaceFormat();
+
+    // Isolate configuration when running development builds so testing preferences (e.g. themes)
+    // do not overwrite the system-installed BubezView user configuration (~/.config/Bubez/BubezView.conf).
+    if (!qEnvironmentVariableIsSet("BUBEZVIEW_NO_DEV_ISOLATION")) {
+        char exePath[4096] = {0};
+        ssize_t count = readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
+        if (count > 0) {
+            std::string path(exePath, count);
+            if (path.find("/build_deb/") != std::string::npos || path.find("/Progetti/BubezView/") != std::string::npos) {
+                const char *currentXdg = getenv("XDG_CONFIG_HOME");
+                if (!currentXdg || strlen(currentXdg) == 0) {
+                    const char *home = getenv("HOME");
+                    if (home) {
+                        std::string devConfigDir = std::string(home) + "/.config/bubezview-dev";
+                        mkdir(devConfigDir.c_str(), 0755);
+                        mkdir((devConfigDir + "/Bubez").c_str(), 0755);
+                        std::string mainConf = std::string(home) + "/.config/Bubez/BubezView.conf";
+                        std::string devConf = devConfigDir + "/Bubez/BubezView.conf";
+                        if (access(devConf.c_str(), F_OK) != 0 && access(mainConf.c_str(), F_OK) == 0) {
+                            QFile::copy(QString::fromStdString(mainConf), QString::fromStdString(devConf));
+                        }
+                        setenv("XDG_CONFIG_HOME", devConfigDir.c_str(), 1);
+                    }
+                }
+            }
+        }
+    }
 
     QApplication app(argc, argv);
     app.setApplicationName("BubezView");
