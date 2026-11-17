@@ -681,13 +681,6 @@ except Exception:
         find "$build_dir/plugins" -type f -name "*.so" -exec cp -f {} "$app_install_dir/plugins/" \; 2>/dev/null || true
     fi
 
-    # Se esiste un binario di sviluppo in build_deb, aggiorna anche quello per coerenza tra gli ambienti
-    local dev_build_deb="/home/davide/Progetti/BubezView/build_deb/$final_exe_name"
-    if [ -f "$dev_build_deb" ]; then
-        cp -f "$exe_path" "$dev_build_deb" 2>/dev/null || true
-        chmod +x "$dev_build_deb" 2>/dev/null || true
-    fi
-
     # Salva una copia dell'installer autonomo per futuri aggiornamenti
     if [ -f "$0" ]; then
         cp -f "$0" "$app_install_dir/install.sh" 2>/dev/null || true

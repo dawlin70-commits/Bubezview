@@ -3322,9 +3322,12 @@ void BaseSkin::showAboutDialog()
     aboutBox.setWindowTitle(tr("About BubezView"));
     aboutBox.setTextFormat(Qt::RichText);
     aboutBox.setIconPixmap(QIcon::fromTheme("bubezview", windowIcon()).pixmap(64, 64));
+    const bool isDev = (QCoreApplication::applicationDirPath().contains("build_deb") ||
+                        QCoreApplication::applicationDirPath().contains("Progetti/BubezView"));
     aboutBox.setText(
-        QString("<h3>BubezView v%1</h3>").arg(QApplication::applicationVersion()) +
-        "<p><b>" + tr("Native C++ / Qt6 Universal Viewer for Linux") + "</b></p>"
+        QString("<h3>BubezView v%1%2</h3>").arg(QApplication::applicationVersion(), isDev ? QStringLiteral(" <span style='color: #38bdf8;'>[Sviluppo / Dev Build]</span>") : QString()) +
+        "<p><b>" + tr("Native C++ / Qt6 Universal Viewer for Linux") + "</b>" +
+        (isDev ? ("<br><small style='color: #a855f7;'>Percorso: " + QCoreApplication::applicationFilePath() + "</small>") : QString()) + "</p>"
         "<p>" + tr("Developed by <b>Davide (Bubez)</b>.<br>Designed to be ultra-fast, responsive, and well integrated into the Linux desktop ecosystem.") + "</p>"
         "<hr>"
         "<p><b>" + tr("Active engines and libraries:") + "</b><br>"
@@ -3838,8 +3841,12 @@ void BaseSkin::showCurrentHexDump()
 
 void BaseSkin::updateWindowTitle()
 {
+    const QString devBadge = (QCoreApplication::applicationDirPath().contains("build_deb") ||
+                              QCoreApplication::applicationDirPath().contains("Progetti/BubezView"))
+                             ? QStringLiteral(" [Sviluppo]") : QString();
+
     if (m_currentFilePath.isEmpty()) {
-        setWindowTitle(tr("BubezView"));
+        setWindowTitle(tr("BubezView") + devBadge);
         return;
     }
     QFileInfo info(m_currentFilePath);
@@ -3856,9 +3863,9 @@ void BaseSkin::updateWindowTitle()
 
     if (!m_archiveOriginPath.isEmpty()) {
         QFileInfo originInfo(m_archiveOriginPath);
-        setWindowTitle(QString("%1%2 (📦 %3) — BubezView").arg(mod, info.fileName(), originInfo.fileName()));
+        setWindowTitle(QString("%1%2 (📦 %3) — BubezView%4").arg(mod, info.fileName(), originInfo.fileName(), devBadge));
     } else {
-        setWindowTitle(QString("%1%2 — BubezView").arg(mod, info.fileName()));
+        setWindowTitle(QString("%1%2 — BubezView%3").arg(mod, info.fileName(), devBadge));
     }
 }
 
