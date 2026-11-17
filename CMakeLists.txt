@@ -153,9 +153,13 @@ set(BUBEZVIEW_RESOURCES
 # -----------------------------------------------------------------------------
 # 5. Tree Subdirectories (Core, Plugins, Tests)
 # -----------------------------------------------------------------------------
-enable_testing()
 add_subdirectory(src)
-add_subdirectory(tests)
+
+option(BUILD_TESTS "Build automated test suite" OFF)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 # -----------------------------------------------------------------------------
 # 6. Global Desktop Integration Installation Rules

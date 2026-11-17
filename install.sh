@@ -346,7 +346,7 @@ build_and_launch() {
 
     echo -e "${BLUE}${BOLD}[*] Configuring project with CMake...${NC}"
     mkdir -p "$BUILD_DIR"
-    cmake -B "$BUILD_DIR" -S "$SCRIPT_DIR" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" "${cmake_extra_args[@]}"
+    cmake -B "$BUILD_DIR" -S "$SCRIPT_DIR" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DBUILD_TESTS=OFF "${cmake_extra_args[@]}"
 
     local cpu_cores
     cpu_cores=$(nproc 2>/dev/null || echo "4")
