@@ -138,14 +138,17 @@ QString UpdateManager::findInstallerScript() const
     QStringList candidates;
     const QString devRoot = BuildConfig::projectDevRoot();
     if (!devRoot.isEmpty()) {
+        candidates << devRoot + "/Install";
         candidates << devRoot + "/install.sh";
         candidates << devRoot + "/Installa";
         candidates << devRoot + "/bubezview_cpp/Installa";
     }
 
+    candidates << QCoreApplication::applicationDirPath() + "/Install";
     candidates << QCoreApplication::applicationDirPath() + "/install.sh";
     candidates << QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../install.sh");
     candidates << QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../install.sh");
+    candidates << QDir::homePath() + "/Progetti/BubezView/Install";
     candidates << QDir::homePath() + "/Progetti/BubezView/install.sh";
     candidates << QDir::homePath() + "/.local/share/bubezview/install.sh";
     candidates << QCoreApplication::applicationDirPath() + "/Installa";

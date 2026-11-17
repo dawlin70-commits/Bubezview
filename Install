@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# BubezView — One-Click Interactive Launcher & Installer
+# Automatically spawns a terminal emulator if launched from a graphical file manager
+# ==============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# If running outside an interactive terminal (e.g. double-clicked from Dolphin, Nautilus, Nemo)
+if [ ! -t 0 ] || [ ! -t 1 ]; then
+    for term in konsole gnome-terminal ptyxis kgx xfce4-terminal mate-terminal tilix terminator alacritty kitty foot x-terminal-emulator xterm; do
+        if command -v "$term" >/dev/null 2>&1; then
+            case "$term" in
+                konsole)
+                    exec konsole -e bash -c "cd '$SCRIPT_DIR' && ./install.sh; echo; read -n 1 -s -r -p 'Press any key to close...'"
+                    ;;
+                gnome-terminal|tilix|terminator)
+                    exec "$term" -- bash -c "cd '$SCRIPT_DIR' && ./install.sh; echo; read -n 1 -s -r -p 'Press any key to close...'"
+                    ;;
+                ptyxis|kgx)
+                    exec "$term" -- bash -c "cd '$SCRIPT_DIR' && ./install.sh; echo; read -n 1 -s -r -p 'Press any key to close...'"
+                    ;;
+                xfce4-terminal|mate-terminal)
+                    exec "$term" -e "bash -c \"cd '$SCRIPT_DIR' && ./install.sh; echo; read -n 1 -s -r -p 'Press any key to close...'\""
+                    ;;
+                alacritty|kitty|foot)
+                    exec "$term" -e bash -c "cd '$SCRIPT_DIR' && ./install.sh; echo; read -n 1 -s -r -p 'Press any key to close...'"
+                    ;;
+                *)
+                    exec "$term" -e "bash -c 'cd \"$SCRIPT_DIR\" && ./install.sh; echo; read -n 1 -s -r -p \"Press any key to close...\"'"
+                    ;;
+            esac
+        fi
+    done
+fi
+
+# If already inside a terminal emulator or CLI, pass all arguments directly to install.sh
+exec "${SCRIPT_DIR}/install.sh" "$@"

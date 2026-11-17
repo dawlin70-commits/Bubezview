@@ -38,6 +38,14 @@ scorciatoie.txt
 # Backup & temporanei
 *backup*
 *_backup*/
+scratch/
+test trasparente/
+New Folder/
+*.pdf
+provafirma.jpeg
+Schermata_*.png
+AnxfJm.json
+translations/*.png
 *.log
 *.tmp
 *.swp
