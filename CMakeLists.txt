@@ -45,7 +45,7 @@ option(OPTIMIZE_FOR_NATIVE_CPU "Enable native CPU microarchitecture tuning (-mar
 # -----------------------------------------------------------------------------
 # 2. Optimization Level & CPU Instruction Tuning
 # -----------------------------------------------------------------------------
-set(OPTIMIZATION_LEVEL "O2" CACHE STRING "Compiler optimization: O0, O1, O2, or O3")
+set(OPTIMIZATION_LEVEL "O3" CACHE STRING "Compiler optimization: O0, O1, O2, or O3")
 set(CUSTOM_CXX_FLAGS "" CACHE STRING "Custom compiler flags applied uniformly across all targets")
 
 if(NOT MSVC)
