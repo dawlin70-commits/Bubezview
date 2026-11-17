@@ -6,7 +6,7 @@
 #include <QMessageBox>
 
 GotoFolderDialog::GotoFolderDialog(const QString &currentPath, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_currentPath(currentPath)
     , m_pathEdit(nullptr)
     , m_bookmarksList(nullptr)
@@ -22,8 +22,8 @@ GotoFolderDialog::GotoFolderDialog(const QString &currentPath, QWidget *parent)
 
 void GotoFolderDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(18, 18, 18, 18);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(12);
 
     QLabel *lblTitle = new QLabel(tr("📁 Enter or select folder to open:"), this);

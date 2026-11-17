@@ -51,6 +51,11 @@ public:
     void setCurrentIndex(int index);
 
     /**
+     * @brief Clears all file thumbnails from the filmstrip.
+     */
+    void clear();
+
+    /**
      * @brief Checks whether the filmstrip has valid file items.
      * @return True if there are sibling files loaded.
      */

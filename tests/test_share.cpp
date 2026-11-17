@@ -1,5 +1,6 @@
 #include <QtTest>
 #include <QApplication>
+#include <QClipboard>
 #include <QMenu>
 #include <QAction>
 #include "share_manager.h"
@@ -72,12 +73,24 @@ void TestShare::testShareDialogUI()
 {
     QString testPath = "/home/davide/Progetti/BubezView/test/documento_firmato_test_pag1.jpg";
     ShareDialog dlg(testPath);
-    dlg.resize(400, 520);
+    dlg.resize(440, 520);
     dlg.show();
     QTest::qWait(150);
 
+    // Verify Copy Path button works and populates clipboard
+    bool foundCopyBtn = false;
+    for (QPushButton *btn : dlg.findChildren<QPushButton*>()) {
+        if (btn->text().contains("Copy Path") || btn->text().contains("Copia")) {
+            foundCopyBtn = true;
+            btn->click();
+            QCOMPARE(QApplication::clipboard()->text(), testPath);
+            break;
+        }
+    }
+    QVERIFY(foundCopyBtn);
+
     QPixmap pix = dlg.grab();
-    pix.save("/home/davide/.gemini/antigravity/brain/c8aaa138-5782-4f22-ba66-d5f04036bb68/share_dialog_preview.png");
+    pix.save("/home/davide/.gemini/antigravity/brain/4e70622e-50ab-4665-afcd-a70645769460/share_dialog_preview.png");
     QVERIFY(!pix.isNull());
 }
 

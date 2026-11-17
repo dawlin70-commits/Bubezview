@@ -17,7 +17,7 @@
 #include <QFile>
 
 UpdateDialog::UpdateDialog(const ReleaseInfo &info, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_info(info)
     , m_process(nullptr)
     , m_lblTitle(nullptr)
@@ -46,9 +46,9 @@ UpdateDialog::~UpdateDialog()
 
 void UpdateDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(14);
-    mainLayout->setContentsMargins(18, 18, 18, 18);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     m_lblTitle = new QLabel(this);
     m_lblTitle->setText(QString("<h3>%1</h3><p>%2 <b>%3</b> &nbsp;➔&nbsp; %4 <b>v%5</b></p>")

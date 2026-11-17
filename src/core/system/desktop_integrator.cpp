@@ -203,7 +203,8 @@ bool DesktopIntegrator::enableDolphin(const QString &shortcut)
             triggerPath = QFileInfo(appDir + "/../../trigger_bubez.sh").canonicalFilePath();
         }
     }
-    QString execCmd = QFile::exists(triggerPath) ? (triggerPath + " %F") : (appPath + " %F");
+    QString execCmd = QFile::exists(triggerPath) ? (QStringLiteral("\"%1\" %F").arg(triggerPath))
+                                                 : (QStringLiteral("\"%1\" %F").arg(appPath));
 
     QString desktopContent = QString(
         "[Desktop Entry]\n"
@@ -294,7 +295,7 @@ bool DesktopIntegrator::enableGnomeNemo()
             QString content = QString(
                 "[D-BUS Service]\n"
                 "Name=%1\n"
-                "Exec=%2 --previewer\n"
+                "Exec=\"%2\" --previewer\n"
             ).arg(svc, appPath);
             f.write(content.toUtf8());
             f.close();
@@ -413,7 +414,7 @@ bool DesktopIntegrator::enableContextMenu()
             "Name[it]=BubezView (Anteprima rapida)\n"
             "Comment=Instant preview of images, text, and documents\n"
             "Comment[it]=Anteprima istantanea di immagini, testi e documenti\n"
-            "Exec=%1 %F\n"
+            "Exec=\"%1\" %F\n"
             "Icon-Name=%2\n"
             "Selection=any\n"
             "Extensions=any;\n"
@@ -468,7 +469,7 @@ bool DesktopIntegrator::installAppMenu()
             "GenericName[it]=Visualizzatore di file e documenti\n"
             "Comment=Instant ultra-fast native preview of images, text, and documents\n"
             "Comment[it]=Anteprima ultra-rapida nativa di immagini, testi e documenti\n"
-            "Exec=%1 %F\n"
+            "Exec=\"%1\" %F\n"
             "Icon=%2\n"
             "Terminal=false\n"
             "Categories=Graphics;Viewer;Utility;Qt;\n"

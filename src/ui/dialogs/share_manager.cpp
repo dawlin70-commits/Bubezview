@@ -409,8 +409,15 @@ void ShareManager::shareEmail(const QString &filePath, QWidget *parent)
     // Copy absolute path to clipboard
     QApplication::clipboard()->setText(resolvedPath);
 
-    QSettings settings("BubezView", "BubezView");
+    QSettings settings("Bubez", "BubezView");
     bool hideHint = settings.value("hide_email_share_hint", false).toBool();
+    if (!hideHint) {
+        QSettings legacy("BubezView", "BubezView");
+        if (legacy.value("hide_email_share_hint", false).toBool()) {
+            hideHint = true;
+            settings.setValue("hide_email_share_hint", true);
+        }
+    }
 
     if (!hideHint) {
         QMessageBox msgBox(parent);

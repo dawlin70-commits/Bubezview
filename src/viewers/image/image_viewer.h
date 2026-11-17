@@ -9,6 +9,7 @@
 #include "core/services/image_processor.h"
 
 class ImageCanvasWidget;
+class QTimer;
 
 /**
  * @brief High-performance hardware-accelerated image viewer widget.
@@ -85,21 +86,28 @@ public:
 
     /**
      * @brief Transparency background rendering mode for images with an alpha channel.
+     *
+     * Checkerboard is the fixed application-wide default: the user-facing setting was
+     * removed because it is the only mode that keeps every kind of transparent image
+     * readable (dark signatures, white logos, soft shadows). The other modes are kept
+     * for internal/programmatic use only.
      */
     enum class TransparencyMode {
-        White,        ///< Solid pure white background (Default, high contrast, removes transparency).
-        Checkerboard, ///< Subtle checkerboard pattern (Photoshop / GIMP style).
+        White,        ///< Solid pure white background.
+        Checkerboard, ///< Subtle checkerboard pattern (Photoshop / GIMP style). Default.
         Theme,        ///< Theme coordinated background color (Dark Slate / Breeze Dark / Native).
         Black         ///< Solid black background.
     };
 
     /**
-     * @brief Gets current transparency background mode from settings.
+     * @brief Gets the current transparency background mode of this viewer.
+     * @return Active mode (Checkerboard unless changed programmatically).
      */
     TransparencyMode transparencyMode() const;
 
     /**
-     * @brief Sets transparency background mode and refreshes canvas.
+     * @brief Sets transparency background mode for this viewer and refreshes canvas.
+     * @param mode Mode to apply. Not persisted to settings.
      */
     void setTransparencyMode(TransparencyMode mode);
 
@@ -225,26 +233,29 @@ signals:
     void contextMenuRequested(const QPoint &globalPos);
 
 protected:
+    void showEvent(QShowEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     void updateScaledPixmap();
+    void updateScaledPixmapFast();
     void pushUndoState();
 
     QScrollArea *m_scrollArea = nullptr;
     ImageCanvasWidget *m_canvas = nullptr;
+    QTimer *m_smoothResizeTimer = nullptr;
 
     QImage m_originalImage;
     QList<QImage> m_undoStack;
     QList<QImage> m_redoStack;
-    QPixmap m_sourcePixmap;
     QPixmap m_scaledPixmap;
     double m_zoomFactor;
     bool m_fitToWindow;
     bool m_zoomToolActive;
     bool m_isModified;
+    TransparencyMode m_transparencyMode = TransparencyMode::Checkerboard;
 
     bool m_isEditMode = true;
 };

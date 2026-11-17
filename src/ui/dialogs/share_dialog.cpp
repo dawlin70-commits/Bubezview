@@ -10,15 +10,19 @@
 #include <QTcpSocket>
 #include <QNetworkInterface>
 #include <QUrl>
+#include <QApplication>
+#include <QClipboard>
+#include <QTimer>
 #include <qrencode.h>
 
 ShareDialog::ShareDialog(const QString &filePath, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_filePath(filePath)
     , m_tcpServer(nullptr)
     , m_qrLabel(nullptr)
     , m_infoLabel(nullptr)
     , m_urlLabel(nullptr)
+    , m_btnCopyPath(nullptr)
     , m_btnLocalSend(nullptr)
     , m_btnClose(nullptr)
 {
@@ -107,8 +111,8 @@ void ShareDialog::onNewConnection()
 
 void ShareDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(24, 20, 24, 20);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(6, 6, 6, 6);
     mainLayout->setSpacing(14);
 
     QFileInfo fi(m_filePath);
@@ -122,7 +126,7 @@ void ShareDialog::setupUi()
     m_qrLabel = new QLabel(this);
     m_qrLabel->setFixedSize(260, 260);
     m_qrLabel->setAlignment(Qt::AlignCenter);
-    m_qrLabel->setStyleSheet("background-color: #ffffff; border-radius: 12px; border: 2px solid rgba(128, 128, 128, 0.4); padding: 10px;");
+    m_qrLabel->setStyleSheet("background-color: #ffffff; border-radius: 16px; border: 1.5px solid rgba(56, 189, 248, 0.35); padding: 12px;");
     mainLayout->addWidget(m_qrLabel, 0, Qt::AlignCenter);
 
     m_infoLabel = new QLabel(tr("Scan with your phone (make sure you are on the same Wi-Fi network):"), this);
@@ -133,25 +137,51 @@ void ShareDialog::setupUi()
 
     m_urlLabel = new QLabel(m_serverUrl, this);
     m_urlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_urlLabel->setStyleSheet("color: #0369a1; background-color: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: bold; font-family: monospace;");
+    m_urlLabel->setStyleSheet("color: #38bdf8; background-color: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.38); border-radius: 12px; padding: 8px 12px; font-size: 12px; font-weight: bold; font-family: monospace;");
     m_urlLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(m_urlLabel);
 
     QHBoxLayout *btnLayout = new QHBoxLayout();
     btnLayout->setSpacing(12);
 
+    m_btnCopyPath = new QPushButton(tr("📋 Copy Path"), this);
+    m_btnCopyPath->setCursor(Qt::PointingHandCursor);
+    m_btnCopyPath->setStyleSheet(
+        "QPushButton {"
+        "   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #10b981, stop:1 #059669);"
+        "   color: #ffffff;"
+        "   font-weight: bold;"
+        "   border: 1px solid rgba(255, 255, 255, 0.25);"
+        "   border-radius: 10px;"
+        "   padding: 8px 16px;"
+        "}"
+        "QPushButton:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #34d399, stop:1 #10b981); }"
+    );
+    connect(m_btnCopyPath, &QPushButton::clicked, this, [this]() {
+        if (QClipboard *cb = QApplication::clipboard()) {
+            cb->setText(m_filePath);
+            m_btnCopyPath->setText(tr("✓ Copied!"));
+            QTimer::singleShot(2000, this, [this]() {
+                if (m_btnCopyPath) {
+                    m_btnCopyPath->setText(tr("📋 Copy Path"));
+                }
+            });
+        }
+    });
+    btnLayout->addWidget(m_btnCopyPath);
+
     m_btnLocalSend = new QPushButton(tr("🚀 Send with LocalSend"), this);
     m_btnLocalSend->setCursor(Qt::PointingHandCursor);
     m_btnLocalSend->setStyleSheet(
         "QPushButton {"
-        "   background-color: #0284c7;"
+        "   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #38bdf8, stop:1 #2563eb);"
         "   color: #ffffff;"
         "   font-weight: bold;"
-        "   border: none;"
-        "   border-radius: 6px;"
+        "   border: 1px solid rgba(125, 211, 252, 0.55);"
+        "   border-radius: 10px;"
         "   padding: 8px 16px;"
         "}"
-        "QPushButton:hover { background-color: #0369a1; }"
+        "QPushButton:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #7dd3fc, stop:1 #3b82f6); }"
     );
     connect(m_btnLocalSend, &QPushButton::clicked, this, &ShareDialog::onSendViaLocalSend);
     btnLayout->addWidget(m_btnLocalSend);
@@ -160,13 +190,13 @@ void ShareDialog::setupUi()
     m_btnClose->setCursor(Qt::PointingHandCursor);
     m_btnClose->setStyleSheet(
         "QPushButton {"
-        "   background-color: #334155;"
+        "   background-color: rgba(51, 65, 85, 0.85);"
         "   color: #f1f5f9;"
-        "   border: none;"
-        "   border-radius: 6px;"
+        "   border: 1px solid rgba(255, 255, 255, 0.14);"
+        "   border-radius: 10px;"
         "   padding: 8px 16px;"
         "}"
-        "QPushButton:hover { background-color: #475569; }"
+        "QPushButton:hover { background-color: rgba(71, 85, 105, 0.95); }"
     );
     connect(m_btnClose, &QPushButton::clicked, this, &QDialog::accept);
     btnLayout->addWidget(m_btnClose);

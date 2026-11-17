@@ -10,6 +10,7 @@ if(POPPLER_QT6_FOUND OR STATIC_PDF)
 
     set(PDF_PLUGIN_SOURCES
         pdf_plugin.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/ui/base_studio_panel.cpp
         ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_studio_panel.cpp
         ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_history_widget.cpp
@@ -23,6 +24,9 @@ if(POPPLER_QT6_FOUND OR STATIC_PDF)
         ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_repair_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
+        ${CMAKE_SOURCE_DIR}/src/core/system/package_manager_helper.cpp
+        ${CMAKE_SOURCE_DIR}/src/core/system/font_resolution_helper.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/dialogs/font_resolution_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/core/system/gpu_acceleration_manager.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
@@ -56,6 +60,7 @@ if(POPPLER_QT6_FOUND OR STATIC_PDF)
         Qt6::Widgets
         Qt6::OpenGLWidgets
         Qt6::PrintSupport
+        Qt6::Network
         ${POPPLER_QT6_LIBRARIES}
     )
 

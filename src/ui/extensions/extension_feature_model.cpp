@@ -8,6 +8,7 @@
 #include "core/system/package_manager_helper.h"
 #include <QStandardPaths>
 #include <QFile>
+#include <QProcess>
 
 QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
 {
@@ -53,8 +54,8 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         m.systemPackage = PackageManagerHelper::packageNameForComponent("pdfimages");
         m.category = "PDF";
         m.summary = tr("High-speed lossless dump of raster streams and photographs embedded inside PDF files.");
-        m.canCompile = false;
-        m.isStaticCompiled = false;
+        m.canCompile = true;
+        m.isStaticCompiled = BuildConfig::hasSourceBinary("pdfimages");
         m.diagnosticCommand = BuildConfig::pdfimagesExecutable().isEmpty() ? "pdfimages -v" : (BuildConfig::pdfimagesExecutable() + " -v");
         m.features = {
             {
@@ -655,4 +656,70 @@ void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
     } else {
         module.isStaticCompiled = false;
     }
+}
+
+bool ExtensionFeatureRegistry::checkBuildReadiness(const ExtensionModuleInfo &module, QStringList &missingList, QString &summaryLog)
+{
+    missingList.clear();
+    QStringList logLines;
+    logLines.append(QString("=== %1: Build Prerequisites Inspection ===").arg(module.displayName));
+
+    auto runCheck = [](const QString &cmd) -> bool {
+        QProcess proc;
+        proc.start(QStringLiteral("/bin/sh"), QStringList() << QStringLiteral("-c") << cmd);
+        return (proc.waitForFinished(2500) && proc.exitStatus() == QProcess::NormalExit && proc.exitCode() == 0);
+    };
+
+    // 1. Check CMake
+    bool hasCmake = runCheck(QStringLiteral("cmake --version"));
+    if (hasCmake) {
+        logLines.append(QStringLiteral("✓ Build System: CMake detected."));
+    } else {
+        missingList.append(QStringLiteral("cmake"));
+        logLines.append(QStringLiteral("❌ Build System: CMake is NOT installed on this host."));
+    }
+
+    // 2. Check C++ Compiler (g++ or clang++)
+    bool hasCompiler = runCheck(QStringLiteral("g++ --version 2>/dev/null || clang++ --version 2>/dev/null"));
+    if (hasCompiler) {
+        logLines.append(QStringLiteral("✓ Compiler Toolchain: C++ compiler (g++/clang++) detected."));
+    } else {
+        missingList.append(QStringLiteral("g++ (build-essential)"));
+        logLines.append(QStringLiteral("❌ Compiler Toolchain: No C++ compiler (g++ or clang++) found on PATH."));
+    }
+
+    // 3. Check pkg-config
+    bool hasPkgConfig = runCheck(QStringLiteral("pkg-config --version"));
+    if (hasPkgConfig) {
+        logLines.append(QStringLiteral("✓ Package Locator: pkg-config detected."));
+    } else {
+        missingList.append(QStringLiteral("pkg-config"));
+        logLines.append(QStringLiteral("❌ Package Locator: pkg-config is NOT installed."));
+    }
+
+    // 4. Check Development Headers (-dev)
+    if (!module.devPkgConfig.isEmpty()) {
+        QString devCmd = QString("pkg-config --exists %1").arg(module.devPkgConfig);
+        bool hasDev = runCheck(devCmd);
+        if (hasDev) {
+            logLines.append(QString("✓ C/C++ Headers: '%1' development files found and verified.").arg(module.devPkgConfig));
+        } else {
+            QString devName = module.devPackage.isEmpty() ? module.devPkgConfig : module.devPackage;
+            missingList.append(devName);
+            logLines.append(QString("❌ C/C++ Headers: '%1' development headers NOT found.\n   -> Install via package manager: apt install %2")
+                                .arg(module.devPkgConfig, devName));
+        }
+    }
+
+    // 5. Check Git
+    bool hasGit = runCheck(QStringLiteral("git --version"));
+    if (hasGit) {
+        logLines.append(QStringLiteral("✓ Source Management: git detected."));
+    } else {
+        missingList.append(QStringLiteral("git"));
+        logLines.append(QStringLiteral("❌ Source Management: git is NOT installed."));
+    }
+
+    summaryLog = logLines.join(QStringLiteral("\n"));
+    return missingList.isEmpty();
 }

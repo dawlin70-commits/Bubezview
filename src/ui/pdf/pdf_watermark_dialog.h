@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QColor>
 
 class QComboBox;
@@ -18,7 +18,7 @@ class QLabel;
 /**
  * @brief Dialog for watermark stamp customization (preset labels, custom text, angle, opacity, color, styles).
  */
-class PdfWatermarkDialog : public QDialog
+class PdfWatermarkDialog : public FramelessDialog
 {
     Q_OBJECT
 

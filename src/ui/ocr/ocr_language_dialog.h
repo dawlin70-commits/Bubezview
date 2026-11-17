@@ -1,7 +1,7 @@
 #ifndef OCR_LANGUAGE_DIALOG_H
 #define OCR_LANGUAGE_DIALOG_H
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QTableWidget>
 #include <QLineEdit>
 #include <QPushButton>
@@ -15,7 +15,7 @@
  * languages directly from the official repository into user space without requiring
  * administrative permissions, or specify custom ISO language codes.
  */
-class OcrLanguageDialog : public QDialog
+class OcrLanguageDialog : public FramelessDialog
 {
     Q_OBJECT
 

@@ -15,7 +15,7 @@
 #include <QStandardPaths>
 
 PdfMergeDialog::PdfMergeDialog(const QStringList &initialFiles, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_fileListWidget(nullptr)
     , m_editOutput(nullptr)
     , m_process(new QProcess(this))
@@ -55,9 +55,9 @@ QString PdfMergeDialog::outputFilePath() const
 
 void PdfMergeDialog::setupUi()
 {
-    auto *mainLay = new QVBoxLayout(this);
+    auto *mainLay = contentLayout();
     mainLay->setSpacing(10);
-    mainLay->setContentsMargins(16, 16, 16, 16);
+    mainLay->setContentsMargins(4, 4, 4, 4);
 
     // Engine banner
     m_lblEngineStatus = new QLabel(this);

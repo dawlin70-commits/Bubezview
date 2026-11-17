@@ -88,6 +88,12 @@ public:
      */
     void applyThemePreset(ThemePreset preset);
 
+    /**
+     * @brief Sets the UI scale factor percentage (e.g. 100, 115, 125, 150).
+     */
+    void setUiScale(int scalePercent);
+    double uiScale() const { return m_uiScale; }
+
     QToolButton *shareButton() const { return m_btnShare; }
     QToolButton *settingsButton() const { return m_btnSettings; }
     QToolButton *prevButton() const { return m_btnPrev; }
@@ -98,15 +104,21 @@ public:
     QAction *zoomInAction() const { return m_actZoomIn; }
     QAction *zoomOutAction() const { return m_actZoomOut; }
     QAction *zoomFitAction() const { return m_actZoomFit; }
+    QAction *zoomFitWidthAction() const { return m_actZoomFitWidth; }
+    QAction *zoomFitPageAction() const { return m_actZoomFitPage; }
     QAction *zoomResetAction() const { return m_actZoom100; }
+    QAction *handAction() const { return m_actHand; }
+    void setHandToolChecked(bool checked);
     double zoomFactor() const { return m_currentZoomFactor; }
     void setZoomFactor(double factor);
     QToolButton *inspectorButton() const { return m_btnInspector; }
     QPushButton *editButton() const { return m_btnEdit; }
 
     ContextualActionBar *contextualBar() const { return m_contextualBar; }
+    void setOverlayContainer(QWidget *container);
+    void updateContextualBarPosition();
     void showContextualTextBar(const QString &text = QString(), const QFont &font = QFont(),
-                               const QColor &color = QColor(), PdfTextBgMode bgMode = PdfTextBgMode::Auto,
+                               const QColor &color = QColor(), PdfTextBgMode bgMode = PdfTextBgMode::Transparent,
                                const QColor &bgColor = Qt::white);
     void showContextualHighlightBar();
     void showContextualShapesBar(int shapeType = 0);
@@ -193,6 +205,7 @@ signals:
     void trashRequested();
     void shareRequested();
     void saveExportRequested(const QPoint &globalPos);
+    void exportRequested();
     void saveAsRequested();
     void settingsRequested();
     void closeRequested();
@@ -206,6 +219,14 @@ signals:
     void flipHRequested();
     void flipVRequested();
     void cropRequested();
+    void imageResizeRequested();
+    void imageInvertRequested();
+    void imageInspectorRequested();
+
+    // Office
+    void officeEditLoRequested();
+    void officeSavePdfRequested();
+    void officeExtractImagesRequested();
 
     // PDF
     void pdfStudioRequested();
@@ -247,8 +268,11 @@ signals:
     void zoomInRequested();
     void zoomOutRequested();
     void zoomFitRequested();
+    void zoomFitWidthRequested();
+    void zoomFitPageRequested();
     void zoomResetRequested();
     void zoomSetPercentRequested(int percent);
+    void handToolToggleRequested();
 
     void undoRequested();
     void redoRequested();
@@ -299,6 +323,7 @@ private:
     void startCenterTransition(int targetIndex);
 
     QString m_rawTitle;
+    double m_uiScale = 1.0;
     bool m_editMode = false;
     bool m_pageOrganizerMode = false;
     bool m_windowControlsVisible = true;
@@ -312,8 +337,15 @@ private:
 
     QWidget *m_primaryBar = nullptr;
     ContextualActionBar *m_contextualBar = nullptr;
+    QWidget *m_overlayContainer = nullptr;
+    void animateContextualBar(bool show);
     QWidget *m_windowControlsWidget = nullptr;
-    QWidget *m_editLeftWidget = nullptr;
+    QFrame *m_navIslandFrame = nullptr;
+    QFrame *m_sepNavIsland = nullptr;
+    QFrame *m_editLeftWidget = nullptr;
+    QFrame *m_editToolsIslandFrame = nullptr;
+    QFrame *m_orgToolsIslandFrame = nullptr;
+    QFrame *m_rightActionsIslandFrame = nullptr;
     QToolButton *m_btnDiscard = nullptr;
     QToolButton *m_btnQuickUndo = nullptr;
     QToolButton *m_btnHistory = nullptr;
@@ -337,6 +369,14 @@ private:
     QToolButton *m_btnImgFlipH = nullptr;
     QToolButton *m_btnImgFlipV = nullptr;
     QToolButton *m_btnImgCrop = nullptr;
+    QToolButton *m_btnImgResize = nullptr;
+    QToolButton *m_btnImgInvert = nullptr;
+    QToolButton *m_btnImgInspector = nullptr;
+
+    // Office Tool Buttons
+    QToolButton *m_btnOfficeEditLo = nullptr;
+    QToolButton *m_btnOfficeSavePdf = nullptr;
+    QToolButton *m_btnOfficeExtractImages = nullptr;
 
     // PDF Clean 5-Pill Editing Cluster
     QPushButton *m_btnPdfText = nullptr;
@@ -372,6 +412,7 @@ private:
     QPushButton *m_btnOrgAddPdf = nullptr;
     QPushButton *m_btnOrgReverse = nullptr;
     QPushButton *m_btnOrgReset = nullptr;
+    QPushButton *m_btnOrgRepair = nullptr;
 
     // Archive Tool Buttons
     QPushButton *m_btnArcExtract = nullptr;
@@ -401,7 +442,10 @@ private:
     QAction *m_actZoomIn = nullptr;
     QAction *m_actZoomOut = nullptr;
     QAction *m_actZoomFit = nullptr;
+    QAction *m_actZoomFitWidth = nullptr;
+    QAction *m_actZoomFitPage = nullptr;
     QAction *m_actZoom100 = nullptr;
+    QAction *m_actHand = nullptr;
     QList<QAction*> m_presetZoomActions;
     double m_currentZoomFactor = 1.0;
     QToolButton *m_btnInspector = nullptr;
@@ -414,6 +458,8 @@ private:
     QFrame *m_sepPdf1 = nullptr;
     QFrame *m_sepPdf2 = nullptr;
     QFrame *m_sepImg1 = nullptr;
+    QFrame *m_sepImg2 = nullptr;
+    QFrame *m_sepOffice1 = nullptr;
     QFrame *m_sepExport = nullptr;
     QFrame *m_sepArc1 = nullptr;
 };

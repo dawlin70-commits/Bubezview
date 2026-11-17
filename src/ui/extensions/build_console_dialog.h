@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 
 class QLabel;
 class QProgressBar;
@@ -17,7 +17,7 @@ class QProcess;
  * @class BuildConsoleDialog
  * @brief Dedicated, resizable floating console showing live compilation progress, terminal logs, and controls.
  */
-class BuildConsoleDialog : public QDialog {
+class BuildConsoleDialog : public FramelessDialog {
     Q_OBJECT
 
 public:
@@ -112,6 +112,11 @@ private:
      * @brief Initializes dialog geometry and UI layout.
      */
     void setupUi();
+
+    /**
+     * @brief Safely terminates compiler process and all spawned child processes.
+     */
+    void terminateProcessGroup();
 
     QLabel *m_lblTitle;
     QLabel *m_lblStatus;

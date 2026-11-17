@@ -4,6 +4,8 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QProcess>
+#include <QProcessEnvironment>
+#include <QThread>
 #include <QLocale>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -13,6 +15,11 @@
 #include <QProgressDialog>
 #include <QApplication>
 #include <QDebug>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <algorithm>
+#include <vector>
 #include <unistd.h>
 
 OcrManager &OcrManager::instance()
@@ -368,7 +375,7 @@ bool OcrManager::installTesseractSystemPackage(QWidget *parent, QString *outErro
     return isTesseractInstalled();
 }
 
-bool OcrManager::runOcr(const QString &imagePath, const QString &langCode, QString &outText, QString &outError)
+bool OcrManager::runOcr(const QString &imagePath, const QString &langCode, QString &outText, QString &outError, int threadLimit)
 {
     outText.clear();
     outError.clear();
@@ -398,9 +405,26 @@ bool OcrManager::runOcr(const QString &imagePath, const QString &langCode, QStri
     args << "-l" << (langCode.isEmpty() ? "eng" : langCode);
 
     QProcess proc;
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+
+    if (threadLimit > 0) {
+        // Explicit thread limit (used in parallel batch processing to prevent thread oversaturation)
+        env.insert("OMP_NUM_THREADS", QString::number(threadLimit));
+        env.insert("OMP_THREAD_LIMIT", QString::number(threadLimit));
+    } else {
+        // Standalone image: leverage available CPU cores via OpenMP
+        int ideal = QThread::idealThreadCount();
+        int ompThreads = std::clamp(ideal > 0 ? ideal : 4, 1, 8);
+        env.insert("OMP_NUM_THREADS", QString::number(ompThreads));
+        env.insert("OMP_THREAD_LIMIT", QString::number(ompThreads));
+        args << "-c" << "tessedit_parallelize=1";
+    }
+    proc.setProcessEnvironment(env);
+
     proc.start(tesseract, args);
-    if (!proc.waitForFinished(20000)) {
-        outError = tr("Tesseract OCR process timed out (exceeded 20s).");
+    if (!proc.waitForFinished(30000)) {
+        proc.kill();
+        outError = tr("Tesseract OCR process timed out (exceeded 30s).");
         return false;
     }
 
@@ -411,4 +435,73 @@ bool OcrManager::runOcr(const QString &imagePath, const QString &langCode, QStri
 
     outText = QString::fromUtf8(proc.readAllStandardOutput()).trimmed();
     return true;
+}
+
+QVector<OcrManager::PageOcrResult> OcrManager::runBatchOcr(const QStringList &imagePaths,
+                                                           const QString &langCode,
+                                                           std::function<void(int completed, int total)> progressCallback,
+                                                           std::atomic<bool> *cancelFlag)
+{
+    const int total = imagePaths.size();
+    QVector<PageOcrResult> results(total);
+    if (total == 0) return results;
+
+    for (int i = 0; i < total; ++i) {
+        results[i].pageIndex = i;
+    }
+
+    int numCores = QThread::idealThreadCount();
+    if (numCores <= 0) numCores = 4;
+    // Scale worker count up to available CPU cores or total page count
+    int workerCount = std::clamp(total, 1, numCores);
+
+    std::atomic<int> nextIndex{0};
+    std::atomic<int> completedCount{0};
+    std::mutex progressMutex;
+
+    auto workerFunc = [&]() {
+        while (true) {
+            if (cancelFlag && cancelFlag->load(std::memory_order_relaxed)) {
+                break;
+            }
+            int idx = nextIndex.fetch_add(1);
+            if (idx >= total) {
+                break;
+            }
+
+            const QString &imgPath = imagePaths[idx];
+            if (imgPath.isEmpty() || !QFile::exists(imgPath)) {
+                results[idx].error = tr("Image file missing for page %1").arg(idx + 1);
+                results[idx].success = false;
+            } else {
+                QString outText, outError;
+                // When running concurrently across multiple CPU cores, limit each worker's
+                // Tesseract process to 1 thread to maximize throughput without CPU core contention.
+                bool ok = runOcr(imgPath, langCode, outText, outError, 1);
+                results[idx].text = outText;
+                results[idx].error = outError;
+                results[idx].success = ok;
+            }
+
+            int done = completedCount.fetch_add(1) + 1;
+            if (progressCallback) {
+                std::lock_guard<std::mutex> lock(progressMutex);
+                progressCallback(done, total);
+            }
+        }
+    };
+
+    std::vector<std::thread> workers;
+    workers.reserve(workerCount);
+    for (int w = 0; w < workerCount; ++w) {
+        workers.emplace_back(workerFunc);
+    }
+
+    for (auto &w : workers) {
+        if (w.joinable()) {
+            w.join();
+        }
+    }
+
+    return results;
 }

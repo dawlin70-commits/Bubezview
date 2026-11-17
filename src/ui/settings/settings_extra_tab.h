@@ -9,6 +9,8 @@
 
 class QComboBox;
 class QLabel;
+class QPushButton;
+class QGroupBox;
 
 /**
  * @class SettingsExtraTab
@@ -28,6 +30,11 @@ public:
      * @brief Destructor.
      */
     ~SettingsExtraTab() override = default;
+
+    /**
+     * @brief Updates Liquid Glass card styling and controls to match the active theme.
+     */
+    void updateThemeStyles();
 
 signals:
     /**
@@ -63,6 +70,21 @@ private slots:
      */
     void launchSetupWizard();
 
+    /**
+     * @brief Repairs and reinstalls desktop launcher, file manager context menus, and quick-look shortcuts.
+     */
+    void reinstallIntegrations();
+
+    /**
+     * @brief Clears cached thumbnails, shader caches, and temporary data.
+     */
+    void clearThumbnailCache();
+
+    /**
+     * @brief Displays an uninstallation dialog and cleanly uninstalls BubezView components.
+     */
+    void uninstallApplication();
+
 private:
     /**
      * @brief Initializes widgets, layouts, and data bindings.
@@ -74,8 +96,18 @@ private:
      */
     void updateDebugStatusLabel();
 
+    QGroupBox *m_grpMaintenance = nullptr;
+    QGroupBox *m_grpDebug = nullptr;
     QComboBox *m_comboDebugLevel = nullptr;
     QLabel *m_lblDebugStatus = nullptr;
+    QLabel *m_lblMaintSub = nullptr;
+    QLabel *m_lblDebugSub = nullptr;
+    QLabel *m_lblTermHint = nullptr;
+    QPushButton *m_btnRunWizard = nullptr;
+    QPushButton *m_btnReinstall = nullptr;
+    QPushButton *m_btnClearCache = nullptr;
+    QPushButton *m_btnUninstall = nullptr;
+    QPushButton *m_btnCopyReport = nullptr;
     int m_previousDebugLevel = 0;
     bool m_isUpdatingUi = false;
 };

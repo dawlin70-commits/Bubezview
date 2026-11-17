@@ -4,7 +4,9 @@
  */
 
 #include "pdf_base_viewer.h"
+#include "pdf_document_ops.h"
 #include "core/services/theme_manager.h"
+#include "vector_icons.h"
 
 #include <poppler/qt6/poppler-qt6.h>
 #include <QVBoxLayout>
@@ -34,6 +36,10 @@
 #include <QPropertyAnimation>
 #include <QTimer>
 #include <QDebug>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QFile>
 #include <cmath>
 
 // ============================================================================
@@ -89,6 +95,7 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
     m_scrollArea->setMouseTracking(true);
 
     m_canvas = new PdfBaseCanvas(m_scrollArea);
+    m_canvas->setScrollArea(m_scrollArea);
     m_scrollArea->setWidget(m_canvas);
     m_splitter->addWidget(m_scrollArea);
 
@@ -98,16 +105,22 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
 
     // Canvas signals
     connect(m_canvas, &PdfBaseCanvas::selectionChanged, this, &PdfBaseViewer::onCanvasSelectionChanged);
-    connect(m_canvas, &PdfBaseCanvas::zoomWheelRequested, this, [this](double factor) {
-        setZoomFactor(m_zoomFactor * factor);
-    });
+    connect(m_canvas, &PdfBaseCanvas::zoomAtRequested, this, &PdfBaseViewer::zoomAt);
     connect(m_canvas, &PdfBaseCanvas::showInfoRequested, this, &PdfBaseViewer::showDocumentInfo);
     connect(m_canvas, &PdfBaseCanvas::printRequested, this, &PdfBaseViewer::printDocument);
     connect(m_canvas, &PdfBaseCanvas::fitWidthRequested, this, &PdfBaseViewer::fitToWidth);
+    connect(m_canvas, &PdfBaseCanvas::fitPageRequested, this, &PdfBaseViewer::fitToPage);
+    connect(m_canvas, &PdfBaseCanvas::savePageAsPdfRequested, this, &PdfBaseViewer::savePageAsPdfRequested);
+    connect(m_canvas, &PdfBaseCanvas::savePageAsImageRequested, this, &PdfBaseViewer::savePageAsImageRequested);
+    connect(m_canvas, &PdfBaseCanvas::saveAsRequested, this, &PdfBaseViewer::saveAsRequested);
+    connect(m_canvas, &PdfBaseCanvas::exportRequested, this, &PdfBaseViewer::exportRequested);
+    connect(m_canvas, &PdfBaseCanvas::scanTextRequested, this, &PdfBaseViewer::scanTextRequested);
+    connect(m_canvas, &PdfBaseCanvas::requestStudio, this, &PdfBaseViewer::requestStudio);
 
     connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int value) {
-        if (m_canvas && m_pageCount > 0) {
-            int pageIdx = m_canvas->pageIndexAtY(value + 40);
+        if (m_canvas && m_pageCount > 0 && m_scrollArea && m_scrollArea->viewport()) {
+            int centerY = value + m_scrollArea->viewport()->height() / 2;
+            int pageIdx = m_canvas->pageIndexAtY(centerY);
             if (pageIdx != m_currentPage) {
                 onCanvasPageScrolled(pageIdx);
             }
@@ -124,9 +137,14 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
     hudLayout->setContentsMargins(10, 3, 10, 3);
     hudLayout->setSpacing(6);
 
-    auto createPillBtn = [this](const QString &text, const QString &tip) -> QToolButton* {
+    auto createPillBtn = [this](const QString &text, const QString &tip, const QIcon &icon = QIcon()) -> QToolButton* {
         auto *b = new QToolButton(m_hudPill);
-        b->setText(text);
+        if (!icon.isNull()) {
+            b->setIcon(icon);
+            b->setIconSize(QSize(16, 16));
+        } else {
+            b->setText(text);
+        }
         b->setToolTip(tip);
         b->setAutoRaise(true);
         b->setFixedSize(28, 28);
@@ -134,7 +152,8 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
         return b;
     };
 
-    m_btnPrev = createPillBtn(QStringLiteral("◀"), tr("Previous Page (Page Up / Left Arrow)"));
+    m_btnPrev = createPillBtn(QString(), tr("Previous Page (Page Up / Left Arrow)"),
+                              VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronLeft, QColor("#94a3b8"), 14));
     connect(m_btnPrev, &QToolButton::clicked, this, &PdfBaseViewer::prevPage);
 
     m_lblPageText = new QLabel(tr("Page"), m_hudPill);
@@ -153,66 +172,15 @@ PdfBaseViewer::PdfBaseViewer(QWidget *parent)
 
     m_lblPageCount = new QLabel(tr("of 0"), m_hudPill);
 
-    m_btnNext = createPillBtn(QStringLiteral("▶"), tr("Next Page (Page Down / Right Arrow)"));
+    m_btnNext = createPillBtn(QString(), tr("Next Page (Page Down / Right Arrow)"),
+                              VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronRight, QColor("#94a3b8"), 14));
     connect(m_btnNext, &QToolButton::clicked, this, &PdfBaseViewer::nextPage);
-
-    auto addSep = [hudLayout, this]() {
-        auto *sep = new QFrame(m_hudPill);
-        sep->setFrameShape(QFrame::VLine);
-        sep->setFrameShadow(QFrame::Sunken);
-        sep->setStyleSheet(QStringLiteral("color: rgba(148, 163, 184, 0.4); margin: 3px 2px;"));
-        hudLayout->addWidget(sep);
-    };
-
-    m_btnZoomOut = createPillBtn(QStringLiteral("➖"), tr("Zoom Out (-)"));
-    connect(m_btnZoomOut, &QToolButton::clicked, this, &PdfBaseViewer::zoomOut);
-
-    m_btnZoomReset = createPillBtn(QStringLiteral("1:1"), tr("Reset Zoom to 100%"));
-    connect(m_btnZoomReset, &QToolButton::clicked, this, &PdfBaseViewer::resetZoom);
-
-    m_btnZoomIn = createPillBtn(QStringLiteral("➕"), tr("Zoom In (+)"));
-    connect(m_btnZoomIn, &QToolButton::clicked, this, &PdfBaseViewer::zoomIn);
-
-    m_btnFitWidth = createPillBtn(QStringLiteral("↔"), tr("Fit to Viewport Width"));
-    connect(m_btnFitWidth, &QToolButton::clicked, this, &PdfBaseViewer::fitToWidth);
-
-    m_btnInfo = createPillBtn(QStringLiteral("ℹ️"), tr("Document Metadata & Information"));
-    connect(m_btnInfo, &QToolButton::clicked, this, &PdfBaseViewer::showDocumentInfo);
-
-    m_btnPrint = createPillBtn(QStringLiteral("🖨️"), tr("Print Document... (Ctrl+P)"));
-    connect(m_btnPrint, &QToolButton::clicked, this, &PdfBaseViewer::printDocument);
-
-    m_btnToc = createPillBtn(QStringLiteral("📑"), tr("Toggle Table of Contents"));
-    connect(m_btnToc, &QToolButton::clicked, this, &PdfBaseViewer::toggleTocSidebar);
-    m_btnToc->setVisible(false);
-
-    m_btnStudio = new QPushButton(tr("✏️ Studio"), m_hudPill);
-    m_btnStudio->setToolTip(tr("Open PDF Studio for signatures, page organizing, and repairs"));
-    m_btnStudio->setCursor(Qt::PointingHandCursor);
-    m_btnStudio->setFixedHeight(26);
-    m_btnStudio->setStyleSheet(
-        "QPushButton { background-color: rgba(56, 189, 248, 0.15); color: #0284c7; "
-        "border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; padding: 2px 10px; font-weight: 600; font-size: 11px; }"
-        "QPushButton:hover { background-color: #0284c7; color: #ffffff; }"
-    );
-    connect(m_btnStudio, &QPushButton::clicked, this, &PdfBaseViewer::requestStudio);
 
     hudLayout->addWidget(m_btnPrev);
     hudLayout->addWidget(m_lblPageText);
     hudLayout->addWidget(m_spinPage);
     hudLayout->addWidget(m_lblPageCount);
     hudLayout->addWidget(m_btnNext);
-    addSep();
-    hudLayout->addWidget(m_btnZoomOut);
-    hudLayout->addWidget(m_btnZoomReset);
-    hudLayout->addWidget(m_btnZoomIn);
-    hudLayout->addWidget(m_btnFitWidth);
-    addSep();
-    hudLayout->addWidget(m_btnInfo);
-    hudLayout->addWidget(m_btnPrint);
-    hudLayout->addWidget(m_btnToc);
-    addSep();
-    hudLayout->addWidget(m_btnStudio);
 
     m_hudOpacity = new QGraphicsOpacityEffect(m_hudPill);
     m_hudOpacity->setOpacity(0.0);
@@ -244,9 +212,37 @@ bool PdfBaseViewer::loadFile(const QString &filePath)
     m_filePath = filePath;
 
     m_doc = Poppler::Document::load(filePath);
-    if (!m_doc || m_doc->isLocked()) {
+    if (!m_doc) {
         clear();
         return false;
+    }
+
+    if (m_doc->isLocked()) {
+        bool ok = false;
+        while (m_doc->isLocked()) {
+            QString password = QInputDialog::getText(
+                this,
+                tr("Password Protected PDF"),
+                tr("This document is encrypted. Please enter the password to open it:"),
+                QLineEdit::Password,
+                QString(),
+                &ok
+            );
+            if (!ok) {
+                // User cancelled
+                clear();
+                return false;
+            }
+            QByteArray pwdUtf8 = password.toUtf8();
+            if (m_doc->unlock(pwdUtf8, pwdUtf8)) {
+                break;
+            }
+            QMessageBox::warning(
+                this,
+                tr("Incorrect Password"),
+                tr("The password you entered is incorrect. Please try again.")
+            );
+        }
     }
 
     m_doc->setRenderHint(Poppler::Document::Antialiasing, true);
@@ -255,8 +251,10 @@ bool PdfBaseViewer::loadFile(const QString &filePath)
 
     m_pageCount = m_doc->numPages();
     m_currentPage = 0;
+    m_rotationDegrees = 0;
     m_zoomFactor = 1.0;
     m_fitToWidthMode = true;
+    m_fitToPageMode = false;
 
     populateOutline();
     fitToWidth();
@@ -264,6 +262,12 @@ bool PdfBaseViewer::loadFile(const QString &filePath)
 
     showHud(true);
     emit pageChanged(m_currentPage + 1, m_pageCount);
+    if (m_pageChangedCallback) {
+        m_pageChangedCallback(m_currentPage + 1, m_pageCount);
+    }
+    if (m_zoomChangedCallback) {
+        m_zoomChangedCallback(m_zoomFactor);
+    }
     return true;
 }
 
@@ -273,6 +277,8 @@ void PdfBaseViewer::clear()
     m_doc.reset();
     m_currentPage = 0;
     m_pageCount = 0;
+    m_rotationDegrees = 0;
+    clearSearch();
     m_hasOutline = false;
     if (m_tocModel) m_tocModel->clear();
     if (m_tocContainer) m_tocContainer->hide();
@@ -287,7 +293,12 @@ QSize PdfBaseViewer::pageSize() const
         return QSize();
     }
     std::unique_ptr<Poppler::Page> p(m_doc->page(m_currentPage));
-    return p ? p->pageSize() : QSize();
+    if (!p) return QSize();
+    QSize sz = p->pageSize();
+    if (m_rotationDegrees == 90 || m_rotationDegrees == 270) {
+        sz.transpose();
+    }
+    return sz;
 }
 
 void PdfBaseViewer::nextPage()
@@ -315,29 +326,46 @@ void PdfBaseViewer::scrollToPage(int page)
 
     m_currentPage = page;
     QRect pRect = m_canvas->pageRect(page);
-    if (!pRect.isEmpty() && m_scrollArea) {
-        m_scrollArea->verticalScrollBar()->setValue(pRect.top() - 10);
+    if (!pRect.isEmpty() && m_scrollArea && m_scrollArea->viewport()) {
+        int viewH = m_scrollArea->viewport()->height();
+        int targetY = pRect.top() - 16;
+        if (m_fitToPageMode && pRect.height() < viewH) {
+            targetY = pRect.top() - std::max(16, (viewH - pRect.height()) / 2);
+        }
+        m_scrollArea->verticalScrollBar()->setValue(targetY);
     }
     updateNavControls();
     showHud(true);
     emit pageChanged(m_currentPage + 1, m_pageCount);
+    if (m_pageChangedCallback) {
+        m_pageChangedCallback(m_currentPage + 1, m_pageCount);
+    }
 }
 
 void PdfBaseViewer::zoomIn()
 {
-    m_fitToWidthMode = false;
-    setZoomFactor(m_zoomFactor * 1.25);
+    if (m_scrollArea && m_scrollArea->viewport()) {
+        QPoint center(m_scrollArea->viewport()->width() / 2, m_scrollArea->viewport()->height() / 2);
+        zoomAt(center, 1.25);
+    } else {
+        setZoomFactor(m_zoomFactor * 1.25);
+    }
 }
 
 void PdfBaseViewer::zoomOut()
 {
-    m_fitToWidthMode = false;
-    setZoomFactor(m_zoomFactor / 1.25);
+    if (m_scrollArea && m_scrollArea->viewport()) {
+        QPoint center(m_scrollArea->viewport()->width() / 2, m_scrollArea->viewport()->height() / 2);
+        zoomAt(center, 1.0 / 1.25);
+    } else {
+        setZoomFactor(m_zoomFactor / 1.25);
+    }
 }
 
 void PdfBaseViewer::resetZoom()
 {
     m_fitToWidthMode = false;
+    m_fitToPageMode = false;
     setZoomFactor(1.0);
 }
 
@@ -346,13 +374,9 @@ void PdfBaseViewer::fitToWidth()
     if (!m_doc || m_pageCount <= 0 || !m_scrollArea) return;
 
     m_fitToWidthMode = true;
-    std::unique_ptr<Poppler::Page> p(m_doc->page(m_currentPage));
-    if (!p) return;
-
-    QSizeF pSize = p->pageSize();
-    int viewW = std::max(200, m_scrollArea->viewport()->width() - 48);
-    double targetZoom = (double)viewW / std::max(10.0, pSize.width());
-    setZoomFactor(std::clamp(targetZoom, 0.25, 4.0));
+    m_fitToPageMode = false;
+    updateCanvasLayout();
+    showHud(true);
 }
 
 void PdfBaseViewer::fitToPage()
@@ -360,26 +384,107 @@ void PdfBaseViewer::fitToPage()
     if (!m_doc || m_pageCount <= 0 || !m_scrollArea) return;
 
     m_fitToWidthMode = false;
-    std::unique_ptr<Poppler::Page> p(m_doc->page(m_currentPage));
-    if (!p) return;
-
-    QSizeF pSize = p->pageSize();
-    int viewW = std::max(200, m_scrollArea->viewport()->width() - 48);
-    int viewH = std::max(200, m_scrollArea->viewport()->height() - 48);
-
-    double zoomW = (double)viewW / std::max(10.0, pSize.width());
-    double zoomH = (double)viewH / std::max(10.0, pSize.height());
-    setZoomFactor(std::clamp(std::min(zoomW, zoomH), 0.2, 3.5));
+    m_fitToPageMode = true;
+    updateCanvasLayout();
+    showHud(true);
 }
 
 void PdfBaseViewer::setZoomFactor(double factor)
 {
+    m_fitToWidthMode = false;
+    m_fitToPageMode = false;
     m_zoomFactor = std::clamp(factor, 0.15, 6.0);
-    if (m_canvas && m_scrollArea) {
-        int availW = m_scrollArea->viewport()->width();
-        m_canvas->setDocument(m_doc.get(), m_zoomFactor, availW);
-    }
+    updateCanvasLayout();
     showHud(true);
+}
+
+void PdfBaseViewer::zoomAt(const QPoint &viewportPos, double factor)
+{
+    if (!m_canvas || !m_scrollArea || !m_scrollArea->viewport() || !m_doc) return;
+
+    QPoint canvasPos = m_canvas->mapFrom(m_scrollArea->viewport(), viewportPos);
+    int pageIdx = m_canvas->pageIndexAtY(canvasPos.y());
+    QRect pRect = m_canvas->pageRect(pageIdx);
+
+    double normX = 0.5;
+    double normY = 0.5;
+    if (!pRect.isEmpty()) {
+        normX = std::clamp((double)(canvasPos.x() - pRect.left()) / pRect.width(), 0.0, 1.0);
+        normY = std::clamp((double)(canvasPos.y() - pRect.top()) / pRect.height(), 0.0, 1.0);
+    }
+
+    m_fitToWidthMode = false;
+    m_fitToPageMode = false;
+    m_zoomFactor = std::clamp(m_zoomFactor * factor, 0.15, 6.0);
+    updateCanvasLayout();
+
+    QRect newPRect = m_canvas->pageRect(pageIdx);
+    if (!newPRect.isEmpty()) {
+        int targetCanvasX = newPRect.left() + (int)std::round(normX * newPRect.width());
+        int targetCanvasY = newPRect.top() + (int)std::round(normY * newPRect.height());
+
+        int targetScrollX = targetCanvasX - viewportPos.x();
+        int targetScrollY = targetCanvasY - viewportPos.y();
+
+        if (m_scrollArea->horizontalScrollBar()) {
+            m_scrollArea->horizontalScrollBar()->setValue(targetScrollX);
+        }
+        if (m_scrollArea->verticalScrollBar()) {
+            m_scrollArea->verticalScrollBar()->setValue(targetScrollY);
+        }
+    }
+
+    showHud(true);
+}
+
+void PdfBaseViewer::toggleZoomTool(bool active)
+{
+    if (m_canvas) {
+        m_canvas->setHandToolActive(active);
+    }
+}
+
+bool PdfBaseViewer::isZoomToolActive() const
+{
+    return m_canvas ? m_canvas->isHandToolActive() : false;
+}
+
+void PdfBaseViewer::rotateClockwise()
+{
+    m_rotationDegrees = (m_rotationDegrees + 90) % 360;
+    updateCanvasLayout();
+    showHud(true);
+}
+
+void PdfBaseViewer::rotateCounterClockwise()
+{
+    m_rotationDegrees = (m_rotationDegrees + 270) % 360;
+    updateCanvasLayout();
+    showHud(true);
+}
+
+void PdfBaseViewer::updateCanvasLayout()
+{
+    if (!m_canvas || !m_scrollArea) return;
+
+    int availW = 800;
+    int availH = 600;
+    if (m_scrollArea->viewport() && m_scrollArea->viewport()->width() > 50 && m_scrollArea->viewport()->height() > 50) {
+        availW = m_scrollArea->viewport()->width();
+        availH = m_scrollArea->viewport()->height();
+    } else if (width() > 50 && height() > 50) {
+        availW = width();
+        availH = height();
+    }
+
+    m_canvas->setDocument(m_doc.get(), m_zoomFactor, m_rotationDegrees, availW, availH, m_fitToPageMode, m_fitToWidthMode);
+
+    if (m_currentPage >= 0 && m_currentPage < m_canvas->pageCount()) {
+        m_zoomFactor = m_canvas->pageScale(m_currentPage);
+    }
+    if (m_zoomChangedCallback) {
+        m_zoomChangedCallback(m_zoomFactor);
+    }
 }
 
 void PdfBaseViewer::toggleTocSidebar()
@@ -401,20 +506,46 @@ bool PdfBaseViewer::findNext(const QString &text, bool matchCase, bool *wrapped)
     Poppler::Page::SearchFlags flags = Poppler::Page::NoSearchFlags;
     if (!matchCase) flags |= Poppler::Page::IgnoreCase;
 
-    int startPage = (m_currentPage + 1) % m_pageCount;
+    Poppler::Page::Rotation r = Poppler::Page::Rotate0;
+    if (m_rotationDegrees == 90) r = Poppler::Page::Rotate90;
+    else if (m_rotationDegrees == 180) r = Poppler::Page::Rotate180;
+    else if (m_rotationDegrees == 270) r = Poppler::Page::Rotate270;
+
+    bool sameQuery = (m_lastSearchText == text && m_lastSearchCase == matchCase);
+    m_lastSearchText = text;
+    m_lastSearchCase = matchCase;
+
+    // Check if there are further matches on the current page
+    if (sameQuery && m_searchHighlightPage >= 0 && m_searchHighlightPage < m_pageCount) {
+        std::unique_ptr<Poppler::Page> curPage(m_doc->page(m_searchHighlightPage));
+        if (curPage) {
+            QList<QRectF> curMatches = curPage->search(text, flags, r);
+            if (m_searchMatchIndex + 1 < curMatches.size()) {
+                m_searchMatchIndex++;
+                m_canvas->setSearchHighlight(m_searchHighlightPage, curMatches[m_searchMatchIndex]);
+                scrollToPage(m_searchHighlightPage);
+                return true;
+            }
+        }
+    }
+
+    // Search subsequent pages
+    int startPage = (m_searchHighlightPage >= 0) ? (m_searchHighlightPage + 1) % m_pageCount : m_currentPage;
     for (int step = 0; step < m_pageCount; ++step) {
         int pageIdx = (startPage + step) % m_pageCount;
         std::unique_ptr<Poppler::Page> page(m_doc->page(pageIdx));
-        if (page) {
-            QList<QRectF> matches = page->search(text, flags);
-            if (!matches.isEmpty()) {
-                if (wrapped && pageIdx <= m_currentPage && step > 0) {
-                    *wrapped = true;
-                }
-                m_canvas->setSearchHighlight(pageIdx, matches.first());
-                scrollToPage(pageIdx);
-                return true;
+        if (!page) continue;
+
+        QList<QRectF> matches = page->search(text, flags, r);
+        if (!matches.isEmpty()) {
+            if (wrapped && pageIdx <= m_currentPage && step > 0) {
+                *wrapped = true;
             }
+            m_searchHighlightPage = pageIdx;
+            m_searchMatchIndex = 0;
+            m_canvas->setSearchHighlight(pageIdx, matches.first());
+            scrollToPage(pageIdx);
+            return true;
         }
     }
     return false;
@@ -428,20 +559,46 @@ bool PdfBaseViewer::findPrev(const QString &text, bool matchCase, bool *wrapped)
     Poppler::Page::SearchFlags flags = Poppler::Page::NoSearchFlags;
     if (!matchCase) flags |= Poppler::Page::IgnoreCase;
 
-    int startPage = (m_currentPage - 1 + m_pageCount) % m_pageCount;
+    Poppler::Page::Rotation r = Poppler::Page::Rotate0;
+    if (m_rotationDegrees == 90) r = Poppler::Page::Rotate90;
+    else if (m_rotationDegrees == 180) r = Poppler::Page::Rotate180;
+    else if (m_rotationDegrees == 270) r = Poppler::Page::Rotate270;
+
+    bool sameQuery = (m_lastSearchText == text && m_lastSearchCase == matchCase);
+    m_lastSearchText = text;
+    m_lastSearchCase = matchCase;
+
+    // Check if there are earlier matches on the current page
+    if (sameQuery && m_searchHighlightPage >= 0 && m_searchHighlightPage < m_pageCount && m_searchMatchIndex > 0) {
+        std::unique_ptr<Poppler::Page> curPage(m_doc->page(m_searchHighlightPage));
+        if (curPage) {
+            QList<QRectF> curMatches = curPage->search(text, flags, r);
+            if (m_searchMatchIndex - 1 < curMatches.size()) {
+                m_searchMatchIndex--;
+                m_canvas->setSearchHighlight(m_searchHighlightPage, curMatches[m_searchMatchIndex]);
+                scrollToPage(m_searchHighlightPage);
+                return true;
+            }
+        }
+    }
+
+    // Search previous pages
+    int startPage = (m_searchHighlightPage >= 0) ? (m_searchHighlightPage - 1 + m_pageCount) % m_pageCount : m_currentPage;
     for (int step = 0; step < m_pageCount; ++step) {
         int pageIdx = (startPage - step + m_pageCount) % m_pageCount;
         std::unique_ptr<Poppler::Page> page(m_doc->page(pageIdx));
-        if (page) {
-            QList<QRectF> matches = page->search(text, flags);
-            if (!matches.isEmpty()) {
-                if (wrapped && pageIdx >= m_currentPage && step > 0) {
-                    *wrapped = true;
-                }
-                m_canvas->setSearchHighlight(pageIdx, matches.last());
-                scrollToPage(pageIdx);
-                return true;
+        if (!page) continue;
+
+        QList<QRectF> matches = page->search(text, flags, r);
+        if (!matches.isEmpty()) {
+            if (wrapped && pageIdx >= m_currentPage && step > 0) {
+                *wrapped = true;
             }
+            m_searchHighlightPage = pageIdx;
+            m_searchMatchIndex = matches.size() - 1;
+            m_canvas->setSearchHighlight(pageIdx, matches.last());
+            scrollToPage(pageIdx);
+            return true;
         }
     }
     return false;
@@ -449,6 +606,9 @@ bool PdfBaseViewer::findPrev(const QString &text, bool matchCase, bool *wrapped)
 
 void PdfBaseViewer::clearSearch()
 {
+    m_searchHighlightPage = -1;
+    m_searchMatchIndex = -1;
+    m_lastSearchText.clear();
     if (m_canvas) {
         m_canvas->clearSearchHighlight();
     }
@@ -505,68 +665,18 @@ QImage PdfBaseViewer::renderCurrentPageForOcr(int dpi) const
 
 void PdfBaseViewer::showDocumentInfo()
 {
-    if (!m_doc) return;
+    PdfDocumentOps::showDocumentInfoDialog(this, m_doc.get(), m_filePath, m_currentPage, m_pageCount);
+}
 
-    QDialog dlg(this);
-    dlg.setWindowTitle(tr("Document Metadata & Information"));
-    dlg.resize(480, 420);
-
-    QVBoxLayout *dlgLayout = new QVBoxLayout(&dlg);
-    QFormLayout *form = new QFormLayout();
-    form->setSpacing(8);
-
-    auto addRow = [form](const QString &label, const QString &val) {
-        QLabel *v = new QLabel(val.isEmpty() ? QStringLiteral("—") : val);
-        v->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        v->setWordWrap(true);
-        form->addRow(QString("<b>%1:</b>").arg(label), v);
-    };
-
-    QFileInfo fi(m_filePath);
-    addRow(tr("File Name"), fi.fileName());
-    addRow(tr("Location"), fi.absolutePath());
-    addRow(tr("File Size"), QString("%1 KB").arg(fi.size() / 1024));
-    addRow(tr("Total Pages"), QString::number(m_pageCount));
-
-    std::unique_ptr<Poppler::Page> p(m_doc->page(m_currentPage));
-    if (p) {
-        QSizeF sz = p->pageSize();
-        double wMm = sz.width() * 25.4 / 72.0;
-        double hMm = sz.height() * 25.4 / 72.0;
-        addRow(tr("Page Dimensions"), QString("%1 × %2 mm (%3 × %4 pt)")
-            .arg(wMm, 0, 'f', 1).arg(hMm, 0, 'f', 1)
-            .arg(sz.width(), 0, 'f', 0).arg(sz.height(), 0, 'f', 0));
+bool PdfBaseViewer::saveAs(const QString &targetFilePath)
+{
+    if (m_filePath.isEmpty() || !QFile::exists(m_filePath) || targetFilePath.isEmpty()) {
+        return false;
     }
-
-    addRow(tr("Title"), m_doc->info("Title"));
-    addRow(tr("Author"), m_doc->info("Author"));
-    addRow(tr("Subject"), m_doc->info("Subject"));
-    addRow(tr("Keywords"), m_doc->info("Keywords"));
-    addRow(tr("Creator"), m_doc->info("Creator"));
-    addRow(tr("Producer"), m_doc->info("Producer"));
-
-    QDateTime cDate = m_doc->creationDate();
-    if (cDate.isValid()) addRow(tr("Created"), cDate.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
-
-    QDateTime mDate = m_doc->modificationDate();
-    if (mDate.isValid()) addRow(tr("Modified"), mDate.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
-
-    auto ver = m_doc->getPdfVersion();
-    addRow(tr("PDF Version"), QString("v%1.%2").arg(ver.major).arg(ver.minor));
-    addRow(tr("Fast Web View"), m_doc->isLinearized() ? tr("Yes (Linearized)") : tr("No"));
-    addRow(tr("Encrypted"), m_doc->isEncrypted() ? tr("Yes (Password Protected)") : tr("No"));
-
-    dlgLayout->addLayout(form);
-    dlgLayout->addStretch(1);
-
-    QHBoxLayout *btnRow = new QHBoxLayout();
-    btnRow->addStretch(1);
-    QPushButton *btnClose = new QPushButton(tr("Close"), &dlg);
-    connect(btnClose, &QPushButton::clicked, &dlg, &QDialog::accept);
-    btnRow->addWidget(btnClose);
-    dlgLayout->addLayout(btnRow);
-
-    dlg.exec();
+    if (QFile::exists(targetFilePath)) {
+        QFile::remove(targetFilePath);
+    }
+    return QFile::copy(m_filePath, targetFilePath);
 }
 
 void PdfBaseViewer::printDocument()
@@ -612,6 +722,13 @@ bool PdfBaseViewer::saveCurrentPageAsPdf(const QString &outputPath, QString *err
         return false;
     }
 
+    if (!m_filePath.isEmpty() && QFile::exists(m_filePath)) {
+        QString qpdfErr;
+        if (PdfDocumentOps::extractSinglePageToPdf(m_filePath, m_currentPage, outputPath, qpdfErr)) {
+            return true;
+        }
+    }
+
     std::unique_ptr<Poppler::Page> page(m_doc->page(m_currentPage));
     if (!page) {
         if (errorMsg) *errorMsg = tr("Could not access current page.");
@@ -619,6 +736,9 @@ bool PdfBaseViewer::saveCurrentPageAsPdf(const QString &outputPath, QString *err
     }
 
     QSizeF pSizePoints = page->pageSize();
+    if (m_rotationDegrees == 90 || m_rotationDegrees == 270) {
+        pSizePoints.transpose();
+    }
 
     QPdfWriter writer(outputPath);
     writer.setPageSize(QPageSize(pSizePoints, QPageSize::Point));
@@ -657,20 +777,41 @@ bool PdfBaseViewer::saveCurrentPageAsImage(const QString &outputPath, const QStr
 
 void PdfBaseViewer::updateTheme()
 {
-    bool isDark = ThemeManager::isDarkTheme();
-    QString bgCanvas = isDark ? QStringLiteral("#0f172a") : QStringLiteral("#f1f5f9");
-    QString bgHud = isDark ? QStringLiteral("rgba(15, 23, 42, 0.92)") : QStringLiteral("rgba(255, 255, 255, 0.95)");
-    QString borderHud = isDark ? QStringLiteral("rgba(51, 65, 85, 0.8)") : QStringLiteral("rgba(203, 213, 225, 0.8)");
-    QString textHud = isDark ? QStringLiteral("#f8fafc") : QStringLiteral("#0f172a");
+    ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    bool isDark = ThemeManager::isDark(preset);
+    QString bgCanvas;
+    QString bgHud;
+    QString borderHud;
+    QString textHud;
+
+    if (preset == ThemePreset::ZincGray) {
+        bgCanvas = QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #3e3f44, stop:0.5 #343539, stop:1 #2b2c30)");
+        bgHud = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(88, 89, 96, 0.94), stop:1 rgba(54, 55, 59, 0.96))");
+        borderHud = QStringLiteral("rgba(255, 255, 255, 0.20)");
+        textHud = QStringLiteral("#ffffff");
+    } else if (isDark) {
+        bgCanvas = QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1e2538, stop:0.5 #151a28, stop:1 #0e121c)");
+        bgHud = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 41, 59, 0.94), stop:1 rgba(15, 23, 42, 0.96))");
+        borderHud = QStringLiteral("rgba(255, 255, 255, 0.14)");
+        textHud = QStringLiteral("#f8fafc");
+    } else {
+        bgCanvas = QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #edf0f4, stop:0.5 #e2e6eb, stop:1 #d6dbe2)");
+        bgHud = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.94), stop:1 rgba(235, 239, 245, 0.96))");
+        borderHud = QStringLiteral("rgba(15, 23, 42, 0.12)");
+        textHud = QStringLiteral("#1e293b");
+    }
 
     if (m_scrollArea) {
-        m_scrollArea->setStyleSheet(QString("QScrollArea { background-color: %1; border: none; }").arg(bgCanvas));
+        m_scrollArea->setStyleSheet(
+            QString("QScrollArea { background: %1; border: none; }\n").arg(bgCanvas) +
+            ThemeManager::scrollBarStyleSheet(preset)
+        );
     }
 
     if (m_hudPill) {
         m_hudPill->setStyleSheet(QString(
             "QWidget#PdfBaseHudPill {"
-            "  background-color: %1;"
+            "  background: %1;"
             "  border: 1px solid %2;"
             "  border-radius: 18px;"
             "}"
@@ -681,39 +822,71 @@ void PdfBaseViewer::updateTheme()
             "  font-size: 11px;"
             "}"
             "QToolButton:hover {"
-            "  background-color: rgba(56, 189, 248, 0.20);"
+            "  background-color: rgba(56, 189, 248, 0.22);"
             "  border-radius: 14px;"
             "}"
             "QSpinBox {"
             "  background-color: transparent;"
             "  color: %3;"
             "  border: 1px solid %2;"
-            "  border-radius: 4px;"
+            "  border-radius: 8px;"
             "  font-weight: 600;"
             "}"
         ).arg(bgHud, borderHud, textHud));
+
+        if (m_btnPrev) {
+            m_btnPrev->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronLeft, QColor(textHud), 14));
+            m_btnPrev->setIconSize(QSize(14, 14));
+        }
+        if (m_btnNext) {
+            m_btnNext->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronRight, QColor(textHud), 14));
+            m_btnNext->setIconSize(QSize(14, 14));
+        }
     }
+}
+
+void PdfBaseViewer::repositionHud()
+{
+    if (!m_hudPill) return;
+    m_hudPill->raise();
+    int hudW = m_hudPill->sizeHint().width() + 10;
+    int x = std::max(20, (width() - hudW) / 2);
+    int y = height() - m_hudPill->height() - 20;
+    m_hudPill->setGeometry(x, y, hudW, m_hudPill->height());
 }
 
 void PdfBaseViewer::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
-    if (m_fitToWidthMode) {
-        fitToWidth();
+    repositionHud();
+}
+
+void PdfBaseViewer::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    if (layout()) {
+        layout()->activate();
     }
-    if (m_hudPill) {
-        m_hudPill->raise();
-        int hudW = m_hudPill->sizeHint().width() + 10;
-        int x = std::max(20, (width() - hudW) / 2);
-        int y = height() - m_hudPill->height() - 20;
-        m_hudPill->setGeometry(x, y, hudW, m_hudPill->height());
+    if (m_fitToPageMode || m_fitToWidthMode) {
+        updateCanvasLayout();
+        scrollToPage(m_currentPage);
     }
+    repositionHud();
 }
 
 bool PdfBaseViewer::eventFilter(QObject *watched, QEvent *event)
 {
+    if (m_scrollArea && watched == m_scrollArea->viewport()) {
+        if (event->type() == QEvent::Resize) {
+            if (m_fitToPageMode || m_fitToWidthMode) {
+                updateCanvasLayout();
+            }
+        }
+    }
     if (event->type() == QEvent::MouseMove || event->type() == QEvent::Wheel) {
-        showHud(true);
+        if (m_hudPill && (m_hudOpacity->opacity() < 0.95 || (m_hudTimer && !m_hudTimer->isActive()))) {
+            showHud(true);
+        }
     }
     return QWidget::eventFilter(watched, event);
 }
@@ -731,16 +904,22 @@ void PdfBaseViewer::onTocItemActivated(const QModelIndex &index)
 
 void PdfBaseViewer::onCanvasPageScrolled(int pageIndex)
 {
-    if (pageIndex >= 0 && pageIndex < m_pageCount) {
+    if (pageIndex >= 0 && pageIndex < m_pageCount && pageIndex != m_currentPage) {
         m_currentPage = pageIndex;
         updateNavControls();
         emit pageChanged(m_currentPage + 1, m_pageCount);
+        if (m_pageChangedCallback) {
+            m_pageChangedCallback(m_currentPage + 1, m_pageCount);
+        }
     }
 }
 
 void PdfBaseViewer::onCanvasSelectionChanged(bool hasSelection)
 {
     emit selectionChanged(hasSelection);
+    if (m_selectionChangedCallback) {
+        m_selectionChangedCallback();
+    }
 }
 
 void PdfBaseViewer::populateOutline()
@@ -748,7 +927,6 @@ void PdfBaseViewer::populateOutline()
     m_tocModel->clear();
     if (!m_doc) {
         m_hasOutline = false;
-        m_btnToc->setVisible(false);
         m_tocContainer->hide();
         emit outlineAvailabilityChanged(false);
         return;
@@ -757,14 +935,12 @@ void PdfBaseViewer::populateOutline()
     QVector<Poppler::OutlineItem> rootItems = m_doc->outline();
     if (rootItems.isEmpty()) {
         m_hasOutline = false;
-        m_btnToc->setVisible(false);
         m_tocContainer->hide();
         emit outlineAvailabilityChanged(false);
         return;
     }
 
     m_hasOutline = true;
-    m_btnToc->setVisible(true);
     buildOutlineBranch(m_tocModel->invisibleRootItem(), rootItems);
     emit outlineAvailabilityChanged(true);
 }
@@ -835,4 +1011,24 @@ void PdfBaseViewer::hideHud()
     m_hudAnim->setStartValue(m_hudOpacity->opacity());
     m_hudAnim->setEndValue(0.0);
     m_hudAnim->start();
+}
+
+void PdfBaseViewer::setEditMode(bool editMode)
+{
+    m_isEditMode = editMode;
+    if (m_canvas) {
+        m_canvas->setEditMode(editMode);
+    }
+    if (m_editorOverlay) {
+        m_editorOverlay->setVisible(editMode);
+    }
+    updateNavControls();
+}
+
+void PdfBaseViewer::setEditorOverlay(QWidget *overlay)
+{
+    m_editorOverlay = overlay;
+    if (m_canvas) {
+        m_canvas->setEditorOverlay(overlay);
+    }
 }

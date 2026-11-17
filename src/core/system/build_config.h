@@ -133,6 +133,7 @@ public:
     static bool isPkgInstalled(const QString &pkgName);
     static void clearPackageCache();
     static bool isExecutableAvailable(const QString &exeName);
+    static QString findExecutable(const QString &exeName);
     static bool isQpdfAvailable();
     static QString qpdfExecutable();
     static bool isTesseractAvailable();
@@ -140,6 +141,9 @@ public:
     static bool isPdfimagesAvailable();
     static QString pdfuniteExecutable();
     static bool isPdfuniteAvailable();
+    static QString pdfsigExecutable();
+    static bool isPdfsigAvailable();
+    static QString opensslExecutable();
     static QString sevenZipExecutable();
     static bool isSevenZipAvailable();
     static bool isPopplerDataInstalled();
@@ -159,12 +163,18 @@ public:
     
     /**
      * @enum HardwareProfile
-     * @brief High-level hardware profiles governing source builds vs packaged libraries.
+     * @brief Compilation scope levels governing source builds vs packaged libraries.
      */
     enum class HardwareProfile {
-        HighPerformance, ///< Potente / Desktop: Everything compiled from source with extreme optimization
-        Balanced,        ///< Bilanciato: Everything from system precompiled packages
-        Custom           ///< Manual fine-grained override via Compiler Wizard
+        SystemPackages, ///< Level 1: System Packages (No compilation / zero build)
+        MissingOnly,    ///< Level 2: Missing components only compiled from source
+        AllStable,      ///< Level 3: All standard stable components compiled from source
+        AllSource,      ///< Level 4: All components from source, including unrecommended
+        Custom,         ///< Manual fine-grained override via Compiler Wizard
+
+        // Backwards-compatibility aliases
+        HighPerformance = AllStable,
+        Balanced = MissingOnly
     };
 
     /**

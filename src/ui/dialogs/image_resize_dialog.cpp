@@ -14,7 +14,7 @@
 #include <cmath>
 
 ImageResizeDialog::ImageResizeDialog(int originalWidth, int originalHeight, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_origWidth(std::max(1, originalWidth))
     , m_origHeight(std::max(1, originalHeight))
 {
@@ -27,8 +27,8 @@ ImageResizeDialog::ImageResizeDialog(int originalWidth, int originalHeight, QWid
 
 void ImageResizeDialog::setupUi()
 {
-    auto *rootLayout = new QVBoxLayout(this);
-    rootLayout->setContentsMargins(18, 18, 18, 18);
+    auto *rootLayout = contentLayout();
+    rootLayout->setContentsMargins(4, 4, 4, 4);
     rootLayout->setSpacing(14);
 
     // 1. Header Banner

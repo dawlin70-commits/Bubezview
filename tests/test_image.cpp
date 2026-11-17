@@ -53,8 +53,8 @@ void TestImage::initTestCase()
 void TestImage::testTransparencyModeDefault()
 {
     ImageViewer viewer;
-    // Default should be White (solid opaque background removing transparency)
-    QCOMPARE(viewer.transparencyMode(), ImageViewer::TransparencyMode::White);
+    // Default must be Checkerboard (fixed app-wide behavior, no user setting)
+    QCOMPARE(viewer.transparencyMode(), ImageViewer::TransparencyMode::Checkerboard);
 }
 
 void TestImage::testSetTransparencyMode()

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QString>
 
 class QLineEdit;
@@ -17,7 +17,7 @@ class QProgressBar;
  * @class PdfRepairDialog
  * @brief Dialog that guides the user through repairing damaged PDFs using QPDF's xref reconstruction engine.
  */
-class PdfRepairDialog : public QDialog
+class PdfRepairDialog : public FramelessDialog
 {
     Q_OBJECT
 

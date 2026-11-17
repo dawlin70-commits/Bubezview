@@ -6,7 +6,8 @@
 #include "build_console_dialog.h"
 #include "update_manager.h"
 #include "build_config.h"
-#include "base_skin.h"
+#include "package_manager_helper.h"
+#include "core/services/plugin_manager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -20,8 +21,13 @@
 #include <QApplication>
 #include <QTextCursor>
 
+#if defined(Q_OS_UNIX)
+#include <signal.h>
+#include <unistd.h>
+#endif
+
 BuildConsoleDialog::BuildConsoleDialog(QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_lblTitle(nullptr)
     , m_lblStatus(nullptr)
     , m_progressBar(nullptr)
@@ -37,10 +43,27 @@ BuildConsoleDialog::BuildConsoleDialog(QWidget *parent)
 
 BuildConsoleDialog::~BuildConsoleDialog()
 {
-    if (m_process && m_process->state() != QProcess::NotRunning) {
-        m_process->kill();
-        m_process->waitForFinished(1000);
+    terminateProcessGroup();
+}
+
+void BuildConsoleDialog::terminateProcessGroup()
+{
+    if (!m_process || m_process->state() == QProcess::NotRunning) {
+        return;
     }
+#if defined(Q_OS_UNIX)
+    qint64 pid = m_process->processId();
+    if (pid > 0) {
+        ::kill(-static_cast<pid_t>(pid), SIGTERM);
+        if (!m_process->waitForFinished(500)) {
+            ::kill(-static_cast<pid_t>(pid), SIGKILL);
+            m_process->waitForFinished(500);
+        }
+        return;
+    }
+#endif
+    m_process->kill();
+    m_process->waitForFinished(500);
 }
 
 void BuildConsoleDialog::setupUi()
@@ -49,9 +72,9 @@ void BuildConsoleDialog::setupUi()
     resize(700, 480);
     setMinimumSize(560, 380);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(10);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     // Header section
     m_lblTitle = new QLabel(tr("<b>⚙️ Recompiling BubezView</b>"), this);
@@ -120,6 +143,10 @@ bool BuildConsoleDialog::startBuild()
 
 bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
 {
+    if (isBuilding()) {
+        return false;
+    }
+
     QString scriptPath = UpdateManager::instance().findInstallerScript();
     if (scriptPath.isEmpty()) {
         m_lblStatus->setText(tr("❌ Installer script not found."));
@@ -144,6 +171,11 @@ bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
     if (!m_process) {
         m_process = new QProcess(this);
         m_process->setProcessChannelMode(QProcess::MergedChannels);
+#if defined(Q_OS_UNIX)
+        m_process->setChildProcessModifier([]() {
+            ::setpgid(0, 0);
+        });
+#endif
         connect(m_process, &QProcess::readyReadStandardOutput, this, &BuildConsoleDialog::onReadyReadStandardOutput);
         connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
                 this, &BuildConsoleDialog::onProcessFinished);
@@ -161,6 +193,10 @@ bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
 
 bool BuildConsoleDialog::startBuildForComponent(const QString &componentId)
 {
+    if (isBuilding()) {
+        return false;
+    }
+
     QString scriptPath = UpdateManager::instance().findInstallerScript();
     if (scriptPath.isEmpty()) {
         m_lblStatus->setText(tr("❌ Installer script not found."));
@@ -185,6 +221,11 @@ bool BuildConsoleDialog::startBuildForComponent(const QString &componentId)
     if (!m_process) {
         m_process = new QProcess(this);
         m_process->setProcessChannelMode(QProcess::MergedChannels);
+#if defined(Q_OS_UNIX)
+        m_process->setChildProcessModifier([]() {
+            ::setpgid(0, 0);
+        });
+#endif
         connect(m_process, &QProcess::readyReadStandardOutput, this, &BuildConsoleDialog::onReadyReadStandardOutput);
         connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
                 this, &BuildConsoleDialog::onProcessFinished);
@@ -263,6 +304,9 @@ void BuildConsoleDialog::onProcessFinished(int exitCode, int exitStatus)
         m_lblStatus->setStyleSheet("color: #10b981; font-size: 12px; font-weight: bold;");
         m_txtLog->append(tr("\n[Success] Recompilation finished successfully!"));
 
+        PluginManager::instance().discoverPlugins();
+        PackageManagerHelper::clearCaches();
+
         m_btnCancel->hide();
         m_btnRestart->hide();
         m_btnClose->show();
@@ -298,10 +342,8 @@ void BuildConsoleDialog::cancelBuild()
     );
 
     if (res == QMessageBox::Yes) {
-        if (m_process && m_process->state() != QProcess::NotRunning) {
-            m_process->kill();
-            m_process->waitForFinished(1500);
-        }
+        m_pendingComponents.clear();
+        terminateProcessGroup();
         m_lblStatus->setText(tr("⚠️ Compilation cancelled by user."));
         m_lblStatus->setStyleSheet("color: #f59e0b; font-size: 12px; font-weight: bold;");
         m_progressBar->setRange(0, 100);
@@ -319,14 +361,13 @@ void BuildConsoleDialog::restartApplication()
     // Detect if there is an active file open to restore it on relaunch
     QString curPath;
     QWidget *top = window();
-    if (auto *skin = qobject_cast<BaseSkin*>(top)) {
-        curPath = skin->currentFilePath();
-    } else {
+    if (top) {
+        curPath = top->property("currentFilePath").toString();
+    }
+    if (curPath.isEmpty()) {
         for (QWidget *w : QApplication::topLevelWidgets()) {
-            if (auto *bs = qobject_cast<BaseSkin*>(w)) {
-                curPath = bs->currentFilePath();
-                if (!curPath.isEmpty()) break;
-            }
+            curPath = w->property("currentFilePath").toString();
+            if (!curPath.isEmpty()) break;
         }
     }
 
@@ -348,10 +389,8 @@ void BuildConsoleDialog::closeEvent(QCloseEvent *event)
             QMessageBox::Yes | QMessageBox::No
         );
         if (res == QMessageBox::Yes) {
-            if (m_process) {
-                m_process->kill();
-                m_process->waitForFinished(1000);
-            }
+            m_pendingComponents.clear();
+            terminateProcessGroup();
             event->accept();
         } else {
             event->ignore();

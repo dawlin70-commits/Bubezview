@@ -4,6 +4,7 @@
  */
 
 #include "pdf_page_organizer_dialog.h"
+#include "pdf_repair_dialog.h"
 #include "package_manager_helper.h"
 #include "build_config.h"
 #include "fallback_notice_dialog.h"
@@ -501,6 +502,17 @@ void PdfPageOrganizerWidget::setupUi()
         m_btnReset->setCursor(Qt::PointingHandCursor);
         connect(m_btnReset, &QPushButton::clicked, this, &PdfPageOrganizerWidget::onResetOrder);
         topLay->addWidget(m_btnReset);
+
+        topLay->addSpacing(4);
+
+        QPushButton *btnRepair = new QPushButton(tr("🔧 Repair PDF..."), m_topBar);
+        btnRepair->setToolTip(tr("Repair corrupted cross-reference tables or defective PDF streams"));
+        btnRepair->setCursor(Qt::PointingHandCursor);
+        connect(btnRepair, &QPushButton::clicked, this, [this]() {
+            PdfRepairDialog dlg(m_sourcePath, this);
+            dlg.exec();
+        });
+        topLay->addWidget(btnRepair);
 
         topLay->addStretch(1);
 
@@ -1078,7 +1090,7 @@ bool PdfPageOrganizerWidget::executeQpdfReorder(const QString &destinationPath)
 /* ========================================================================= */
 
 PdfPageOrganizerDialog::PdfPageOrganizerDialog(const QString &pdfPath, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_organizerWidget(new PdfPageOrganizerWidget(this, true))
     , m_outPath()
 {
@@ -1086,7 +1098,7 @@ PdfPageOrganizerDialog::PdfPageOrganizerDialog(const QString &pdfPath, QWidget *
     resize(920, 640);
     setMinimumSize(680, 480);
 
-    auto *lay = new QVBoxLayout(this);
+    auto *lay = contentLayout();
     lay->setContentsMargins(0, 0, 0, 0);
     lay->addWidget(m_organizerWidget);
 

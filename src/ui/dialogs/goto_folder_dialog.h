@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "frameless_dialog.h"
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
@@ -19,7 +19,7 @@
  *
  * Provides shortcuts to Home, Documents, Downloads, Pictures, Videos, Desktop, Root, and custom directories.
  */
-class GotoFolderDialog : public QDialog {
+class GotoFolderDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

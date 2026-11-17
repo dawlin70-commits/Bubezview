@@ -87,5 +87,6 @@ private:
     QPushButton *m_btnSourceStatic;
     QPushButton *m_btnDiagnose;
     QLabel *m_lblDiagResult;
+    QPushButton *m_btnUninstall;
     QPushButton *m_btnAction;
 };

@@ -84,6 +84,20 @@ public:
     bool isEngineAvailable(FileCategory category) const;
 
     /**
+     * @brief Dynamically unloads a loaded plugin by its category and releases its memory.
+     * @param category Target file category.
+     * @return True if a plugin was found and unloaded.
+     */
+    bool unloadPlugin(FileCategory category);
+
+    /**
+     * @brief Dynamically unloads a loaded plugin by its ID ("pdf", "archive", "media").
+     * @param pluginId Plugin identifier.
+     * @return True if a plugin was found and unloaded.
+     */
+    bool unloadPlugin(const QString &pluginId);
+
+    /**
      * @brief Instantiates a viewer widget for the given category using the loaded plugin.
      * @param category Target file category.
      * @param parent Parent widget.

@@ -27,7 +27,7 @@ AudioTagDialog::AudioTagDialog(const QString &currentFilePath,
                                const QStringList &siblingFiles,
                                QWidget *parent,
                                bool isEmbedded)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_initialFilePath(currentFilePath)
     , m_currentTrackIdx(0)
     , m_isEmbedded(isEmbedded)
@@ -37,6 +37,8 @@ AudioTagDialog::AudioTagDialog(const QString &currentFilePath,
     setWindowTitle(tr("Audio Tag && Album Editor - BubezView"));
     if (m_isEmbedded) {
         setWindowFlags(Qt::Widget);
+        headerBar()->setVisible(false);
+        container()->setStyleSheet("background: transparent; border: none;");
         setMinimumSize(560, 340);
     } else {
         setMinimumSize(1020, 640);
@@ -86,8 +88,8 @@ void AudioTagDialog::refreshTheme()
 
 void AudioTagDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(18, 16, 18, 16);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(12);
 
     // 1. Top Action Toolbar: All batch action buttons in a clear, accessible row
@@ -991,11 +993,6 @@ void AudioTagDialog::applyTheme()
 
     if (preset == ThemePreset::DarkSlate) {
         setStyleSheet(
-            "QDialog {"
-            "   background-color: #22262b;"
-            "   color: #eff0f1;"
-            "   font-family: sans-serif;"
-            "}"
             "QLabel {"
             "   color: #eff0f1;"
             "   font-size: 13px;"
@@ -1111,11 +1108,6 @@ void AudioTagDialog::applyTheme()
         }
     } else if (preset == ThemePreset::BreezeDark) {
         setStyleSheet(
-            "QDialog {"
-            "   background-color: #181b1d;"
-            "   color: #eff0f1;"
-            "   font-family: sans-serif;"
-            "}"
             "QLabel {"
             "   color: #eff0f1;"
             "   font-size: 13px;"

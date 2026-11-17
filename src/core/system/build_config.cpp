@@ -5,6 +5,7 @@
 
 #include "build_config.h"
 #include "package_manager_helper.h"
+#include "core/services/plugin_manager.h"
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <QDir>
@@ -225,44 +226,102 @@ void BuildConfig::applyHardwareProfile(HardwareProfile profile)
     QSettings settings("Bubez", "BubezView");
 
     switch (profile) {
-    case HardwareProfile::HighPerformance: {
-        // 1. Potente / Desktop: All compilable engines compiled from source with extreme flags
-        m_cpuProfile = "native";
-        m_optimizationLevel = "O3";
-        m_customCompilerFlags = "";
-        settings.setValue("hardware_profile", "desktop");
-
-        // Set all compilable engines to LocalSource mode
-        const QStringList engines = {"engine-poppler", "poppler", "engine-libarchive", "libarchive", "qpdf", "tesseract"};
-        for (const QString &eng : engines) {
-            settings.setValue("component_mode_" + eng, "source");
-        }
-        m_staticPdf = true;
-        m_staticArchive = true;
-
-        // Runtime memory & preload tuning for maximum responsiveness
-        settings.setValue("prefetch_distance", 3);
-        settings.setValue("cache_budget_mb", 512);
-        break;
-    }
-    case HardwareProfile::Balanced: {
-        // 2. Bilanciato: All system precompiled packages from OS distribution
+    case HardwareProfile::SystemPackages: {
+        // Level 1: System Packages (No Compilation / Zero build)
         m_cpuProfile = "standard";
         m_optimizationLevel = "O2";
         m_customCompilerFlags = "";
-        settings.setValue("hardware_profile", "balanced");
+        settings.setValue("hardware_profile", "system_packages");
 
-        // Set all compilable engines to SystemBinary mode
-        const QStringList engines = {"engine-poppler", "poppler", "pdfimages", "engine-libarchive", "libarchive", "qpdf", "tesseract"};
+        const QStringList engines = {
+            "engine-poppler", "poppler", "pdfimages",
+            "engine-libarchive", "libarchive", "qpdf",
+            "tesseract", "engine-office", "librevenge", "mpv", "engine-mpv",
+            "7zip", "image-formats", "zstd", "xz"
+        };
         for (const QString &eng : engines) {
             settings.setValue("component_mode_" + eng, "system");
         }
         m_staticPdf = false;
         m_staticArchive = false;
+        m_enableInternalOffice = false;
 
-        // Runtime memory & preload tuning for balanced daily usage
         settings.setValue("prefetch_distance", 1);
         settings.setValue("cache_budget_mb", 256);
+        break;
+    }
+    case HardwareProfile::MissingOnly: {
+        // Level 2: Missing Components Only
+        m_cpuProfile = "native";
+        m_optimizationLevel = "O3";
+        m_customCompilerFlags = "";
+        settings.setValue("hardware_profile", "missing_only");
+
+        const QStringList engines = {
+            "engine-poppler", "poppler", "pdfimages",
+            "engine-libarchive", "libarchive", "qpdf",
+            "tesseract", "engine-office", "librevenge", "mpv", "engine-mpv",
+            "7zip", "image-formats", "zstd", "xz"
+        };
+        for (const QString &eng : engines) {
+            bool hasSys = hasSystemBinary(eng);
+            settings.setValue("component_mode_" + eng, hasSys ? "system" : "source");
+        }
+        m_staticPdf = !hasSystemBinary("poppler-qt6");
+        m_staticArchive = !hasSystemBinary("libarchive");
+        m_enableInternalOffice = false;
+        settings.setValue("component_mode_engine-office", "system");
+
+        settings.setValue("prefetch_distance", 2);
+        settings.setValue("cache_budget_mb", 384);
+        break;
+    }
+    case HardwareProfile::AllStable: {
+        // Level 3: All Stable Components from source
+        m_cpuProfile = "native";
+        m_optimizationLevel = "O3";
+        m_customCompilerFlags = "";
+        settings.setValue("hardware_profile", "all_stable");
+
+        const QStringList engines = {
+            "engine-poppler", "poppler", "pdfimages",
+            "engine-libarchive", "libarchive", "qpdf",
+            "tesseract", "7zip", "image-formats", "zstd", "xz"
+        };
+        for (const QString &eng : engines) {
+            settings.setValue("component_mode_" + eng, "source");
+        }
+        m_staticPdf = true;
+        m_staticArchive = true;
+        m_enableInternalOffice = false;
+        settings.setValue("component_mode_engine-office", "system");
+
+        settings.setValue("prefetch_distance", 3);
+        settings.setValue("cache_budget_mb", 512);
+        break;
+    }
+    case HardwareProfile::AllSource: {
+        // Level 4: All From Source (Including Unrecommended)
+        m_cpuProfile = "native";
+        m_optimizationLevel = "O3";
+        m_customCompilerFlags = "";
+        settings.setValue("hardware_profile", "all_source");
+
+        const QStringList engines = {
+            "engine-poppler", "poppler", "pdfimages",
+            "engine-libarchive", "libarchive", "qpdf",
+            "tesseract", "engine-office", "librevenge", "mpv", "engine-mpv",
+            "7zip", "image-formats", "zstd", "xz"
+        };
+        for (const QString &eng : engines) {
+            settings.setValue("component_mode_" + eng, "source");
+        }
+        m_staticPdf = true;
+        m_staticArchive = true;
+        m_enableInternalOffice = true;
+
+        settings.setValue("prefetch_distance", 3);
+        settings.setValue("cache_budget_mb", 512);
         break;
     }
     case HardwareProfile::Custom:
@@ -282,18 +341,27 @@ BuildConfig::HardwareProfile BuildConfig::activeHardwareProfile() const
 
     QSettings settings("Bubez", "BubezView");
     QString hw = settings.value("hardware_profile", "").toString();
-    if (hw == QLatin1String("desktop") || hw == QLatin1String("high_performance")) {
-        return HardwareProfile::HighPerformance;
+    if (hw == QLatin1String("system_packages") || hw == QLatin1String("system_only")) {
+        return HardwareProfile::SystemPackages;
     }
-    if (hw == QLatin1String("balanced")) {
-        return HardwareProfile::Balanced;
+    if (hw == QLatin1String("missing_only") || hw == QLatin1String("balanced")) {
+        return HardwareProfile::MissingOnly;
+    }
+    if (hw == QLatin1String("all_stable") || hw == QLatin1String("desktop") || hw == QLatin1String("high_performance")) {
+        return HardwareProfile::AllStable;
+    }
+    if (hw == QLatin1String("all_source")) {
+        return HardwareProfile::AllSource;
     }
 
-    // Auto-detection fallback: if native CPU or static modules active -> HighPerformance, else Balanced
-    if (isNativeCpu() || m_staticPdf || m_staticArchive) {
-        return HardwareProfile::HighPerformance;
+    // Auto-detection fallback:
+    if (m_enableInternalOffice) {
+        return HardwareProfile::AllSource;
     }
-    return HardwareProfile::Balanced;
+    if (m_staticPdf || m_staticArchive) {
+        return HardwareProfile::AllStable;
+    }
+    return HardwareProfile::MissingOnly;
 }
 
 static QMap<QString, bool> s_pkgInstalledCache;
@@ -324,39 +392,119 @@ bool BuildConfig::isPkgInstalled(const QString &pkgName)
     return installed;
 }
 
+QString BuildConfig::findExecutable(const QString &exeName)
+{
+    if (exeName.isEmpty()) return QString();
+
+    const QString appDir = QCoreApplication::applicationDirPath();
+    if (QFile::exists(appDir + "/" + exeName) && QFileInfo(appDir + "/" + exeName).isExecutable()) {
+        return appDir + "/" + exeName;
+    }
+    if (QFile::exists(appDir + "/bin/" + exeName) && QFileInfo(appDir + "/bin/" + exeName).isExecutable()) {
+        return appDir + "/bin/" + exeName;
+    }
+
+    const QString devRoot = projectDevRoot();
+    if (!devRoot.isEmpty()) {
+        const QString contBin = devRoot + "/container/.local/bin/" + exeName;
+        if (QFile::exists(contBin) && QFileInfo(contBin).isExecutable()) {
+            return contBin;
+        }
+    }
+
+    const QString home = QDir::homePath();
+    const QString homeBin = home + "/.local/bin/" + exeName;
+    if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) {
+        return homeBin;
+    }
+
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+    if (!hostHome.isEmpty()) {
+        const QString hostBin = hostHome + "/.local/bin/" + exeName;
+        if (QFile::exists(hostBin) && QFileInfo(hostBin).isExecutable()) {
+            return hostBin;
+        }
+        const QString hostContBin = hostHome + "/Progetti/BubezView/container/.local/bin/" + exeName;
+        if (QFile::exists(hostContBin) && QFileInfo(hostContBin).isExecutable()) {
+            return hostContBin;
+        }
+    }
+
+    const QString sysFound = QStandardPaths::findExecutable(exeName);
+    if (!sysFound.isEmpty()) {
+        return sysFound;
+    }
+
+    for (const QString &dir : {QStringLiteral("/usr/bin"), QStringLiteral("/usr/local/bin"), QStringLiteral("/bin")}) {
+        const QString p = dir + "/" + exeName;
+        if (QFile::exists(p) && QFileInfo(p).isExecutable()) {
+            return p;
+        }
+    }
+
+    return QString();
+}
+
 bool BuildConfig::isExecutableAvailable(const QString &exeName)
 {
-    if (exeName.isEmpty()) return false;
-    const QString appDir = QCoreApplication::applicationDirPath();
-    if (QFile::exists(appDir + "/" + exeName) && QFileInfo(appDir + "/" + exeName).isExecutable()) return true;
-    if (QFile::exists(appDir + "/bin/" + exeName) && QFileInfo(appDir + "/bin/" + exeName).isExecutable()) return true;
-    const QString homeBin = QDir::homePath() + "/.local/bin/" + exeName;
-    if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) return true;
-    return !QStandardPaths::findExecutable(exeName).isEmpty();
+    return !findExecutable(exeName).isEmpty();
 }
 
 QString BuildConfig::qpdfExecutable()
 {
     ComponentSourceMode mode = instance().componentSourceMode("qpdf");
+    const QString home = QDir::homePath();
+    const QString projectRoot = projectDevRoot();
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+
+    QStringList sourceCandidates = {
+        home + "/.local/bin/qpdf",
+        home + "/Progetti/BubezView/container/.local/bin/qpdf"
+    };
+    if (!projectRoot.isEmpty()) {
+        sourceCandidates.prepend(projectRoot + "/container/.local/bin/qpdf");
+    }
+    if (!hostHome.isEmpty()) {
+        sourceCandidates.append(hostHome + "/.local/bin/qpdf");
+        sourceCandidates.append(hostHome + "/Progetti/BubezView/container/.local/bin/qpdf");
+    }
+
+    QStringList systemCandidates = {
+        "/usr/bin/qpdf",
+        "/usr/local/bin/qpdf",
+        "/bin/qpdf"
+    };
+
     if (mode == ComponentSourceMode::LocalSource) {
-        const QString homeBin = QDir::homePath() + "/.local/bin/qpdf";
-        if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) {
-            return homeBin;
-        }
-        const QString projectRoot = projectDevRoot();
-        if (!projectRoot.isEmpty()) {
-            const QString containerBin = projectRoot + "/container/.local/bin/qpdf";
-            if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
-                return containerBin;
+        for (const QString &srcPath : sourceCandidates) {
+            if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+                return srcPath;
             }
         }
+        for (const QString &sysPath : systemCandidates) {
+            if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+                return sysPath;
+            }
+        }
+        return QStandardPaths::findExecutable("qpdf");
     }
 
     // Default or System mode: use official OS package binary
-    if (QFile::exists("/usr/bin/qpdf")) return "/usr/bin/qpdf";
-    if (QFile::exists("/bin/qpdf")) return "/bin/qpdf";
-    if (QFile::exists("/usr/local/bin/qpdf")) return "/usr/local/bin/qpdf";
-    return QStandardPaths::findExecutable("qpdf");
+    for (const QString &sysPath : systemCandidates) {
+        if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+            return sysPath;
+        }
+    }
+    QString found = QStandardPaths::findExecutable("qpdf");
+    if (!found.isEmpty()) return found;
+
+    // Fallback to source binary if system binary was not found
+    for (const QString &srcPath : sourceCandidates) {
+        if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+            return srcPath;
+        }
+    }
+    return QString();
 }
 
 bool BuildConfig::isQpdfAvailable()
@@ -372,25 +520,56 @@ bool BuildConfig::isTesseractAvailable()
 QString BuildConfig::pdfimagesExecutable()
 {
     ComponentSourceMode mode = instance().componentSourceMode("pdfimages");
-    if (mode == ComponentSourceMode::LocalSource) {
-        const QString homeBin = QDir::homePath() + "/.local/bin/pdfimages";
-        if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) {
-            return homeBin;
-        }
-        const QString projectRoot = projectDevRoot();
-        if (!projectRoot.isEmpty()) {
-            const QString containerBin = projectRoot + "/container/.local/bin/pdfimages";
-            if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
-                return containerBin;
-            }
-        }
+    const QString home = QDir::homePath();
+    const QString projectRoot = projectDevRoot();
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+
+    QStringList sourceCandidates = {
+        home + "/.local/bin/pdfimages",
+        home + "/Progetti/BubezView/container/.local/bin/pdfimages"
+    };
+    if (!projectRoot.isEmpty()) {
+        sourceCandidates.prepend(projectRoot + "/container/.local/bin/pdfimages");
+    }
+    if (!hostHome.isEmpty()) {
+        sourceCandidates.append(hostHome + "/.local/bin/pdfimages");
+        sourceCandidates.append(hostHome + "/Progetti/BubezView/container/.local/bin/pdfimages");
     }
 
-    // Default or System mode: use official OS package binary
-    if (QFile::exists("/usr/bin/pdfimages")) return "/usr/bin/pdfimages";
-    if (QFile::exists("/bin/pdfimages")) return "/bin/pdfimages";
-    if (QFile::exists("/usr/local/bin/pdfimages")) return "/usr/local/bin/pdfimages";
-    return QStandardPaths::findExecutable("pdfimages");
+    QStringList systemCandidates = {
+        "/usr/bin/pdfimages",
+        "/usr/local/bin/pdfimages",
+        "/bin/pdfimages"
+    };
+
+    if (mode == ComponentSourceMode::LocalSource) {
+        for (const QString &srcPath : sourceCandidates) {
+            if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+                return srcPath;
+            }
+        }
+        for (const QString &sysPath : systemCandidates) {
+            if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+                return sysPath;
+            }
+        }
+        return QStandardPaths::findExecutable("pdfimages");
+    }
+
+    for (const QString &sysPath : systemCandidates) {
+        if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+            return sysPath;
+        }
+    }
+    QString found = QStandardPaths::findExecutable("pdfimages");
+    if (!found.isEmpty()) return found;
+
+    for (const QString &srcPath : sourceCandidates) {
+        if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+            return srcPath;
+        }
+    }
+    return QString();
 }
 
 bool BuildConfig::isPdfimagesAvailable()
@@ -401,30 +580,127 @@ bool BuildConfig::isPdfimagesAvailable()
 QString BuildConfig::pdfuniteExecutable()
 {
     ComponentSourceMode mode = instance().componentSourceMode("pdfimages");
-    if (mode == ComponentSourceMode::LocalSource) {
-        const QString homeBin = QDir::homePath() + "/.local/bin/pdfunite";
-        if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) {
-            return homeBin;
-        }
-        const QString projectRoot = projectDevRoot();
-        if (!projectRoot.isEmpty()) {
-            const QString containerBin = projectRoot + "/container/.local/bin/pdfunite";
-            if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) {
-                return containerBin;
-            }
-        }
+    const QString home = QDir::homePath();
+    const QString projectRoot = projectDevRoot();
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+
+    QStringList sourceCandidates = {
+        home + "/.local/bin/pdfunite",
+        home + "/Progetti/BubezView/container/.local/bin/pdfunite"
+    };
+    if (!projectRoot.isEmpty()) {
+        sourceCandidates.prepend(projectRoot + "/container/.local/bin/pdfunite");
+    }
+    if (!hostHome.isEmpty()) {
+        sourceCandidates.append(hostHome + "/.local/bin/pdfunite");
+        sourceCandidates.append(hostHome + "/Progetti/BubezView/container/.local/bin/pdfunite");
     }
 
-    // Default or System mode: use official OS package binary
-    if (QFile::exists("/usr/bin/pdfunite")) return "/usr/bin/pdfunite";
-    if (QFile::exists("/bin/pdfunite")) return "/bin/pdfunite";
-    if (QFile::exists("/usr/local/bin/pdfunite")) return "/usr/local/bin/pdfunite";
-    return QStandardPaths::findExecutable("pdfunite");
+    QStringList systemCandidates = {
+        "/usr/bin/pdfunite",
+        "/usr/local/bin/pdfunite",
+        "/bin/pdfunite"
+    };
+
+    if (mode == ComponentSourceMode::LocalSource) {
+        for (const QString &srcPath : sourceCandidates) {
+            if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+                return srcPath;
+            }
+        }
+        for (const QString &sysPath : systemCandidates) {
+            if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+                return sysPath;
+            }
+        }
+        return QStandardPaths::findExecutable("pdfunite");
+    }
+
+    for (const QString &sysPath : systemCandidates) {
+        if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+            return sysPath;
+        }
+    }
+    QString found = QStandardPaths::findExecutable("pdfunite");
+    if (!found.isEmpty()) return found;
+
+    for (const QString &srcPath : sourceCandidates) {
+        if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+            return srcPath;
+        }
+    }
+    return QString();
 }
 
 bool BuildConfig::isPdfuniteAvailable()
 {
     return !pdfuniteExecutable().isEmpty();
+}
+
+QString BuildConfig::pdfsigExecutable()
+{
+    ComponentSourceMode mode = instance().componentSourceMode("pdfimages");
+    const QString devRoot = projectDevRoot();
+    const QString home = QDir::homePath();
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+
+    QStringList sourceCandidates = {
+        home + "/.local/bin/pdfsig",
+        home + "/Progetti/BubezView/container/.local/bin/pdfsig"
+    };
+    if (!devRoot.isEmpty()) {
+        sourceCandidates.prepend(devRoot + "/container/.local/bin/pdfsig");
+    }
+    if (!hostHome.isEmpty()) {
+        sourceCandidates.append(hostHome + "/.local/bin/pdfsig");
+        sourceCandidates.append(hostHome + "/Progetti/BubezView/container/.local/bin/pdfsig");
+    }
+
+    QStringList systemCandidates = {
+        "/usr/bin/pdfsig",
+        "/usr/local/bin/pdfsig",
+        "/bin/pdfsig"
+    };
+
+    if (mode == ComponentSourceMode::LocalSource) {
+        for (const QString &srcPath : sourceCandidates) {
+            if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+                return srcPath;
+            }
+        }
+        for (const QString &sysPath : systemCandidates) {
+            if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+                return sysPath;
+            }
+        }
+        return QStandardPaths::findExecutable("pdfsig");
+    }
+
+    for (const QString &sysPath : systemCandidates) {
+        if (QFile::exists(sysPath) && QFileInfo(sysPath).isExecutable()) {
+            return sysPath;
+        }
+    }
+    QString found = QStandardPaths::findExecutable("pdfsig");
+    if (!found.isEmpty()) return found;
+
+    for (const QString &srcPath : sourceCandidates) {
+        if (QFile::exists(srcPath) && QFileInfo(srcPath).isExecutable()) {
+            return srcPath;
+        }
+    }
+    return QString();
+}
+
+bool BuildConfig::isPdfsigAvailable()
+{
+    return !pdfsigExecutable().isEmpty();
+}
+
+QString BuildConfig::opensslExecutable()
+{
+    QString exe = findExecutable("openssl");
+    return exe.isEmpty() ? QStringLiteral("openssl") : exe;
 }
 
 QString BuildConfig::sevenZipExecutable()
@@ -482,9 +758,13 @@ bool BuildConfig::isSevenZipAvailable()
 
 bool BuildConfig::isPopplerDataInstalled()
 {
+    const QString home = QDir::homePath();
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
     return isPkgInstalled("poppler-data") ||
            QDir("/usr/share/poppler/cMap").exists() ||
-           QDir("/usr/local/share/poppler/cMap").exists();
+           QDir("/usr/local/share/poppler/cMap").exists() ||
+           QDir(home + "/.local/share/poppler/cMap").exists() ||
+           (!hostHome.isEmpty() && QDir(hostHome + "/.local/share/poppler/cMap").exists());
 }
 
 bool BuildConfig::isImageFormatsInstalled()
@@ -526,6 +806,20 @@ QString BuildConfig::projectDevRoot()
         }
         if (!dir.cdUp()) break;
     }
+
+    const QString defaultProjectDir = QDir::homePath() + "/Progetti/BubezView";
+    if (QDir(defaultProjectDir).exists("CMakeLists.txt")) {
+        return defaultProjectDir;
+    }
+
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+    if (!hostHome.isEmpty()) {
+        const QString hostProjectDir = hostHome + "/Progetti/BubezView";
+        if (QDir(hostProjectDir).exists("CMakeLists.txt")) {
+            return hostProjectDir;
+        }
+    }
+
     return QString();
 }
 
@@ -533,13 +827,20 @@ bool BuildConfig::hasSystemBinary(const QString &componentId)
 {
     QString id = componentId.trimmed().toLower();
     if (id == "pdfimages" || id == "poppler-utils") {
-        return QFile::exists("/usr/bin/pdfimages") || QFile::exists("/bin/pdfimages") || !QStandardPaths::findExecutable("pdfimages").isEmpty();
+        return QFile::exists("/usr/bin/pdfimages") || QFile::exists("/bin/pdfimages") ||
+               QFile::exists("/usr/local/bin/pdfimages") || !QStandardPaths::findExecutable("pdfimages").isEmpty();
     }
     if (id == "qpdf") {
-        return QFile::exists("/usr/bin/qpdf") || QFile::exists("/bin/qpdf") || !QStandardPaths::findExecutable("qpdf").isEmpty();
+        return QFile::exists("/usr/bin/qpdf") || QFile::exists("/bin/qpdf") ||
+               QFile::exists("/usr/local/bin/qpdf") || !QStandardPaths::findExecutable("qpdf").isEmpty();
+    }
+    if (id == "mupdf" || id == "libmupdf" || id == "mupdf-tools") {
+        return QFile::exists("/usr/bin/mutool") || QFile::exists("/bin/mutool") ||
+               QFile::exists("/usr/local/bin/mutool") || !QStandardPaths::findExecutable("mutool").isEmpty();
     }
     if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") {
-        return QFile::exists("/usr/bin/tesseract") || QFile::exists("/bin/tesseract") || !QStandardPaths::findExecutable("tesseract").isEmpty();
+        return QFile::exists("/usr/bin/tesseract") || QFile::exists("/bin/tesseract") ||
+               QFile::exists("/usr/local/bin/tesseract") || !QStandardPaths::findExecutable("tesseract").isEmpty();
     }
     if (id == "openssl") {
         return QFile::exists("/usr/bin/openssl") || isPkgInstalled("openssl");
@@ -611,35 +912,94 @@ bool BuildConfig::hasSourceBinary(const QString &componentId)
         return false;
     }
 
-    QString exe;
-    if (id == "pdfimages" || id == "engine-poppler" || id == "poppler") exe = "pdfimages";
-    else if (id == "qpdf") exe = "qpdf";
-    else if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") exe = "tesseract";
-    else if (id == "openssl") exe = "openssl";
-    else if (id == "7zip" || id == "7z" || id == "7zz") exe = "7zz";
-    else if (id == "zstd") exe = "zstd";
-    else if (id == "xz" || id == "liblzma") exe = "xz";
-    else if (id == "office" || id == "engine-office") {
+    auto checkPluginExists = [](const QString &pluginName) -> bool {
+        const QString fileName = pluginName.endsWith(".so") ? pluginName : (pluginName + ".so");
+        const QString home = QDir::homePath();
+        const QString devRoot = projectDevRoot();
+
+        QStringList candidateDirs = {
+            home + "/.local/lib/bubezview/plugins",
+            home + "/.local/lib/x86_64-linux-gnu/bubezview/plugins",
+            home + "/.local/lib64/bubezview/plugins",
+            home + "/.local/share/bubezview/plugins",
+            QCoreApplication::applicationDirPath() + "/plugins",
+            QCoreApplication::applicationDirPath() + "/../plugins"
+        };
+
+        if (!devRoot.isEmpty()) {
+            candidateDirs.append(devRoot + "/container/.local/lib/bubezview/plugins");
+            candidateDirs.append(devRoot + "/container/.local/share/bubezview/plugins");
+            candidateDirs.append(devRoot + "/build_deb/plugins");
+            candidateDirs.append(devRoot + "/build_deb/plugins/pdf");
+            candidateDirs.append(devRoot + "/build_deb/plugins/archive");
+            candidateDirs.append(devRoot + "/build_deb/plugins/media");
+            candidateDirs.append(devRoot + "/build_install/lib/bubezview/plugins");
+        }
+
+        for (const QString &dir : candidateDirs) {
+            if (QFile::exists(dir + "/" + fileName)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (id == "engine-poppler" || id == "poppler" || id == "poppler-qt6" || id == "pdf") {
+        if (checkPluginExists("bubez_pdf.so")) return true;
+    } else if (id == "engine-libarchive" || id == "libarchive" || id == "archive") {
+        if (checkPluginExists("bubez_archive.so")) return true;
+    } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media") {
+        if (checkPluginExists("bubez_media.so")) return true;
+    } else if (id == "office" || id == "engine-office" || id == "librevenge") {
         return instance().staticOffice() || instance().enableInternalOffice();
     }
-    else if (id == "engine-libarchive" || id == "libarchive") {
-        if (instance().staticArchive()) return true;
-        exe = "bsdunzip";
+
+    QStringList exes;
+    if (id == "pdfimages" || id == "engine-poppler" || id == "poppler" || id == "pdf") {
+        exes << "pdfimages" << "pdfunite";
+    } else if (id == "qpdf") {
+        exes << "qpdf";
+    } else if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") {
+        exes << "tesseract";
+    } else if (id == "openssl") {
+        exes << "openssl";
+    } else if (id == "7zip" || id == "7z" || id == "7zz") {
+        exes << "7zz" << "7z" << "7za";
+    } else if (id == "zstd") {
+        exes << "zstd";
+    } else if (id == "xz" || id == "liblzma") {
+        exes << "xz";
+    } else if (id == "engine-libarchive" || id == "libarchive" || id == "archive") {
+        exes << "bsdtar" << "bsdunzip";
+    } else {
+        exes << id;
     }
-    else exe = id;
 
-    // Check user local bin
-    const QString homeBin = QDir::homePath() + "/.local/bin/" + exe;
-    if (QFile::exists(homeBin) && QFileInfo(homeBin).isExecutable()) return true;
-
+    const QString home = QDir::homePath();
     const QString projectRoot = projectDevRoot();
-    if (!projectRoot.isEmpty()) {
-        const QString containerBin = projectRoot + "/container/.local/bin/" + exe;
-        if (QFile::exists(containerBin) && QFileInfo(containerBin).isExecutable()) return true;
-    }
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
 
-    const QString appBin = QCoreApplication::applicationDirPath() + "/" + exe;
-    if (QFile::exists(appBin) && QFileInfo(appBin).isExecutable()) return true;
+    for (const QString &exe : exes) {
+        QStringList candidatePaths = {
+            home + "/.local/bin/" + exe,
+            home + "/Progetti/BubezView/container/.local/bin/" + exe,
+            appDir + "/" + exe,
+            appDir + "/bin/" + exe
+        };
+        if (!projectRoot.isEmpty()) {
+            candidatePaths.prepend(projectRoot + "/container/.local/bin/" + exe);
+        }
+        if (!hostHome.isEmpty()) {
+            candidatePaths.append(hostHome + "/.local/bin/" + exe);
+            candidatePaths.append(hostHome + "/Progetti/BubezView/container/.local/bin/" + exe);
+        }
+
+        for (const QString &cand : candidatePaths) {
+            QFileInfo fi(cand);
+            if (fi.exists() && fi.isFile() && fi.isExecutable()) return true;
+        }
+    }
 
     return false;
 }
@@ -666,13 +1026,22 @@ BuildConfig::ComponentSourceMode BuildConfig::componentSourceMode(const QString 
     QString key = "component_mode_" + id;
     if (settings.contains(key)) {
         QString pref = settings.value(key).toString();
-        if (pref == "system") return ComponentSourceMode::SystemBinary;
-        if (pref == "source") return ComponentSourceMode::LocalSource;
+        if (pref == "system" && sys) return ComponentSourceMode::SystemBinary;
+        if (pref == "source" && src) return ComponentSourceMode::LocalSource;
     }
 
     // Default presence fallback:
     if (src && !sys) return ComponentSourceMode::LocalSource;
     if (sys && !src) return ComponentSourceMode::SystemBinary;
+
+    // When both or neither are present, respect the user's active hardware profile:
+    HardwareProfile hp = activeHardwareProfile();
+    if (hp == HardwareProfile::AllSource || hp == HardwareProfile::AllStable) {
+        return ComponentSourceMode::LocalSource;
+    }
+    if (hp == HardwareProfile::MissingOnly) {
+        if (!sys) return ComponentSourceMode::LocalSource;
+    }
 
     // Default when both or neither are present
     return src ? ComponentSourceMode::LocalSource : ComponentSourceMode::SystemBinary;
@@ -686,7 +1055,7 @@ void BuildConfig::setComponentSourceMode(const QString &componentId, ComponentSo
     settings.setValue(key, mode == ComponentSourceMode::SystemBinary ? "system" : "source");
 
     // Sync legacy static module booleans if applicable
-    if (id == "pdfimages" || id == "engine-poppler" || id == "poppler") {
+    if (id == "pdfimages" || id == "engine-poppler" || id == "poppler" || id == "pdf") {
         setStaticPdf(mode == ComponentSourceMode::LocalSource);
     } else if (id == "engine-libarchive" || id == "archive") {
         setStaticArchive(mode == ComponentSourceMode::LocalSource);
@@ -699,8 +1068,82 @@ void BuildConfig::setComponentSourceMode(const QString &componentId, ComponentSo
 bool BuildConfig::removeLocalSourceBuild(const QString &componentId)
 {
     QString id = componentId.trimmed().toLower();
+    const QString home = QDir::homePath();
+    const QString projectRoot = projectDevRoot();
+
+    auto removePluginFiles = [&](const QString &pluginName) {
+        const QString fileName = pluginName.endsWith(".so") ? pluginName : (pluginName + ".so");
+        QStringList targetDirs = {
+            home + "/.local/lib/bubezview/plugins",
+            home + "/.local/lib/x86_64-linux-gnu/bubezview/plugins",
+            home + "/.local/lib64/bubezview/plugins",
+            home + "/.local/share/bubezview/plugins"
+        };
+        if (!projectRoot.isEmpty()) {
+            targetDirs.append(projectRoot + "/container/.local/lib/bubezview/plugins");
+            targetDirs.append(projectRoot + "/container/.local/share/bubezview/plugins");
+            targetDirs.append(projectRoot + "/build_deb/plugins/pdf");
+            targetDirs.append(projectRoot + "/build_deb/plugins/archive");
+            targetDirs.append(projectRoot + "/build_deb/plugins/media");
+            targetDirs.append(projectRoot + "/build_deb/plugins");
+            targetDirs.append(projectRoot + "/build_install/lib/bubezview/plugins");
+        }
+        for (const QString &dir : targetDirs) {
+            QString fullPath = dir + "/" + fileName;
+            if (QFile::exists(fullPath)) {
+                QFile::remove(fullPath);
+            }
+        }
+    };
+
+    auto removeExecutables = [&](const QStringList &exeList) {
+        const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+        for (const QString &exe : exeList) {
+            QStringList toRemove = {
+                home + "/.local/bin/" + exe,
+                home + "/Progetti/BubezView/container/.local/bin/" + exe
+            };
+            if (!projectRoot.isEmpty()) {
+                toRemove.append(projectRoot + "/container/.local/bin/" + exe);
+            }
+            if (!hostHome.isEmpty()) {
+                toRemove.append(hostHome + "/.local/bin/" + exe);
+                toRemove.append(hostHome + "/Progetti/BubezView/container/.local/bin/" + exe);
+            }
+            for (const QString &f : toRemove) {
+                if (QFile::exists(f)) {
+                    QFile::remove(f);
+                }
+            }
+        }
+    };
+
+    auto removeLibraries = [&](const QString &pattern) {
+        QStringList libDirs = {
+            home + "/.local/lib",
+            home + "/.local/lib64",
+            home + "/.local/lib/x86_64-linux-gnu",
+            home + "/Progetti/BubezView/container/.local/lib"
+        };
+        if (!projectRoot.isEmpty()) {
+            libDirs.append(projectRoot + "/container/.local/lib");
+            libDirs.append(projectRoot + "/container/.local/lib64");
+        }
+        const QString hostHome = qEnvironmentVariable("DISTROBOX_HOST_HOME");
+        if (!hostHome.isEmpty()) {
+            libDirs.append(hostHome + "/.local/lib");
+            libDirs.append(hostHome + "/Progetti/BubezView/container/.local/lib");
+        }
+        for (const QString &ld : libDirs) {
+            QDir ldir(ld);
+            if (ldir.exists()) {
+                const auto libs = ldir.entryList({pattern}, QDir::Files);
+                for (const QString &l : libs) ldir.remove(l);
+            }
+        }
+    };
+
     if (id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins") {
-        const QString home = QDir::homePath();
         const QStringList localDirs = {
             home + "/.local/lib/qt6/plugins/imageformats",
             home + "/.local/lib/x86_64-linux-gnu/qt6/plugins/imageformats",
@@ -716,53 +1159,83 @@ bool BuildConfig::removeLocalSourceBuild(const QString &componentId)
                 }
             }
         }
-        // Clean build directories in build_deps if present
-        const QString projectRoot = projectDevRoot();
         if (!projectRoot.isEmpty()) {
             QDir depDir(projectRoot + "/build_deps/qtimageformats");
             if (depDir.exists()) depDir.removeRecursively();
             QDir bldDir(projectRoot + "/build_deps/qtimageformats_build");
             if (bldDir.exists()) bldDir.removeRecursively();
         }
-        QSettings settings("Bubez", "BubezView");
-        settings.setValue("component_mode_" + id, "system");
-        return true;
-    }
-
-    QString exe;
-    if (id == "pdfimages" || id == "engine-poppler" || id == "poppler") exe = "pdfimages";
-    else if (id == "qpdf") exe = "qpdf";
-    else if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") exe = "tesseract";
-    else if (id == "openssl") exe = "openssl";
-    else if (id == "7zip" || id == "7z" || id == "7zz") exe = "7zz";
-    else if (id == "zstd") exe = "zstd";
-    else if (id == "xz") exe = "xz";
-    else exe = id;
-
-    // Remove from ~/.local/bin
-    const QString homeBin = QDir::homePath() + "/.local/bin/" + exe;
-    if (QFile::exists(homeBin)) {
-        QFile::remove(homeBin);
-    }
-
-    // Remove from container .local
-    const QString projectRoot = projectDevRoot();
-    if (!projectRoot.isEmpty()) {
-        const QString containerBin = projectRoot + "/container/.local/bin/" + exe;
-        if (QFile::exists(containerBin)) {
-            QFile::remove(containerBin);
+    } else if (id == "engine-poppler" || id == "poppler" || id == "poppler-qt6" || id == "pdf") {
+        removePluginFiles("bubez_pdf.so");
+        removeExecutables({"pdfimages", "pdfunite", "pdftoppm", "pdftotext", "pdfinfo", "pdffonts",
+                           "pdfattach", "pdfdetach", "pdfseparate", "pdftops", "pdftohtml"});
+        removeLibraries("libpoppler*");
+        instance().setStaticPdf(false);
+        PluginManager::instance().unloadPlugin(FileCategory::Pdf);
+        PluginManager::instance().unloadPlugin("pdf");
+    } else if (id == "engine-libarchive" || id == "libarchive" || id == "archive") {
+        removePluginFiles("bubez_archive.so");
+        removeExecutables({"bsdtar", "bsdunzip"});
+        removeLibraries("libarchive*");
+        instance().setStaticArchive(false);
+        PluginManager::instance().unloadPlugin(FileCategory::Archive);
+        PluginManager::instance().unloadPlugin("archive");
+    } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media") {
+        removePluginFiles("bubez_media.so");
+        PluginManager::instance().unloadPlugin(FileCategory::Media);
+        PluginManager::instance().unloadPlugin("media");
+    } else if (id == "office" || id == "engine-office" || id == "librevenge") {
+        instance().setStaticOffice(false);
+        instance().setEnableInternalOffice(false);
+    } else if (id == "7zip" || id == "7z" || id == "7zz") {
+        removeExecutables({"7zz", "7z", "7za"});
+    } else if (id == "qpdf") {
+        removeExecutables({"qpdf", "fix-qdf", "zlib-flate"});
+        removeLibraries("libqpdf*");
+        auto removeSubDir = [](const QString &dPath) { QDir d(dPath); if (d.exists()) d.removeRecursively(); };
+        removeSubDir(home + "/.local/include/qpdf");
+        removeSubDir(home + "/.local/share/doc/qpdf");
+        removeSubDir(home + "/.local/lib/cmake/qpdf");
+        if (!projectRoot.isEmpty()) {
+            removeSubDir(projectRoot + "/container/.local/include/qpdf");
+            removeSubDir(projectRoot + "/container/.local/share/doc/qpdf");
+            removeSubDir(projectRoot + "/container/.local/lib/cmake/qpdf");
         }
+    } else if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") {
+        removeExecutables({"tesseract"});
+        removeLibraries("libtesseract*");
+    } else if (id == "zstd") {
+        removeExecutables({"zstd", "zstdcat", "unzstd"});
+    } else if (id == "xz" || id == "liblzma") {
+        removeExecutables({"xz", "xzcat", "unxz", "lzma"});
+    } else {
+        removeExecutables({id});
+    }
 
-        // Clean build directory in build_deps if present
+    // Clean build directory in build_deps if present
+    if (!projectRoot.isEmpty()) {
         QDir depDir(projectRoot + "/build_deps/" + id);
         if (depDir.exists()) {
             depDir.removeRecursively();
         }
+        QDir depBldDir(projectRoot + "/build_deps/" + id + "_build");
+        if (depBldDir.exists()) {
+            depBldDir.removeRecursively();
+        }
     }
 
-    // Reset preference to system
+    // Update settings: if system package exists, switch to system; otherwise remove the override
+    // so active hardware profile can take effect cleanly without forcing obsolete system mode.
     QSettings settings("Bubez", "BubezView");
-    settings.setValue("component_mode_" + id, "system");
+    if (hasSystemBinary(id)) {
+        settings.setValue("component_mode_" + id, "system");
+    } else {
+        settings.remove("component_mode_" + id);
+    }
+
+    instance().save();
+    PackageManagerHelper::clearCaches();
+
     return true;
 }
 

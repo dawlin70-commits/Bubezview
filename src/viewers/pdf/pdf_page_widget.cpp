@@ -5,6 +5,7 @@
 
 #include "pdf_page_widget.h"
 #include "pdf_canvas_tools.h"
+#include "pdf_document_ops.h"
 #include "theme_manager.h"
 #include "pdf_typewriter_dialog.h"
 #include "pdf_watermark_dialog.h"
@@ -14,6 +15,7 @@
 #include <poppler/qt6/poppler-form.h>
 
 #include <QPainter>
+#include <QPainterPath>
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QContextMenuEvent>
@@ -24,10 +26,11 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
+#include <QTemporaryDir>
+#include <QTemporaryFile>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QProcess>
-#include <QXmlStreamReader>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QLineEdit>
@@ -39,7 +42,10 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QJsonObject>
+#include <QJsonDocument>
 #include <QFontInfo>
+#include <QFontDatabase>
 #include <QTimer>
 #include <algorithm>
 #include <cmath>
@@ -48,7 +54,7 @@ PdfPageWidget::PdfPageWidget(QWidget *parent)
     : QWidget(parent)
     , m_scaleX(1.0)
     , m_scaleY(1.0)
-    , m_toolMode(PdfToolMode::SelectText)
+    , m_toolMode(PdfToolMode::Hand)
     , m_transformBox(nullptr)
     , m_isSelecting(false)
     , m_isPanning(false)
@@ -65,7 +71,7 @@ PdfPageWidget::PdfPageWidget(QWidget *parent)
 {
     setAttribute(Qt::WA_OpaquePaintEvent, true);
     setFocusPolicy(Qt::StrongFocus);
-    setCursor(Qt::IBeamCursor);
+    setCursor(Qt::OpenHandCursor);
     setAcceptDrops(true);
 
     // Initialize hardware profile page cache limit
@@ -80,11 +86,21 @@ PdfPageWidget::PdfPageWidget(QWidget *parent)
     connect(m_transformBox, &PdfTransformBox::applyAndContinue, this, &PdfPageWidget::onTransformBoxApplyAndContinue);
     connect(m_transformBox, &PdfTransformBox::cancelled, this, &PdfPageWidget::onTransformBoxCancelled);
     connect(m_transformBox, &PdfTransformBox::editRequested, this, &PdfPageWidget::onTransformBoxEditRequested);
-    connect(m_transformBox, &PdfTransformBox::cutAreaRequested, this, &PdfPageWidget::cutSelectedArea);
-    connect(m_transformBox, &PdfTransformBox::copyAreaRequested, this, &PdfPageWidget::copySelectedArea);
+    connect(m_transformBox, &PdfTransformBox::copyAreaTextRequested, this, &PdfPageWidget::copySelectedAreaText);
+    connect(m_transformBox, &PdfTransformBox::copyAreaRequested, this, &PdfPageWidget::copySelectedAreaImage);
+    connect(m_transformBox, &PdfTransformBox::ocrAreaRequested, this, &PdfPageWidget::ocrSelectedArea);
     connect(m_transformBox, &PdfTransformBox::undoRequested, this, &PdfPageWidget::undoRequested);
     connect(m_transformBox, &PdfTransformBox::redoRequested, this, &PdfPageWidget::redoRequested);
     connect(m_transformBox, &PdfTransformBox::geometryChanged, this, &PdfPageWidget::updateTransformBoxCollision);
+    connect(m_transformBox, &PdfTransformBox::placementModeChanged, this, [this](bool isPlacement) {
+        if (isPlacement) {
+            emit inPlaceTextEditFinished();
+        } else {
+            emit inPlaceTextEditStarted(m_transformBox->text(), m_transformBox->textFont(),
+                                        m_transformBox->textColor(), m_transformBox->textBgMode(),
+                                        m_pendingErasedBgColor);
+        }
+    });
 }
 
 PdfPageWidget::~PdfPageWidget() = default;
@@ -182,7 +198,6 @@ void PdfPageWidget::clear()
 
     m_pageLayouts.clear();
     m_pageCache.clear();
-    m_placedShapes.clear();
     clearPendingErasedState();
     m_permanentlyErasedBoxIndices.clear();
     m_doc = nullptr;
@@ -193,6 +208,16 @@ void PdfPageWidget::clear()
 
 void PdfPageWidget::setDocument(Poppler::Document *doc, double zoomFactor, bool fitToWidth, int rotationDegrees, int availWidth)
 {
+    const bool sameParams = (m_doc == doc &&
+                             qFuzzyCompare(m_zoomFactor, zoomFactor) &&
+                             m_fitToWidth == fitToWidth &&
+                             m_rotationDegrees == rotationDegrees &&
+                             m_availWidth == availWidth &&
+                             !m_pageLayouts.isEmpty());
+    if (sameParams) {
+        return;
+    }
+
     m_doc = doc;
     m_zoomFactor = zoomFactor;
     m_fitToWidth = fitToWidth;
@@ -270,19 +295,6 @@ void PdfPageWidget::setDocument(Poppler::Document *doc, double zoomFactor, bool 
         m_activePageIndex = 0;
     }
 
-    // Scale pixel bounds of placed shapes/stamps to match new layout DPI
-    for (auto &shp : m_placedShapes) {
-        if (shp.pageIndex >= 0 && shp.pageIndex < m_pageLayouts.size()) {
-            const auto &pl = m_pageLayouts[shp.pageIndex];
-            int pw = pl.rect.width();
-            int ph = pl.rect.height();
-            shp.rect = QRect(qRound(shp.normRect.x() * pw),
-                             qRound(shp.normRect.y() * ph),
-                             qRound(shp.normRect.width() * pw),
-                             qRound(shp.normRect.height() * ph));
-        }
-    }
-
     refreshActivePageData();
     update();
 }
@@ -343,12 +355,30 @@ int PdfPageWidget::pageIndexAtY(int y) const
 
 int PdfPageWidget::pageIndexAtPos(const QPoint &pos) const
 {
+    if (m_pageLayouts.isEmpty()) return -1;
+
     for (int i = 0; i < m_pageLayouts.size(); ++i) {
         if (m_pageLayouts[i].rect.contains(pos)) {
             return i;
         }
     }
-    return -1;
+
+    // If not strictly inside (e.g. user clicked in side margins or padding between pages),
+    // find the page whose vertical range covers pos.y(), or the closest page
+    int closest = -1;
+    int minDistance = 1e9;
+    for (int i = 0; i < m_pageLayouts.size(); ++i) {
+        const QRect &r = m_pageLayouts[i].rect;
+        if (pos.y() >= r.top() && pos.y() <= r.bottom()) {
+            return i;
+        }
+        int dist = std::min(std::abs(pos.y() - r.top()), std::abs(pos.y() - r.bottom()));
+        if (dist < minDistance) {
+            minDistance = dist;
+            closest = i;
+        }
+    }
+    return closest;
 }
 
 int PdfPageWidget::pageTopY(int pageIndex) const
@@ -391,22 +421,51 @@ void PdfPageWidget::setEditMode(bool editMode)
         if (m_transformBox) {
             m_transformBox->dismiss();
         }
-        if (m_toolMode != PdfToolMode::SelectText && m_toolMode != PdfToolMode::Zoom) {
-            setToolMode(PdfToolMode::SelectText);
-        }
+        setToolMode(PdfToolMode::Hand);
+    } else {
+        setToolMode(PdfToolMode::SelectText);
     }
     update();
 }
 
 void PdfPageWidget::setToolMode(PdfToolMode mode)
 {
-    if (!m_isEditMode && mode != PdfToolMode::SelectText && mode != PdfToolMode::Zoom && mode != PdfToolMode::Snapshot) {
+    if (!m_isEditMode && mode != PdfToolMode::SelectText && mode != PdfToolMode::Hand && mode != PdfToolMode::Zoom && mode != PdfToolMode::Snapshot) {
         return;
     }
-    if (m_toolMode == mode) return;
-
-    if (m_committingShapeIndex >= 0) {
-        commitSelectedStampToPdf();
+    if (m_toolMode == mode) {
+        // Ensure cursor is strictly synchronized with mode even if unchanged
+        switch (m_toolMode) {
+        case PdfToolMode::Hand:
+            setCursor(Qt::OpenHandCursor);
+            break;
+        case PdfToolMode::SelectText:
+            setCursor(Qt::IBeamCursor);
+            break;
+        case PdfToolMode::Zoom: {
+            QPixmap zoomPix = QIcon::fromTheme("zoom-in").pixmap(24, 24);
+            if (!zoomPix.isNull()) {
+                setCursor(QCursor(zoomPix, 8, 8));
+            } else {
+                setCursor(Qt::CrossCursor);
+            }
+            break;
+        }
+        case PdfToolMode::SelectArea:
+        case PdfToolMode::Snapshot:
+        case PdfToolMode::Redaction:
+        case PdfToolMode::Shape:
+        case PdfToolMode::Highlight:
+        case PdfToolMode::Watermark:
+            setCursor(Qt::CrossCursor);
+            break;
+        case PdfToolMode::Typewriter:
+        case PdfToolMode::Signature:
+        case PdfToolMode::InsertImage:
+            setCursor(Qt::ArrowCursor);
+            break;
+        }
+        return;
     }
 
     if (m_inlineEditor) {
@@ -417,6 +476,9 @@ void PdfPageWidget::setToolMode(PdfToolMode mode)
     m_toolMode = mode;
 
     switch (m_toolMode) {
+    case PdfToolMode::Hand:
+        setCursor(Qt::OpenHandCursor);
+        break;
     case PdfToolMode::SelectText:
         setCursor(Qt::IBeamCursor);
         break;
@@ -451,24 +513,34 @@ void PdfPageWidget::setToolMode(PdfToolMode mode)
 QPoint PdfPageWidget::visibleCenter() const
 {
     QWidget *vp = parentWidget(); // QScrollArea viewport
-    if (m_activePageIndex >= 0 && m_activePageIndex < m_pageLayouts.size()) {
-        const auto &pl = m_pageLayouts[m_activePageIndex];
-        if (vp && vp->isVisible()) {
-            QPoint centerInCanvas = mapFrom(vp, vp->rect().center());
+    if (vp && vp->isVisible() && !m_pageLayouts.isEmpty()) {
+        QPoint centerInCanvas = mapFrom(vp, vp->rect().center());
+        int pageIdx = pageIndexAtPos(centerInCanvas);
+        if (pageIdx < 0) {
+            int bestDist = 1e9;
+            pageIdx = (m_activePageIndex >= 0 && m_activePageIndex < m_pageLayouts.size()) ? m_activePageIndex : 0;
+            for (int i = 0; i < m_pageLayouts.size(); ++i) {
+                int dist = std::abs(m_pageLayouts[i].rect.center().y() - centerInCanvas.y());
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    pageIdx = i;
+                }
+            }
+        }
+        if (pageIdx >= 0 && pageIdx < m_pageLayouts.size()) {
+            if (pageIdx != m_activePageIndex) {
+                const_cast<PdfPageWidget*>(this)->setActivePage(pageIdx);
+            }
+            const auto &pl = m_pageLayouts[pageIdx];
             QPoint centerInPage = centerInCanvas - pl.rect.topLeft();
             int cx = qBound(30, centerInPage.x(), qMax(30, pl.rect.width() - 30));
             int cy = qBound(30, centerInPage.y(), qMax(30, pl.rect.height() - 30));
             return QPoint(cx, cy);
         }
-        return QPoint(pl.rect.width() / 2, pl.rect.height() / 2);
     }
-    if (vp && vp->isVisible()) {
-        QPoint centerInPage = mapFrom(vp, vp->rect().center());
-        int marginX = qBound(20, width() / 6, 120);
-        int marginY = qBound(20, height() / 6, 120);
-        int cx = qBound(marginX, centerInPage.x(), qMax(marginX, width() - marginX));
-        int cy = qBound(marginY, centerInPage.y(), qMax(marginY, height() - marginY));
-        return QPoint(cx, cy);
+    if (m_activePageIndex >= 0 && m_activePageIndex < m_pageLayouts.size()) {
+        return QPoint(m_pageLayouts[m_activePageIndex].rect.width() / 2,
+                      m_pageLayouts[m_activePageIndex].rect.height() / 2);
     }
     return rect().center();
 }
@@ -515,17 +587,26 @@ void PdfPageWidget::startInsertImage(const QImage &image, const QPoint &initialP
 {
     setToolMode(PdfToolMode::InsertImage);
 
-    QPoint targetPos = initialPos;
-    if (targetPos.isNull()) {
-        targetPos = visibleCenter();
-    }
+    QRect activePR = pageRect(m_activePageIndex);
+    int pageW = activePR.width() > 0 ? activePR.width() : width();
+    int pageH = activePR.height() > 0 ? activePR.height() : height();
 
-    // Determine clean proportional display dimensions
+    // Determine clean proportional display dimensions based on page bounds
+    int maxW = (pageW > 100) ? qRound(pageW * 0.82) : 600;
+    int maxH = (pageH > 100) ? qRound(pageH * 0.82) : 800;
+
     QSize defSize(280, 200);
     if (!image.isNull() && image.width() > 0 && image.height() > 0) {
-        int w = std::min(350, image.width());
-        int h = static_cast<int>(w * static_cast<double>(image.height()) / image.width());
-        defSize = QSize(w, std::max(40, h));
+        if (image.width() <= 320 && image.height() <= 320) {
+            defSize = image.size();
+        } else {
+            defSize = image.size().scaled(maxW, maxH, Qt::KeepAspectRatio);
+        }
+    }
+
+    QPoint targetPos = initialPos;
+    if (targetPos.isNull()) {
+        targetPos = activePR.isValid() ? (activePR.center() - activePR.topLeft()) : visibleCenter();
     }
 
     if (m_transformBox) {
@@ -540,10 +621,111 @@ void PdfPageWidget::clearPendingErasedState()
     m_pendingErasedPtRect = QRectF();
     m_pendingErasedNormRect = QRectF();
     m_pendingErasedBgColor = Qt::white;
+    m_pendingErasedPreviewPatch = QImage();
     m_pendingErasedBoxIndices.clear();
     m_collidingTextPtRects.clear();
     if (m_transformBox) {
         m_transformBox->setHasCollision(false);
+    }
+}
+
+void PdfPageWidget::updatePendingErasedPreviewPatch()
+{
+    m_pendingErasedPreviewPatch = QImage();
+    if (!m_doc || m_activePageIndex < 0 || m_activePageIndex >= m_doc->numPages() ||
+        !m_pendingErasedPtRect.isValid() || m_pendingErasedPtRect.isEmpty()) {
+        return;
+    }
+
+    double scaleX = m_scaleX;
+    double scaleY = m_scaleY;
+    if (m_activePageIndex < m_pageLayouts.size()) {
+        scaleX = m_pageLayouts[m_activePageIndex].scaleX;
+        scaleY = m_pageLayouts[m_activePageIndex].scaleY;
+    }
+    if (scaleX <= 0.0 || scaleY <= 0.0) {
+        return;
+    }
+
+    QRect wipedPix(qRound(m_pendingErasedPtRect.x() * scaleX),
+                   qRound(m_pendingErasedPtRect.y() * scaleY),
+                   qRound(m_pendingErasedPtRect.width() * scaleX),
+                   qRound(m_pendingErasedPtRect.height() * scaleY));
+    if (wipedPix.width() <= 0 || wipedPix.height() <= 0) {
+        return;
+    }
+
+    // If the pending erased text is an existing annotation, the underlying vector stream
+    // has already been redacted. Bypassing python vector redaction here avoids spurious redactions.
+    if (m_doc && m_activePageIndex >= 0 && m_activePageIndex < m_doc->numPages()) {
+        std::unique_ptr<Poppler::Page> page(m_doc->page(m_activePageIndex));
+        if (page) {
+            auto annots = page->annotations();
+            for (const auto &ann : annots) {
+                if (ann && (ann->subType() == Poppler::Annotation::AText || ann->subType() == Poppler::Annotation::AStamp)) {
+                    QRectF b = ann->boundary();
+                    if (b.intersects(m_pendingErasedNormRect) || b.contains(m_pendingErasedNormRect.center())) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    QString srcPath = m_filePath;
+    QString tempConvPath;
+    QTemporaryFile tempFile(QDir::tempPath() + "/bubez_preview_src_XXXXXX.pdf");
+    tempFile.setAutoRemove(false);
+    if (tempFile.open()) {
+        tempConvPath = tempFile.fileName();
+        tempFile.close();
+        QFile::remove(tempConvPath);
+
+        std::unique_ptr<Poppler::PDFConverter> conv = m_doc->pdfConverter();
+        if (conv) {
+            conv->setPDFOptions(Poppler::PDFConverter::WithChanges);
+            conv->setOutputFileName(tempConvPath);
+            if (conv->convert() && QFile::exists(tempConvPath)) {
+                srcPath = tempConvPath;
+            }
+        }
+    }
+
+    if (srcPath.isEmpty() || !QFile::exists(srcPath)) {
+        if (!tempConvPath.isEmpty()) {
+            QFile::remove(tempConvPath);
+        }
+        return;
+    }
+
+    QString outRedacted;
+    QString errMsg;
+    if (PdfDocumentOps::removeVectorTextFromPage(srcPath, m_activePageIndex, m_pendingErasedPtRect, outRedacted, errMsg)) {
+        std::unique_ptr<Poppler::Document> redDoc = Poppler::Document::load(outRedacted);
+        if (redDoc && !redDoc->isLocked() && m_activePageIndex < redDoc->numPages()) {
+            redDoc->setRenderHint(Poppler::Document::Antialiasing, true);
+            redDoc->setRenderHint(Poppler::Document::TextAntialiasing, true);
+            redDoc->setRenderHint(Poppler::Document::ThinLineSolid, true);
+            std::unique_ptr<Poppler::Page> redPage = redDoc->page(m_activePageIndex);
+            if (redPage) {
+                Poppler::Page::Rotation popplerRot = Poppler::Page::Rotate0;
+                if (m_rotationDegrees == 90) popplerRot = Poppler::Page::Rotate90;
+                else if (m_rotationDegrees == 180) popplerRot = Poppler::Page::Rotate180;
+                else if (m_rotationDegrees == 270) popplerRot = Poppler::Page::Rotate270;
+                double dpiX = scaleX * 72.0;
+                double dpiY = scaleY * 72.0;
+                m_pendingErasedPreviewPatch = redPage->renderToImage(
+                    dpiX, dpiY,
+                    wipedPix.x(), wipedPix.y(), wipedPix.width(), wipedPix.height(),
+                    popplerRot);
+            }
+        }
+        redDoc.reset();
+        QFile::remove(outRedacted);
+    }
+
+    if (!tempConvPath.isEmpty()) {
+        QFile::remove(tempConvPath);
     }
 }
 
@@ -643,18 +825,13 @@ void PdfPageWidget::cutSelection()
             }
         }
 
-        QColor sampledBg = sampleBackgroundColorForRect(m_activePageIndex, unionPtRect);
         QRectF normRect(std::max(0.0, (unionPtRect.x() - 1.0) / pageWPt),
                         std::max(0.0, (unionPtRect.y() - 1.0) / pageHPt),
                         std::min(1.0, (unionPtRect.width() + 2.0) / pageWPt),
                         std::min(1.0, (unionPtRect.height() + 2.0) / pageHPt));
 
-        int pixW = std::max(4, qRound((unionPtRect.width() + 2.0) * m_scaleX));
-        int pixH = std::max(4, qRound((unionPtRect.height() + 2.0) * m_scaleY));
-        QImage patchImg(pixW, pixH, QImage::Format_ARGB32_Premultiplied);
-        patchImg.fill(sampledBg);
-
-        emit addStampAnnotationRequested(patchImg, normRect);
+        // Erase text cleanly via vector redaction / annotation removal without stamping opaque white
+        emit eraseOriginalTextRequested(m_activePageIndex, unionPtRect, normRect);
     }
 
     // 3. Clear selection and update display
@@ -694,7 +871,7 @@ QColor PdfPageWidget::sampleBackgroundColorForRect(int pageIndex, const QRectF &
     return PdfCanvasTools::sampleBackgroundColor(pageImg, pixelRect);
 }
 
-void PdfPageWidget::startInPlaceTextEdit()
+void PdfPageWidget::launchTextTransform(bool startInEditMode)
 {
     if (m_selectedIndices.empty() || m_textBoxes.empty()) return;
 
@@ -730,60 +907,70 @@ void PdfPageWidget::startInPlaceTextEdit()
 
     double pageWPt = width() / m_scaleX;
     double pageHPt = height() / m_scaleY;
-    if (m_doc && m_activePageIndex >= 0 && m_activePageIndex < m_doc->numPages()) {
-        std::unique_ptr<Poppler::Page> p(m_doc->page(m_activePageIndex));
-        if (p) {
-            pageWPt = p->pageSize().width();
-            pageHPt = p->pageSize().height();
-        }
+    if (m_activePageIndex >= 0 && m_activePageIndex < m_pageLayouts.size()) {
+        pageWPt = m_pageLayouts[m_activePageIndex].rect.width() / m_scaleX;
+        pageHPt = m_pageLayouts[m_activePageIndex].rect.height() / m_scaleY;
     }
-    if (pageWPt > 0 && pageHPt > 0) {
+
+    if (pageWPt > 0.0 && pageHPt > 0.0) {
         m_pendingErasedPtRect = paddedUnionPt;
         m_pendingErasedNormRect = QRectF(std::max(0.0, paddedUnionPt.x() / pageWPt),
                                          std::max(0.0, paddedUnionPt.y() / pageHPt),
                                          std::min(1.0, paddedUnionPt.width() / pageWPt),
                                          std::min(1.0, paddedUnionPt.height() / pageHPt));
         m_selectedTextNormRect = m_pendingErasedNormRect;
+        m_pendingErasedBgColor = sampleBackgroundColorForRect(m_activePageIndex, unionPtRect);
+        updatePendingErasedPreviewPatch();
     }
-
-    QFont font = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.font : m_typewriterFont;
-    QColor color = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.color : m_typewriterColor;
-
-    // Sample background color around the selected text perimeter
-    QColor sampledBg = sampleBackgroundColorForRect(m_activePageIndex, m_selectedTextPtRect);
-    m_pendingErasedBgColor = sampledBg;
 
     // Immediately clear text selection and repaint so the selected block is visually wiped on canvas
     m_selectedIndices.clear();
     emit selectionChanged(false);
     update();
 
-    // Position the in-place text editor directly over the wiped area with extra width buffer
+    QFont font = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.font : m_typewriterFont;
+    QColor color = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.color : m_typewriterColor;
+
+    // Position the transform box directly over the wiped area with tight bounding box
     QRect origPixRect(qRound(unionPtRect.left() * m_scaleX),
                       qRound(unionPtRect.top() * m_scaleY),
                       qRound(unionPtRect.width() * m_scaleX),
                       qRound(unionPtRect.height() * m_scaleY));
-    QPoint targetTopLeft(origPixRect.left() - 4, origPixRect.top() - 2);
-    int suggestedW = origPixRect.width() + 32;
+    QPoint targetTopLeft(origPixRect.left(), origPixRect.top());
+    int suggestedW = origPixRect.width() + 8;
 
     setToolMode(PdfToolMode::Typewriter);
 
-    PdfTextBgMode bgMode = PdfTextBgMode::Auto;
+    PdfTextBgMode bgMode = PdfTextBgMode::Transparent;
+    QColor sampledBg = m_pendingErasedBgColor.isValid() ? m_pendingErasedBgColor : Qt::white;
+
     if (m_transformBox) {
         m_transformBox->setScaleFactor(m_scaleX);
         m_transformBox->setGeometry(pageRect(m_activePageIndex));
         m_transformBox->showText(text, font, color, bgMode, sampledBg,
-                                 QRect(targetTopLeft.x(), targetTopLeft.y(), suggestedW, origPixRect.height() + 4),
+                                 QRect(targetTopLeft.x(), targetTopLeft.y(), suggestedW, origPixRect.height()),
                                  targetTopLeft);
         m_transformBox->setTextModified(true);
-        if (m_transformBox->inlineTextEdit()) {
-            m_transformBox->inlineTextEdit()->setFocus();
-            m_transformBox->inlineTextEdit()->selectAll();
+        if (startInEditMode) {
+            m_transformBox->setPlacementMode(false);
+            if (m_transformBox->inlineTextEdit()) {
+                m_transformBox->inlineTextEdit()->setFocus();
+                m_transformBox->inlineTextEdit()->selectAll();
+            }
+        } else {
+            m_transformBox->setPlacementMode(true, QPoint(), suggestedW, targetTopLeft);
         }
     }
 
     updateTransformBoxCollision();
-    emit inPlaceTextEditStarted(text, font, color, bgMode, sampledBg);
+    if (startInEditMode) {
+        emit inPlaceTextEditStarted(text, font, color, bgMode, sampledBg);
+    }
+}
+
+void PdfPageWidget::startInPlaceTextEdit()
+{
+    launchTextTransform(true);
 }
 
 void PdfPageWidget::updateTextBgProperties(PdfTextBgMode mode, const QColor &color)
@@ -808,71 +995,7 @@ void PdfPageWidget::editSelectedTextWithWhiteout()
 
 void PdfPageWidget::moveSelectedText()
 {
-    if (m_selectedIndices.empty() || m_textBoxes.empty()) return;
-
-    captureSelectedTextFormat();
-    QString text = selectedText();
-
-    clearPendingErasedState();
-
-    QRectF unionPtRect;
-    for (int idx : m_selectedIndices) {
-        if (idx >= 0 && idx < static_cast<int>(m_textBoxes.size())) {
-            m_pendingErasedBoxIndices.insert(idx);
-            if (unionPtRect.isNull()) {
-                unionPtRect = m_textBoxes[idx]->boundingBox();
-            } else {
-                unionPtRect = unionPtRect.united(m_textBoxes[idx]->boundingBox());
-            }
-        }
-    }
-
-    if (unionPtRect.isEmpty() || unionPtRect.width() <= 0.0 || unionPtRect.height() <= 0.0) return;
-
-    QRectF paddedUnionPt = unionPtRect.adjusted(-1.0, -1.0, 1.0, 1.0);
-    for (int i = 0; i < static_cast<int>(m_textBoxes.size()); ++i) {
-        if (m_textBoxes[i] && paddedUnionPt.contains(m_textBoxes[i]->boundingBox().center())) {
-            m_pendingErasedBoxIndices.insert(i);
-        }
-    }
-
-    double pageWPt = width() / m_scaleX;
-    double pageHPt = height() / m_scaleY;
-    if (m_activePageIndex >= 0 && m_activePageIndex < m_pageLayouts.size()) {
-        pageWPt = m_pageLayouts[m_activePageIndex].rect.width() / m_scaleX;
-        pageHPt = m_pageLayouts[m_activePageIndex].rect.height() / m_scaleY;
-    }
-
-    if (pageWPt > 0.0 && pageHPt > 0.0) {
-        m_pendingErasedPtRect = paddedUnionPt;
-        m_pendingErasedNormRect = QRectF(std::max(0.0, paddedUnionPt.x() / pageWPt),
-                                         std::max(0.0, paddedUnionPt.y() / pageHPt),
-                                         std::min(1.0, paddedUnionPt.width() / pageWPt),
-                                         std::min(1.0, paddedUnionPt.height() / pageHPt));
-        m_pendingErasedBgColor = sampleBackgroundColorForRect(m_activePageIndex, unionPtRect);
-    }
-
-    // Clear selection
-    m_selectedIndices.clear();
-    update();
-    emit selectionChanged(false);
-
-    // Launch movable typewriter box in placement mode with collision detection
-    QRect origPixRect(qRound(unionPtRect.left() * m_scaleX),
-                      qRound(unionPtRect.top() * m_scaleY),
-                      qRound(unionPtRect.width() * m_scaleX),
-                      qRound(unionPtRect.height() * m_scaleY));
-    QPoint targetTopLeft(origPixRect.left() - 4, origPixRect.top() - 2);
-    int suggestedW = origPixRect.width() + 32;
-
-    QFont font = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.font : m_typewriterFont;
-    QColor color = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.color : m_typewriterColor;
-
-    startTypewriter(text, font, color, false, targetTopLeft);
-    if (m_transformBox) {
-        m_transformBox->setPlacementMode(true, QPoint(), suggestedW, targetTopLeft);
-    }
-    updateTransformBoxCollision();
+    launchTextTransform(false);
 }
 
 void PdfPageWidget::redactSelectedText()
@@ -932,7 +1055,12 @@ void PdfPageWidget::updateTypewriterProperties(const QFont &font, const QColor &
 
 void PdfPageWidget::updateShapeProperties(int strokeWidth, const QColor &strokeColor, const QColor &fillColor)
 {
-    updateShapeProperties(m_shapeType, strokeWidth, strokeColor, fillColor);
+    m_shapeStrokeWidth = strokeWidth;
+    m_shapeStrokeColor = strokeColor;
+    m_shapeFillColor = fillColor;
+    if (m_transformBox && m_transformBox->isVisible() && m_transformBox->itemType() == PdfTransformItemType::Shape) {
+        m_transformBox->updateShape(m_shapeType, strokeWidth, strokeColor, fillColor);
+    }
 }
 
 void PdfPageWidget::updateShapeProperties(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor)
@@ -944,151 +1072,34 @@ void PdfPageWidget::updateShapeProperties(int shapeType, int strokeWidth, const 
     if (m_transformBox && m_transformBox->isVisible() && m_transformBox->itemType() == PdfTransformItemType::Shape) {
         m_transformBox->updateShape(shapeType, strokeWidth, strokeColor, fillColor);
     }
-    if (m_selectedShapeIndex >= 0 && m_selectedShapeIndex < m_placedShapes.size()) {
-        updateSelectedShapeProperties(shapeType, strokeWidth, strokeColor, fillColor);
-    }
-}
-
-void PdfPageWidget::updateSelectedShapeProperties(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor)
-{
-    if (m_selectedShapeIndex < 0 || m_selectedShapeIndex >= m_placedShapes.size()) return;
-
-    auto &shp = m_placedShapes[m_selectedShapeIndex];
-    if (shapeType >= 0) {
-        shp.shapeType = shapeType;
-    }
-    shp.strokeWidth = strokeWidth;
-    shp.strokeColor = strokeColor;
-    shp.fillColor = fillColor;
-
-    shp.stampImage = PdfCanvasTools::renderShapeStamp(shp.shapeType, shp.strokeWidth,
-                                                      shp.strokeColor, shp.fillColor,
-                                                      shp.rect.size(), shp.startPt, shp.endPt);
-    if (!shp.stampImage.isNull()) {
-        emit moveStampAnnotationRequested(shp.normRect, shp.normRect, shp.stampImage);
-    }
-    update();
 }
 
 void PdfPageWidget::updateSelectedStampProperties(const QString &text, const QColor &color, qreal angle, int style, int fontSize)
 {
-    if (m_selectedShapeIndex < 0 || m_selectedShapeIndex >= m_placedShapes.size()) return;
-    auto &shp = m_placedShapes[m_selectedShapeIndex];
-    if (shp.shapeType != 100) return;
-
-    if (m_committingShapeIndex >= 0 && m_committingShapeIndex != m_selectedShapeIndex) {
-        commitSelectedStampToPdf();
-    }
-
-    if (m_committingShapeIndex != m_selectedShapeIndex) {
-        m_committingShapeIndex = m_selectedShapeIndex;
-        m_commitOldNormRect = shp.normRect;
-    }
-
-    shp.stampText = text;
-    shp.stampColor = color.isValid() ? color : QColor(QStringLiteral("#dc2626"));
-    shp.stampAngle = angle;
-    shp.stampStyle = style;
-    shp.stampSize = (fontSize > 0) ? fontSize : 28;
-
-    QRect activePR = pageRect(shp.pageIndex);
-    int pageW = activePR.width();
-    int pageH = activePR.height();
-    if (pageW <= 0 || pageH <= 0) return;
-
-    QPoint centerPos = shp.rect.center();
-    QRect newRect = PdfCanvasTools::calculateStampRect(shp.stampText, shp.stampAngle,
-                                                       shp.stampSize, centerPos, pageW, pageH);
-
-    QImage stampImg(newRect.size(), QImage::Format_ARGB32_Premultiplied);
-    stampImg.fill(Qt::transparent);
-    QPainter p(&stampImg);
-    p.setRenderHint(QPainter::Antialiasing, true);
-    PdfTransformBox::drawWatermarkStamp(p, QRect(QPoint(0, 0), newRect.size()),
-                                        shp.stampText, shp.stampAngle,
-                                        shp.stampOpacity, shp.stampColor,
-                                        shp.stampStyle);
-    p.end();
-
-    QRectF newNorm(static_cast<double>(newRect.x()) / pageW,
-                   static_cast<double>(newRect.y()) / pageH,
-                   static_cast<double>(newRect.width()) / pageW,
-                   static_cast<double>(newRect.height()) / pageH);
-
-    shp.rect = newRect;
-    shp.normRect = newNorm;
-    shp.stampImage = stampImg;
-
-    update();
-
-    if (!m_stampCommitTimer) {
-        m_stampCommitTimer = new QTimer(this);
-        m_stampCommitTimer->setSingleShot(true);
-        connect(m_stampCommitTimer, &QTimer::timeout, this, &PdfPageWidget::commitSelectedStampToPdf);
-    }
-    m_stampCommitTimer->start(350);
-}
-
-void PdfPageWidget::commitSelectedStampToPdf()
-{
-    if (m_stampCommitTimer && m_stampCommitTimer->isActive()) {
-        m_stampCommitTimer->stop();
-    }
-    if (m_committingShapeIndex >= 0 && m_committingShapeIndex < m_placedShapes.size()) {
-        int idx = m_committingShapeIndex;
-        QRectF oldNorm = m_commitOldNormRect;
-        QRectF newNorm = m_placedShapes[idx].normRect;
-        QImage stampImg = m_placedShapes[idx].stampImage;
-        m_committingShapeIndex = -1;
-        m_commitOldNormRect = QRectF();
-
-        if (!stampImg.isNull()) {
-            emit moveStampAnnotationRequested(oldNorm, newNorm, stampImg);
-        }
-    } else {
-        m_committingShapeIndex = -1;
-        m_commitOldNormRect = QRectF();
+    m_watermarkText = text;
+    m_watermarkColor = color.isValid() ? color : QColor(QStringLiteral("#dc2626"));
+    m_watermarkAngle = angle;
+    m_watermarkStyle = style;
+    m_watermarkSize = (fontSize > 0) ? fontSize : 28;
+    if (m_transformBox && m_transformBox->isVisible() && m_transformBox->itemType() == PdfTransformItemType::Watermark) {
+        m_transformBox->updateWatermark(text, angle, 0.90, m_watermarkColor, style);
     }
 }
 
-void PdfPageWidget::cancelPendingStampCommit()
+void PdfPageWidget::commitActiveTransformBox()
 {
-    if (m_stampCommitTimer && m_stampCommitTimer->isActive()) {
-        m_stampCommitTimer->stop();
+    if (m_transformBox && m_transformBox->isVisible()) {
+        onTransformBoxApplied();
     }
-    m_committingShapeIndex = -1;
-    m_commitOldNormRect = QRectF();
-}
-
-void PdfPageWidget::deleteSelectedShape()
-{
-    if (m_selectedShapeIndex < 0 || m_selectedShapeIndex >= m_placedShapes.size()) return;
-
-    QRectF normRect = m_placedShapes[m_selectedShapeIndex].normRect;
-    if (m_committingShapeIndex == m_selectedShapeIndex) {
-        if (m_stampCommitTimer && m_stampCommitTimer->isActive()) {
-            m_stampCommitTimer->stop();
-        }
-        if (!m_commitOldNormRect.isNull()) {
-            normRect = m_commitOldNormRect;
-        }
-        m_committingShapeIndex = -1;
-        m_commitOldNormRect = QRectF();
-    }
-    m_placedShapes.removeAt(m_selectedShapeIndex);
-    m_selectedShapeIndex = -1;
-    m_hoveredShapeIndex = -1;
-    emit deleteStampAnnotationRequested(normRect);
-    update();
 }
 
 void PdfPageWidget::dragEnterEvent(QDragEnterEvent *event)
 {
-    if (m_isEditMode && event->mimeData() && event->mimeData()->hasUrls()) {
+    if (event->mimeData() && event->mimeData()->hasUrls()) {
         const auto urls = event->mimeData()->urls();
         for (const auto &url : urls) {
             QString ext = QFileInfo(url.toLocalFile()).suffix().toLower();
-            if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "webp" || ext == "bmp" || ext == "svg") {
+            if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "webp" || ext == "bmp" || ext == "svg" || ext == "tiff" || ext == "tif") {
                 event->acceptProposedAction();
                 return;
             }
@@ -1099,12 +1110,15 @@ void PdfPageWidget::dragEnterEvent(QDragEnterEvent *event)
 
 void PdfPageWidget::dropEvent(QDropEvent *event)
 {
-    if (m_isEditMode && event->mimeData() && event->mimeData()->hasUrls()) {
+    if (event->mimeData() && event->mimeData()->hasUrls()) {
         const auto urls = event->mimeData()->urls();
         for (const auto &url : urls) {
             QString path = url.toLocalFile();
             QImage img(path);
             if (!img.isNull()) {
+                if (!m_isEditMode) {
+                    emit editModeRequested();
+                }
                 int clickedPage = pageIndexAtPos(event->position().toPoint());
                 if (clickedPage >= 0 && clickedPage != m_activePageIndex) {
                     setActivePage(clickedPage);
@@ -1164,6 +1178,11 @@ void PdfPageWidget::cutSelectedArea()
 
 void PdfPageWidget::copySelectedArea()
 {
+    copySelectedAreaImage();
+}
+
+void PdfPageWidget::copySelectedAreaImage()
+{
     m_lastClipType = LastClipType::AreaImage;
     m_lastCopiedTextFormat.valid = false;
 
@@ -1174,7 +1193,7 @@ void PdfPageWidget::copySelectedArea()
         r = m_selectedAreaRect;
     }
 
-    if (r.width() < 4 || r.height() < 4) return;
+    if (r.width() < 4 || r.height() < 4 || m_scaleX <= 0.0 || m_scaleY <= 0.0) return;
 
     QRectF pointRect(r.x() / m_scaleX,
                     r.y() / m_scaleY,
@@ -1182,6 +1201,103 @@ void PdfPageWidget::copySelectedArea()
                     r.height() / m_scaleY);
 
     emit copyAreaRequested(pointRect);
+}
+
+void PdfPageWidget::copySelectedAreaText()
+{
+    QRect r;
+    if (m_transformBox && m_transformBox->isVisible() && m_transformBox->itemType() == PdfTransformItemType::AreaSelection) {
+        r = m_transformBox->boxRect();
+    } else if (m_hasAreaSelection && m_selectedAreaRect.width() >= 4 && m_selectedAreaRect.height() >= 4) {
+        r = m_selectedAreaRect;
+    }
+
+    if (r.width() < 4 || r.height() < 4 || m_scaleX <= 0.0 || m_scaleY <= 0.0) return;
+
+    QRectF areaPtRect(r.x() / m_scaleX, r.y() / m_scaleY, r.width() / m_scaleX, r.height() / m_scaleY);
+
+    QString extractedText;
+    std::vector<int> containedIndices;
+    for (int i = 0; i < static_cast<int>(m_textBoxes.size()); ++i) {
+        if (!m_textBoxes[i]) continue;
+        QRectF b = m_textBoxes[i]->boundingBox();
+        if (areaPtRect.contains(b.center()) ||
+            (areaPtRect.intersects(b) && areaPtRect.intersected(b).width() >= b.width() * 0.35)) {
+            containedIndices.push_back(i);
+        }
+    }
+
+    if (!containedIndices.empty()) {
+        for (size_t k = 0; k < containedIndices.size(); ++k) {
+            int idx = containedIndices[k];
+            extractedText += m_textBoxes[idx]->text();
+            if (k + 1 < containedIndices.size()) {
+                int nextIdx = containedIndices[k + 1];
+                QRectF currR = m_textBoxes[idx]->boundingBox();
+                QRectF nextR = m_textBoxes[nextIdx]->boundingBox();
+                double vertDiff = nextR.center().y() - currR.center().y();
+                double lineH = std::max(6.0, currR.height());
+                if (vertDiff > lineH * 0.45) {
+                    extractedText += (vertDiff > lineH * 1.4) ? QStringLiteral("\n\n") : QStringLiteral("\n");
+                } else if (m_textBoxes[idx]->hasSpaceAfter() || nextR.left() > currR.right() + 1.0) {
+                    extractedText += QStringLiteral(" ");
+                }
+            } else if (m_textBoxes[idx]->hasSpaceAfter()) {
+                extractedText += QStringLiteral(" ");
+            }
+        }
+    }
+
+    // Direct Poppler text extraction fallback in area rect
+    if (extractedText.trimmed().isEmpty() && m_doc && m_activePageIndex >= 0 && m_activePageIndex < m_doc->numPages()) {
+        std::unique_ptr<Poppler::Page> p(m_doc->page(m_activePageIndex));
+        if (p) {
+            extractedText = p->text(areaPtRect).trimmed();
+        }
+    }
+
+    QString trimmed = extractedText.trimmed();
+    if (!trimmed.isEmpty()) {
+        m_lastClipType = LastClipType::Text;
+        QApplication::clipboard()->setText(trimmed);
+        QToolTip::showText(QCursor::pos(), tr("📋 Copied text from area (%1 characters)").arg(trimmed.length()));
+    } else {
+        // Fallback to image copy if area contains no selectable text
+        copySelectedAreaImage();
+    }
+}
+
+void PdfPageWidget::ocrSelectedArea()
+{
+    if (m_transformBox && m_transformBox->isVisible()) {
+        if (m_transformBox->itemType() == PdfTransformItemType::Image && !m_transformBox->image().isNull()) {
+            emit scanSnippetRequested(m_transformBox->image());
+            return;
+        }
+        if (m_transformBox->itemType() == PdfTransformItemType::AreaSelection) {
+            QRect r = m_transformBox->boxRect();
+            if (r.width() >= 4 && r.height() >= 4 && m_scaleX > 0.0 && m_scaleY > 0.0) {
+                QRectF pointRect(r.x() / m_scaleX,
+                                r.y() / m_scaleY,
+                                r.width() / m_scaleX,
+                                r.height() / m_scaleY);
+                emit ocrAreaRequested(pointRect);
+                return;
+            }
+        }
+    }
+
+    if (m_hasAreaSelection && m_selectedAreaRect.width() >= 4 && m_selectedAreaRect.height() >= 4) {
+        QRect r = m_selectedAreaRect;
+        if (m_scaleX > 0.0 && m_scaleY > 0.0) {
+            QRectF pointRect(r.x() / m_scaleX,
+                            r.y() / m_scaleY,
+                            r.width() / m_scaleX,
+                            r.height() / m_scaleY);
+            emit ocrAreaRequested(pointRect);
+            return;
+        }
+    }
 }
 
 void PdfPageWidget::clearAreaSelection()
@@ -1238,6 +1354,48 @@ void PdfPageWidget::pasteFromClipboard(const QPoint &targetPos)
         }
     }
 
+    auto extractFormatFromClipboard = [this, clipboard, &text](QFont &outFont, QColor &outColor) {
+        bool hasCustomFormat = false;
+        const QMimeData *mimeData = clipboard->mimeData();
+        if (mimeData && mimeData->hasFormat(QStringLiteral("application/x-bubez-text-format"))) {
+            QByteArray raw = mimeData->data(QStringLiteral("application/x-bubez-text-format"));
+            QJsonDocument doc = QJsonDocument::fromJson(raw);
+            if (!doc.isNull() && doc.isObject()) {
+                QJsonObject obj = doc.object();
+                QString fam = obj[QStringLiteral("family")].toString();
+                double pt = obj[QStringLiteral("pointSize")].toDouble();
+                QString col = obj[QStringLiteral("color")].toString();
+                bool b = obj[QStringLiteral("bold")].toBool();
+                bool it = obj[QStringLiteral("italic")].toBool();
+
+                if (!fam.isEmpty()) outFont.setFamily(fam);
+                if (pt > 0.0) outFont.setPointSizeF(pt);
+                outFont.setBold(b);
+                outFont.setItalic(it);
+                if (b && it) outFont.setStyleName(QStringLiteral("Bold Italic"));
+                else if (b) outFont.setStyleName(QStringLiteral("Bold"));
+                else if (it) outFont.setStyleName(QStringLiteral("Italic"));
+                if (!col.isEmpty()) outColor = QColor(col);
+                hasCustomFormat = true;
+
+                m_lastCopiedTextFormat.font = outFont;
+                m_lastCopiedTextFormat.color = outColor;
+                m_lastCopiedTextFormat.valid = true;
+            }
+        }
+
+        if (!hasCustomFormat) {
+            if (m_lastCopiedTextFormat.valid) {
+                outFont = m_lastCopiedTextFormat.font;
+                outColor = m_lastCopiedTextFormat.color;
+            } else {
+                detectTextFormatFromDocument(text);
+                outFont = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.font : QFont(QStringLiteral("Sans Serif"), 12);
+                outColor = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.color : Qt::black;
+            }
+        }
+    };
+
     // 1. If an area or image was copied/cut:
     if (hasImage && (m_lastClipType == LastClipType::AreaImage || !hasText)) {
         startInsertImage(img, localPos);
@@ -1246,13 +1404,16 @@ void PdfPageWidget::pasteFromClipboard(const QPoint &targetPos)
 
     // 2. If text was copied/cut:
     if (hasText && (m_lastClipType == LastClipType::Text || !hasImage)) {
-        QFont pasteFont = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.font : QFont(QStringLiteral("Sans Serif"), 12);
-        QColor pasteColor = m_lastCopiedTextFormat.valid ? m_lastCopiedTextFormat.color : Qt::black;
+        QFont pasteFont(QStringLiteral("Sans Serif"), 12);
+        QColor pasteColor = Qt::black;
+        extractFormatFromClipboard(pasteFont, pasteColor);
+
         startTypewriter(text, pasteFont, pasteColor, false, localPos);
         if (m_transformBox) {
-            m_transformBox->setPlacementMode(true, localPos);
+            m_transformBox->setPlacementMode(true, QPoint(), 0, localPos);
         }
         updateTransformBoxCollision();
+        emit inPlaceTextEditStarted(text, pasteFont, pasteColor, PdfTextBgMode::Transparent, Qt::white);
         return;
     }
 
@@ -1264,11 +1425,15 @@ void PdfPageWidget::pasteFromClipboard(const QPoint &targetPos)
 
     if (hasText) {
         QFont defaultFont(QStringLiteral("Sans Serif"), 12);
-        startTypewriter(text, defaultFont, Qt::black, false, localPos);
+        QColor defaultColor = Qt::black;
+        extractFormatFromClipboard(defaultFont, defaultColor);
+
+        startTypewriter(text, defaultFont, defaultColor, false, localPos);
         if (m_transformBox) {
-            m_transformBox->setPlacementMode(true, localPos);
+            m_transformBox->setPlacementMode(true, QPoint(), 0, localPos);
         }
         updateTransformBoxCollision();
+        emit inPlaceTextEditStarted(text, defaultFont, defaultColor, PdfTextBgMode::Transparent, Qt::white);
         return;
     }
 }
@@ -1276,67 +1441,41 @@ void PdfPageWidget::pasteFromClipboard(const QPoint &targetPos)
 void PdfPageWidget::startWatermark(const QString &text, qreal angle, qreal opacity,
                                    const QColor &color, const QPoint &initialPos, int style, int fontSize)
 {
-    m_watermarkText = text;
+    m_watermarkText = text.isEmpty() ? tr("CONFIDENTIAL") : text;
     m_watermarkAngle = angle;
     m_watermarkOpacity = opacity;
     m_watermarkColor = color.isValid() ? color : QColor(QStringLiteral("#dc2626"));
     m_watermarkStyle = style;
     m_watermarkSize = (fontSize > 0) ? fontSize : 28;
+
+    if (!m_transformBox) return;
+
+    QPoint targetPos = initialPos.isNull() ? visibleCenter() : initialPos;
+    QRect activePR = pageRect(m_activePageIndex);
+    int pageW = activePR.width();
+    int pageH = activePR.height();
+    QRect stampRect = PdfCanvasTools::calculateStampRect(m_watermarkText, m_watermarkAngle,
+                                                         m_watermarkSize, targetPos, pageW, pageH);
+    m_transformBox->setGeometry(activePR);
+    m_transformBox->showWatermark(m_watermarkText, m_watermarkAngle, m_watermarkOpacity,
+                                  m_watermarkColor, stampRect.center(), m_watermarkStyle);
     setToolMode(PdfToolMode::Watermark);
-
-    if (!initialPos.isNull() && !m_watermarkText.isEmpty()) {
-        QRect activePR = pageRect(m_activePageIndex);
-        int pageW = activePR.width();
-        int pageH = activePR.height();
-        if (pageW > 0 && pageH > 0) {
-            QRect stampRect = PdfCanvasTools::calculateStampRect(m_watermarkText, m_watermarkAngle,
-                                                                 m_watermarkSize, initialPos, pageW, pageH);
-
-            QImage stampImg(stampRect.size(), QImage::Format_ARGB32_Premultiplied);
-            stampImg.fill(Qt::transparent);
-            QPainter p(&stampImg);
-            p.setRenderHint(QPainter::Antialiasing, true);
-            PdfTransformBox::drawWatermarkStamp(p, QRect(QPoint(0, 0), stampRect.size()),
-                                                m_watermarkText, m_watermarkAngle,
-                                                m_watermarkOpacity, m_watermarkColor,
-                                                m_watermarkStyle);
-            p.end();
-
-            QRectF normRect(static_cast<double>(stampRect.x()) / pageW,
-                           static_cast<double>(stampRect.y()) / pageH,
-                           static_cast<double>(stampRect.width()) / pageW,
-                           static_cast<double>(stampRect.height()) / pageH);
-
-            PlacedShapeItem item;
-            item.id = ++m_shapeIdCounter;
-            item.pageIndex = m_activePageIndex;
-            item.shapeType = 100;
-            item.rect = stampRect;
-            item.normRect = normRect;
-            item.stampImage = stampImg;
-            item.stampText = m_watermarkText;
-            item.stampAngle = m_watermarkAngle;
-            item.stampOpacity = m_watermarkOpacity;
-            item.stampColor = m_watermarkColor;
-            item.stampStyle = m_watermarkStyle;
-            item.stampSize = m_watermarkSize;
-            m_placedShapes.append(item);
-            m_selectedShapeIndex = m_placedShapes.size() - 1;
-
-            emit addStampAnnotationRequested(stampImg, normRect);
-            update();
-        }
-    }
+    update();
 }
 
 void PdfPageWidget::startShape(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor)
 {
     m_shapeType = shapeType;
-    m_shapeStrokeWidth = strokeWidth;
-    m_shapeStrokeColor = strokeColor;
+    m_shapeStrokeWidth = std::max(1, strokeWidth);
+    m_shapeStrokeColor = strokeColor.isValid() ? strokeColor : Qt::red;
     m_shapeFillColor = fillColor;
 
     setToolMode(PdfToolMode::Shape);
+
+    if (m_transformBox && m_transformBox->isVisible() && m_transformBox->itemType() == PdfTransformItemType::Shape) {
+        m_transformBox->updateShape(m_shapeType, m_shapeStrokeWidth, m_shapeStrokeColor, m_shapeFillColor);
+    }
+    update();
 }
 
 void PdfPageWidget::setShapeType(int type)
@@ -1448,16 +1587,6 @@ void PdfPageWidget::commitHighlightDrawing(const QRect &rect)
     c.setAlphaF(qBound(0.05, m_highlighterOpacity, 1.0));
     highlightImg.fill(c);
 
-    PlacedShapeItem item;
-    item.id = ++m_shapeIdCounter;
-    item.pageIndex = m_activePageIndex;
-    item.shapeType = 102; // Highlight
-    item.rect = rect;
-    item.normRect = normRect;
-    item.stampImage = highlightImg;
-    m_placedShapes.append(item);
-    m_activeHighlightIndex = m_placedShapes.size() - 1;
-
     emit addStampAnnotationRequested(highlightImg, normRect);
     update();
 }
@@ -1481,7 +1610,7 @@ void PdfPageWidget::highlightSelectedText(const QColor &color, double opacity)
 
     if (pageWPt <= 0 || pageHPt <= 0) return;
 
-    QList<QPair<QImage, QRectF>> batchStamps;
+    QList<QPair<QImage, QRectF>> hlStamps;
     for (int idx : m_selectedIndices) {
         if (idx >= 0 && idx < static_cast<int>(m_textBoxes.size())) {
             const auto &box = m_textBoxes[idx];
@@ -1492,11 +1621,6 @@ void PdfPageWidget::highlightSelectedText(const QColor &color, double opacity)
                             std::min(1.0, ptRect.width() / pageWPt),
                             std::min(1.0, ptRect.height() / pageHPt));
 
-            QRect hlRect(qRound(ptRect.x() * m_scaleX),
-                         qRound(ptRect.y() * m_scaleY),
-                         std::max(4, qRound(ptRect.width() * m_scaleX)),
-                         std::max(4, qRound(ptRect.height() * m_scaleY)));
-
             int pixW = std::max(4, qRound(ptRect.width() * m_scaleX * 2.0));
             int pixH = std::max(4, qRound(ptRect.height() * m_scaleY * 2.0));
             QImage hlImg(pixW, pixH, QImage::Format_ARGB32_Premultiplied);
@@ -1504,25 +1628,12 @@ void PdfPageWidget::highlightSelectedText(const QColor &color, double opacity)
             c.setAlphaF(hlOpacity);
             hlImg.fill(c);
 
-            PlacedShapeItem item;
-            item.id = ++m_shapeIdCounter;
-            item.pageIndex = m_activePageIndex;
-            item.shapeType = 102; // Highlight
-            item.rect = hlRect;
-            item.normRect = normRect;
-            item.stampImage = hlImg;
-            m_placedShapes.append(item);
-
-            batchStamps.append(qMakePair(hlImg, normRect));
+            hlStamps.append({hlImg, normRect});
         }
     }
 
-    if (!m_placedShapes.isEmpty()) {
-        m_activeHighlightIndex = m_placedShapes.size() - 1;
-    }
-
-    if (!batchStamps.isEmpty()) {
-        emit addStampAnnotationsRequested(batchStamps);
+    if (!hlStamps.isEmpty()) {
+        emit addStampAnnotationsRequested(hlStamps);
     }
 
     m_selectedIndices.clear();
@@ -1534,28 +1645,12 @@ void PdfPageWidget::updateHighlighterProperties(const QColor &color, double opac
 {
     m_highlighterColor = color.isValid() ? color : m_highlighterColor;
     m_highlighterOpacity = qBound(0.05, opacity, 1.0);
-
-    // Apply color and opacity globally across all placed highlights on the document
-    for (auto &shp : m_placedShapes) {
-        if (shp.shapeType == 102) {
-            int pixW = std::max(4, shp.rect.width() * 2);
-            int pixH = std::max(4, shp.rect.height() * 2);
-            QImage newHlImg(pixW, pixH, QImage::Format_ARGB32_Premultiplied);
-            QColor c = m_highlighterColor;
-            c.setAlphaF(m_highlighterOpacity);
-            newHlImg.fill(c);
-            shp.stampImage = newHlImg;
-        }
-    }
     update();
 }
 
 void PdfPageWidget::clearActiveHighlightSelection()
 {
-    if (m_activeHighlightIndex >= 0) {
-        m_activeHighlightIndex = -1;
-        update();
-    }
+    update();
 }
 
 void PdfPageWidget::replaceSelectedText(const QString &newText, const QFont &font, const QColor &color, bool whiteout)
@@ -1576,55 +1671,12 @@ void PdfPageWidget::replaceSelectedText(const QString &newText, const QFont &fon
 
     if (pageWPt <= 0 || pageHPt <= 0) return;
 
-    // 1. If whiteout requested, place an opaque white block over the original text bounding box
-    if (whiteout && m_selectedTextPtRect.isValid()) {
-        int pixW = std::max(4, qRound((m_selectedTextPtRect.width() + 4.0) * m_scaleX));
-        int pixH = std::max(4, qRound((m_selectedTextPtRect.height() + 4.0) * m_scaleY));
-        QImage whiteImg(pixW, pixH, QImage::Format_ARGB32_Premultiplied);
-        whiteImg.fill(Qt::white);
-
-        PlacedShapeItem whiteItem;
-        whiteItem.id = ++m_shapeIdCounter;
-        whiteItem.pageIndex = pageIdx;
-        whiteItem.shapeType = 101; // Redaction / Whiteout
-        whiteItem.rect = QRect(qRound((m_selectedTextPtRect.x() - 2.0) * m_scaleX),
-                               qRound((m_selectedTextPtRect.y() - 2.0) * m_scaleY),
-                               pixW, pixH);
-        whiteItem.normRect = m_selectedTextNormRect;
-        whiteItem.stampImage = whiteImg;
-        m_placedShapes.append(whiteItem);
+    // 1. Erase original text cleanly via vector redaction or annotation removal without whiteout stamps
+    if (m_selectedTextPtRect.isValid() && m_selectedTextNormRect.isValid()) {
+        emit eraseOriginalTextRequested(pageIdx, m_selectedTextPtRect, m_selectedTextNormRect);
     }
 
-    // 2. Render new text cleanly at target location
-    QFontMetrics fm(font);
-    QRect textBound = fm.boundingRect(QRect(0, 0, 4000, 4000), Qt::AlignLeft | Qt::TextWordWrap, newText);
-    int txtPixW = std::max(16, textBound.width() + 16);
-    int txtPixH = std::max(16, textBound.height() + 8);
-    QImage txtImg(txtPixW, txtPixH, QImage::Format_ARGB32_Premultiplied);
-    txtImg.fill(Qt::transparent);
-    {
-        QPainter p(&txtImg);
-        p.setRenderHint(QPainter::Antialiasing);
-        p.setRenderHint(QPainter::TextAntialiasing);
-        p.setFont(font);
-        p.setPen(color);
-        p.drawText(QRect(4, 2, textBound.width(), textBound.height()), Qt::AlignLeft | Qt::TextWordWrap, newText);
-    }
-
-    if (!txtImg.isNull()) {
-        PlacedShapeItem txtItem;
-        txtItem.id = ++m_shapeIdCounter;
-        txtItem.pageIndex = pageIdx;
-        txtItem.shapeType = 100; // Text stamp
-        txtItem.rect = QRect(qRound(m_selectedTextPtRect.x() * m_scaleX),
-                             qRound(m_selectedTextPtRect.y() * m_scaleY),
-                             textBound.width(), textBound.height());
-        txtItem.normRect = m_selectedTextNormRect;
-        txtItem.stampImage = txtImg;
-        m_placedShapes.append(txtItem);
-    }
-
-    // 3. Emit persistent text annotation to Poppler
+    // 2. Emit persistent text annotation to Poppler
     emit addTextAnnotationRequested(newText, font, color, m_selectedTextNormRect, whiteout);
 
     m_selectedIndices.clear();
@@ -1638,15 +1690,11 @@ void PdfPageWidget::replaceSelectedText(const QString &newText, const QFont &fon
 
 void PdfPageWidget::cancelActiveTool()
 {
-    if (m_committingShapeIndex >= 0) {
-        commitSelectedStampToPdf();
-    }
-    if (m_transformBox) {
-        m_transformBox->dismiss();
+    if (m_transformBox && m_transformBox->isVisible()) {
+        commitActiveTransformBox();
     }
     clearPendingErasedState();
     m_isDraggingTool = false;
-    m_activeHighlightIndex = -1;
     m_selectedTextNormRect = QRectF();
     bool wasContinuous = m_continuousMode;
     m_continuousMode = false;
@@ -1720,13 +1768,19 @@ void PdfPageWidget::onTransformBoxApplied()
     case PdfTransformItemType::Text: {
         QString text = m_transformBox->text();
         if (text.trimmed().isEmpty()) {
-            if (m_pendingErasedNormRect.isValid() && !m_pendingErasedNormRect.isEmpty()) {
-                int patchW = std::max(4, qRound(m_pendingErasedNormRect.width() * pageW));
-                int patchH = std::max(4, qRound(m_pendingErasedNormRect.height() * pageH));
-                QImage patchImg(patchW, patchH, QImage::Format_ARGB32_Premultiplied);
-                patchImg.fill(m_pendingErasedBgColor);
-                m_permanentlyErasedBoxIndices.unite(m_pendingErasedBoxIndices);
-                emit addStampAnnotationRequested(patchImg, m_pendingErasedNormRect);
+            if (m_transformBox->textBgMode() != PdfTextBgMode::Transparent) {
+                if (m_pendingErasedNormRect.isValid() && !m_pendingErasedNormRect.isEmpty()) {
+                    int patchW = std::max(4, qRound(m_pendingErasedNormRect.width() * pageW));
+                    int patchH = std::max(4, qRound(m_pendingErasedNormRect.height() * pageH));
+                    QImage patchImg(patchW, patchH, QImage::Format_ARGB32_Premultiplied);
+                    patchImg.fill(m_pendingErasedBgColor);
+                    m_permanentlyErasedBoxIndices.unite(m_pendingErasedBoxIndices);
+                    emit addStampAnnotationRequested(patchImg, m_pendingErasedNormRect);
+                }
+            } else {
+                if (m_pendingErasedPtRect.isValid() && !m_pendingErasedPtRect.isEmpty()) {
+                    emit eraseOriginalTextRequested(m_activePageIndex, m_pendingErasedPtRect, m_pendingErasedNormRect);
+                }
             }
             clearPendingErasedState();
             m_selectedTextNormRect = QRectF();
@@ -1737,63 +1791,46 @@ void PdfPageWidget::onTransformBoxApplied()
             return;
         }
 
-        // Real-time collision guardrail: block placement if borders overlap existing neighboring text
+        // Real-time collision guardrail: inform user if borders overlap existing neighboring text, but allow placement
         updateTransformBoxCollision();
         if (m_transformBox->hasCollision()) {
-            QMessageBox::warning(
-                window(),
-                tr("Text Overlap Detected"),
-                tr("Cannot place the text box here because its borders overlap existing text on the page.\n\n"
-                   "Please drag the box to a clear position (or click 'Edit' to shorten the text / reduce the font size) "
-                   "so it does not overwrite neighboring text."));
-            return;
-        }
-
-        if (!m_pendingMoveWhiteoutRect.isEmpty()) {
-            QImage whiteImg(16, 16, QImage::Format_RGB32);
-            whiteImg.fill(Qt::white);
-            emit addStampAnnotationRequested(whiteImg, m_pendingMoveWhiteoutRect);
-            m_pendingMoveWhiteoutRect = QRectF();
+            QToolTip::showText(QCursor::pos(), tr("⚠️ Testo applicato con sovrapposizione"));
         }
 
         m_permanentlyErasedBoxIndices.unite(m_pendingErasedBoxIndices);
 
-        // Determine background wipe rectangle:
-        // If replacing an erased block, ensure the original erased block is wiped cleanly.
-        QRectF bgNormRect = normRect;
-        if (m_pendingErasedNormRect.isValid() && !m_pendingErasedNormRect.isEmpty()) {
-            if (m_transformBox->textBgMode() == PdfTextBgMode::Transparent ||
-                m_pendingErasedNormRect.contains(normRect)) {
-                bgNormRect = m_pendingErasedNormRect;
-            } else if (m_pendingErasedNormRect.intersects(normRect)) {
-                bgNormRect = m_pendingErasedNormRect.united(normRect);
-            } else {
-                // The user dragged the replacement box completely outside the original wiped area:
-                // Stamp the original wiped area first, then use normRect for the new box's background.
+        // 1. If modifying, replacing, or moving existing text:
+        // When text background mode is NOT Transparent (e.g. Auto, Feathered, Custom),
+        // apply the user-selected background patch to cleanly wipe out the original text area.
+        if (m_transformBox->textBgMode() != PdfTextBgMode::Transparent) {
+            if (m_pendingErasedNormRect.isValid() && !m_pendingErasedNormRect.isEmpty()) {
                 int origW = std::max(4, qRound(m_pendingErasedNormRect.width() * pageW));
                 int origH = std::max(4, qRound(m_pendingErasedNormRect.height() * pageH));
-                QImage origWipeImg(origW, origH, QImage::Format_ARGB32_Premultiplied);
-                origWipeImg.fill(m_pendingErasedBgColor);
+                QImage origWipeImg;
+                QColor wipeColor = (m_transformBox->textBgColor().isValid()) ? m_transformBox->textBgColor() : m_pendingErasedBgColor;
+                if (m_transformBox->textBgMode() == PdfTextBgMode::Feathered) {
+                    origWipeImg = PdfCanvasTools::createFeatheredPatch(QSize(origW, origH), wipeColor);
+                } else {
+                    origWipeImg = QImage(origW, origH, QImage::Format_ARGB32_Premultiplied);
+                    origWipeImg.fill(wipeColor);
+                }
                 emit addStampAnnotationRequested(origWipeImg, m_pendingErasedNormRect);
-                bgNormRect = normRect;
             }
-        } else if (m_selectedTextNormRect.isValid() && !m_selectedTextNormRect.isEmpty()) {
-            bgNormRect = bgNormRect.united(m_selectedTextNormRect);
-            bgNormRect.adjust(-0.002, -0.002, 0.002, 0.002);
-            bgNormRect.setLeft(std::max(0.0, bgNormRect.left()));
-            bgNormRect.setTop(std::max(0.0, bgNormRect.top()));
-            bgNormRect.setRight(std::min(1.0, bgNormRect.right()));
-            bgNormRect.setBottom(std::min(1.0, bgNormRect.bottom()));
+        } else {
+            // When text background mode IS Transparent, NEVER stamp an opaque solid rectangular patch!
+            // Instead, request vector text removal so background graphics, grids, and photos remain intact.
+            if (m_pendingErasedPtRect.isValid() && !m_pendingErasedPtRect.isEmpty()) {
+                emit eraseOriginalTextRequested(m_activePageIndex, m_pendingErasedPtRect, m_pendingErasedNormRect);
+            }
         }
 
-        // Generate background patch image if we have a wiped block or non-transparent background mode
+        // 2. Generate background patch for the NEW text box ONLY if user explicitly requested a non-transparent background
         QImage bgImg;
-        bool needBgPatch = (m_transformBox->textBgMode() != PdfTextBgMode::Transparent) ||
-                           (m_pendingErasedNormRect.isValid() && !m_pendingErasedNormRect.isEmpty());
+        bool needBgPatch = (m_transformBox->textBgMode() != PdfTextBgMode::Transparent);
+        QRectF bgNormRect = normRect;
+
         if (needBgPatch) {
-            QColor patchColor = (m_pendingErasedNormRect.isValid() && !m_pendingErasedNormRect.isEmpty())
-                                ? m_pendingErasedBgColor
-                                : m_transformBox->textBgColor();
+            QColor patchColor = (m_transformBox->textBgColor().isValid()) ? m_transformBox->textBgColor() : m_pendingErasedBgColor;
             int patchW = std::max(4, qRound(bgNormRect.width() * pageW));
             int patchH = std::max(4, qRound(bgNormRect.height() * pageH));
             if (m_transformBox->textBgMode() == PdfTextBgMode::Feathered) {
@@ -1804,12 +1841,42 @@ void PdfPageWidget::onTransformBoxApplied()
             }
         }
 
-        // Give left-aligned FreeText annotations a right-side width buffer
-        // so Poppler's internal PDF font metrics never prematurely wrap words at line ends.
+        // Give FreeText annotations a generous width and height buffer
+        // so Poppler's internal PDF font metrics and clipping rect never prematurely wrap or truncate words at line ends or descenders.
         QRectF textNormRect = normRect;
-        if (m_transformBox->textAlignment() == Qt::AlignLeft && pageW > 0) {
-            double extraNormW = 28.0 / pageW;
-            textNormRect.setWidth(std::min(1.0 - textNormRect.left(), textNormRect.width() + extraNormW));
+        if (pageW > 0 && pageH > 0) {
+            QFont annotFont = m_transformBox->textFont();
+            QFontMetricsF fmPt(annotFont);
+            double fontPt = annotFont.pointSizeF() > 0.0 ? annotFont.pointSizeF() : annotFont.pointSize();
+            if (fontPt <= 0.0) fontPt = 12.0;
+
+            double pageWPt = (m_scaleX > 0.001) ? (pageW / m_scaleX) : (pageW * 72.0 / 96.0);
+            double pageHPt = (m_scaleY > 0.001) ? (pageH / m_scaleY) : (pageH * 72.0 / 96.0);
+            double boxWPt = (m_scaleX > 0.001) ? (box.width() / m_scaleX) : box.width();
+            double boxHPt = (m_scaleY > 0.001) ? (box.height() / m_scaleY) : box.height();
+
+            const QStringList textLines = text.split(QLatin1Char('\n'));
+            double maxTextWPt = 0.0;
+            for (const QString &line : textLines) {
+                maxTextWPt = std::max(maxTextWPt, fmPt.horizontalAdvance(line));
+            }
+            double neededHPt = std::max(boxHPt, static_cast<double>(textLines.size()) * fmPt.lineSpacing());
+
+            double bufferWPt = std::max(24.0, fontPt * 1.5);
+            double bufferHPt = std::max(12.0, fontPt * 0.8);
+
+            double finalWPt = std::max(boxWPt, maxTextWPt) + bufferWPt;
+            double finalHPt = std::max(boxHPt, neededHPt) + bufferHPt;
+
+            textNormRect.setWidth(finalWPt / pageWPt);
+            textNormRect.setHeight(finalHPt / pageHPt);
+
+            if (textNormRect.right() > 1.0) {
+                textNormRect.setWidth(std::max(normRect.width(), 1.0 - textNormRect.x()));
+            }
+            if (textNormRect.bottom() > 1.0) {
+                textNormRect.setHeight(std::max(normRect.height(), 1.0 - textNormRect.y()));
+            }
         }
 
         clearPendingErasedState();
@@ -1964,10 +2031,14 @@ void PdfPageWidget::onTransformBoxApplyAndContinue()
 void PdfPageWidget::onTransformBoxCancelled()
 {
     clearPendingErasedState();
-    m_pendingMoveWhiteoutRect = QRectF();
     m_selectedTextNormRect = QRectF();
+    bool wasShape = (m_transformBox && m_transformBox->itemType() == PdfTransformItemType::Shape);
     m_transformBox->dismiss();
-    setToolMode(PdfToolMode::SelectText);
+    if (wasShape) {
+        setToolMode(PdfToolMode::Shape);
+    } else {
+        setToolMode(PdfToolMode::SelectText);
+    }
     emit inPlaceTextEditFinished();
     update();
 }
@@ -1987,6 +2058,9 @@ void PdfPageWidget::onTransformBoxEditRequested()
             m_transformBox->inlineTextEdit()->selectAll();
         }
         updateTransformBoxCollision();
+        emit inPlaceTextEditStarted(m_transformBox->text(), m_transformBox->textFont(),
+                                    m_transformBox->textColor(), m_transformBox->textBgMode(),
+                                    m_pendingErasedBgColor);
         break;
     }
 
@@ -2049,6 +2123,7 @@ void PdfPageWidget::onTransformBoxEditRequested()
 
         QColor sampledBg = sampleBackgroundColorForRect(m_activePageIndex, areaPtRect);
         m_pendingErasedBgColor = sampledBg;
+        updatePendingErasedPreviewPatch();
 
         QFont font = (!m_selectedIndices.empty() && m_lastCopiedTextFormat.valid) ? m_lastCopiedTextFormat.font : m_typewriterFont;
         QColor color = (!m_selectedIndices.empty() && m_lastCopiedTextFormat.valid) ? m_lastCopiedTextFormat.color : m_typewriterColor;
@@ -2057,14 +2132,14 @@ void PdfPageWidget::onTransformBoxEditRequested()
         emit selectionChanged(false);
         update();
 
-        QPoint targetTopLeft(r.left() - 4, r.top() - 2);
-        int suggestedW = r.width() + 32;
+        QPoint targetTopLeft(r.left(), r.top());
+        int suggestedW = r.width() + 8;
         setToolMode(PdfToolMode::Typewriter);
-        PdfTextBgMode bgMode = PdfTextBgMode::Auto;
+        PdfTextBgMode bgMode = PdfTextBgMode::Transparent;
         m_transformBox->setScaleFactor(m_scaleX);
         m_transformBox->setGeometry(pageRect(m_activePageIndex));
         m_transformBox->showText(extractedText, font, color, bgMode, sampledBg,
-                                 QRect(targetTopLeft.x(), targetTopLeft.y(), suggestedW, r.height() + 4),
+                                 QRect(targetTopLeft.x(), targetTopLeft.y(), suggestedW, r.height()),
                                  targetTopLeft);
         m_transformBox->setTextModified(true);
         if (m_transformBox->inlineTextEdit()) {
@@ -2139,7 +2214,7 @@ void PdfPageWidget::onTransformBoxEditRequested()
     }
 }
 
-void PdfPageWidget::commitShapeDrawing(const QRect &rect, const QPoint &startPt, const QPoint &endPt)
+void PdfPageWidget::commitShapeDrawing(const QRect &rect, const QPoint &startPt, const QPoint &endPt, int overrideShapeType)
 {
     int pageW = width();
     int pageH = height();
@@ -2149,15 +2224,16 @@ void PdfPageWidget::commitShapeDrawing(const QRect &rect, const QPoint &startPt,
     }
     if (pageW <= 0 || pageH <= 0) return;
 
+    int typeToUse = (overrideShapeType >= 0) ? overrideShapeType : m_shapeType;
     QRect targetRect = rect;
     QPoint localStart(-1, -1);
     QPoint localEnd(-1, -1);
 
-    if (m_shapeType == 2 || m_shapeType == 3) {
+    if (typeToUse == 2 || typeToUse == 3 || typeToUse == 8) {
         if (startPt == QPoint(-1, -1) || endPt == QPoint(-1, -1)) {
             if (rect.width() <= 2 || rect.height() <= 2) return;
         } else {
-            // Line or Arrow: preserve exact direction, vector, and inclination
+            // Line, Arrow, or Double Arrow: preserve exact direction, vector, and inclination
             int minX = std::min(startPt.x(), endPt.x());
             int maxX = std::max(startPt.x(), endPt.x());
             int minY = std::min(startPt.y(), endPt.y());
@@ -2183,7 +2259,7 @@ void PdfPageWidget::commitShapeDrawing(const QRect &rect, const QPoint &startPt,
         if (targetRect.width() <= 2 || targetRect.height() <= 2) return;
     }
 
-    QImage shapeImg = PdfCanvasTools::renderShapeStamp(m_shapeType, m_shapeStrokeWidth,
+    QImage shapeImg = PdfCanvasTools::renderShapeStamp(typeToUse, m_shapeStrokeWidth,
                                                        m_shapeStrokeColor, m_shapeFillColor,
                                                        targetRect.size(), localStart, localEnd);
     if (shapeImg.isNull()) return;
@@ -2195,21 +2271,6 @@ void PdfPageWidget::commitShapeDrawing(const QRect &rect, const QPoint &startPt,
     QRectF normRect(nx, ny, nw, nh);
 
     emit addStampAnnotationRequested(shapeImg, normRect);
-
-    PlacedShapeItem item;
-    item.id = ++m_shapeIdCounter;
-    item.pageIndex = m_activePageIndex;
-    item.shapeType = m_shapeType;
-    item.strokeWidth = m_shapeStrokeWidth;
-    item.strokeColor = m_shapeStrokeColor;
-    item.fillColor = m_shapeFillColor;
-    item.rect = targetRect;
-    item.startPt = localStart;
-    item.endPt = localEnd;
-    item.normRect = normRect;
-    item.stampImage = shapeImg;
-    m_placedShapes.append(item);
-    m_selectedShapeIndex = m_placedShapes.size() - 1;
     update();
 }
 
@@ -2272,174 +2333,6 @@ QString PdfPageWidget::selectedText() const
     return result.trimmed();
 }
 
-/**
- * @brief Strips PDF subset prefixes and standard weight suffixes from a font family name.
- */
-static QString cleanPdfFontFamily(const QString &rawName, bool &outBold, bool &outItalic)
-{
-    QString name = rawName;
-    int plusIdx = name.indexOf('+');
-    if (plusIdx != -1) {
-        name = name.mid(plusIdx + 1);
-    }
-
-    if (name.contains(QStringLiteral("Bold"), Qt::CaseInsensitive) ||
-        name.contains(QStringLiteral("Heavy"), Qt::CaseInsensitive) ||
-        name.contains(QStringLiteral("Black"), Qt::CaseInsensitive)) {
-        outBold = true;
-    }
-    if (name.contains(QStringLiteral("Italic"), Qt::CaseInsensitive) ||
-        name.contains(QStringLiteral("Oblique"), Qt::CaseInsensitive)) {
-        outItalic = true;
-    }
-
-    int hyphenIdx = name.indexOf('-');
-    if (hyphenIdx != -1) {
-        name = name.left(hyphenIdx);
-    }
-
-    static const QStringList suffixes = {
-        QStringLiteral(" Regular"), QStringLiteral(" regular"),
-        QStringLiteral(" Bold"), QStringLiteral(" bold"),
-        QStringLiteral(" Italic"), QStringLiteral(" italic"),
-        QStringLiteral(" Oblique"), QStringLiteral(" oblique")
-    };
-    for (const QString &sfx : suffixes) {
-        if (name.endsWith(sfx, Qt::CaseInsensitive)) {
-            name.chop(sfx.length());
-        }
-    }
-    QString trimmed = name.trimmed();
-    if (trimmed.compare(QStringLiteral("SegoeUI"), Qt::CaseInsensitive) == 0) {
-        trimmed = QStringLiteral("Segoe UI");
-    } else if (trimmed.compare(QStringLiteral("NotoSans"), Qt::CaseInsensitive) == 0) {
-        trimmed = QStringLiteral("Noto Sans");
-    } else if (trimmed.compare(QStringLiteral("LiberationSans"), Qt::CaseInsensitive) == 0) {
-        trimmed = QStringLiteral("Liberation Sans");
-    }
-    return trimmed;
-}
-
-bool PdfPageWidget::parsePageXmlLayout(int pageIndex, double pageWidthPt, double pageHeightPt)
-{
-    if (m_filePath.isEmpty() || !QFile::exists(m_filePath)) return false;
-    if (m_cachedPageLayout.pageIndex == pageIndex && m_cachedPageLayout.filePath == m_filePath && !m_cachedPageLayout.elements.isEmpty()) {
-        return true;
-    }
-
-    m_cachedPageLayout = CachedPageLayout();
-    m_cachedPageLayout.pageIndex = pageIndex;
-    m_cachedPageLayout.filePath = m_filePath;
-
-    int pageNum = pageIndex + 1; // pdftohtml pages are 1-based
-    QProcess proc;
-    proc.setWorkingDirectory(QDir::tempPath());
-    QStringList args;
-    args << QStringLiteral("-xml")
-         << QStringLiteral("-stdout")
-         << QStringLiteral("-i")         // Crucial: ignore images so embedded raster images are never dumped to disk!
-         << QStringLiteral("-noframes")
-         << QStringLiteral("-nodrm")
-         << QStringLiteral("-q")
-         << QStringLiteral("-f") << QString::number(pageNum)
-         << QStringLiteral("-l") << QString::number(pageNum)
-         << m_filePath;
-
-    proc.start(QStringLiteral("pdftohtml"), args);
-    if (!proc.waitForFinished(1500)) {
-        proc.kill();
-        return false;
-    }
-
-    QByteArray xmlData = proc.readAllStandardOutput();
-    if (xmlData.isEmpty()) return false;
-
-    QXmlStreamReader xml(xmlData);
-    double xmlPageW = 0.0;
-    double xmlPageH = 0.0;
-    double scaleX = 1.0;
-    double scaleY = 1.0;
-
-    while (!xml.atEnd() && !xml.hasError()) {
-        QXmlStreamReader::TokenType token = xml.readNext();
-        if (token == QXmlStreamReader::StartElement) {
-            auto tagName = xml.name();
-            if (tagName == QLatin1String("page")) {
-                xmlPageW = xml.attributes().value(QLatin1String("width")).toDouble();
-                xmlPageH = xml.attributes().value(QLatin1String("height")).toDouble();
-                if (pageWidthPt > 0.0 && xmlPageW > 0.0) scaleX = xmlPageW / pageWidthPt;
-                if (pageHeightPt > 0.0 && xmlPageH > 0.0) scaleY = xmlPageH / pageHeightPt;
-            } else if (tagName == QLatin1String("fontspec")) {
-                int fontId = xml.attributes().value(QLatin1String("id")).toInt();
-                double size = xml.attributes().value(QLatin1String("size")).toDouble();
-                QString rawFamily = xml.attributes().value(QLatin1String("family")).toString();
-                QString colorStr = xml.attributes().value(QLatin1String("color")).toString();
-
-                PageFontSpec fs;
-                bool isBold = false;
-                bool isItalic = false;
-                fs.family = cleanPdfFontFamily(rawFamily, isBold, isItalic);
-                fs.isBold = isBold;
-                fs.isItalic = isItalic;
-                fs.size = (scaleY > 0.0) ? (size / scaleY) : size;
-                if (!colorStr.isEmpty()) {
-                    fs.color = QColor(colorStr);
-                }
-                m_cachedPageLayout.fonts.insert(fontId, fs);
-            } else if (tagName == QLatin1String("text")) {
-                double top = xml.attributes().value(QLatin1String("top")).toDouble();
-                double left = xml.attributes().value(QLatin1String("left")).toDouble();
-                double width = xml.attributes().value(QLatin1String("width")).toDouble();
-                double height = xml.attributes().value(QLatin1String("height")).toDouble();
-                int fontId = xml.attributes().value(QLatin1String("font")).toInt();
-
-                PageTextElement el;
-                el.fontId = fontId;
-                el.rectPt = QRectF(left / scaleX, top / scaleY, width / scaleX, height / scaleY);
-
-                if (m_cachedPageLayout.fonts.contains(fontId)) {
-                    const PageFontSpec &fs = m_cachedPageLayout.fonts.value(fontId);
-                    el.family = fs.family;
-                    el.size = fs.size;
-                    el.color = fs.color;
-                    el.isBold = fs.isBold;
-                    el.isItalic = fs.isItalic;
-                }
-
-                bool innerBold = false;
-                bool innerItalic = false;
-                QString elText;
-
-                while (!xml.atEnd()) {
-                    xml.readNext();
-                    if (xml.tokenType() == QXmlStreamReader::StartElement) {
-                        if (xml.name() == QLatin1String("b")) {
-                            innerBold = true;
-                        } else if (xml.name() == QLatin1String("i")) {
-                            innerItalic = true;
-                        }
-                    } else if (xml.tokenType() == QXmlStreamReader::Characters) {
-                        elText += xml.text();
-                    } else if (xml.tokenType() == QXmlStreamReader::EndElement && xml.name() == QLatin1String("text")) {
-                        break;
-                    }
-                }
-
-                el.text = elText;
-                if (innerBold) el.isBold = true;
-                if (innerItalic) el.isItalic = true;
-
-                // Ignore empty or whitespace-only elements so they do not pollute font/color extraction
-                if (!el.text.trimmed().isEmpty()) {
-                    m_cachedPageLayout.elements.append(el);
-                }
-            }
-        }
-    }
-
-    return !m_cachedPageLayout.elements.isEmpty();
-}
-
 void PdfPageWidget::captureSelectedTextFormat()
 {
     if (m_selectedIndices.empty() || m_textBoxes.empty()) return;
@@ -2451,6 +2344,7 @@ void PdfPageWidget::captureSelectedTextFormat()
     double minH = 1e9;
     double maxH = 0.0;
     int validBoxes = 0;
+    QRectF selBoundsPt;
 
     for (int idx : m_selectedIndices) {
         if (idx >= 0 && idx < static_cast<int>(m_textBoxes.size())) {
@@ -2460,9 +2354,14 @@ void PdfPageWidget::captureSelectedTextFormat()
                 if (h > maxH) maxH = h;
                 validBoxes++;
 
-                double pt = h;
+                double pt = h * 0.75;
                 int halfPt = qRound(pt * 2.0);
                 sizeFrequency[halfPt]++;
+            }
+            if (selBoundsPt.isEmpty()) {
+                selBoundsPt = m_textBoxes[idx]->boundingBox();
+            } else {
+                selBoundsPt = selBoundsPt.united(m_textBoxes[idx]->boundingBox());
             }
         }
     }
@@ -2483,171 +2382,156 @@ void PdfPageWidget::captureSelectedTextFormat()
         m_lastCopiedTextFormat.font.setPointSize(12);
     }
 
-    // 2. Discover precise font family, style, and color using XML layout analysis (pdftohtml)
-    bool layoutMatched = false;
-    double pageWPt = width() / m_scaleX;
-    double pageHPt = height() / m_scaleY;
-    if (m_doc && m_activePageIndex >= 0 && m_activePageIndex < m_doc->numPages()) {
-        std::unique_ptr<Poppler::Page> page = m_doc->page(m_activePageIndex);
-        if (page) {
-            pageWPt = page->pageSizeF().width();
-            pageHPt = page->pageSizeF().height();
-        }
-    }
-
-    if (!m_filePath.isEmpty() && QFile::exists(m_filePath) && pageWPt > 0.0 && pageHPt > 0.0) {
-        if (parsePageXmlLayout(m_activePageIndex, pageWPt, pageHPt)) {
-            QRectF selBoundsPt;
-            for (int idx : m_selectedIndices) {
-                if (idx >= 0 && idx < static_cast<int>(m_textBoxes.size())) {
-                    if (selBoundsPt.isEmpty()) {
-                        selBoundsPt = m_textBoxes[idx]->boundingBox();
-                    } else {
-                        selBoundsPt = selBoundsPt.united(m_textBoxes[idx]->boundingBox());
+    // 2. Direct format inspection: first check existing in-memory FreeText annotations
+    bool formatMatched = false;
+    if (m_doc && m_activePageIndex >= 0 && m_activePageIndex < m_doc->numPages() && selBoundsPt.isValid()) {
+        std::unique_ptr<Poppler::Page> p(m_doc->page(m_activePageIndex));
+        if (p) {
+            QSizeF pSize = p->pageSizeF();
+            if (pSize.width() > 0 && pSize.height() > 0) {
+                auto annots = p->annotations();
+                for (const auto &ann : annots) {
+                    if (ann && ann->subType() == Poppler::Annotation::AText) {
+                        auto *txtAnn = static_cast<Poppler::TextAnnotation*>(ann.get());
+                        QRectF bNorm = txtAnn->boundary();
+                        QRectF bPt(bNorm.x() * pSize.width(), bNorm.y() * pSize.height(),
+                                   bNorm.width() * pSize.width(), bNorm.height() * pSize.height());
+                        if (bPt.intersects(selBoundsPt) || bPt.contains(selBoundsPt.center()) || selBoundsPt.contains(bPt.center())) {
+                            m_lastCopiedTextFormat.font = txtAnn->textFont();
+                            m_lastCopiedTextFormat.color = txtAnn->textColor();
+                            m_lastCopiedTextFormat.valid = true;
+                            formatMatched = true;
+                            break;
+                        }
                     }
                 }
             }
+        }
+    }
 
-            QString fullSelected = selectedText().simplified();
-            const PageTextElement *bestEl = nullptr;
-            int bestScore = -1;
-            QSet<QString> matchedStyles;
-            QRectF selBoundsAdj = selBoundsPt.adjusted(-1.5, -1.5, 1.5, 1.5);
+    // Direct vector text format inspection using MuPDF (replaces pdftohtml XML parsing)
+    if (!formatMatched && !m_filePath.isEmpty() && QFile::exists(m_filePath) && selBoundsPt.isValid() && !selBoundsPt.isEmpty()) {
+        PdfDocumentOps::TextFormatInfo fmt;
+        QString errMsg;
+        if (PdfDocumentOps::inspectTextFormat(m_filePath, m_activePageIndex, selBoundsPt, fmt, errMsg) && fmt.valid) {
+            formatMatched = true;
+            m_lastCopiedTextFormat.hasMultipleStyles = fmt.hasMultipleStyles;
 
-            for (const PageTextElement &el : m_cachedPageLayout.elements) {
-                QString elNorm = el.text.simplified();
-                if (elNorm.isEmpty()) continue;
-
-                // An element can only be part of the selection if it spatially intersects the selection bounding box
-                bool intersects = el.rectPt.intersects(selBoundsAdj);
-                if (!intersects) {
-                    continue;
-                }
-
-                // Ensure there is meaningful spatial overlap (not just a touching pixel)
-                QRectF inter = el.rectPt.intersected(selBoundsAdj);
-                if (inter.width() < 1.0 || inter.height() < 1.0) {
-                    continue;
-                }
-
-                // Track distinct styles among elements intersecting the user's selection
-                QString styleKey = QStringLiteral("%1_%2_%3_%4")
-                                      .arg(el.family)
-                                      .arg(el.color.name())
-                                      .arg(el.isBold ? 1 : 0)
-                                      .arg(qRound(el.size));
-                matchedStyles.insert(styleKey);
-
-                // Scoring: spatial overlap + text match
-                int score = qRound(inter.width() * inter.height() * 10.0);
-                bool exactText = (!fullSelected.isEmpty() && elNorm == fullSelected);
-                bool containsText = (!fullSelected.isEmpty() && (fullSelected.contains(elNorm) || elNorm.contains(fullSelected)));
-
-                if (exactText) {
-                    score += 10000;
-                } else if (containsText) {
-                    score += 5000;
-                }
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestEl = &el;
-                }
+            if (!fmt.family.isEmpty()) {
+                m_lastCopiedTextFormat.font.setFamily(fmt.family);
             }
-
-            if (bestEl) {
-                layoutMatched = true;
-                m_lastCopiedTextFormat.hasMultipleStyles = (matchedStyles.size() > 1);
-
-                if (!bestEl->family.isEmpty()) {
-                    QString resolvedFamily = QFontInfo(QFont(bestEl->family)).family();
-                    m_lastCopiedTextFormat.font.setFamily(!resolvedFamily.isEmpty() ? resolvedFamily : bestEl->family);
-                }
-                m_lastCopiedTextFormat.font.setBold(bestEl->isBold);
-                m_lastCopiedTextFormat.font.setItalic(bestEl->isItalic);
-                if (bestEl->isBold && bestEl->isItalic) {
-                    m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold Italic"));
-                } else if (bestEl->isBold) {
-                    m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold"));
-                } else if (bestEl->isItalic) {
-                    m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Italic"));
-                }
-                if (bestEl->color.isValid()) {
-                    m_lastCopiedTextFormat.color = bestEl->color;
-                }
-                if (bestEl->size > 0.0) {
-                    m_lastCopiedTextFormat.font.setPointSizeF(bestEl->size);
-                }
+            m_lastCopiedTextFormat.font.setBold(fmt.isBold);
+            m_lastCopiedTextFormat.font.setWeight(fmt.isBold ? QFont::Bold : QFont::Normal);
+            m_lastCopiedTextFormat.font.setItalic(fmt.isItalic);
+            if (fmt.isBold && fmt.isItalic) {
+                m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold Italic"));
+            } else if (fmt.isBold) {
+                m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold"));
+            } else if (fmt.isItalic) {
+                m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Italic"));
+            }
+            if (fmt.color.isValid()) {
+                m_lastCopiedTextFormat.color = fmt.color;
+            }
+            if (fmt.pointSize > 0.0) {
+                m_lastCopiedTextFormat.font.setPointSizeF(fmt.pointSize);
             }
         }
     }
 
-    // 3. Graceful fallback to Poppler::FontIterator if layout analysis wasn't available
-    if (!layoutMatched) {
+    // 3. Graceful fallback to Poppler::FontIterator if inspection wasn't available
+    if (!formatMatched) {
         if (validBoxes > 1 && (maxH - minH) > 4.5) {
             m_lastCopiedTextFormat.hasMultipleStyles = true;
         }
 
         if (m_doc && m_activePageIndex >= 0 && m_activePageIndex < m_doc->numPages()) {
-        std::unique_ptr<Poppler::FontIterator> it = m_doc->newFontIterator(m_activePageIndex);
-        if (it && it->hasNext()) {
-            QList<Poppler::FontInfo> fonts = it->next();
-            QString selectedFamily;
-            bool isBold = false;
-            bool isItalic = false;
+            std::unique_ptr<Poppler::FontIterator> it = m_doc->newFontIterator(m_activePageIndex);
+            if (it && it->hasNext()) {
+                QList<Poppler::FontInfo> fonts = it->next();
+                QString selectedFamily;
+                bool isBold = false;
+                bool isItalic = false;
 
-            for (const Poppler::FontInfo &fi : fonts) {
-                QString fontName = fi.name();
-                int plusIdx = fontName.indexOf('+');
-                if (plusIdx != -1) {
-                    fontName = fontName.mid(plusIdx + 1);
-                }
-
-                QString lower = fontName.toLower();
-                if (lower.contains(QStringLiteral("emoji")) || lower.contains(QStringLiteral("symbol")) ||
-                    lower.contains(QStringLiteral("dingbat")) || lower.contains(QStringLiteral("wingding")) ||
-                    lower.contains(QStringLiteral("icon")) || lower.contains(QStringLiteral("pua")) ||
-                    lower.contains(QStringLiteral("fontcustom"))) {
-                    continue;
-                }
-
-                if (selectedFamily.isEmpty()) {
-                    isBold = fontName.contains(QStringLiteral("Bold"), Qt::CaseInsensitive) ||
-                             fontName.contains(QStringLiteral("Heavy"), Qt::CaseInsensitive) ||
-                             fontName.contains(QStringLiteral("Black"), Qt::CaseInsensitive);
-                    isItalic = fontName.contains(QStringLiteral("Italic"), Qt::CaseInsensitive) ||
-                               fontName.contains(QStringLiteral("Oblique"), Qt::CaseInsensitive);
-
-                    QString clean = fontName;
-                    int hyphenIdx = clean.indexOf('-');
-                    if (hyphenIdx != -1) {
-                        clean = clean.left(hyphenIdx);
+                for (const Poppler::FontInfo &fi : fonts) {
+                    QString fontName = fi.name();
+                    int plusIdx = fontName.indexOf('+');
+                    if (plusIdx != -1) {
+                        fontName = fontName.mid(plusIdx + 1);
                     }
-                    selectedFamily = clean;
-                }
-            }
 
-            if (!selectedFamily.isEmpty()) {
-                QString resolvedFamily = QFontInfo(QFont(selectedFamily)).family();
-                m_lastCopiedTextFormat.font.setFamily(!resolvedFamily.isEmpty() ? resolvedFamily : selectedFamily);
-                m_lastCopiedTextFormat.font.setBold(isBold);
-                m_lastCopiedTextFormat.font.setItalic(isItalic);
-                if (isBold && isItalic) {
-                    m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold Italic"));
-                } else if (isBold) {
-                    m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold"));
-                } else if (isItalic) {
-                    m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Italic"));
+                    QString lower = fontName.toLower();
+                    if (lower.contains(QStringLiteral("emoji")) || lower.contains(QStringLiteral("symbol")) ||
+                        lower.contains(QStringLiteral("dingbat")) || lower.contains(QStringLiteral("wingding")) ||
+                        lower.contains(QStringLiteral("icon")) || lower.contains(QStringLiteral("pua")) ||
+                        lower.contains(QStringLiteral("fontcustom"))) {
+                        continue;
+                    }
+
+                    if (selectedFamily.isEmpty()) {
+                        selectedFamily = PdfDocumentOps::resolveFontFamily(fontName, isBold, isItalic);
+                    }
+                }
+
+                if (!selectedFamily.isEmpty()) {
+                    QString resolvedFamily = QFontInfo(QFont(selectedFamily)).family();
+                    m_lastCopiedTextFormat.font.setFamily(!resolvedFamily.isEmpty() ? resolvedFamily : selectedFamily);
+                    m_lastCopiedTextFormat.font.setBold(isBold);
+                    m_lastCopiedTextFormat.font.setItalic(isItalic);
+                    if (isBold && isItalic) {
+                        m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold Italic"));
+                    } else if (isBold) {
+                        m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold"));
+                    } else if (isItalic) {
+                        m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Italic"));
+                    }
                 }
             }
+            m_lastCopiedTextFormat.color = Qt::black;
         }
-        m_lastCopiedTextFormat.color = Qt::black;
-    }
     }
 
     m_lastCopiedTextFormat.sourceDocumentPath = m_filePath;
     m_lastCopiedTextFormat.isTextModified = false;
     m_lastCopiedTextFormat.valid = true;
+}
+
+bool PdfPageWidget::detectTextFormatFromDocument(const QString &text)
+{
+    QString trimmed = text.trimmed();
+    if (trimmed.isEmpty() || !m_doc || m_filePath.isEmpty() || !QFile::exists(m_filePath)) {
+        return false;
+    }
+
+    PdfDocumentOps::TextFormatInfo fmt;
+    QString errMsg;
+    if (PdfDocumentOps::inspectTextFormatByText(m_filePath, m_activePageIndex, trimmed, fmt, errMsg) && fmt.valid) {
+        if (!fmt.family.isEmpty()) {
+            m_lastCopiedTextFormat.font.setFamily(fmt.family);
+        }
+        m_lastCopiedTextFormat.font.setBold(fmt.isBold);
+        m_lastCopiedTextFormat.font.setWeight(fmt.isBold ? QFont::Bold : QFont::Normal);
+        m_lastCopiedTextFormat.font.setItalic(fmt.isItalic);
+        if (fmt.isBold && fmt.isItalic) {
+            m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold Italic"));
+        } else if (fmt.isBold) {
+            m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Bold"));
+        } else if (fmt.isItalic) {
+            m_lastCopiedTextFormat.font.setStyleName(QStringLiteral("Italic"));
+        }
+        if (fmt.color.isValid()) {
+            m_lastCopiedTextFormat.color = fmt.color;
+        }
+        if (fmt.pointSize > 0.0) {
+            m_lastCopiedTextFormat.font.setPointSizeF(fmt.pointSize);
+        }
+        m_lastCopiedTextFormat.sourceDocumentPath = m_filePath;
+        m_lastCopiedTextFormat.isTextModified = false;
+        m_lastCopiedTextFormat.valid = true;
+        return true;
+    }
+
+    return false;
 }
 
 void PdfPageWidget::copySelectionToClipboard()
@@ -2657,68 +2541,41 @@ void PdfPageWidget::copySelectionToClipboard()
 
     captureSelectedTextFormat();
 
-    if (m_lastCopiedTextFormat.hasMultipleStyles) {
-        QMessageBox msgBox(this);
-        msgBox.setWindowTitle(tr("Multiple Styles Detected"));
-        msgBox.setText(tr("Multiple styles detected.\nDo you want to paste as uniform text or copy the original area?"));
-        msgBox.setIcon(QMessageBox::Question);
-        QPushButton *btnText = msgBox.addButton(tr("📝 Text"), QMessageBox::AcceptRole);
-        QPushButton *btnArea = msgBox.addButton(tr("🖼️ Copy Area"), QMessageBox::ActionRole);
-        btnText->setMinimumWidth(100);
-        btnArea->setMinimumWidth(120);
-        btnText->setCursor(Qt::PointingHandCursor);
-        btnArea->setCursor(Qt::PointingHandCursor);
-        msgBox.setDefaultButton(btnText);
-        msgBox.setEscapeButton(btnText);
-        msgBox.exec();
-
-        if (msgBox.clickedButton() == btnArea) {
-            // Compute the union bounding box of all selected text boxes in PDF points
-            QRectF textBoundsPt;
-            for (int idx : m_selectedIndices) {
-                if (idx >= 0 && idx < static_cast<int>(m_textBoxes.size())) {
-                    QRectF boxR = m_textBoxes[idx]->boundingBox();
-                    if (textBoundsPt.isEmpty()) {
-                        textBoundsPt = boxR;
-                    } else {
-                        textBoundsPt = textBoundsPt.united(boxR);
-                    }
-                }
-            }
-
-            if (!textBoundsPt.isEmpty()) {
-                // Add comfortable 4pt padding around text bounds to prevent clipping of ascenders/descenders
-                textBoundsPt.adjust(-4.0, -4.0, 4.0, 4.0);
-                if (m_doc && m_activePageIndex >= 0 && m_activePageIndex < m_doc->numPages()) {
-                    std::unique_ptr<Poppler::Page> page = m_doc->page(m_activePageIndex);
-                    if (page) {
-                        textBoundsPt = textBoundsPt.intersected(QRectF(QPointF(0, 0), page->pageSizeF()));
-                    }
-                }
-
-                m_lastClipType = LastClipType::AreaImage;
-                m_lastCopiedTextFormat.valid = false;
-
-                // Transfer active text selection into visual canvas area rectangle
-                QRect areaRect(qRound(textBoundsPt.x() * m_scaleX),
-                               qRound(textBoundsPt.y() * m_scaleY),
-                               qRound(textBoundsPt.width() * m_scaleX),
-                               qRound(textBoundsPt.height() * m_scaleY));
-                m_selectedAreaRect = areaRect;
-                m_hasAreaSelection = true;
-                m_selectedIndices.clear();
-                emit selectionChanged(false);
-                update();
-
-                // Trigger 200 DPI high-resolution area snapshot copy
-                emit copyAreaRequested(textBoundsPt);
-                return;
-            }
-        }
-    }
-
     m_lastClipType = LastClipType::Text;
-    QApplication::clipboard()->setText(text);
+
+    QMimeData *mimeData = new QMimeData();
+    mimeData->setText(text);
+
+    QString family = m_lastCopiedTextFormat.font.family();
+    double ptSize = m_lastCopiedTextFormat.font.pointSizeF();
+    if (ptSize <= 0.0) {
+        ptSize = m_lastCopiedTextFormat.font.pointSize() > 0 ? m_lastCopiedTextFormat.font.pointSize() : 12.0;
+    }
+    QString colorHex = m_lastCopiedTextFormat.color.isValid() ? m_lastCopiedTextFormat.color.name() : QStringLiteral("#000000");
+    bool isBold = m_lastCopiedTextFormat.font.bold();
+    bool isItalic = m_lastCopiedTextFormat.font.italic();
+
+    QString html = QStringLiteral("<span style=\"font-family:'%1'; font-size:%2pt; color:%3; font-weight:%4; font-style:%5;\">%6</span>")
+        .arg(family)
+        .arg(ptSize)
+        .arg(colorHex)
+        .arg(isBold ? QStringLiteral("bold") : QStringLiteral("normal"))
+        .arg(isItalic ? QStringLiteral("italic") : QStringLiteral("normal"))
+        .arg(text.toHtmlEscaped());
+    mimeData->setHtml(html);
+
+    QJsonObject formatObj;
+    formatObj[QStringLiteral("family")] = family;
+    formatObj[QStringLiteral("pointSize")] = ptSize;
+    formatObj[QStringLiteral("color")] = colorHex;
+    formatObj[QStringLiteral("bold")] = isBold;
+    formatObj[QStringLiteral("italic")] = isItalic;
+    formatObj[QStringLiteral("sourceDocument")] = m_filePath;
+    formatObj[QStringLiteral("pageIndex")] = m_activePageIndex;
+    QJsonDocument doc(formatObj);
+    mimeData->setData(QStringLiteral("application/x-bubez-text-format"), doc.toJson(QJsonDocument::Compact));
+
+    QApplication::clipboard()->setMimeData(mimeData);
 }
 
 void PdfPageWidget::copyPageTextToClipboard()
@@ -2758,7 +2615,39 @@ void PdfPageWidget::copyPageTextToClipboard()
     }
     QString trimmed = result.trimmed();
     if (!trimmed.isEmpty()) {
-        QApplication::clipboard()->setText(trimmed);
+        QMimeData *mimeData = new QMimeData();
+        mimeData->setText(trimmed);
+
+        QString family = m_lastCopiedTextFormat.font.family();
+        double ptSize = m_lastCopiedTextFormat.font.pointSizeF();
+        if (ptSize <= 0.0) {
+            ptSize = m_lastCopiedTextFormat.font.pointSize() > 0 ? m_lastCopiedTextFormat.font.pointSize() : 12.0;
+        }
+        QString colorHex = m_lastCopiedTextFormat.color.isValid() ? m_lastCopiedTextFormat.color.name() : QStringLiteral("#000000");
+        bool isBold = m_lastCopiedTextFormat.font.bold();
+        bool isItalic = m_lastCopiedTextFormat.font.italic();
+
+        QString html = QStringLiteral("<span style=\"font-family:'%1'; font-size:%2pt; color:%3; font-weight:%4; font-style:%5;\">%6</span>")
+            .arg(family)
+            .arg(ptSize)
+            .arg(colorHex)
+            .arg(isBold ? QStringLiteral("bold") : QStringLiteral("normal"))
+            .arg(isItalic ? QStringLiteral("italic") : QStringLiteral("normal"))
+            .arg(trimmed.toHtmlEscaped());
+        mimeData->setHtml(html);
+
+        QJsonObject formatObj;
+        formatObj[QStringLiteral("family")] = family;
+        formatObj[QStringLiteral("pointSize")] = ptSize;
+        formatObj[QStringLiteral("color")] = colorHex;
+        formatObj[QStringLiteral("bold")] = isBold;
+        formatObj[QStringLiteral("italic")] = isItalic;
+        formatObj[QStringLiteral("sourceDocument")] = m_filePath;
+        formatObj[QStringLiteral("pageIndex")] = m_activePageIndex;
+        QJsonDocument doc(formatObj);
+        mimeData->setData(QStringLiteral("application/x-bubez-text-format"), doc.toJson(QJsonDocument::Compact));
+
+        QApplication::clipboard()->setMimeData(mimeData);
     }
 }
 
@@ -2770,6 +2659,9 @@ void PdfPageWidget::selectAll()
     }
     update();
     emit selectionChanged(hasSelection());
+    if (hasSelection()) {
+        captureSelectedTextFormat();
+    }
 }
 
 void PdfPageWidget::paintEvent(QPaintEvent *event)
@@ -2780,30 +2672,43 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
 
     QRect clip = event->rect();
 
-    // 1. Draw canvas background matching active theme
-    ThemePreset preset = ThemeManager::currentPreset();
-    QColor canvasBg;
-    if (preset == ThemePreset::DarkSlate) {
-        canvasBg = QColor("#22262b");
+    // 1. Draw Liquid Glass canvas background matching active theme
+    ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    QLinearGradient canvasBg(0, 0, width(), height());
+    if (preset == ThemePreset::ZincGray) {
+        canvasBg.setColorAt(0.0, QColor("#3e3f44"));
+        canvasBg.setColorAt(0.5, QColor("#343539"));
+        canvasBg.setColorAt(1.0, QColor("#2b2c30"));
+    } else if (preset == ThemePreset::DarkSlate) {
+        canvasBg.setColorAt(0.0, QColor("#1e2538"));
+        canvasBg.setColorAt(0.5, QColor("#151a28"));
+        canvasBg.setColorAt(1.0, QColor("#0e121c"));
     } else if (preset == ThemePreset::BreezeDark) {
-        canvasBg = QColor("#181b1d");
-    } else if (preset == ThemePreset::ModernLight) {
-        canvasBg = QColor("#f5f5f7");
-    } else { // BreezeLight
-        canvasBg = QColor("#eff0f1");
+        canvasBg.setColorAt(0.0, QColor("#1a1f2c"));
+        canvasBg.setColorAt(0.5, QColor("#131620"));
+        canvasBg.setColorAt(1.0, QColor("#0b0d13"));
+    } else {
+        canvasBg.setColorAt(0.0, QColor("#edf0f4"));
+        canvasBg.setColorAt(0.5, QColor("#e2e6eb"));
+        canvasBg.setColorAt(1.0, QColor("#d6dbe2"));
     }
     painter.fillRect(clip, canvasBg);
 
     // Single-page fallback mode (when setPageContent was called directly)
     if (m_pageLayouts.isEmpty()) {
         if (!m_pixmap.isNull()) {
+            const qreal rRadius = 12.0;
+            const QRectF rF(rect());
+            painter.save();
+            QPainterPath singleClip;
+            singleClip.addRoundedRect(rF, rRadius, rRadius);
+            painter.setClipPath(singleClip);
             painter.fillRect(rect(), Qt::white);
             painter.drawPixmap(0, 0, m_pixmap);
-            if (!ThemeManager::isDark(preset)) {
-                painter.setPen(QColor("#c5cad0"));
-                painter.setBrush(Qt::NoBrush);
-                painter.drawRect(rect().adjusted(0, 0, -1, -1));
-            }
+            painter.restore();
+            painter.setPen(QPen(QColor(148, 163, 184, 75), 1.0));
+            painter.setBrush(Qt::NoBrush);
+            painter.drawRoundedRect(rF.adjusted(0.5, 0.5, -0.5, -0.5), rRadius, rRadius);
             if (m_isEditMode && !m_formFields.empty()) {
                 PdfCanvasTools::drawAcroFormHighlights(painter, m_formFields, m_scaleX, m_scaleY);
             }
@@ -2819,18 +2724,22 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
     else if (m_rotationDegrees == 180) popplerRot = Poppler::Page::Rotate180;
     else if (m_rotationDegrees == 270) popplerRot = Poppler::Page::Rotate270;
 
-    // 2. Render each visible page
+    // 2. Render each visible page with 12px rounded corners & soft drop shadow
     for (const auto &pl : m_pageLayouts) {
         if (!pl.rect.intersects(clip)) {
             continue;
         }
 
         QRect pageR = pl.rect;
+        const qreal pageRadius = 12.0;
+        const QRectF pageF(pageR);
 
-        // Subtle drop shadow around page
-        painter.fillRect(pageR.adjusted(2, 2, 3, 3), QColor(0, 0, 0, 25));
-        // Pure white paper background
-        painter.fillRect(pageR, Qt::white);
+        // Soft multi-layer rounded drop shadow around page
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(0, 0, 0, 14));
+        painter.drawRoundedRect(pageF.adjusted(-4, -1, 4, 7), pageRadius + 3.0, pageRadius + 3.0);
+        painter.setBrush(QColor(0, 0, 0, 26));
+        painter.drawRoundedRect(pageF.adjusted(-2, 1, 2, 4), pageRadius + 1.5, pageRadius + 1.5);
 
         // Fetch or render page image from LRU cache
         QPixmap px;
@@ -2839,9 +2748,15 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
         } else {
             std::unique_ptr<Poppler::Page> p(m_doc->page(pl.pageIndex));
             if (p) {
-                double dpi = pl.scaleX * 72.0;
-                QImage img = p->renderToImage(dpi, dpi, -1, -1, -1, -1, popplerRot);
+                const double dpr = (devicePixelRatioF() > 0.0) ? devicePixelRatioF() : 1.0;
+                const double baseDpi = pl.scaleX * 72.0;
+                // Render at high-density (minimum 192 DPI or 1.75x supersample) so inserted images,
+                // stamps, and vector text are rasterized with full detail and never suffer from Splash downsampling blur.
+                const double targetDpi = std::clamp(std::max(192.0, baseDpi * 1.75) * dpr, 72.0, 500.0);
+                const double effectiveDpr = targetDpi / std::max(1.0, baseDpi);
+                QImage img = p->renderToImage(targetDpi, targetDpi, -1, -1, -1, -1, popplerRot);
                 if (!img.isNull()) {
+                    img.setDevicePixelRatio(effectiveDpr);
                     px = QPixmap::fromImage(img);
                     m_pageCache.insert(pl.pageIndex, px);
 
@@ -2862,72 +2777,21 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
             }
         }
 
+        // Clip page paper and rendered content to 12px rounded corners
+        painter.save();
+        QPainterPath pageClipPath;
+        pageClipPath.addRoundedRect(pageF, pageRadius, pageRadius);
+        painter.setClipPath(pageClipPath);
+        painter.fillRect(pageR, Qt::white);
         if (!px.isNull()) {
             painter.drawPixmap(pageR.topLeft(), px);
         }
-
-        // Native subtle page border
-        painter.setPen(QColor(0, 0, 0, 45));
-        painter.setBrush(Qt::NoBrush);
-        painter.drawRect(pageR.adjusted(0, 0, -1, -1));
-
-        // Placed shapes, rubber stamps, and redactions on this page
-        painter.save();
-        painter.translate(pageR.topLeft());
-        for (int sIdx = 0; sIdx < m_placedShapes.size(); ++sIdx) {
-            if (m_placedShapes[sIdx].pageIndex != pl.pageIndex) continue;
-            if (m_isMovingShape && sIdx == m_movingShapeIndex) {
-                // Mask out original position while dragging to prevent ghosting
-                painter.fillRect(m_moveShapeInitialRect, Qt::white);
-                continue; // drawn with live moving overlay below
-            }
-            if (m_committingShapeIndex == sIdx && !m_commitOldNormRect.isNull() && !m_isMovingShape) {
-                // Mask out previous committed position while interactive slider editing is active
-                int pw = pl.rect.width();
-                int ph = pl.rect.height();
-                QRect oldPixRect(qRound(m_commitOldNormRect.x() * pw),
-                                 qRound(m_commitOldNormRect.y() * ph),
-                                 qRound(m_commitOldNormRect.width() * pw),
-                                 qRound(m_commitOldNormRect.height() * ph));
-                painter.fillRect(oldPixRect, Qt::white);
-            }
-            const auto &shp = m_placedShapes[sIdx];
-            if (!shp.stampImage.isNull()) {
-                painter.drawImage(shp.rect, shp.stampImage);
-            }
-            if (sIdx == m_activeHighlightIndex && shp.shapeType == 102) {
-                QPen hlPen(QColor(0, 122, 255, 220), 1.0, Qt::DashLine);
-                painter.setPen(hlPen);
-                painter.setBrush(Qt::NoBrush);
-                painter.drawRect(shp.rect.adjusted(-1, -1, 1, 1));
-            }
-        }
-
-        // Draw selected shape bounding indicator with corner handles
-        if (m_selectedShapeIndex >= 0 && m_selectedShapeIndex < m_placedShapes.size() &&
-            m_placedShapes[m_selectedShapeIndex].pageIndex == pl.pageIndex && !m_isMovingShape) {
-            const auto &selShp = m_placedShapes[m_selectedShapeIndex];
-            QRect selRect = selShp.rect.adjusted(-3, -3, 3, 3);
-            QPen selPen(QColor(14, 165, 233), 1.5, Qt::DashLine);
-            painter.setPen(selPen);
-            painter.setBrush(Qt::NoBrush);
-            painter.drawRect(selRect);
-
-            // 4 corner handles
-            const int hSize = 6;
-            painter.setPen(QColor(14, 165, 233));
-            painter.setBrush(Qt::white);
-            const QPoint handles[4] = {
-                selRect.topLeft(),
-                selRect.topRight(),
-                selRect.bottomLeft(),
-                selRect.bottomRight()
-            };
-            for (const auto &hp : handles) {
-                painter.drawRect(hp.x() - hSize / 2, hp.y() - hSize / 2, hSize, hSize);
-            }
-        }
         painter.restore();
+
+        // Crisp rounded inner rim
+        painter.setPen(QPen(QColor(148, 163, 184, 75), 1.0));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRoundedRect(pageF.adjusted(0.5, 0.5, -0.5, -0.5), pageRadius, pageRadius);
 
         // AcroForms, pending background wipe, collision highlights & selection for active page
         if (pl.pageIndex == m_activePageIndex) {
@@ -2938,7 +2802,11 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
                                qRound(m_pendingErasedPtRect.y() * pl.scaleY),
                                qRound(m_pendingErasedPtRect.width() * pl.scaleX),
                                qRound(m_pendingErasedPtRect.height() * pl.scaleY));
-                painter.fillRect(wipedPix, m_pendingErasedBgColor);
+                if (!m_transformBox || m_transformBox->textBgMode() != PdfTextBgMode::Transparent) {
+                    painter.fillRect(wipedPix, m_pendingErasedBgColor);
+                } else if (!m_pendingErasedPreviewPatch.isNull()) {
+                    painter.drawImage(wipedPix, m_pendingErasedPreviewPatch);
+                }
             }
             if (!m_collidingTextPtRects.isEmpty()) {
                 painter.setPen(QPen(QColor(239, 68, 68), 1.5));
@@ -2964,45 +2832,42 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
         const auto &pl = m_pageLayouts[m_activePageIndex];
         painter.save();
         painter.translate(pl.rect.topLeft());
-        QRect r = PdfCanvasTools::normalizeRect(m_dragStart, m_dragCurrent);
-        int snapW = qRound(r.width() * 200.0 / (72.0 * pl.scaleX));
-        int snapH = qRound(r.height() * 200.0 / (72.0 * pl.scaleY));
-        int modeCode = (m_toolMode == PdfToolMode::Snapshot || m_toolMode == PdfToolMode::SelectArea) ? 1
-                     : (m_toolMode == PdfToolMode::Redaction) ? 3
-                     : (m_toolMode == PdfToolMode::Shape) ? 4
-                     : (m_toolMode == PdfToolMode::Highlight) ? (m_highlighterSpotlight ? 6 : 5) : 0;
-        QColor hlColor = m_highlighterColor;
-        hlColor.setAlphaF(m_highlighterOpacity);
-        PdfCanvasTools::drawRubberBand(painter, r, modeCode, snapW, snapH,
-                                       m_shapeType, m_shapeStrokeWidth, m_shapeStrokeColor,
-                                       (m_toolMode == PdfToolMode::Highlight ? hlColor : m_shapeFillColor),
-                                       m_dragStart, m_dragCurrent);
-        painter.restore();
-    }
-
-    // 4. Moving Shape Live Overlay or Hover Indicator
-    if ((m_toolMode == PdfToolMode::Shape || m_toolMode == PdfToolMode::Watermark || m_toolMode == PdfToolMode::Redaction || m_toolMode == PdfToolMode::Highlight) &&
-        m_activePageIndex >= 0 && m_activePageIndex < m_pageLayouts.size()) {
-        const auto &pl = m_pageLayouts[m_activePageIndex];
-        painter.save();
-        painter.translate(pl.rect.topLeft());
-
-        if (m_isMovingShape && m_movingShapeIndex >= 0 && m_movingShapeIndex < m_placedShapes.size()) {
-            const auto &shp = m_placedShapes[m_movingShapeIndex];
-            if (!shp.stampImage.isNull()) {
-                painter.drawImage(m_moveShapeCurrentRect, shp.stampImage);
+        if (m_toolMode == PdfToolMode::Shape && m_shapeType == 9) {
+            // Draw freehand stroke for Smart Shape
+            painter.setRenderHint(QPainter::Antialiasing, true);
+            painter.setPen(QPen(m_shapeStrokeColor, m_shapeStrokeWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            if (m_smartShapePoints.size() >= 2) {
+                painter.drawPolyline(m_smartShapePoints.constData(), m_smartShapePoints.size());
             }
-            QPen movePen(QColor(0, 122, 255, 220), 1.5, Qt::DashLine);
-            painter.setPen(movePen);
-            painter.setBrush(Qt::NoBrush);
-            painter.drawRect(m_moveShapeCurrentRect);
-        } else if (!m_isDraggingTool && m_hoveredShapeIndex >= 0 && m_hoveredShapeIndex < m_placedShapes.size()) {
-            QPen hoverPen(QColor(0, 122, 255, 180), 1.0, Qt::DashLine);
-            painter.setPen(hoverPen);
-            painter.setBrush(QColor(0, 122, 255, 20));
-            painter.drawRect(m_placedShapes[m_hoveredShapeIndex].rect);
+        } else {
+            QPoint currentPt = m_dragCurrent;
+            if (m_toolMode == PdfToolMode::Shape &&
+                (m_shapeType == 2 || m_shapeType == 3 || m_shapeType == 8) &&
+                (QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)) {
+                int dx = currentPt.x() - m_dragStart.x();
+                int dy = currentPt.y() - m_dragStart.y();
+                double dist = std::hypot(dx, dy);
+                if (dist > 1.0) {
+                    double angle = std::atan2(dy, dx);
+                    double snappedAngle = std::round(angle / (M_PI / 4.0)) * (M_PI / 4.0);
+                    currentPt = m_dragStart + QPoint(qRound(dist * std::cos(snappedAngle)),
+                                                     qRound(dist * std::sin(snappedAngle)));
+                }
+            }
+            QRect r = PdfCanvasTools::normalizeRect(m_dragStart, currentPt);
+            int snapW = qRound(r.width() * 200.0 / (72.0 * pl.scaleX));
+            int snapH = qRound(r.height() * 200.0 / (72.0 * pl.scaleY));
+            int modeCode = (m_toolMode == PdfToolMode::Snapshot || m_toolMode == PdfToolMode::SelectArea) ? 1
+                         : (m_toolMode == PdfToolMode::Redaction) ? 3
+                         : (m_toolMode == PdfToolMode::Shape) ? 4
+                         : (m_toolMode == PdfToolMode::Highlight) ? (m_highlighterSpotlight ? 6 : 5) : 0;
+            QColor hlColor = m_highlighterColor;
+            hlColor.setAlphaF(m_highlighterOpacity);
+            PdfCanvasTools::drawRubberBand(painter, r, modeCode, snapW, snapH,
+                                           m_shapeType, m_shapeStrokeWidth, m_shapeStrokeColor,
+                                           (m_toolMode == PdfToolMode::Highlight ? hlColor : m_shapeFillColor),
+                                           m_dragStart, currentPt);
         }
-
         painter.restore();
     }
 }
@@ -3068,10 +2933,6 @@ void PdfPageWidget::mousePressEvent(QMouseEvent *event)
     }
 
     if (event->button() == Qt::LeftButton) {
-        if (m_committingShapeIndex >= 0) {
-            commitSelectedStampToPdf();
-        }
-
         // Detect clicked page in multi-page mode
         int clickedPage = pageIndexAtPos(event->pos());
         if (clickedPage >= 0 && clickedPage != m_activePageIndex) {
@@ -3119,130 +2980,64 @@ void PdfPageWidget::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-        // 0a-2. Interactive Highlight Re-selection and Direct Move
-        if (m_toolMode == PdfToolMode::Highlight) {
-            clearAreaSelection();
-            int hlIdx = -1;
-            for (int i = m_placedShapes.size() - 1; i >= 0; --i) {
-                if (m_placedShapes[i].pageIndex == m_activePageIndex &&
-                    m_placedShapes[i].shapeType == 102 &&
-                    m_placedShapes[i].rect.contains(localPos)) {
-                    hlIdx = i;
-                    break;
-                }
+        // 0a-1. Modular Transform Box click-to-place: if clicking on a page outside the transform box
+        if (m_transformBox && m_transformBox->isVisible()) {
+            if (clickedPage >= 0 && clickedPage != m_activePageIndex) {
+                setActivePage(clickedPage);
+                activePR = pageRect(m_activePageIndex);
+                localPos = event->pos() - activePR.topLeft();
+                m_transformBox->setGeometry(activePR);
             }
-            if (hlIdx >= 0) {
-                m_isMovingShape = true;
-                m_movingShapeIndex = hlIdx;
-                m_moveShapeStartMouse = localPos;
-                m_moveShapeInitialRect = m_placedShapes[hlIdx].rect;
-                m_moveShapeCurrentRect = m_moveShapeInitialRect;
-                m_activeHighlightIndex = hlIdx;
-                setCursor(Qt::SizeAllCursor);
-                update();
-                event->accept();
-                return;
-            } else if (m_activeHighlightIndex >= 0) {
-                m_activeHighlightIndex = -1;
-                update();
-            }
-        }
-
-        // 0b. Continuous Shape & Stamp Tool: Direct Move or Instant Draw/Placement
-        if (m_toolMode == PdfToolMode::Shape || m_toolMode == PdfToolMode::Watermark || (m_isEditMode && m_toolMode == PdfToolMode::SelectText)) {
-            clearAreaSelection();
-
-            // Check if clicked on an existing placed shape/stamp using accurate vector hit-testing
-            int shapeIdx = -1;
-            for (int i = m_placedShapes.size() - 1; i >= 0; --i) {
-                const auto &item = m_placedShapes[i];
-                if (item.pageIndex != m_activePageIndex) continue;
-                if (PdfCanvasTools::hitTestShape(item.shapeType, item.rect, item.startPt, item.endPt,
-                                                 item.strokeWidth, item.fillColor, localPos)) {
-                    shapeIdx = i;
-                    break;
-                }
-            }
-
-            if (shapeIdx >= 0) {
-                m_selectedShapeIndex = shapeIdx;
-                m_isMovingShape = true;
-                m_movingShapeIndex = shapeIdx;
-                m_moveShapeStartMouse = localPos;
-                m_moveShapeInitialRect = m_placedShapes[shapeIdx].rect;
-                m_moveShapeCurrentRect = m_moveShapeInitialRect;
-                setCursor(Qt::SizeAllCursor);
-
-                const auto &clickedItem = m_placedShapes[shapeIdx];
-                if (clickedItem.shapeType == 100) {
-                    emit stampSelectedForContextualEdit(clickedItem.stampText, clickedItem.stampColor,
-                                                        clickedItem.stampAngle, clickedItem.stampStyle,
-                                                        clickedItem.stampSize);
-                }
-
-                update();
-                event->accept();
-                return;
-            } else if (m_selectedShapeIndex >= 0) {
-                m_selectedShapeIndex = -1;
-                update();
-            }
-
-            if (m_toolMode == PdfToolMode::Watermark) {
-                // Clicked on empty space: place rubber stamp directly at clicked position!
-                int pageW = activePR.width();
-                int pageH = activePR.height();
-                if (pageW > 0 && pageH > 0 && !m_watermarkText.isEmpty()) {
-                    QRect stampRect = PdfCanvasTools::calculateStampRect(m_watermarkText, m_watermarkAngle,
-                                                                         m_watermarkSize, localPos, pageW, pageH);
-
-                    QImage stampImg(stampRect.size(), QImage::Format_ARGB32_Premultiplied);
-                    stampImg.fill(Qt::transparent);
-                    QPainter p(&stampImg);
-                    p.setRenderHint(QPainter::Antialiasing, true);
-                    PdfTransformBox::drawWatermarkStamp(p, QRect(QPoint(0, 0), stampRect.size()),
-                                                        m_watermarkText, m_watermarkAngle,
-                                                        m_watermarkOpacity, m_watermarkColor,
-                                                        m_watermarkStyle);
-                    p.end();
-
-                    QRectF normRect(static_cast<double>(stampRect.x()) / pageW,
-                                   static_cast<double>(stampRect.y()) / pageH,
-                                   static_cast<double>(stampRect.width()) / pageW,
-                                   static_cast<double>(stampRect.height()) / pageH);
-
-                    PlacedShapeItem item;
-                    item.id = ++m_shapeIdCounter;
-                    item.pageIndex = m_activePageIndex;
-                    item.shapeType = 100;
-                    item.rect = stampRect;
-                    item.normRect = normRect;
-                    item.stampImage = stampImg;
-                    item.stampText = m_watermarkText;
-                    item.stampAngle = m_watermarkAngle;
-                    item.stampOpacity = m_watermarkOpacity;
-                    item.stampColor = m_watermarkColor;
-                    item.stampStyle = m_watermarkStyle;
-                    item.stampSize = m_watermarkSize;
-                    m_placedShapes.append(item);
-                    m_selectedShapeIndex = m_placedShapes.size() - 1;
-
-                    emit addStampAnnotationRequested(stampImg, normRect);
+            if (!m_transformBox->boxRect().adjusted(-16, -16, 16, 16).contains(localPos)) {
+                if (m_toolMode == PdfToolMode::Shape || m_transformBox->itemType() == PdfTransformItemType::Shape) {
+                    m_transformBox->dismiss();
+                    m_toolMode = PdfToolMode::Shape;
+                    // Fall through to block 0b to immediately begin dragging the new shape
+                } else {
+                    QRect bRect = m_transformBox->boxRect();
+                    bRect.moveCenter(localPos);
+                    int pw = activePR.width();
+                    int ph = activePR.height();
+                    if (pw > bRect.width()) {
+                        if (bRect.left() < 4) bRect.moveLeft(4);
+                        if (bRect.right() > pw - 4) bRect.moveRight(pw - 4);
+                    }
+                    if (ph > bRect.height()) {
+                        if (bRect.top() < 4) bRect.moveTop(4);
+                        if (bRect.bottom() > ph - 4) bRect.moveBottom(ph - 4);
+                    }
+                    m_transformBox->setBoxRect(bRect);
                     update();
                     event->accept();
                     return;
                 }
-            }
-
-            if (m_toolMode == PdfToolMode::Shape) {
-                // Clicked on empty space: start drawing a new shape
-                m_isDraggingTool = true;
-                m_dragStart = localPos;
-                m_dragCurrent = localPos;
-                update();
-                event->accept();
+            } else {
+                QWidget::mousePressEvent(event);
                 return;
             }
+        }
+
+        // 0b. Tool Drag Modes for Shapes & Gestures (Smart Shape, Vector Shapes, Arrows, Lines)
+        if (m_toolMode == PdfToolMode::Shape) {
+            clearAreaSelection();
+            m_isDraggingTool = true;
+            m_dragStart = localPos;
+            m_dragCurrent = localPos;
+            m_smartShapePoints.clear();
+            if (m_shapeType == 9) {
+                m_smartShapePoints.append(localPos);
+            }
+            update();
+            event->accept();
+            return;
+        }
+
+        if (m_toolMode == PdfToolMode::Watermark) {
+            clearAreaSelection();
+            startWatermark(m_watermarkText, m_watermarkAngle, m_watermarkOpacity,
+                           m_watermarkColor, localPos, m_watermarkStyle, m_watermarkSize);
+            event->accept();
+            return;
         }
 
         // 1. Tool Drag Modes (SelectArea, Snapshot, Redaction, Highlight)
@@ -3305,6 +3100,15 @@ void PdfPageWidget::mousePressEvent(QMouseEvent *event)
             }
         }
 
+        // Hand / Pan Tool
+        if (m_toolMode == PdfToolMode::Hand) {
+            m_isPanning = true;
+            m_panStartPos = event->globalPosition().toPoint();
+            setCursor(Qt::ClosedHandCursor);
+            event->accept();
+            return;
+        }
+
         // 3. Standard Text Selection
         if (m_toolMode == PdfToolMode::SelectText) {
             m_isSelecting = true;
@@ -3317,7 +3121,7 @@ void PdfPageWidget::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-    } else if (event->button() == Qt::MiddleButton) {
+    } else if (event->button() == Qt::MiddleButton || (m_spacePressed && event->button() == Qt::LeftButton)) {
         m_isPanning = true;
         m_panStartPos = event->globalPosition().toPoint();
         setCursor(Qt::ClosedHandCursor);
@@ -3333,35 +3137,11 @@ void PdfPageWidget::mouseMoveEvent(QMouseEvent *event)
     QRect activePR = pageRect(m_activePageIndex);
     QPoint localPos = event->pos() - activePR.topLeft();
 
-    if (m_isMovingShape && m_movingShapeIndex >= 0 && m_movingShapeIndex < m_placedShapes.size()) {
-        QPoint delta = localPos - m_moveShapeStartMouse;
-        m_moveShapeCurrentRect = m_moveShapeInitialRect.translated(delta);
-        update();
-        event->accept();
-        return;
-    }
-
     if (m_isDraggingTool) {
-        QPoint currentPos = localPos;
-        if (m_toolMode == PdfToolMode::Shape && (event->modifiers() & Qt::ShiftModifier)) {
-            if (m_shapeType == 0 || m_shapeType == 1 || m_shapeType == 4) { // Rectangle, Ellipse, Rounded Rect -> 1:1 Aspect Ratio
-                int dx = currentPos.x() - m_dragStart.x();
-                int dy = currentPos.y() - m_dragStart.y();
-                int side = std::max(std::abs(dx), std::abs(dy));
-                currentPos = m_dragStart + QPoint((dx >= 0 ? 1 : -1) * side, (dy >= 0 ? 1 : -1) * side);
-            } else if (m_shapeType == 2 || m_shapeType == 3) { // Arrow or Line -> Snap to 45 degree angles
-                double dx = currentPos.x() - m_dragStart.x();
-                double dy = currentPos.y() - m_dragStart.y();
-                double len = std::hypot(dx, dy);
-                if (len > 0) {
-                    double angle = std::atan2(dy, dx);
-                    double snapped = std::round(angle / (M_PI / 4.0)) * (M_PI / 4.0);
-                    currentPos = m_dragStart + QPoint(qRound(len * std::cos(snapped)),
-                                                       qRound(len * std::sin(snapped)));
-                }
-            }
+        m_dragCurrent = localPos;
+        if (m_toolMode == PdfToolMode::Shape && m_shapeType == 9) {
+            m_smartShapePoints.append(localPos);
         }
-        m_dragCurrent = currentPos;
 
         // Autoscroll viewport when dragging near top/bottom edges of the scroll area
         QScrollArea *sa = nullptr;
@@ -3417,29 +3197,12 @@ void PdfPageWidget::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    if ((m_toolMode == PdfToolMode::Shape || m_toolMode == PdfToolMode::Watermark ||
-         m_toolMode == PdfToolMode::Redaction || m_toolMode == PdfToolMode::Highlight ||
-         (m_isEditMode && m_toolMode == PdfToolMode::SelectText)) &&
-        !m_isDraggingTool && !m_isMovingShape) {
-        int shapeIdx = -1;
-        for (int i = m_placedShapes.size() - 1; i >= 0; --i) {
-            const auto &item = m_placedShapes[i];
-            if (item.pageIndex != m_activePageIndex) continue;
-            if (PdfCanvasTools::hitTestShape(item.shapeType, item.rect, item.startPt, item.endPt,
-                                             item.strokeWidth, item.fillColor, localPos)) {
-                shapeIdx = i;
-                break;
-            }
-        }
-        if (shapeIdx != m_hoveredShapeIndex) {
-            m_hoveredShapeIndex = shapeIdx;
-            if (m_hoveredShapeIndex >= 0) {
-                setCursor(Qt::SizeAllCursor);
-            } else {
-                setCursor(m_toolMode == PdfToolMode::SelectText ? Qt::IBeamCursor : Qt::CrossCursor);
-            }
-            update();
-        }
+    if (m_toolMode == PdfToolMode::SelectText) {
+        setCursor(Qt::IBeamCursor);
+    } else if (m_toolMode == PdfToolMode::SelectArea || m_toolMode == PdfToolMode::Snapshot ||
+               m_toolMode == PdfToolMode::Redaction || m_toolMode == PdfToolMode::Highlight ||
+               m_toolMode == PdfToolMode::Shape) {
+        setCursor(Qt::CrossCursor);
     }
 
     QWidget::mouseMoveEvent(event);
@@ -3449,35 +3212,6 @@ void PdfPageWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     QRect activePR = pageRect(m_activePageIndex);
     QPoint localPos = event->pos() - activePR.topLeft();
-
-    // 0. Finish Moving Shape
-    if (event->button() == Qt::LeftButton && m_isMovingShape) {
-        m_isMovingShape = false;
-        int idx = m_movingShapeIndex;
-        m_movingShapeIndex = -1;
-        if (idx >= 0 && idx < m_placedShapes.size()) {
-            QPoint delta = localPos - m_moveShapeStartMouse;
-            if (delta.manhattanLength() >= 2) {
-                int pageW = activePR.width();
-                int pageH = activePR.height();
-                if (pageW > 0 && pageH > 0) {
-                    QRectF oldNorm = m_placedShapes[idx].normRect;
-                    QRect newRect = m_moveShapeCurrentRect;
-                    QRectF newNorm(static_cast<double>(newRect.x()) / pageW,
-                                   static_cast<double>(newRect.y()) / pageH,
-                                   static_cast<double>(newRect.width()) / pageW,
-                                   static_cast<double>(newRect.height()) / pageH);
-                    m_placedShapes[idx].rect = newRect;
-                    m_placedShapes[idx].normRect = newNorm;
-                    emit moveStampAnnotationRequested(oldNorm, newNorm, m_placedShapes[idx].stampImage);
-                }
-            }
-            m_selectedShapeIndex = idx;
-        }
-        update();
-        event->accept();
-        return;
-    }
 
     if (event->button() == Qt::LeftButton && m_isDraggingTool) {
         m_isDraggingTool = false;
@@ -3519,15 +3253,6 @@ void PdfPageWidget::mouseReleaseEvent(QMouseEvent *event)
                     QImage redactImg(r.size(), QImage::Format_ARGB32_Premultiplied);
                     redactImg.fill(m_redactionColor);
 
-                    PlacedShapeItem item;
-                    item.id = ++m_shapeIdCounter;
-                    item.pageIndex = m_activePageIndex;
-                    item.shapeType = 101; // Redaction
-                    item.rect = r;
-                    item.normRect = normRect;
-                    item.stampImage = redactImg;
-                    m_placedShapes.append(item);
-
                     if (m_redactionPermanent) {
                         for (auto it = m_textBoxes.begin(); it != m_textBoxes.end();) {
                             QRectF b = (*it)->boundingBox();
@@ -3541,6 +3266,9 @@ void PdfPageWidget::mouseReleaseEvent(QMouseEvent *event)
                                 ++it;
                             }
                         }
+                        QRectF ptRect(r.x() / m_scaleX, r.y() / m_scaleY,
+                                      r.width() / m_scaleX, r.height() / m_scaleY);
+                        emit eraseOriginalTextRequested(m_activePageIndex, ptRect, normRect);
                     }
 
                     emit addStampAnnotationRequested(redactImg, normRect);
@@ -3551,24 +3279,75 @@ void PdfPageWidget::mouseReleaseEvent(QMouseEvent *event)
                 setToolMode(PdfToolMode::SelectText);
             }
 
-        } else if (m_toolMode == PdfToolMode::Shape) {
-            bool validShape = false;
-            if (m_shapeType == 2 || m_shapeType == 3) { // Arrow or Line
-                validShape = ((m_dragCurrent - m_dragStart).manhattanLength() >= 4);
-            } else {
-                validShape = (r.width() >= 4 && r.height() >= 4);
-            }
-
-            if (validShape) {
-                commitShapeDrawing(r, m_dragStart, m_dragCurrent);
-            }
-            // Continuous drawing: remain in Shape mode without opening transform box!
         } else if (m_toolMode == PdfToolMode::Highlight) {
             if (r.width() >= 4 && r.height() >= 4) {
                 commitHighlightDrawing(r);
             }
             if (!m_continuousMode) {
                 setToolMode(PdfToolMode::SelectText);
+            }
+
+        } else if (m_toolMode == PdfToolMode::Shape) {
+            int finalShapeType = m_shapeType;
+            QRect shapeRect = r;
+            QPoint startPt = m_dragStart;
+            QPoint endPt = m_dragCurrent;
+
+            if (m_shapeType == 9) { // Smart Shape gesture recognition
+                RecognizedShapeResult rec = PdfCanvasTools::recognizeSmartShape(m_smartShapePoints);
+                finalShapeType = rec.shapeType;
+                shapeRect = rec.boundingBox;
+                startPt = rec.startPt;
+                endPt = rec.endPt;
+                m_smartShapePoints.clear();
+                if (!rec.name.isEmpty()) {
+                    QToolTip::showText(mapToGlobal(localPos), tr("✨ Recognized shape: %1").arg(rec.name));
+                }
+            }
+
+            if ((event->modifiers() & Qt::ShiftModifier) &&
+                (finalShapeType == 2 || finalShapeType == 3 || finalShapeType == 8)) {
+                int dx = endPt.x() - startPt.x();
+                int dy = endPt.y() - startPt.y();
+                double dist = std::hypot(dx, dy);
+                if (dist > 1.0) {
+                    double angle = std::atan2(dy, dx);
+                    double snappedAngle = std::round(angle / (M_PI / 4.0)) * (M_PI / 4.0);
+                    endPt = startPt + QPoint(qRound(dist * std::cos(snappedAngle)),
+                                             qRound(dist * std::sin(snappedAngle)));
+                }
+            }
+
+            if (finalShapeType == 2 || finalShapeType == 3 || finalShapeType == 8) { // Arrow, Line, Double Arrow
+                int dragDist = (endPt - startPt).manhattanLength();
+                if (dragDist < 10) {
+                    // Clic singolo senza trascinamento: linea/freccia orizzontale da 160px
+                    startPt = m_dragStart;
+                    endPt = m_dragStart + QPoint(160, 0);
+                }
+
+                int padding = std::max(16, m_shapeStrokeWidth * 4);
+                int minX = std::min(startPt.x(), endPt.x()) - padding;
+                int maxX = std::max(startPt.x(), endPt.x()) + padding;
+                int minY = std::min(startPt.y(), endPt.y()) - padding;
+                int maxY = std::max(startPt.y(), endPt.y()) + padding;
+                QRect box(minX, minY, std::max(30, maxX - minX), std::max(30, maxY - minY));
+
+                QPoint localStart = startPt - box.topLeft();
+                QPoint localEnd = endPt - box.topLeft();
+
+                if (m_transformBox) {
+                    m_transformBox->setGeometry(activePR);
+                    m_transformBox->showShape(finalShapeType, m_shapeStrokeWidth, m_shapeStrokeColor, m_shapeFillColor, box, localStart, localEnd);
+                }
+            } else {
+                if (shapeRect.width() < 12 && shapeRect.height() < 12) {
+                    shapeRect = QRect(m_dragStart.x() - 80, m_dragStart.y() - 50, 160, 100);
+                }
+                if (m_transformBox) {
+                    m_transformBox->setGeometry(activePR);
+                    m_transformBox->showShape(finalShapeType, m_shapeStrokeWidth, m_shapeStrokeColor, m_shapeFillColor, shapeRect);
+                }
             }
         }
 
@@ -3611,16 +3390,16 @@ void PdfPageWidget::mouseReleaseEvent(QMouseEvent *event)
                                                     m_selectedTextPtRect.width() / pageWPt,
                                                     m_selectedTextPtRect.height() / pageHPt);
                 }
-                captureSelectedTextFormat();
             }
+            captureSelectedTextFormat();
         }
         event->accept();
         return;
     }
 
-    if (event->button() == Qt::MiddleButton && m_isPanning) {
+    if ((event->button() == Qt::MiddleButton || event->button() == Qt::LeftButton) && m_isPanning) {
         m_isPanning = false;
-        setCursor(m_toolMode == PdfToolMode::SelectText ? Qt::IBeamCursor : Qt::ArrowCursor);
+        setCursor((m_toolMode == PdfToolMode::Hand || m_spacePressed) ? Qt::OpenHandCursor : (m_toolMode == PdfToolMode::SelectText ? Qt::IBeamCursor : Qt::ArrowCursor));
         event->accept();
         return;
     }
@@ -3684,21 +3463,7 @@ void PdfPageWidget::wheelEvent(QWheelEvent *event)
 
 void PdfPageWidget::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
-        if (m_selectedShapeIndex >= 0 && m_selectedShapeIndex < m_placedShapes.size()) {
-            deleteSelectedShape();
-            event->accept();
-            return;
-        }
-    }
-
     if (event->key() == Qt::Key_Escape) {
-        if (m_selectedShapeIndex >= 0) {
-            m_selectedShapeIndex = -1;
-            update();
-            event->accept();
-            return;
-        }
         if (m_toolMode != PdfToolMode::SelectText || m_continuousMode || m_hasAreaSelection) {
             cancelActiveTool();
             clearAreaSelection();
@@ -3767,6 +3532,12 @@ void PdfPageWidget::keyPressEvent(QKeyEvent *event)
         event->accept();
         return;
     }
+    if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
+        m_spacePressed = true;
+        setCursor(Qt::OpenHandCursor);
+        event->accept();
+        return;
+    }
     if (event->key() == Qt::Key_Escape) {
         if (m_hasAreaSelection) {
             clearAreaSelection();
@@ -3780,6 +3551,19 @@ void PdfPageWidget::keyPressEvent(QKeyEvent *event)
     QWidget::keyPressEvent(event);
 }
 
+void PdfPageWidget::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
+        m_spacePressed = false;
+        if (!m_isPanning) {
+            setCursor(m_toolMode == PdfToolMode::SelectText ? Qt::IBeamCursor : Qt::ArrowCursor);
+        }
+        event->accept();
+        return;
+    }
+    QWidget::keyReleaseEvent(event);
+}
+
 void PdfPageWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     int clickedPage = pageIndexAtPos(event->pos());
@@ -3788,47 +3572,6 @@ void PdfPageWidget::contextMenuEvent(QContextMenuEvent *event)
     }
     QRect activePR = pageRect(m_activePageIndex);
     QPoint localPos = event->pos() - activePR.topLeft();
-
-    // Check if right-clicked on an existing shape
-    int rightClickedShapeIdx = -1;
-    for (int i = m_placedShapes.size() - 1; i >= 0; --i) {
-        const auto &item = m_placedShapes[i];
-        if (item.pageIndex != m_activePageIndex) continue;
-        if (PdfCanvasTools::hitTestShape(item.shapeType, item.rect, item.startPt, item.endPt,
-                                         item.strokeWidth, item.fillColor, localPos)) {
-            rightClickedShapeIdx = i;
-            break;
-        }
-    }
-
-    if (rightClickedShapeIdx >= 0) {
-        m_selectedShapeIndex = rightClickedShapeIdx;
-        update();
-
-        QMenu shapeMenu(this);
-        ThemePreset preset = ThemeManager::currentPreset();
-        if (ThemeManager::isDark(preset)) {
-            shapeMenu.setStyleSheet(
-                "QMenu { background-color: #21252b; color: #e2e8f0; border: 1px solid #3e4451; border-radius: 6px; padding: 4px 0px; }"
-                "QMenu::item { padding: 6px 24px 6px 12px; }"
-                "QMenu::item:selected { background-color: #38bdf8; color: #ffffff; }"
-            );
-        } else {
-            shapeMenu.setStyleSheet(
-                "QMenu { background-color: #ffffff; color: #1d1d1f; border: 1px solid #d2d2d7; border-radius: 6px; padding: 4px 0px; }"
-                "QMenu::item { padding: 6px 24px 6px 12px; }"
-                "QMenu::item:selected { background-color: #007aff; color: #ffffff; }"
-            );
-        }
-        if (m_placedShapes[rightClickedShapeIdx].shapeType == 100) {
-            shapeMenu.addAction(QIcon::fromTheme("edit-delete"), tr("🗑️ Delete Stamp"), this, &PdfPageWidget::deleteSelectedShape);
-        } else {
-            shapeMenu.addAction(QIcon::fromTheme("edit-delete"), tr("🗑️ Delete Shape"), this, &PdfPageWidget::deleteSelectedShape);
-        }
-        shapeMenu.exec(event->globalPos());
-        event->accept();
-        return;
-    }
 
     if (!m_hasAreaSelection && m_selectedIndices.empty()) {
         int clickedIdx = findClosestBox(localPos);
@@ -3844,6 +3587,10 @@ void PdfPageWidget::contextMenuEvent(QContextMenuEvent *event)
                 emit selectionChanged(true);
             }
         }
+    }
+
+    if (hasSelection()) {
+        captureSelectedTextFormat();
     }
 
     QMenu menu(this);
@@ -3895,16 +3642,10 @@ void PdfPageWidget::contextMenuEvent(QContextMenuEvent *event)
     }
 
     if (m_hasAreaSelection) {
-        if (m_isEditMode) {
-            menu.addAction(tr("✏️ Edit / Replace Text in Area..."), this, &PdfPageWidget::onTransformBoxEditRequested);
-            menu.addSeparator();
-            QAction *actCut = menu.addAction(QIcon::fromTheme("edit-cut"), tr("Cut Area"), this, &PdfPageWidget::cutSelectedArea);
-            actCut->setShortcut(QKeySequence::Cut);
-        }
-
-        QAction *actCopy = menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy Area"), this, &PdfPageWidget::copySelectedArea);
-        actCopy->setShortcut(QKeySequence::Copy);
-
+        menu.addAction(QIcon::fromTheme("edit-copy"), tr("📋 Copy Text from Area"), this, &PdfPageWidget::copySelectedAreaText);
+        menu.addAction(QIcon::fromTheme("image-x-generic"), tr("🖼️ Copy Area as Image"), this, &PdfPageWidget::copySelectedAreaImage);
+        menu.addAction(QIcon::fromTheme("system-search"), tr("🔍 Scan Area Text (OCR)..."), this, &PdfPageWidget::ocrSelectedArea);
+        menu.addSeparator();
         menu.addAction(tr("Clear Area Selection"), this, &PdfPageWidget::clearAreaSelection);
         menu.addSeparator();
     } else if (hasSelection()) {
@@ -3918,12 +3659,6 @@ void PdfPageWidget::contextMenuEvent(QContextMenuEvent *event)
 
             QAction *actCopy = menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy Text"), this, &PdfPageWidget::copySelectionToClipboard);
             actCopy->setShortcut(QKeySequence::Copy);
-
-            menu.addSeparator();
-            menu.addAction(QIcon::fromTheme("draw-highlight"), tr("🖍️ Highlight Selected Text"), this, [this]() {
-                highlightSelectedText(m_highlighterColor, m_highlighterOpacity);
-            });
-            menu.addAction(tr("⬛ Redact / Blackout Text"), this, &PdfPageWidget::redactSelectedText);
         } else {
             QAction *actCopy = menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy Text"), this, &PdfPageWidget::copySelectionToClipboard);
             actCopy->setShortcut(QKeySequence::Copy);
@@ -3941,24 +3676,20 @@ void PdfPageWidget::contextMenuEvent(QContextMenuEvent *event)
                 pasteFromClipboard(clickPos);
             });
             actPaste->setShortcut(QKeySequence::Paste);
+            menu.addSeparator();
         }
-
-        menu.addSeparator();
-
-        menu.addAction(QIcon::fromTheme("edit-select"), tr("Select Area..."), this, &PdfPageWidget::startSelectArea);
-        menu.addAction(QIcon::fromTheme("insert-image"), tr("Insert Image..."), this, &PdfPageWidget::insertImageRequested);
     }
 
-    QAction *actCopyPage = menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy Page Text"), this, &PdfPageWidget::copyPageTextToClipboard);
-    actCopyPage->setEnabled(!m_textBoxes.empty());
+    if (!m_hasAreaSelection) {
+        menu.addAction(QIcon::fromTheme("edit-select"), tr("Select Area..."), this, &PdfPageWidget::startSelectArea);
+    }
 
-    menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy Entire Document Text"), this, &PdfPageWidget::copyDocumentRequested);
+    menu.addAction(tr("🔍 Scansiona testo..."), this, &PdfPageWidget::scanPageRequested);
 
     menu.addSeparator();
 
-    QAction *actSelectAll = menu.addAction(QIcon::fromTheme("edit-select-all"), tr("Select All"), this, &PdfPageWidget::selectAll);
-    actSelectAll->setEnabled(!m_textBoxes.empty());
-    actSelectAll->setShortcut(QKeySequence::SelectAll);
+    QAction *actCopyPage = menu.addAction(QIcon::fromTheme("edit-copy"), tr("📋 Copy Page Text"), this, &PdfPageWidget::copyPageTextToClipboard);
+    actCopyPage->setEnabled(!m_textBoxes.empty());
 
     menu.exec(event->globalPos());
 }

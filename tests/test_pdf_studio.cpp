@@ -17,6 +17,7 @@
 #include <QListWidget>
 #include <QStandardPaths>
 #include <QFileIconProvider>
+#include <QTimer>
 #include "ui/vector_icons.h"
 
 #include "core/services/theme_manager.h"
@@ -28,6 +29,8 @@
 #include "ui/minimal_header_bar.h"
 #include "ui/contextual_action_bar.h"
 #include "ui/pdf/pdf_signature_dialog.h"
+#include "ui/dialogs/unified_export_dialog.h"
+#include "ui/pdf/pdf_image_extract_dialog.h"
 
 class TestPdfStudio : public QObject
 {
@@ -53,6 +56,7 @@ private slots:
     void testInPlaceTextEditingAndSmartBackground();
     void testZoomSystem();
     void testSignatureDialogUnifiedFlow();
+    void testExportAndImageExtractDialogs();
     void testUiSnapshots();
 };
 
@@ -333,21 +337,23 @@ void TestPdfStudio::testMinimalHeaderBarRefinements()
     bar.setEditMode(true);
     bar.show();
 
-    // Verify Edit button displays "✓ Confirm"
+    // Verify Edit button displays Done or Confirm
     QVERIFY(bar.editButton() != nullptr);
-    QVERIFY(bar.editButton()->text().contains("Confirm"));
+    QVERIFY(bar.editButton()->toolTip().contains("Done") || bar.editButton()->text().contains("Confirm"));
 
     // Verify Quick Undo button is separate and visible
     QVERIFY(bar.quickUndoButton() != nullptr);
-    QVERIFY(bar.quickUndoButton()->text().contains("Undo"));
+    QVERIFY(bar.quickUndoButton()->toolTip().contains("Annulla") || bar.quickUndoButton()->toolTip().contains("Undo"));
 
     // Verify History Timeline button is separate and visible
     QVERIFY(bar.historyTimelineButton() != nullptr);
-    QVERIFY(bar.historyTimelineButton()->text().contains("Timeline"));
+    QVERIFY(bar.historyTimelineButton()->toolTip().contains("Cronologia") ||
+            bar.historyTimelineButton()->toolTip().contains("Timeline") ||
+            bar.historyTimelineButton()->toolTip().contains("History"));
 
     // Verify Insert button has a menu containing Geometric Shapes, Insert Image, Highlight, and Stamp
     QVERIFY(bar.pdfShapesButton() != nullptr);
-    QVERIFY(bar.pdfShapesButton()->text().contains("Insert"));
+    QVERIFY(bar.pdfShapesButton()->toolTip().contains("Inserisci") || bar.pdfShapesButton()->toolTip().contains("Insert"));
     QMenu *shapesMenu = bar.pdfShapesButton()->menu();
     QVERIFY(shapesMenu != nullptr);
     QCOMPARE(shapesMenu->actions().size(), 4);
@@ -632,19 +638,113 @@ void TestPdfStudio::testSignatureDialogUnifiedFlow()
     dlg.close();
 }
 
+void TestPdfStudio::testExportAndImageExtractDialogs()
+{
+    QString artDir = QStringLiteral("/home/davide/.gemini/antigravity/brain/4e70622e-50ab-4665-afcd-a70645769460");
+    QString samplePdf = QStringLiteral("/home/davide/Progetti/BubezView/421_Guida turistica di Trieste.pdf");
+
+    // 1. UnifiedExportDialog test
+    UnifiedExportDialog expDlg(FileCategory::Pdf, samplePdf, 0, 9);
+    expDlg.resize(520, 320);
+    expDlg.show();
+    QTest::qWait(100);
+
+    QPushButton *btnExtract = nullptr;
+    for (QPushButton *btn : expDlg.findChildren<QPushButton*>()) {
+        if (btn->text().contains("Extract") || btn->text().contains("Estrai")) {
+            btnExtract = btn;
+            break;
+        }
+    }
+    QVERIFY(btnExtract != nullptr);
+    expDlg.grab().save(QStringLiteral("%1/unified_export_dialog_pdf.png").arg(artDir));
+
+    // Test that clicking Extract Images returns UnifiedExportDialog::ExtractImages (code 2)
+    QTimer::singleShot(50, btnExtract, &QPushButton::click);
+    int res = expDlg.exec();
+    QCOMPARE(res, static_cast<int>(UnifiedExportDialog::ExtractImages));
+
+    // 2. PdfImageExtractDialog test
+    if (QFile::exists(samplePdf)) {
+        PdfImageExtractDialog extractDlg(samplePdf);
+        extractDlg.resize(800, 600);
+        extractDlg.show();
+        // Wait for asynchronous pdfimages extraction to populate the thumbnail grid
+        for (int w = 0; w < 60; ++w) {
+            QTest::qWait(200);
+            QListWidget *lw = extractDlg.findChild<QListWidget*>();
+            if (lw && lw->count() > 0) {
+                break;
+            }
+        }
+        QListWidget *listWidget = extractDlg.findChild<QListWidget*>();
+        QVERIFY(listWidget != nullptr);
+        QVERIFY(listWidget->count() > 0);
+        extractDlg.grab().save(QStringLiteral("%1/pdf_image_extract_dialog.png").arg(artDir));
+    }
+}
+
 void TestPdfStudio::testUiSnapshots()
 {
     PdfStudioPanel panel;
     panel.resize(340, 680);
     panel.show();
 
-    QString artDir = QStringLiteral("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7");
+    QString artDir = QStringLiteral("/home/davide/.gemini/antigravity/brain/4e70622e-50ab-4665-afcd-a70645769460");
 
     for (int i = 0; i < 5; ++i) {
         panel.setCurrentTab(i);
         QTest::qWait(50);
         QPixmap pix = panel.grab();
         pix.save(QStringLiteral("%1/pdf_studio_tab_%2.png").arg(artDir).arg(i));
+    }
+
+    // Capture Header Bar in View Mode (Light Theme - ModernLight)
+    {
+        MinimalHeaderBar viewLightBar;
+        viewLightBar.applyThemePreset(ThemePreset::ModernLight);
+        viewLightBar.setCategory(FileCategory::Pdf);
+        viewLightBar.setEditMode(false);
+        viewLightBar.resize(1150, 46);
+        viewLightBar.show();
+        QTest::qWait(50);
+        viewLightBar.grab().save(QStringLiteral("%1/header_view_light_theme.png").arg(artDir));
+    }
+
+    // Capture Header Bar in View Mode (Dark Theme - DarkSlate)
+    {
+        MinimalHeaderBar viewDarkBar;
+        viewDarkBar.applyThemePreset(ThemePreset::DarkSlate);
+        viewDarkBar.setCategory(FileCategory::Pdf);
+        viewDarkBar.setEditMode(false);
+        viewDarkBar.resize(1150, 46);
+        viewDarkBar.show();
+        QTest::qWait(50);
+        viewDarkBar.grab().save(QStringLiteral("%1/header_view_dark_theme.png").arg(artDir));
+    }
+
+    // Capture Header Bar in Edit Mode (Light Theme - ModernLight)
+    {
+        MinimalHeaderBar lightBar;
+        lightBar.applyThemePreset(ThemePreset::ModernLight);
+        lightBar.setCategory(FileCategory::Pdf);
+        lightBar.setEditMode(true);
+        lightBar.resize(1150, 46);
+        lightBar.show();
+        QTest::qWait(50);
+        lightBar.grab().save(QStringLiteral("%1/editor_header_light_theme.png").arg(artDir));
+    }
+
+    // Capture Header Bar in Edit Mode (Dark Theme - DarkSlate)
+    {
+        MinimalHeaderBar darkBar;
+        darkBar.applyThemePreset(ThemePreset::DarkSlate);
+        darkBar.setCategory(FileCategory::Pdf);
+        darkBar.setEditMode(true);
+        darkBar.resize(1150, 46);
+        darkBar.show();
+        QTest::qWait(50);
+        darkBar.grab().save(QStringLiteral("%1/editor_header_dark_theme.png").arg(artDir));
     }
 
     // Capture Header Bar showing new Zoom control
@@ -655,6 +755,16 @@ void TestPdfStudio::testUiSnapshots()
     zoomHeader.show();
     QTest::qWait(50);
     zoomHeader.grab().save(QStringLiteral("%1/header_bar_zoom.png").arg(artDir));
+
+    // Capture Header Bar in Page Organizer mode showing the new dedicated Repair PDF pill
+    MinimalHeaderBar orgHeader;
+    orgHeader.setCategory(FileCategory::Pdf);
+    orgHeader.setEditMode(true);
+    orgHeader.setPageOrganizerMode(true);
+    orgHeader.resize(1100, 46);
+    orgHeader.show();
+    QTest::qWait(50);
+    orgHeader.grab().save(QStringLiteral("/home/davide/.gemini/antigravity/brain/4e70622e-50ab-4665-afcd-a70645769460/organizer_header_repair_btn.png"));
 
     // Capture Header Bar with Undo & Timeline buttons and Contextual Text Bar
     MinimalHeaderBar header;

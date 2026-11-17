@@ -12,11 +12,13 @@
 #include <QFontDatabase>
 #include <QFontInfo>
 #include <QLineEdit>
+#include <QGraphicsDropShadowEffect>
 
 ContextualActionBar::ContextualActionBar(QWidget *parent)
     : QWidget(parent)
 {
     setObjectName(QStringLiteral("ContextualActionBar"));
+    setAttribute(Qt::WA_StyledBackground, true);
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     setFixedHeight(0);
     hide();
@@ -31,6 +33,12 @@ QSize ContextualActionBar::minimumSizeHint() const
 
 void ContextualActionBar::setupUi()
 {
+    auto *shadow = new QGraphicsDropShadowEffect(this);
+    shadow->setBlurRadius(16);
+    shadow->setColor(QColor(0, 0, 0, 110));
+    shadow->setOffset(0, 4);
+    setGraphicsEffect(shadow);
+
     auto *rootLayout = new QHBoxLayout(this);
     rootLayout->setContentsMargins(12, 2, 12, 2);
     rootLayout->setSpacing(8);
@@ -145,11 +153,12 @@ void ContextualActionBar::setupTextPage()
 
     m_cmbTextBgMode = new QComboBox(m_textPage);
     m_cmbTextBgMode->setFixedHeight(26);
-    m_cmbTextBgMode->addItem(tr("🪄 Auto (Sampled)"), static_cast<int>(PdfTextBgMode::Auto));
     m_cmbTextBgMode->addItem(tr("⚪ None (Transparent)"), static_cast<int>(PdfTextBgMode::Transparent));
+    m_cmbTextBgMode->addItem(tr("🪄 Auto (Sampled)"), static_cast<int>(PdfTextBgMode::Auto));
     m_cmbTextBgMode->addItem(tr("🌫️ Feathered (Soft)"), static_cast<int>(PdfTextBgMode::Feathered));
     m_cmbTextBgMode->addItem(tr("🎨 Custom Color..."), static_cast<int>(PdfTextBgMode::Custom));
-    m_cmbTextBgMode->setToolTip(tr("Background coverage behind text: Auto samples the exact page color, None keeps background transparent, Feathered softens rectangular borders, Custom lets you pick any tint."));
+    m_cmbTextBgMode->setCurrentIndex(0);
+    m_cmbTextBgMode->setToolTip(tr("Background coverage behind text: None keeps background transparent (default), Auto samples the exact page color, Feathered softens rectangular borders, Custom lets you pick any tint."));
     lay->addWidget(m_cmbTextBgMode, 0, Qt::AlignVCenter);
 
     m_btnTextBgColor = new QToolButton(m_textPage);
@@ -292,146 +301,156 @@ void ContextualActionBar::setupHighlightPage()
 }
 
 // -----------------------------------------------------------------------------
-// 3. SHAPES PAGE
+// 3. SHAPES PAGE (Compact 5-Control Interface)
 // -----------------------------------------------------------------------------
 void ContextualActionBar::setupShapesPage()
 {
     m_shapesPage = new QWidget(m_pagesStack);
     auto *lay = new QHBoxLayout(m_shapesPage);
     lay->setContentsMargins(0, 0, 0, 0);
-    lay->setSpacing(6);
+    lay->setSpacing(8);
 
     auto *lblShape = new QLabel(tr("Shape:"), m_shapesPage);
     lay->addWidget(lblShape, 0, Qt::AlignVCenter);
 
-    m_shapeTypeGroup = new QButtonGroup(this);
-    m_shapeTypeGroup->setExclusive(true);
+    // 1. Single Shape Selector Button with popup menu
+    m_btnShapeSelector = new QToolButton(m_shapesPage);
+    m_btnShapeSelector->setFixedHeight(28);
+    m_btnShapeSelector->setCursor(Qt::PointingHandCursor);
+    m_btnShapeSelector->setPopupMode(QToolButton::InstantPopup);
+    m_btnShapeSelector->setToolTip(tr("Select geometric shape"));
 
-    auto makeShapeBtn = [this, lay](QToolButton *&btn, int id, const QString &text, const QString &tip) {
-        btn = new QToolButton(m_shapesPage);
-        btn->setFixedSize(32, 26);
-        btn->setText(text);
-        btn->setCheckable(true);
-        btn->setCursor(Qt::PointingHandCursor);
-        btn->setToolTip(tip);
-        QFont f = btn->font();
-        f.setPointSize(13);
-        f.setBold(true);
-        btn->setFont(f);
-        m_shapeTypeGroup->addButton(btn, id);
-        lay->addWidget(btn, 0, Qt::AlignVCenter);
+    m_menuShapes = new QMenu(m_btnShapeSelector);
+    const struct ShapeEntry {
+        int id;
+        const char *icon;
+        const char *name;
+    } shapes[] = {
+        {0, "▭", "Rectangle"},
+        {4, "▢", "Rounded Rectangle"},
+        {1, "◯", "Ellipse / Circle"},
+        {5, "△", "Triangle"},
+        {6, "◇", "Diamond"},
+        {7, "★", "5-Point Star"},
+        {2, "➔", "Directional Arrow"},
+        {8, "⇄", "Double Arrow"},
+        {3, "―", "Straight Line"}
     };
 
-    makeShapeBtn(m_btnShapeRect, 0, QStringLiteral("▭"), tr("Rectangle"));
-    makeShapeBtn(m_btnShapeCircle, 1, QStringLiteral("◯"), tr("Ellipse / Circle"));
-    makeShapeBtn(m_btnShapeArrow, 2, QStringLiteral("➔"), tr("Directional Arrow"));
-    makeShapeBtn(m_btnShapeLine, 3, QStringLiteral("―"), tr("Straight Line"));
-    m_btnShapeRect->setChecked(true);
-
-    connect(m_shapeTypeGroup, &QButtonGroup::idClicked, this, [this](int id) {
-        emit shapePropertiesChanged(id, strokeWidth(), m_strokeColor, m_fillColor);
-        emit drawingPropertiesChanged(id, strokeWidth(), m_strokeColor, m_fillColor);
-    });
+    for (const auto &s : shapes) {
+        QString label = QStringLiteral("%1  %2").arg(QString::fromUtf8(s.icon), tr(s.name));
+        m_menuShapes->addAction(label, this, [this, id = s.id]() {
+            setActiveShapeType(id);
+            emit shapePropertiesChanged(m_activeShapeType, strokeWidth(), m_strokeColor, m_fillColor);
+        });
+    }
+    m_btnShapeSelector->setMenu(m_menuShapes);
+    updateShapeSelectorButton();
+    lay->addWidget(m_btnShapeSelector, 0, Qt::AlignVCenter);
 
     lay->addSpacing(4);
 
+    // 2. Stroke Width ComboBox
     auto *lblWidth = new QLabel(tr("Width:"), m_shapesPage);
     lay->addWidget(lblWidth, 0, Qt::AlignVCenter);
 
     m_cmbShapeStrokeWidth = new QComboBox(m_shapesPage);
-    m_cmbShapeStrokeWidth->setFixedHeight(26);
-    m_cmbShapeStrokeWidth->setFixedWidth(64);
+    m_cmbShapeStrokeWidth->setFixedHeight(28);
+    m_cmbShapeStrokeWidth->setFixedWidth(68);
     m_cmbShapeStrokeWidth->addItem(tr("1 px"), 1);
     m_cmbShapeStrokeWidth->addItem(tr("2 px"), 2);
     m_cmbShapeStrokeWidth->addItem(tr("3 px"), 3);
     m_cmbShapeStrokeWidth->addItem(tr("5 px"), 5);
     m_cmbShapeStrokeWidth->addItem(tr("8 px"), 8);
+    m_cmbShapeStrokeWidth->addItem(tr("12 px"), 12);
     m_cmbShapeStrokeWidth->setCurrentIndex(1); // 2px
     m_cmbShapeStrokeWidth->setToolTip(tr("Stroke Width"));
     connect(m_cmbShapeStrokeWidth, &QComboBox::currentIndexChanged, this, [this]() {
         emit shapePropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
-        emit drawingPropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
     });
     lay->addWidget(m_cmbShapeStrokeWidth, 0, Qt::AlignVCenter);
 
     lay->addSpacing(4);
 
-    auto *lblStroke = new QLabel(tr("Stroke:"), m_shapesPage);
-    lay->addWidget(lblStroke, 0, Qt::AlignVCenter);
+    // Helper for round color swatch icons in menu
+    auto makeColorIcon = [](const QColor &color) {
+        QPixmap pix(16, 16);
+        pix.fill(Qt::transparent);
+        QPainter p(&pix);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(color);
+        p.setPen(QPen(QColor(0, 0, 0, 90), 1));
+        p.drawEllipse(1, 1, 14, 14);
+        p.end();
+        return QIcon(pix);
+    };
 
-    const struct PaletteColor { const char *hex; const char *tip; } palette[] = {
+    const struct PaletteColor { const char *hex; const char *name; } palette[] = {
         {"#ef4444", "Red"},
         {"#3b82f6", "Blue"},
         {"#22c55e", "Green"},
         {"#f97316", "Orange"},
         {"#fbbf24", "Yellow"},
-        {"#111827", "Black"}
+        {"#111827", "Black"},
+        {"#ffffff", "White"}
     };
 
-    for (const auto &entry : palette) {
-        auto *btn = new QToolButton(m_shapesPage);
-        btn->setFixedSize(22, 22);
-        btn->setCursor(Qt::PointingHandCursor);
-        btn->setToolTip(tr(entry.tip));
-        QString hex = QString::fromLatin1(entry.hex);
-        btn->setStyleSheet(QString(
-            "QToolButton { background-color: %1; border-radius: 11px; border: 1px solid rgba(0,0,0,0.25); }"
-            "QToolButton:hover { border: 2px solid #38bdf8; }"
-        ).arg(hex));
-        connect(btn, &QToolButton::clicked, this, [this, hex]() {
-            setStrokeColor(QColor(hex));
-            emit shapePropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
-            emit drawingPropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
-        });
-        m_shapePaletteButtons.append(btn);
-        lay->addWidget(btn, 0, Qt::AlignVCenter);
-    }
-
+    // 3. Single Stroke Color Button with popup palette
     m_btnShapeStrokeColor = new QToolButton(m_shapesPage);
-    m_btnShapeStrokeColor->setFixedSize(26, 26);
+    m_btnShapeStrokeColor->setFixedHeight(28);
     m_btnShapeStrokeColor->setCursor(Qt::PointingHandCursor);
-    m_btnShapeStrokeColor->setToolTip(tr("Custom Stroke Color..."));
-    updateColorSwatchButton(m_btnShapeStrokeColor, m_strokeColor);
-    connect(m_btnShapeStrokeColor, &QToolButton::clicked, this, [this]() {
+    m_btnShapeStrokeColor->setPopupMode(QToolButton::InstantPopup);
+    m_btnShapeStrokeColor->setToolTip(tr("Border / Stroke Color"));
+
+    auto *menuStroke = new QMenu(m_btnShapeStrokeColor);
+    for (const auto &p : palette) {
+        QColor c(p.hex);
+        menuStroke->addAction(makeColorIcon(c), tr(p.name), this, [this, c]() {
+            setStrokeColor(c);
+            emit shapePropertiesChanged(m_activeShapeType, strokeWidth(), m_strokeColor, m_fillColor);
+        });
+    }
+    menuStroke->addSeparator();
+    menuStroke->addAction(QIcon::fromTheme("color-picker"), tr("🎨 Custom Color..."), this, [this]() {
         openColorDialog(2);
     });
+    m_btnShapeStrokeColor->setMenu(menuStroke);
+    updateStrokeColorButton();
     lay->addWidget(m_btnShapeStrokeColor, 0, Qt::AlignVCenter);
 
     lay->addSpacing(4);
 
-    // Fill Options
-    auto *lblFill = new QLabel(tr("Fill:"), m_shapesPage);
-    lay->addWidget(lblFill, 0, Qt::AlignVCenter);
-
-    m_btnShapeFillTransp = new QToolButton(m_shapesPage);
-    m_btnShapeFillTransp->setFixedHeight(26);
-    m_btnShapeFillTransp->setText(tr("None"));
-    m_btnShapeFillTransp->setCheckable(true);
-    m_btnShapeFillTransp->setChecked(true);
-    m_btnShapeFillTransp->setCursor(Qt::PointingHandCursor);
-    m_btnShapeFillTransp->setToolTip(tr("Transparent Fill (No interior color)"));
-    connect(m_btnShapeFillTransp, &QToolButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            m_fillColor = Qt::transparent;
-            updateColorSwatchButton(m_btnShapeFillColor, Qt::transparent);
-            emit shapePropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
-            emit drawingPropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
-        }
-    });
-    lay->addWidget(m_btnShapeFillTransp, 0, Qt::AlignVCenter);
-
+    // 4. Single Fill Color Button with popup palette
     m_btnShapeFillColor = new QToolButton(m_shapesPage);
-    m_btnShapeFillColor->setFixedSize(26, 26);
+    m_btnShapeFillColor->setFixedHeight(28);
     m_btnShapeFillColor->setCursor(Qt::PointingHandCursor);
-    m_btnShapeFillColor->setToolTip(tr("Pick Fill Color..."));
-    updateColorSwatchButton(m_btnShapeFillColor, m_fillColor);
-    connect(m_btnShapeFillColor, &QToolButton::clicked, this, [this]() {
+    m_btnShapeFillColor->setPopupMode(QToolButton::InstantPopup);
+    m_btnShapeFillColor->setToolTip(tr("Interior Fill Color"));
+
+    auto *menuFill = new QMenu(m_btnShapeFillColor);
+    menuFill->addAction(tr("⊘ None (Transparent)"), this, [this]() {
+        setFillColor(Qt::transparent);
+        emit shapePropertiesChanged(m_activeShapeType, strokeWidth(), m_strokeColor, m_fillColor);
+    });
+    menuFill->addSeparator();
+    for (const auto &p : palette) {
+        QColor c(p.hex);
+        menuFill->addAction(makeColorIcon(c), tr(p.name), this, [this, c]() {
+            setFillColor(c);
+            emit shapePropertiesChanged(m_activeShapeType, strokeWidth(), m_strokeColor, m_fillColor);
+        });
+    }
+    menuFill->addSeparator();
+    menuFill->addAction(QIcon::fromTheme("color-picker"), tr("🎨 Custom Color..."), this, [this]() {
         openColorDialog(3);
     });
+    m_btnShapeFillColor->setMenu(menuFill);
+    updateFillColorButton();
     lay->addWidget(m_btnShapeFillColor, 0, Qt::AlignVCenter);
 
     lay->addStretch(1);
 
+    // 5. Done Button
     m_btnCloseShapes = new QToolButton(m_shapesPage);
     m_btnCloseShapes->setFixedHeight(26);
     m_btnCloseShapes->setText(tr("✓ Done"));
@@ -757,29 +776,32 @@ void ContextualActionBar::updateThemeStyles()
 {
     bool isDark = ThemeManager::isDark(m_currentPreset);
 
-    QString barBg = isDark ? QStringLiteral("#181b20") : QStringLiteral("#f1f2f5");
-    QString borderTop = isDark ? QStringLiteral("#2e3440") : QStringLiteral("#d2d4dc");
-    QString textColor = isDark ? QStringLiteral("#e2e8f0") : QStringLiteral("#1f2937");
-    QString btnBg = isDark ? QStringLiteral("#262b33") : QStringLiteral("#e4e7ed");
-    QString btnHover = isDark ? QStringLiteral("#333a45") : QStringLiteral("#d8dbe2");
-    QString btnChecked = isDark ? QStringLiteral("#0284c7") : QStringLiteral("#007aff");
+    QString barBg = isDark
+        ? QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 39, 58, 0.94), stop:1 rgba(18, 24, 38, 0.96))")
+        : QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.96), stop:1 rgba(241, 245, 249, 0.94))");
+    QString borderCol = isDark ? QStringLiteral("rgba(255, 255, 255, 0.14)") : QStringLiteral("rgba(15, 23, 42, 0.12)");
+    QString textColor = isDark ? QStringLiteral("#f1f5f9") : QStringLiteral("#0f172a");
+    QString btnBg = isDark ? QStringLiteral("rgba(255, 255, 255, 0.08)") : QStringLiteral("rgba(15, 23, 42, 0.06)");
+    QString btnHover = isDark ? QStringLiteral("rgba(255, 255, 255, 0.15)") : QStringLiteral("rgba(15, 23, 42, 0.11)");
+    QString btnChecked = QStringLiteral("#0284c7");
 
     setStyleSheet(QString(
         "#ContextualActionBar {"
-        "   background-color: %1;"
-        "   border-top: 1px solid %2;"
+        "   background: %1;"
+        "   border: 1px solid %2;"
+        "   border-radius: 14px;"
         "}"
         "QLabel {"
         "   color: %3;"
-        "   font-weight: 500;"
+        "   font-weight: 600;"
         "   font-size: 11px;"
         "}"
         "QComboBox {"
         "   background-color: %4;"
         "   color: %3;"
         "   border: 1px solid %2;"
-        "   border-radius: 4px;"
-        "   padding: 1px 6px;"
+        "   border-radius: 8px;"
+        "   padding: 2px 8px;"
         "   font-size: 11px;"
         "}"
         "QComboBox:hover {"
@@ -789,18 +811,19 @@ void ContextualActionBar::updateThemeStyles()
         "   background-color: %4;"
         "   color: %3;"
         "   border: 1px solid %2;"
-        "   border-radius: 4px;"
-        "   padding: 2px 6px;"
+        "   border-radius: 8px;"
+        "   padding: 2px 8px;"
         "   font-size: 11px;"
+        "   font-weight: 600;"
         "}"
         "QToolButton:hover {"
         "   background-color: %5;"
         "   border-color: #38bdf8;"
         "}"
         "QToolButton:checked {"
-        "   background-color: %6;"
+        "   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #38bdf8, stop:1 #2563eb);"
         "   color: #ffffff;"
-        "   border-color: %6;"
+        "   border-color: #38bdf8;"
         "}"
         "QCheckBox {"
         "   color: %3;"
@@ -824,12 +847,13 @@ void ContextualActionBar::updateThemeStyles()
         "   margin-bottom: -5px;"
         "   border-radius: 7px;"
         "}"
-    ).arg(barBg, borderTop, textColor, btnBg, btnHover, btnChecked));
+    ).arg(barBg, borderCol, textColor, btnBg, btnHover, btnChecked));
 
     updateColorSwatchButton(m_btnTextColor, m_textColor);
     updateColorSwatchButton(m_btnHlColor, m_highlighterColor);
-    updateColorSwatchButton(m_btnShapeStrokeColor, m_strokeColor);
-    updateColorSwatchButton(m_btnShapeFillColor, m_fillColor);
+    updateStrokeColorButton();
+    updateFillColorButton();
+    updateShapeSelectorButton();
     if (m_btnStampPalette) {
         QColor icCol = isDark ? QColor(QStringLiteral("#cbd5e1")) : QColor(QStringLiteral("#475569"));
         m_btnStampPalette->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Palette, icCol, 16));
@@ -883,12 +907,9 @@ void ContextualActionBar::openColorDialog(int colorTarget)
         } else if (colorTarget == 2) {
             setStrokeColor(picked);
             emit shapePropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
-            emit drawingPropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
         } else if (colorTarget == 3) {
             setFillColor(picked);
-            if (m_btnShapeFillTransp) m_btnShapeFillTransp->setChecked(false);
             emit shapePropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
-            emit drawingPropertiesChanged(activeShapeType(), strokeWidth(), m_strokeColor, m_fillColor);
         } else if (colorTarget == 4) {
             setStampColor(picked);
             emitStampProperties();
@@ -938,7 +959,9 @@ void ContextualActionBar::setTextFont(const QFont &font)
         }
     }
     if (m_cmbFontSize) {
-        m_cmbFontSize->setCurrentText(QString::number(font.pointSize() > 0 ? font.pointSize() : 12));
+        double pt = font.pointSizeF() > 0.0 ? font.pointSizeF() : font.pointSize();
+        int ptInt = qRound(pt > 0.0 ? pt : 12.0);
+        m_cmbFontSize->setCurrentText(QString::number(ptInt));
     }
     if (m_btnBold) m_btnBold->setChecked(font.bold());
     if (m_btnItalic) m_btnItalic->setChecked(font.italic());
@@ -1025,15 +1048,13 @@ void ContextualActionBar::setSpotlight(bool)
 // Shapes
 int ContextualActionBar::activeShapeType() const
 {
-    return m_shapeTypeGroup ? m_shapeTypeGroup->checkedId() : 0;
+    return m_activeShapeType;
 }
 
 void ContextualActionBar::setActiveShapeType(int shapeType)
 {
-    if (m_shapeTypeGroup) {
-        auto *btn = m_shapeTypeGroup->button(shapeType);
-        if (btn) btn->setChecked(true);
-    }
+    m_activeShapeType = shapeType;
+    updateShapeSelectorButton();
 }
 
 int ContextualActionBar::strokeWidth() const
@@ -1050,14 +1071,73 @@ void ContextualActionBar::setStrokeWidth(int width)
 
 void ContextualActionBar::setStrokeColor(const QColor &color)
 {
-    m_strokeColor = color;
-    updateColorSwatchButton(m_btnShapeStrokeColor, m_strokeColor);
+    m_strokeColor = color.isValid() ? color : QColor(QStringLiteral("#ef4444"));
+    updateStrokeColorButton();
 }
 
 void ContextualActionBar::setFillColor(const QColor &color)
 {
     m_fillColor = color;
-    updateColorSwatchButton(m_btnShapeFillColor, m_fillColor);
+    updateFillColorButton();
+}
+
+void ContextualActionBar::updateShapeSelectorButton()
+{
+    if (!m_btnShapeSelector) return;
+    QString iconStr = QStringLiteral("▭");
+    QString nameStr = tr("Rectangle");
+    switch (m_activeShapeType) {
+    case 0: iconStr = QStringLiteral("▭"); nameStr = tr("Rectangle"); break;
+    case 4: iconStr = QStringLiteral("▢"); nameStr = tr("Rounded Rect"); break;
+    case 1: iconStr = QStringLiteral("◯"); nameStr = tr("Circle"); break;
+    case 5: iconStr = QStringLiteral("△"); nameStr = tr("Triangle"); break;
+    case 6: iconStr = QStringLiteral("◇"); nameStr = tr("Diamond"); break;
+    case 7: iconStr = QStringLiteral("★"); nameStr = tr("Star"); break;
+    case 2: iconStr = QStringLiteral("➔"); nameStr = tr("Arrow"); break;
+    case 8: iconStr = QStringLiteral("⇄"); nameStr = tr("Double Arrow"); break;
+    case 3: iconStr = QStringLiteral("―"); nameStr = tr("Line"); break;
+    default: break;
+    }
+    m_btnShapeSelector->setText(QStringLiteral("%1  %2 ▾").arg(iconStr, nameStr));
+}
+
+void ContextualActionBar::updateStrokeColorButton()
+{
+    if (!m_btnShapeStrokeColor) return;
+    QPixmap pix(14, 14);
+    pix.fill(Qt::transparent);
+    QPainter p(&pix);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setBrush(m_strokeColor.isValid() ? m_strokeColor : QColor(QStringLiteral("#ef4444")));
+    p.setPen(QPen(QColor(0, 0, 0, 100), 1));
+    p.drawEllipse(0, 0, 13, 13);
+    p.end();
+    m_btnShapeStrokeColor->setIcon(QIcon(pix));
+    m_btnShapeStrokeColor->setText(tr("Border ▾"));
+    m_btnShapeStrokeColor->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+}
+
+void ContextualActionBar::updateFillColorButton()
+{
+    if (!m_btnShapeFillColor) return;
+    bool isNone = (!m_fillColor.isValid() || m_fillColor == Qt::transparent || m_fillColor.alpha() == 0);
+    if (isNone) {
+        m_btnShapeFillColor->setIcon(QIcon());
+        m_btnShapeFillColor->setText(tr("⊘ Fill: None ▾"));
+        m_btnShapeFillColor->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    } else {
+        QPixmap pix(14, 14);
+        pix.fill(Qt::transparent);
+        QPainter p(&pix);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(m_fillColor);
+        p.setPen(QPen(QColor(0, 0, 0, 100), 1));
+        p.drawEllipse(0, 0, 13, 13);
+        p.end();
+        m_btnShapeFillColor->setIcon(QIcon(pix));
+        m_btnShapeFillColor->setText(tr("Fill ▾"));
+        m_btnShapeFillColor->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    }
 }
 
 // Redaction

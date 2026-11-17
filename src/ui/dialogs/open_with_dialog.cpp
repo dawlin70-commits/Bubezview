@@ -8,7 +8,7 @@
 #include <QMessageBox>
 
 OpenWithDialog::OpenWithDialog(const QString &filePath, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_filePath(filePath)
     , m_filterEdit(nullptr)
     , m_listWidget(nullptr)
@@ -25,8 +25,8 @@ void OpenWithDialog::setupUi()
     setWindowTitle(tr("Open With... — BubezView"));
     resize(460, 480);
 
-    QVBoxLayout *mainLay = new QVBoxLayout(this);
-    mainLay->setContentsMargins(16, 16, 16, 16);
+    QVBoxLayout *mainLay = contentLayout();
+    mainLay->setContentsMargins(4, 4, 4, 4);
     mainLay->setSpacing(10);
 
     QFileInfo fi(m_filePath);

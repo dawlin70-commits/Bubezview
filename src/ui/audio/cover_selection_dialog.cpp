@@ -141,7 +141,7 @@ private:
 };
 
 CoverSelectionDialog::CoverSelectionDialog(const QString &initialQuery, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_initialQuery(initialQuery)
     , m_selectedIndex(-1)
 {
@@ -164,8 +164,8 @@ CoverSelectionDialog::~CoverSelectionDialog() = default;
 
 void CoverSelectionDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(18, 16, 18, 16);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(12);
 
     // 1. Top Search Bar
@@ -235,10 +235,6 @@ void CoverSelectionDialog::applyTheme()
 
     if (preset == ThemePreset::DarkSlate) {
         setStyleSheet(
-            "QDialog {"
-            "   background-color: #22262b;"
-            "   color: #eff0f1;"
-            "}"
             "QLineEdit {"
             "   background-color: #282c32;"
             "   border: 1px solid #353b44;"
@@ -267,10 +263,6 @@ void CoverSelectionDialog::applyTheme()
         m_btnApply->setStyleSheet("QPushButton { background-color: #0284c7; color: #ffffff; border: 1px solid #0369a1; font-weight: bold; border-radius: 6px; padding: 7px 18px; } QPushButton:hover { background-color: #0369a1; } QPushButton:disabled { background-color: #282c32; color: #6b7280; border-color: #353b44; }");
     } else if (preset == ThemePreset::BreezeDark) {
         setStyleSheet(
-            "QDialog {"
-            "   background-color: #181b1d;"
-            "   color: #eff0f1;"
-            "}"
             "QLineEdit {"
             "   background-color: #22262a;"
             "   border: 1px solid #2a3037;"

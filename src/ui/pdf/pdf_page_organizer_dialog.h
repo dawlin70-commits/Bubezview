@@ -5,9 +5,10 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QString>
 #include <QListWidget>
+#include <QContextMenuEvent>
 #include <memory>
 #include <vector>
 
@@ -69,6 +70,7 @@ protected:
     void dropEvent(QDropEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override { event->accept(); }
 
 private:
     int calculateTargetRow(const QPoint &pos) const;
@@ -151,6 +153,7 @@ signals:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override { event->accept(); }
 
 private slots:
     void onRotate();
@@ -192,7 +195,7 @@ private:
  * @class PdfPageOrganizerDialog
  * @brief Standalone dialog wrapper around PdfPageOrganizerWidget.
  */
-class PdfPageOrganizerDialog : public QDialog
+class PdfPageOrganizerDialog : public FramelessDialog
 {
     Q_OBJECT
 

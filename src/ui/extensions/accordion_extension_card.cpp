@@ -168,6 +168,36 @@ AccordionExtensionCard::AccordionExtensionCard(const ExtensionModuleInfo &mod, Q
     footerLay->addWidget(m_btnDiagnose);
 
     // Action button at end of list
+    m_btnUninstall = new QPushButton(m_detailsContainer);
+    m_btnUninstall->setCursor(Qt::PointingHandCursor);
+    m_btnUninstall->setText(tr("🗑️ Uninstall"));
+    m_btnUninstall->setStyleSheet("QPushButton { font-size: 11px; padding: 4px 12px; border-radius: 4px; background-color: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: bold; } QPushButton:hover { background-color: #ef4444; color: white; }");
+    m_btnUninstall->hide();
+    connect(m_btnUninstall, &QPushButton::clicked, this, [this]() {
+        bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
+        bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
+        bool success = false;
+        if (hasSrc) {
+            if (QMessageBox::question(this, tr("Remove Compiled Build"),
+                    tr("Do you want to remove locally compiled binaries for '%1'?").arg(m_mod.displayName),
+                    QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+                BuildConfig::removeLocalSourceBuild(m_mod.id);
+                success = true;
+            }
+        } else if (hasSys) {
+            if (QMessageBox::question(this, tr("Uninstall Component"),
+                    tr("Do you want to uninstall '%1' from this system?").arg(m_mod.displayName),
+                    QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+                success = PackageManagerHelper::uninstallComponentInteractive(m_mod.id, this);
+            }
+        }
+        if (success) {
+            refreshState();
+            emit statusChanged();
+        }
+    });
+    footerLay->addWidget(m_btnUninstall);
+
     m_btnAction = new QPushButton(m_detailsContainer);
     m_btnAction->setCursor(Qt::PointingHandCursor);
     updateActionButton();
@@ -281,22 +311,37 @@ void AccordionExtensionCard::refreshState()
 void AccordionExtensionCard::handleInstallOrUninstall()
 {
     bool success = false;
-    if (m_mod.isStaticCompiled) {
-        // Trigger local engine/extension compilation
-        QString targetId = m_mod.id;
-        if (PackageManagerHelper::isCompilableEngine(m_mod.id)) {
-            targetId = m_mod.id;
-        } else if (m_mod.id == "pdfimages" || m_mod.category == "PDF") {
-            targetId = "pdf";
-        } else if (m_mod.id == "zstd" || m_mod.id == "xz" || m_mod.category == "Archive") {
-            targetId = "archive";
-        } else if (m_mod.category == "Office") {
-            targetId = "office";
+    auto hwProfile = BuildConfig::instance().activeHardwareProfile();
+    bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
+    bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
+    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
+
+    if (isInstalled) {
+        if (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id)) {
+            QString targetId = m_mod.id;
+            if (!PackageManagerHelper::isCompilableEngine(m_mod.id)) {
+                if (m_mod.id == "pdfimages" || m_mod.category == "PDF") targetId = "engine-poppler";
+                else if (m_mod.id == "zstd" || m_mod.id == "xz" || m_mod.category == "Archive") targetId = "engine-libarchive";
+                else if (m_mod.category == "Office") targetId = "engine-office";
+                else if (m_mod.category == "Media") targetId = "engine-mpv";
+            }
+            success = PackageManagerHelper::triggerEngineCompilation(targetId, this);
         }
-        success = PackageManagerHelper::triggerEngineCompilation(targetId, this);
     } else {
-        if (m_mod.isInstalled) {
-            success = PackageManagerHelper::uninstallComponentInteractive(m_mod.id, this);
+        bool compileWanted = m_mod.isStaticCompiled ||
+                             hwProfile == BuildConfig::HardwareProfile::AllSource ||
+                             hwProfile == BuildConfig::HardwareProfile::AllStable ||
+                             (hwProfile == BuildConfig::HardwareProfile::MissingOnly && !hasSys);
+
+        if (compileWanted && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
+            QString targetId = m_mod.id;
+            if (!PackageManagerHelper::isCompilableEngine(m_mod.id)) {
+                if (m_mod.id == "pdfimages" || m_mod.category == "PDF") targetId = "engine-poppler";
+                else if (m_mod.id == "zstd" || m_mod.id == "xz" || m_mod.category == "Archive") targetId = "engine-libarchive";
+                else if (m_mod.category == "Office") targetId = "engine-office";
+                else if (m_mod.category == "Media") targetId = "engine-mpv";
+            }
+            success = PackageManagerHelper::triggerEngineCompilation(targetId, this);
         } else {
             success = PackageManagerHelper::installComponentInteractive(m_mod.id, this);
         }
@@ -375,18 +420,44 @@ void AccordionExtensionCard::updateHeaderStatusBadge()
 
 void AccordionExtensionCard::updateActionButton()
 {
-    if (m_mod.isStaticCompiled) {
-        if (m_mod.isInstalled) {
+    auto hwProfile = BuildConfig::instance().activeHardwareProfile();
+    bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
+    bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
+    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
+
+    bool compileWanted = m_mod.isStaticCompiled ||
+                         hwProfile == BuildConfig::HardwareProfile::AllSource ||
+                         hwProfile == BuildConfig::HardwareProfile::AllStable ||
+                         (hwProfile == BuildConfig::HardwareProfile::MissingOnly && !hasSys);
+
+    if (m_btnUninstall) {
+        if (isInstalled) {
+            m_btnUninstall->show();
+            if (hasSrc && !hasSys) {
+                m_btnUninstall->setText(tr("🗑️ Remove Build"));
+                m_btnUninstall->setToolTip(tr("Remove locally compiled binaries from ~/.local."));
+            } else {
+                m_btnUninstall->setText(tr("🗑️ Uninstall"));
+                m_btnUninstall->setToolTip(tr("Uninstall component from system."));
+            }
+        } else {
+            m_btnUninstall->hide();
+        }
+    }
+
+    if (isInstalled) {
+        if (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id)) {
+            m_btnAction->show();
             m_btnAction->setText(tr("🔨 Recompile from Source"));
             m_btnAction->setStyleSheet("QPushButton { font-size: 11px; padding: 4px 12px; border-radius: 4px; background-color: #0284c7; color: white; font-weight: bold; } QPushButton:hover { background-color: #0369a1; }");
         } else {
-            m_btnAction->setText(tr("🔨 Compile from Source"));
-            m_btnAction->setStyleSheet("QPushButton { font-size: 11px; padding: 4px 14px; border-radius: 4px; background-color: #0284c7; color: white; font-weight: bold; } QPushButton:hover { background-color: #0369a1; }");
+            m_btnAction->hide();
         }
     } else {
-        if (m_mod.isInstalled) {
-            m_btnAction->setText(tr("🗑️ Uninstall"));
-            m_btnAction->setStyleSheet("QPushButton { font-size: 11px; padding: 4px 12px; border-radius: 4px; background-color: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: bold; } QPushButton:hover { background-color: #ef4444; color: white; }");
+        m_btnAction->show();
+        if (compileWanted && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
+            m_btnAction->setText(tr("🔨 Compile from Source"));
+            m_btnAction->setStyleSheet("QPushButton { font-size: 11px; padding: 4px 14px; border-radius: 4px; background-color: #0284c7; color: white; font-weight: bold; } QPushButton:hover { background-color: #0369a1; }");
         } else {
             m_btnAction->setText(tr("📥 Install"));
             m_btnAction->setStyleSheet("QPushButton { font-size: 11px; padding: 4px 14px; border-radius: 4px; background-color: #0284c7; color: white; font-weight: bold; } QPushButton:hover { background-color: #0369a1; }");

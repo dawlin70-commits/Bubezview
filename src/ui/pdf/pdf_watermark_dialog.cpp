@@ -16,7 +16,7 @@
 #include <QColorDialog>
 
 PdfWatermarkDialog::PdfWatermarkDialog(QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_color(QColor(QStringLiteral("#DC2626"))) // Default Red
 {
     setWindowTitle(tr("🌊 Watermark & Document Stamp"));
@@ -28,9 +28,9 @@ PdfWatermarkDialog::~PdfWatermarkDialog() = default;
 
 void PdfWatermarkDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     // Text & Presets
     QGroupBox *grpText = new QGroupBox(tr("Stamp Text"), this);

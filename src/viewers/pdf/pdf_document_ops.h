@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QRectF>
 #include <QSizeF>
+#include <QColor>
 #include <memory>
 #include <vector>
 
@@ -17,6 +18,8 @@ namespace Poppler {
     class Document;
     class Page;
 }
+class QWidget;
+
 /**
  * @brief High-performance utility class encapsulating filesystem and QPDF stream modifications.
  */
@@ -98,4 +101,101 @@ public:
                                         const QString &currentFilePath,
                                         const QString &targetFilePath,
                                         int &rotationDegrees);
+
+    /**
+     * @brief Individual shape or stamp raster item to permanently bake into a PDF.
+     */
+    struct ImageStampItem {
+        int pageIndex = 0;
+        QImage image;
+        QRectF normalizedRect; // 0.0 to 1.0 relative to visible page rect
+    };
+
+    /**
+     * @brief Writes and bakes shape and stamp raster images permanently into a PDF document using PyMuPDF (fitz).
+     * @param sourceFilePath Path to the source PDF.
+     * @param items List of image stamps with their page index and visible normalized bounding boxes.
+     * @param outFilePath Output modified PDF path on success.
+     * @param errorMessage Detailed failure reason on error.
+     * @return True on success; false on failure.
+     */
+    static bool applyStampsWithMuPdf(const QString &sourceFilePath,
+                                     const QList<ImageStampItem> &items,
+                                     QString &outFilePath,
+                                     QString &errorMessage);
+
+    /**
+     * @brief Removes vector text glyphs from a specific page within pointRect without touching vector graphics or images.
+     * @param sourceFilePath Path to the source PDF.
+     * @param pageIndex 0-based page index.
+     * @param pointRect Bounding rectangle in 72 DPI page point coordinates.
+     * @param outFilePath Output modified PDF path on success.
+     * @param errorMessage Output error string if the operation fails.
+     * @return True on success; false on failure.
+     */
+    static bool removeVectorTextFromPage(const QString &sourceFilePath,
+                                        int pageIndex,
+                                        const QRectF &pointRect,
+                                        QString &outFilePath,
+                                        QString &errorMessage);
+
+    /**
+     * @brief Detailed text formatting attributes extracted directly from vector font streams.
+     */
+    struct TextFormatInfo {
+        bool valid = false;
+        QString fontName;
+        QString family;
+        double pointSize = 12.0;
+        QColor color = Qt::black;
+        bool isBold = false;
+        bool isItalic = false;
+        double ascender = 0.0;
+        double descender = 0.0;
+        bool hasMultipleStyles = false;
+    };
+
+    /**
+     * @brief Inspects native vector text format (font, size, color, weight) within a bounding box on a PDF page.
+     * @param sourceFilePath Path to the source PDF.
+     * @param pageIndex 0-based page index.
+     * @param pointRect Bounding rectangle in 72 DPI page point coordinates.
+     * @param outFormat Output text format metadata on success.
+     * @param errorMessage Detailed failure reason on error.
+     * @return True on success; false on failure.
+     */
+    static bool inspectTextFormat(const QString &sourceFilePath,
+                                  int pageIndex,
+                                  const QRectF &pointRect,
+                                  TextFormatInfo &outFormat,
+                                  QString &errorMessage);
+
+    /**
+     * @brief Inspects native vector text format for the first occurrence of searchText on a PDF page.
+     * @param sourceFilePath Path to the source PDF.
+     * @param pageIndex 0-based page index.
+     * @param searchText Text snippet to locate on page.
+     * @param outFormat Output text format metadata on success.
+     * @param errorMessage Detailed failure reason on error.
+     * @return True on success; false on failure.
+     */
+    static bool inspectTextFormatByText(const QString &sourceFilePath,
+                                        int pageIndex,
+                                        const QString &searchText,
+                                        TextFormatInfo &outFormat,
+                                        QString &errorMessage);
+
+    /**
+     * @brief Normalizes a raw PDF font name to a clean system-available family name.
+     */
+    static QString resolveFontFamily(const QString &rawFontName, bool &outBold, bool &outItalic);
+
+    /**
+     * @brief Displays a standardized, rich document properties and metadata dialog.
+     */
+    static void showDocumentInfoDialog(QWidget *parent,
+                                       Poppler::Document *doc,
+                                       const QString &filePath,
+                                       int currentPage,
+                                       int pageCount);
 };

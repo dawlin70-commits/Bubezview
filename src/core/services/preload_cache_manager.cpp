@@ -179,7 +179,7 @@ void PreloadCacheManager::requestPrefetchNeighbors(const QStringList &siblingFil
         }
 
         FileCategory cat = PluginManager::categorizeFile(path);
-        if (cat == FileCategory::Image || cat == FileCategory::Pdf) {
+        if (cat == FileCategory::Image) {
             m_threadPool.start(new PreloadWorker(path), QThread::LowPriority);
         }
     }

@@ -7,7 +7,7 @@
 #include <QApplication>
 
 OcrLanguageDialog::OcrLanguageDialog(QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
 {
     setWindowTitle(tr("Manage OCR Languages ⚙️"));
     resize(580, 480);
@@ -26,8 +26,8 @@ OcrLanguageDialog::OcrLanguageDialog(QWidget *parent)
 
 void OcrLanguageDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(12);
 
     QLabel *infoLabel = new QLabel(

@@ -6,14 +6,20 @@
 #pragma once
 
 #include <QWidget>
+#include <QStringList>
+#include <QMap>
 
-class QTabWidget;
+class QPushButton;
+class QGroupBox;
+class QGridLayout;
+class QFrame;
+class ExtensionRowWidget;
 
 /**
  * @class SettingsExtensionsTab
  * @brief Settings notebook tab presenting the catalog of functional engines and extensions
- *        (PDF, Archive, Media, Office), supporting one-click install/uninstall, binary vs source builds,
- *        and component diagnostics.
+ *        (PDF, Archive, Media, Office, Graphics), supporting 2-column Liquid Glass tile layout,
+ *        compact segmented category capsules, and direct 3-button control per component.
  */
 class SettingsExtensionsTab : public QWidget {
     Q_OBJECT
@@ -26,14 +32,24 @@ public:
     explicit SettingsExtensionsTab(QWidget *parent = nullptr);
 
     /**
+     * @brief Destructor.
+     */
+    ~SettingsExtensionsTab() override = default;
+
+    /**
      * @brief Refreshes all extension row widgets across category tabs.
      */
     void refreshAllRows();
 
     /**
-     * @brief Destructor.
+     * @brief Switches the active category capsule and populates its grid.
      */
-    ~SettingsExtensionsTab() override = default;
+    void selectCategory(const QString &catId);
+
+    /**
+     * @brief Updates category pill tabs and card styling to match the active theme.
+     */
+    void updateThemeStyles();
 
 signals:
     /**
@@ -41,9 +57,23 @@ signals:
      */
     void pendingStateChanged();
 
+private slots:
+    void runGlobalDiagnostics();
+    void onCategoryCapsuleClicked(const QString &catId);
+
 private:
     void setupUi();
-    QWidget *createCategoryPage(const QString &catFilter);
+    void populateCategoryGrid(const QString &catId);
+    void updateCapsuleSelection();
 
-    QTabWidget *m_catTabs = nullptr;
+    QString m_activeCategory;
+
+    // Header controls
+    QFrame *m_categoryCapsulesFrame = nullptr;
+    QMap<QString, QPushButton*> m_catButtons;
+    QPushButton *m_btnGlobalDiag = nullptr;
+
+    // Active Category Tiles Card (2 columns)
+    QGroupBox *m_grpActiveCategory = nullptr;
+    QGridLayout *m_gridLayout = nullptr;
 };

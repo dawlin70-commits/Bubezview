@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "frameless_dialog.h"
 #include <QImage>
 #include <QString>
 #include "core/services/exif_parser.h"
@@ -13,7 +13,7 @@ class QPushButton;
  * @brief Rich property inspector dialog for image files, displaying technical metadata,
  * camera EXIF parameters, and GPS location coordinates with interactive map lookup.
  */
-class ImageInspectorDialog : public QDialog {
+class ImageInspectorDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

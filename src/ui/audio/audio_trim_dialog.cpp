@@ -675,7 +675,7 @@ void SpectrumWidget::mouseReleaseEvent(QMouseEvent *)
 // AudioTrimDialog Implementation
 // ============================================================================
 AudioTrimDialog::AudioTrimDialog(const QString &audioFilePath, QWidget *parent, bool isEmbedded)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_filePath(audioFilePath)
     , m_isEmbedded(isEmbedded)
     , m_lblInfo(nullptr)
@@ -725,6 +725,8 @@ AudioTrimDialog::AudioTrimDialog(const QString &audioFilePath, QWidget *parent, 
 {
     if (m_isEmbedded) {
         setWindowFlags(Qt::Widget);
+        headerBar()->setVisible(false);
+        container()->setStyleSheet("background: transparent; border: none;");
     } else {
         setWindowTitle(tr("Audio Suite & Tools - BubezView"));
         setMinimumSize(820, 580);
@@ -881,13 +883,13 @@ bool AudioTrimDialog::eventFilter(QObject *watched, QEvent *event)
             }
         }
     }
-    return QDialog::eventFilter(watched, event);
+    return FramelessDialog::eventFilter(watched, event);
 }
 
 void AudioTrimDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(18, 12, 18, 14);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(10);
 
     // 1. Shared Header Information
@@ -1984,11 +1986,6 @@ void AudioTrimDialog::applyTheme()
 
     if (preset == ThemePreset::DarkSlate) {
         setStyleSheet(
-            "QDialog {"
-            "   background-color: #22262b;"
-            "   color: #eff0f1;"
-            "   font-family: sans-serif;"
-            "}"
             "QLabel {"
             "   color: #eff0f1;"
             "   font-size: 13px;"
@@ -2134,11 +2131,6 @@ void AudioTrimDialog::applyTheme()
         );
     } else if (preset == ThemePreset::BreezeDark) {
         setStyleSheet(
-            "QDialog {"
-            "   background-color: #181b1d;"
-            "   color: #eff0f1;"
-            "   font-family: sans-serif;"
-            "}"
             "QLabel {"
             "   color: #eff0f1;"
             "   font-size: 13px;"
@@ -2280,11 +2272,6 @@ void AudioTrimDialog::applyTheme()
         );
     } else {
         setStyleSheet(
-            "QDialog {"
-            "   background-color: palette(window);"
-            "   color: palette(window-text);"
-            "   font-family: sans-serif;"
-            "}"
             "QGroupBox {"
             "   border: 1px solid palette(mid);"
             "   border-radius: 8px;"

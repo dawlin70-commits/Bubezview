@@ -48,6 +48,8 @@ struct ExtensionModuleInfo {
     bool canCompile;                    ///< True if compilable/optimizable from source
     bool isStaticCompiled;              ///< True if user chose static/source compilation
     QString diagnosticCommand;          ///< Command used to verify installation and get version string
+    QString devPackage;                 ///< Package name of C/C++ development headers (e.g. "libpoppler-qt6-dev")
+    QString devPkgConfig;               ///< pkg-config target (e.g. "poppler-qt6")
     QList<SubDependency> subDependencies; ///< Related secondary packages (e.g. language dictionaries)
     QList<ExtensionFeature> features;   ///< Exact list of features enabled in codebase
 };
@@ -59,6 +61,14 @@ struct ExtensionModuleInfo {
 class ExtensionFeatureRegistry : public QObject {
     Q_OBJECT
 public:
+    /**
+     * @brief Checks compilation prerequisites for a given module (compiler, cmake, pkg-config, dev headers).
+     * @param module Module to verify.
+     * @param missingList Out parameter populated with names of missing tools or headers.
+     * @param summaryLog Out parameter with detailed plaintext inspection output.
+     * @return True if system is 100% ready to compile this module from source.
+     */
+    static bool checkBuildReadiness(const ExtensionModuleInfo &module, QStringList &missingList, QString &summaryLog);
     /**
      * @brief Retrieves all registered extensions with current runtime installation status.
      * @return List of ExtensionModuleInfo records.

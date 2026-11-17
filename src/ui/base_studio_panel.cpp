@@ -250,13 +250,14 @@ void BaseStudioPanel::updateTheme()
 {
     ThemePreset preset = ThemeManager::currentPreset();
     const bool isDark = ThemeManager::isDark(preset);
+    const bool isZinc = (preset == ThemePreset::ZincGray);
 
     // 1. Theme-adaptive palette applied to panel and all child widgets
     QPalette pal = palette();
-    QColor windowBg = isDark ? QColor("#1e222a") : QColor("#f8fafc");
+    QColor windowBg = isZinc ? QColor("#343539") : (isDark ? QColor("#1e222a") : QColor("#f8fafc"));
     QColor textColor = isDark ? QColor("#f1f5f9") : QColor("#0f172a");
-    QColor baseBg = isDark ? QColor("#181b20") : QColor("#ffffff");
-    QColor btnBg = isDark ? QColor("#282c34") : QColor("#e2e8f0");
+    QColor baseBg = isZinc ? QColor("#2b2c30") : (isDark ? QColor("#181b20") : QColor("#ffffff"));
+    QColor btnBg = isZinc ? QColor("#505156") : (isDark ? QColor("#282c34") : QColor("#e2e8f0"));
     pal.setColor(QPalette::Window, windowBg);
     pal.setColor(QPalette::Base, baseBg);
     pal.setColor(QPalette::WindowText, textColor);
@@ -282,8 +283,8 @@ void BaseStudioPanel::updateTheme()
     }
 
     // 3. Dynamic color tokens
-    const QString bgHex = isDark ? "#1e222a" : "#f8fafc";
-    const QString borderHex = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)";
+    const QString bgHex = isZinc ? "#343539" : (isDark ? "#1e222a" : "#f8fafc");
+    const QString borderHex = isZinc ? "rgba(255, 255, 255, 0.12)" : (isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)");
     const QString textPrimary = isDark ? "#f1f5f9" : "#0f172a";
     const QString textSecondary = isDark ? "#cbd5e1" : "#334155";
     const QString textMuted = isDark ? "#94a3b8" : "#64748b";
@@ -292,13 +293,13 @@ void BaseStudioPanel::updateTheme()
     const QString tabInactiveText = isDark ? "#94a3b8" : "#64748b";
     const QString tabActiveBg = "#0284c7";
 
-    const QString controlBg = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)";
-    const QString controlBorder = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)";
+    const QString controlBg = isZinc ? "rgba(255, 255, 255, 0.07)" : (isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)");
+    const QString controlBorder = isZinc ? "rgba(255, 255, 255, 0.16)" : (isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)");
     const QString controlHoverBorder = isDark ? "#38bdf8" : "#0284c7";
 
-    const QString btnDefaultBg = isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)";
-    const QString btnDefaultHoverBg = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)";
-    const QString menuBg = isDark ? "#22262b" : "#ffffff";
+    const QString btnDefaultBg = isZinc ? "rgba(255, 255, 255, 0.08)" : (isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)");
+    const QString btnDefaultHoverBg = isZinc ? "rgba(255, 255, 255, 0.16)" : (isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)");
+    const QString menuBg = isZinc ? "#2b2c30" : (isDark ? "#22262b" : "#ffffff");
 
     // 4. Robust stylesheet composition
     QString qss;

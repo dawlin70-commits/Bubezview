@@ -97,30 +97,32 @@ PdfHistoryCard::PdfHistoryCard(const PdfHistoryStep &step, QWidget *parent)
 
 void PdfHistoryCard::updateStyle(bool hovered)
 {
-    bool isLight = (ThemeManager::currentPreset() == ThemePreset::ModernLight);
+    bool isLight = !ThemeManager::isDarkTheme();
 
     QString bgColor;
     QString borderColor;
     int borderWidth = m_isCurrent ? 2 : 1;
 
     if (m_isCurrent) {
-        bgColor = isLight ? QStringLiteral("rgba(0, 122, 255, 0.12)") : QStringLiteral("rgba(10, 132, 255, 0.22)");
-        borderColor = isLight ? QStringLiteral("#007AFF") : QStringLiteral("#0A84FF");
+        bgColor = isLight
+            ? QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(56, 189, 248, 0.22), stop:1 rgba(37, 99, 235, 0.14))")
+            : QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(56, 189, 248, 0.28), stop:1 rgba(37, 99, 235, 0.18))");
+        borderColor = isLight ? QStringLiteral("#0284c7") : QStringLiteral("#38bdf8");
     } else if (hovered) {
-        bgColor = isLight ? QStringLiteral("rgba(0, 122, 255, 0.08)") : QStringLiteral("rgba(10, 132, 255, 0.14)");
-        borderColor = isLight ? QStringLiteral("rgba(0, 122, 255, 0.60)") : QStringLiteral("rgba(10, 132, 255, 0.70)");
+        bgColor = isLight ? QStringLiteral("rgba(56, 189, 248, 0.12)") : QStringLiteral("rgba(56, 189, 248, 0.18)");
+        borderColor = isLight ? QStringLiteral("rgba(2, 132, 199, 0.65)") : QStringLiteral("rgba(56, 189, 248, 0.70)");
     } else {
-        bgColor = isLight ? QStringLiteral("rgba(0, 0, 0, 0.03)") : QStringLiteral("rgba(255, 255, 255, 0.04)");
-        borderColor = isLight ? QStringLiteral("rgba(0, 0, 0, 0.12)") : QStringLiteral("rgba(255, 255, 255, 0.12)");
+        bgColor = isLight ? QStringLiteral("rgba(255, 255, 255, 0.72)") : QStringLiteral("rgba(30, 41, 59, 0.65)");
+        borderColor = isLight ? QStringLiteral("rgba(15, 23, 42, 0.10)") : QStringLiteral("rgba(255, 255, 255, 0.12)");
     }
 
     setStyleSheet(QString(
         "QFrame#PdfHistoryCard {"
-        "   background-color: %1;"
+        "   background: %1;"
         "   border: %2px solid %3;"
         "   border-radius: %4px;"
         "}"
-    ).arg(bgColor, QString::number(borderWidth), borderColor, QString::number(m_isCurrent ? 12 : 8)));
+    ).arg(bgColor, QString::number(borderWidth), borderColor, QString::number(m_isCurrent ? 14 : 12)));
 }
 
 void PdfHistoryCard::mousePressEvent(QMouseEvent *event)
@@ -150,46 +152,19 @@ void PdfHistoryCard::leaveEvent(QEvent *event)
 // =============================================================================
 
 PdfHistoryWidget::PdfHistoryWidget(QWidget *parent)
-    : QDialog(parent, Qt::Dialog | Qt::FramelessWindowHint)
+    : FramelessDialog(parent)
 {
+    setWindowTitle(tr("🎞️ Visual History & Document Timeline"));
     setMinimumWidth(880);
-    setFixedHeight(390);
-    setAttribute(Qt::WA_TranslucentBackground, false);
-    setModal(true);
+    setFixedHeight(410);
 
-    auto *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(16, 14, 16, 14);
-    mainLayout->setSpacing(10);
-
-    // 1. Header Bar: Title, Subtitle and Close button
-    auto *headerLayout = new QHBoxLayout();
-    headerLayout->setContentsMargins(4, 0, 4, 0);
-
-    auto *titleCol = new QVBoxLayout();
-    titleCol->setSpacing(2);
-
-    m_lblHeader = new QLabel(tr("🎞️ Visual History & Document Timeline"), this);
-    QFont hf = m_lblHeader->font();
-    hf.setPointSize(12);
-    hf.setBold(true);
-    m_lblHeader->setFont(hf);
-    titleCol->addWidget(m_lblHeader);
+    auto *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
+    mainLayout->setSpacing(8);
 
     m_lblSubtitle = new QLabel(tr("Click any snapshot to jump to that document state"), this);
-    m_lblSubtitle->setStyleSheet(QStringLiteral("font-size: 11px; opacity: 0.7;"));
-    titleCol->addWidget(m_lblSubtitle);
-
-    headerLayout->addLayout(titleCol, 1);
-
-    m_btnClose = new QToolButton(this);
-    m_btnClose->setText(QStringLiteral("✕"));
-    m_btnClose->setFixedSize(28, 28);
-    m_btnClose->setCursor(Qt::PointingHandCursor);
-    m_btnClose->setToolTip(tr("Close history timeline (Esc)"));
-    connect(m_btnClose, &QToolButton::clicked, this, &QDialog::reject);
-    headerLayout->addWidget(m_btnClose, 0, Qt::AlignTop);
-
-    mainLayout->addLayout(headerLayout);
+    m_lblSubtitle->setStyleSheet(QStringLiteral("font-size: 11px; opacity: 0.7; margin-bottom: 2px;"));
+    mainLayout->addWidget(m_lblSubtitle);
 
     // 2. Horizontal Scroll Area for Snapshot Cards
     m_scrollArea = new QScrollArea(this);
@@ -200,6 +175,7 @@ PdfHistoryWidget::PdfHistoryWidget(QWidget *parent)
     m_scrollArea->setFixedHeight(315);
 
     m_cardContainer = new QWidget(m_scrollArea);
+    m_cardContainer->setObjectName(QStringLiteral("PdfHistoryCardContainer"));
     m_cardLayout = new QHBoxLayout(m_cardContainer);
     m_cardLayout->setContentsMargins(6, 6, 6, 6);
     m_cardLayout->setSpacing(14);
@@ -217,30 +193,33 @@ PdfHistoryWidget::PdfHistoryWidget(QWidget *parent)
 
 void PdfHistoryWidget::updateTheme()
 {
-    bool isLight = (ThemeManager::currentPreset() == ThemePreset::ModernLight);
-    QString bg = isLight ? QStringLiteral("#FFFFFF") : QStringLiteral("#18181B");
-    QString textCol = isLight ? QStringLiteral("#111827") : QStringLiteral("#F9FAFB");
-    QString borderCol = isLight ? QStringLiteral("rgba(0, 0, 0, 0.15)") : QStringLiteral("rgba(255, 255, 255, 0.15)");
+    bool isLight = !ThemeManager::isDarkTheme();
+    QString bg = isLight
+        ? QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #f8fafc, stop:0.5 #f1f5f9, stop:1 #e2e8f0)")
+        : QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1e2538, stop:0.5 #151a28, stop:1 #0f1420)");
+    QString textCol = isLight ? QStringLiteral("#0f172a") : QStringLiteral("#f8fafc");
+    QString borderCol = isLight ? QStringLiteral("rgba(15, 23, 42, 0.14)") : QStringLiteral("rgba(255, 255, 255, 0.16)");
 
     setStyleSheet(QString(
-        "QDialog {"
-        "   background-color: %1;"
-        "   border: 1.5px solid %2;"
-        "   border-radius: 12px;"
-        "}"
-        "QLabel {"
-        "   color: %3;"
-        "}"
-        "QToolButton {"
+        "QScrollArea, QWidget#qt_scrollarea_viewport, QWidget#PdfHistoryCardContainer {"
         "   background: transparent;"
         "   border: none;"
+        "}"
+        "QLabel {"
+        "   color: %2;"
+        "   background: transparent;"
+        "}"
+        "QToolButton {"
+        "   background: rgba(148, 163, 184, 0.14);"
+        "   border: 1px solid %1;"
         "   border-radius: 14px;"
-        "   color: %3;"
+        "   color: %2;"
         "   font-weight: bold;"
         "   font-size: 13px;"
         "}"
         "QToolButton:hover {"
-        "   background-color: %4;"
+        "   background-color: rgba(239, 68, 68, 0.25);"
+        "   border-color: rgba(248, 113, 113, 0.55);"
         "}"
         "QScrollBar:horizontal {"
         "   height: 8px;"
@@ -248,13 +227,12 @@ void PdfHistoryWidget::updateTheme()
         "   margin: 0px 4px 0px 4px;"
         "}"
         "QScrollBar::handle:horizontal {"
-        "   background: %5;"
+        "   background: %3;"
         "   min-width: 24px;"
         "   border-radius: 4px;"
         "}"
-    ).arg(bg, borderCol, textCol,
-          isLight ? QStringLiteral("rgba(0, 0, 0, 0.08)") : QStringLiteral("rgba(255, 255, 255, 0.12)"),
-          isLight ? QStringLiteral("rgba(0, 0, 0, 0.25)") : QStringLiteral("rgba(255, 255, 255, 0.25)")));
+    ).arg(borderCol, textCol,
+          isLight ? QStringLiteral("rgba(100, 116, 139, 0.42)") : QStringLiteral("rgba(148, 163, 184, 0.38)")));
 }
 
 void PdfHistoryWidget::keyPressEvent(QKeyEvent *event)
@@ -284,11 +262,11 @@ void PdfHistoryWidget::setHistorySteps(const QList<PdfHistoryStep> &steps)
         m_lblEmpty = new QLabel(tr("No modification history available yet."), m_cardContainer);
         m_lblEmpty->setAlignment(Qt::AlignCenter);
         m_cardLayout->addWidget(m_lblEmpty);
-        m_lblHeader->setText(tr("🎞️ Visual History & Document Timeline"));
+        setWindowTitle(tr("🎞️ Visual History & Document Timeline"));
         return;
     }
 
-    m_lblHeader->setText(tr("🎞️ Visual History & Document Timeline (%1 steps)").arg(steps.size()));
+    setWindowTitle(tr("🎞️ Visual History & Document Timeline (%1 steps)").arg(steps.size()));
 
     for (const auto &step : steps) {
         auto *card = new PdfHistoryCard(step, m_cardContainer);

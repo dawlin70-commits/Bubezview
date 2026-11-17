@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QFrame>
+#include <QScrollArea>
 #include <QStyledItemDelegate>
 #include <QThread>
 #include <QPointer>
@@ -39,6 +40,13 @@ public:
      * @return QImage containing the rendered document sheet with folded corner and micro-text lines.
      */
     static QImage renderTextThumbnail(const QString &filePath);
+
+    /**
+     * @brief Synchronously generates a thumbnail image for a single supported file.
+     * @param filePath Absolute path to the source file.
+     * @return Rendered thumbnail QImage, or null image if unsupported or unreadable.
+     */
+    static QImage renderFileThumbnail(const QString &filePath);
 
 signals:
     /**
@@ -137,6 +145,31 @@ public:
      * @return Rectangle in local coordinates, or a sensible center fallback.
      */
     QRect cardRectForPath(const QString &filePath) const;
+
+    /**
+     * @brief Returns the exact thumbnail/icon rectangle inside the card in coordinates of FolderViewer.
+     * @param filePath Absolute path of the file.
+     * @return Exact thumbnail/icon rectangle in local coordinates.
+     */
+    QRect thumbnailRectForPath(const QString &filePath) const;
+
+    /**
+     * @brief Ensures a card item has its thumbnail generated synchronously before visual transitions.
+     * @param filePath Absolute path of the file.
+     */
+    void ensureThumbnailForPath(const QString &filePath);
+
+    /**
+     * @brief Temporarily suppresses rendering of a specific card during morphing zoom transition.
+     * @param filePath Absolute path of the item to hide, or empty string to show all.
+     * @param hidden True to hide, false to restore.
+     */
+    void setCardHiddenForTransition(const QString &filePath, bool hidden);
+
+    /**
+     * @brief Returns the file path of the card currently hidden for transition, if any.
+     */
+    QString cardHiddenForTransition() const { return m_cardHiddenForTransition; }
 
     /**
      * @brief Returns the absolute path of the currently selected card in the gallery.
@@ -242,6 +275,7 @@ private:
     QFrame *m_previewCard;
     QLabel *m_previewImgLabel;
     QPlainTextEdit *m_previewTextEdit;
+    QScrollArea *m_metaScrollArea;
     QLabel *m_previewTitleLabel;
     QLabel *m_previewMetaLabel;
     QPushButton *m_btnOpenSelected;
@@ -251,6 +285,8 @@ private:
     QMap<QString, int> m_folderScrollPositions;
 
     QString m_currentFolder;
+    QString m_cardHiddenForTransition;
+    quint64 m_loadGeneration = 0;
     bool m_showFolders = false;
     int m_itemCount;
     qint64 m_totalSize;

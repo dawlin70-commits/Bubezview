@@ -19,7 +19,7 @@
 #include <QShowEvent>
 
 PdfTypewriterDialog::PdfTypewriterDialog(QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_currentColor(Qt::black)
 {
     setWindowTitle(tr("✍️ Typewriter - Write on PDF"));
@@ -33,9 +33,9 @@ PdfTypewriterDialog::~PdfTypewriterDialog() = default;
 
 void PdfTypewriterDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(18, 18, 18, 18);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     // Text Input
     QLabel *lblPrompt = new QLabel(tr("<b>Enter text to insert into the document:</b>"), this);
@@ -220,12 +220,12 @@ bool PdfTypewriterDialog::eventFilter(QObject *watched, QEvent *event)
             return true;
         }
     }
-    return QDialog::eventFilter(watched, event);
+    return FramelessDialog::eventFilter(watched, event);
 }
 
 void PdfTypewriterDialog::showEvent(QShowEvent *event)
 {
-    QDialog::showEvent(event);
+    FramelessDialog::showEvent(event);
     if (m_txtInput) {
         m_txtInput->setFocus();
         m_txtInput->selectAll();

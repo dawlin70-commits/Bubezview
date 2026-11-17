@@ -160,7 +160,7 @@ QImage SignatureCanvasWidget::renderSignatureImage() const
 // ============================================================================
 
 PdfSignatureDialog::PdfSignatureDialog(QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
 {
     setWindowTitle(tr("✒️ Signature Studio"));
     resize(520, 480);
@@ -184,9 +184,9 @@ QString PdfSignatureDialog::signaturesDirPath() const
 
 void PdfSignatureDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     m_tabs = new QTabWidget(this);
 

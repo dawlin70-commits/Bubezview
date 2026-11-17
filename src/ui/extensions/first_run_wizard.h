@@ -5,140 +5,107 @@
 
 #pragma once
 
-#include <QWizard>
+#include "dialogs/frameless_dialog.h"
+
 #include <QLabel>
 #include <QRadioButton>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QPushButton>
+#include <QSlider>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QButtonGroup>
+#include <QStackedWidget>
+
+class TopBarPreviewWidget;
 
 /**
  * @class FirstRunWizard
  * @brief Guided onboarding wizard presented on first launch or on-demand.
  *
- * - **Page 0 (`Page_Welcome`)**: Hero welcome banner with official BubezView emblem,
- *   detected hardware/desktop pills, and live-preview visual theme cards.
- * - **Page 1 (`Page_Spacebar`)**: Dedicated Spacebar preview test screen with single test
- *   button and automatic trigger script copy fallback.
- * - **Page 2 (`Page_Modules`)**: Additional options: on-demand modules, CPU profile,
- *   and window behavior memory.
+ * 4 Streamlined Pages:
+ * - **Page 0 (`Page_Welcome`)**: Welcome & Appearance (Pre-selected system language,
+ *   interactive BubezView top bar preview with live theme switching: Zinc Gray, Dark Slate, Modern Light).
+ * - **Page 1 (`Page_Spacebar`)**: Desktop Integration & Spacebar test (Automatic test execution
+ *   on entry; explanation guide if unsupported; desktop integration checked by default;
+ *   LibreOffice detected automatically on demand).
+ * - **Page 2 (`Page_Modules`)**: Simple module suite choices (Lightweight On-Demand recommended
+ *   vs simple compartment buttons for PDF, Audio, OCR, Archives).
+ * - **Page 3 (`Page_Performance`)**: 4-tier compilation slider and fast restart standby selection
+ *   (default 30 minutes). All other performance defaults applied silently.
  */
-class FirstRunWizard : public QWizard
+class FirstRunWizard : public FramelessDialog
 {
     Q_OBJECT
 
 public:
-    /**
-     * @enum PageId
-     * @brief Numeric identifier for each sequential step in the setup wizard.
-     */
     enum PageId {
-        Page_Welcome = 0,  ///< Welcome Hero and Live Theme selection
-        Page_Spacebar = 1, ///< Dedicated Spacebar test and trigger script fallback
-        Page_Modules = 2   ///< Additional Options: On-demand modules, CPU profile, behavior
+        Page_Welcome = 0,     ///< Welcome & Appearance (Language & 3 Themes with live preview)
+        Page_Spacebar = 1,    ///< Desktop Integration & Spacebar Key Test
+        Page_Modules = 2,     ///< Functional Modules (Simple direct buttons)
+        Page_Performance = 3  ///< 4-Tier Compilation Slider & Fast Restart Standby
     };
 
-    /**
-     * @brief Constructs the first-run wizard dialog.
-     * @param parent Optional parent widget.
-     */
     explicit FirstRunWizard(QWidget *parent = nullptr);
-
-    /**
-     * @brief Destructor.
-     */
     ~FirstRunWizard() override = default;
 
-    /**
-     * @brief Saves all configured selections to persistent application settings (QSettings)
-     *        and activates desktop file manager integrations.
-     */
     void accept() override;
+    void next();
+    void back();
+    void goToPage(int id);
+    int currentId() const;
+    QList<int> pageIds() const { return {Page_Welcome, Page_Spacebar, Page_Modules, Page_Performance}; }
+    void updateThemeStyles() override;
 
 private:
-    /** @brief Creates Page 0: Hero welcome and Live Theme picker. */
-    QWizardPage *createWelcomePage();
-    /** @brief Creates Page 1: Dedicated Spacebar test and trigger script fallback. */
-    QWizardPage *createSpacebarPage();
-    /** @brief Creates Page 2: Additional options (modules, CPU profile, behavior). */
-    QWizardPage *createModulesPage();
+    QWidget *createWelcomePage();
+    QWidget *createSpacebarPage();
+    QWidget *createModulesPage();
+    QWidget *createPerformancePage();
 
-    // Live Theme Selection & Filmstrip (Page 0)
-    QComboBox *m_comboTheme = nullptr;
-    QButtonGroup *m_themeCardGroup = nullptr;
+    // Stacked navigation
+    QStackedWidget *m_pageStack = nullptr;
+    QPushButton *m_btnBack = nullptr;
+    QPushButton *m_btnNext = nullptr;
+    QPushButton *m_btnCancel = nullptr;
+
+    // Page 0: Welcome & Appearance
+    QComboBox *m_comboLanguage = nullptr;
+    TopBarPreviewWidget *m_barPreview = nullptr;
+    QPushButton *m_btnThemeZinc = nullptr;
     QPushButton *m_btnThemeDarkSlate = nullptr;
-    QPushButton *m_btnThemeBreezeDark = nullptr;
     QPushButton *m_btnThemeModernLight = nullptr;
-    QPushButton *m_btnThemeBreezeLight = nullptr;
-    QCheckBox *m_chkFilmstrip = nullptr;
+    QButtonGroup *m_themeGroup = nullptr;
 
-    // Instant Preview Spacebar Test & Trigger (Page 1)
-    QPushButton *m_btnTestShortcut = nullptr;
-    QLabel *m_lblTestResult = nullptr;
-    QWidget *m_triggerBox = nullptr;
-    QLabel *m_lblTriggerHelp = nullptr;
-    QPushButton *m_btnCopyTrigger = nullptr;
-    bool m_useTriggerFallback = false;
+    // Page 1: Spacebar & Desktop Integration
+    QLabel *m_lblTestStatus = nullptr;
+    QWidget *m_cardFallback = nullptr;
+    QPushButton *m_btnCopyCommand = nullptr;
+    QPushButton *m_btnGuide = nullptr;
+    QCheckBox *m_chkDesktopIntegration = nullptr;
 
-    // Functional Modules & Engine Presets (Page 2)
-    QRadioButton *m_radioPresetMinimal = nullptr;
-    QRadioButton *m_radioPresetFull = nullptr;
-    QRadioButton *m_radioPresetCustom = nullptr;
+    // Page 2: Modules
+    QRadioButton *m_radioOnDemand = nullptr;
+    QRadioButton *m_radioPrepareNow = nullptr;
+    QWidget *m_panelModulesNow = nullptr;
+    QCheckBox *m_chkModDocs = nullptr;
+    QCheckBox *m_chkModMedia = nullptr;
+    QCheckBox *m_chkModArchives = nullptr;
+    QCheckBox *m_chkModImages = nullptr;
 
-    // 5 Category Extension Toggles (Page 2)
-    QCheckBox *m_chkCatDocs = nullptr;
-    QCheckBox *m_chkCatImages = nullptr;
-    QCheckBox *m_chkCatVideo = nullptr;
-    QCheckBox *m_chkCatAudio = nullptr;
-    QCheckBox *m_chkCatArchives = nullptr;
+    // Page 3: Performance & Compilation
+    int m_selectedTier = 1; // 0 = System, 1 = CPU Native (Recommended), 2 = Full
+    QPushButton *m_btnTierSystem = nullptr;
+    QPushButton *m_btnTierCpu = nullptr;
+    QPushButton *m_btnTierFull = nullptr;
+    QButtonGroup *m_tierGroup = nullptr;
+    QLabel *m_lblTierDesc = nullptr;
+    QComboBox *m_comboStandby = nullptr;
 
-    QLabel *m_lblDynamicSummary = nullptr;
-    QPushButton *m_btnConfigureExtensions = nullptr;
-
-    // CPU Performance Profile (Page 2)
-    QRadioButton *m_radioCpuDesktop = nullptr;
-    QRadioButton *m_radioCpuBalanced = nullptr;
-    QLabel *m_lblCpuDetectedNotice = nullptr;
-
-    // Navigation & Cache Behavior (Page 2)
-    QCheckBox *m_chkCloseOnEsc = nullptr;
-    QCheckBox *m_chkRememberGeometry = nullptr;
-    QCheckBox *m_chkPreloadCache = nullptr;
-    QCheckBox *m_chkStandbyMode = nullptr;
-
-    bool m_syncingModules = false;
-
-    /**
-     * @brief Applies a functional preset to the module category checkboxes.
-     * @param presetIndex 0=Full Suite, 1=Minimal & On-Demand, 2=Custom.
-     */
-    void applyPreset(int presetIndex);
-
-    /**
-     * @brief Evaluates the current state of category checkboxes to select the corresponding preset radio.
-     */
-    void evaluatePresetFromCheckboxes();
-
-    /**
-     * @brief Updates the real-time dynamic summary card in the modules selection page.
-     */
-    void updateDynamicSummary();
-
-    /**
-     * @brief Updates preset labels according to the selected CPU compilation profile.
-     */
-    void updateModuleOptionTexts();
-
-    /**
-     * @brief Synchronizes visual styling of the interactive theme cards and applies live preview.
-     * @param themeCode Theme identifier ("dark_slate", "breeze_dark", "modern_light", "breeze_light").
-     */
-    void selectLiveTheme(const QString &themeCode);
-
-    /**
-     * @brief Automatically inspects the desktop environment and runs the spacebar test immediately upon entering Page_Spacebar.
-     */
-    void runAutoSpacebarCheck();
+    void selectTheme(const QString &themeCode);
+    void styleThemeButton(QPushButton *btn, bool active);
+    void selectCompilationTier(int tier);
+    void styleTierButton(QPushButton *btn, bool active);
+    void runSpacebarAutoTest();
 };

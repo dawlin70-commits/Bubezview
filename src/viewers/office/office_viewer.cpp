@@ -51,15 +51,12 @@ OfficeConvertWorker::OfficeConvertWorker(const QString &sourcePath, QObject *par
 
 void OfficeConvertWorker::cancel()
 {
-    m_cancelled.store(true);
-    if (m_process) {
-        m_process->kill();
-    }
+    m_cancelled.store(true, std::memory_order_release);
 }
 
 void OfficeConvertWorker::run()
 {
-    if (m_cancelled.load() || m_sourcePath.isEmpty()) return;
+    if (m_cancelled.load(std::memory_order_acquire) || m_sourcePath.isEmpty()) return;
 
     QString outDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/bubez_office_pdf";
     QDir().mkpath(outDir);
@@ -80,30 +77,25 @@ void OfficeConvertWorker::run()
     }
 
     QProcess proc;
-    m_process = &proc;
     QStringList args;
     args << "--headless" << "--convert-to" << "pdf" << "--outdir" << outDir << m_sourcePath;
 
     proc.start(loBin, args);
     if (!proc.waitForStarted(2000)) {
-        m_process = nullptr;
         emit conversionFailed(m_sourcePath, tr("Unable to launch LibreOffice."));
         return;
     }
 
-    // Wait for conversion with cancellation check
-    while (!proc.waitForFinished(100)) {
-        if (m_cancelled.load()) {
+    // Wait for conversion with responsive cancellation check on the owning thread
+    while (!proc.waitForFinished(50)) {
+        if (m_cancelled.load(std::memory_order_acquire)) {
             proc.kill();
             proc.waitForFinished(300);
-            m_process = nullptr;
             return;
         }
     }
 
-    m_process = nullptr;
-
-    if (m_cancelled.load()) return;
+    if (m_cancelled.load(std::memory_order_acquire)) return;
 
     if (proc.exitCode() == 0 && QFile::exists(expectedPdf)) {
         emit conversionFinished(m_sourcePath, expectedPdf);
@@ -125,12 +117,6 @@ OfficeViewer::OfficeViewer(QWidget *parent)
 
 OfficeViewer::~OfficeViewer()
 {
-    if (m_worker) {
-        m_worker->disconnect();
-        m_worker->cancel();
-        m_worker->wait(500);
-        m_worker = nullptr;
-    }
     clear();
 
     // Clean up temporary converted office PDFs on exit to prevent /tmp accumulation
@@ -589,7 +575,8 @@ void OfficeViewer::clear()
     if (m_worker) {
         m_worker->disconnect();
         m_worker->cancel();
-        connect(m_worker, &QThread::finished, m_worker, &QObject::deleteLater);
+        m_worker->wait();
+        delete m_worker.data();
         m_worker = nullptr;
     }
 

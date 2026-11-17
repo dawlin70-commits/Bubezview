@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "frameless_dialog.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -22,7 +22,7 @@ class QTcpServer;
  * file for single-item HTTP download, generates a QR code pointing to the IP/port URL,
  * and presents it to the user so smartphones or other devices on the same LAN can fetch it.
  */
-class ShareDialog : public QDialog {
+class ShareDialog : public FramelessDialog {
     Q_OBJECT
 
 public:
@@ -79,6 +79,7 @@ private:
     QLabel *m_qrLabel;
     QLabel *m_infoLabel;
     QLabel *m_urlLabel;
+    QPushButton *m_btnCopyPath;
     QPushButton *m_btnLocalSend;
     QPushButton *m_btnClose;
 };

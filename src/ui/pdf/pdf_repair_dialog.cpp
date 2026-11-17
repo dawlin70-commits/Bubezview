@@ -21,7 +21,7 @@
 #include <QApplication>
 
 PdfRepairDialog::PdfRepairDialog(const QString &initialFilePath, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_inputPath(initialFilePath)
     , m_editInput(nullptr)
     , m_btnBrowseInput(nullptr)
@@ -46,9 +46,9 @@ PdfRepairDialog::PdfRepairDialog(const QString &initialFilePath, QWidget *parent
 
 void PdfRepairDialog::setupUi()
 {
-    auto *mainLay = new QVBoxLayout(this);
+    auto *mainLay = contentLayout();
     mainLay->setSpacing(12);
-    mainLay->setContentsMargins(18, 18, 18, 18);
+    mainLay->setContentsMargins(4, 4, 4, 4);
 
     // Header
     auto *lblHeader = new QLabel(

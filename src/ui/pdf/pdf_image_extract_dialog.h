@@ -1,7 +1,7 @@
 #ifndef PDF_IMAGE_EXTRACT_DIALOG_H
 #define PDF_IMAGE_EXTRACT_DIALOG_H
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QString>
 #include <QList>
 #include <QImage>
@@ -11,7 +11,9 @@ class QListWidget;
 class QListWidgetItem;
 class QLabel;
 class QPushButton;
+class QProgressBar;
 class QTemporaryDir;
+class QProcess;
 
 /**
  * @struct PdfExtractedImageInfo
@@ -36,7 +38,7 @@ struct PdfExtractedImageInfo {
  * to a custom directory, save a specific image with a custom name and format, or copy directly
  * to the system clipboard.
  */
-class PdfImageExtractDialog : public QDialog
+class PdfImageExtractDialog : public FramelessDialog
 {
     Q_OBJECT
 
@@ -58,6 +60,7 @@ public:
      * @return Number of images found, or -1 if extraction utility failed.
      */
     int loadImages();
+    void startExtraction();
 
 private slots:
     void onSelectAll();
@@ -68,25 +71,29 @@ private slots:
     void onSaveCurrentAs();
     void onSaveSelected();
     void onItemDoubleClicked(QListWidgetItem *item);
+    void onProcessFinished(int exitCode);
 
 private:
     void setupUi();
     void updateSelectionStats();
+    void populateImagesFromDirectory();
     QString formatFileSize(qint64 bytes) const;
 
     QString m_pdfPath;
     std::unique_ptr<QTemporaryDir> m_tempDir;
     QList<PdfExtractedImageInfo> m_images;
+    QProcess *m_extractProcess = nullptr;
 
-    QLabel *m_headerLabel;
-    QLabel *m_statsLabel;
-    QListWidget *m_listWidget;
-    QPushButton *m_btnSelectAll;
-    QPushButton *m_btnDeselectAll;
-    QPushButton *m_btnCopyClipboard;
-    QPushButton *m_btnSaveAs;
-    QPushButton *m_btnSaveSelected;
-    QPushButton *m_btnClose;
+    QLabel *m_headerLabel = nullptr;
+    QProgressBar *m_progressBar = nullptr;
+    QLabel *m_statsLabel = nullptr;
+    QListWidget *m_listWidget = nullptr;
+    QPushButton *m_btnSelectAll = nullptr;
+    QPushButton *m_btnDeselectAll = nullptr;
+    QPushButton *m_btnCopyClipboard = nullptr;
+    QPushButton *m_btnSaveAs = nullptr;
+    QPushButton *m_btnSaveSelected = nullptr;
+    QPushButton *m_btnClose = nullptr;
 };
 
 #endif // PDF_IMAGE_EXTRACT_DIALOG_H

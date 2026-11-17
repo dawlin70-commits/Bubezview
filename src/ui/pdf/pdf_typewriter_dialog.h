@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QFont>
 #include <QColor>
 
@@ -19,7 +19,7 @@ class QLabel;
 /**
  * @brief Dialog allowing users to type, style, and configure text to imprint onto a PDF page.
  */
-class PdfTypewriterDialog : public QDialog
+class PdfTypewriterDialog : public FramelessDialog
 {
     Q_OBJECT
 

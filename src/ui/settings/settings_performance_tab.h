@@ -8,13 +8,15 @@
 #include <QWidget>
 
 class QPushButton;
-class QCheckBox;
+class QComboBox;
 class QLabel;
+class QGroupBox;
+class CapsuleToggleSwitch;
 
 /**
  * @class SettingsPerformanceTab
- * @brief Settings notebook tab managing hardware profiles (Desktop, Balanced, Laptop, Custom),
- *        the Compiler Wizard, adjacent file pre-caching, and background standby duration.
+ * @brief Settings notebook tab managing hardware profiles (Desktop, Balanced, Custom),
+ *        the Compiler Wizard, adjacent file pre-caching, GPU acceleration, and background standby duration.
  */
 class SettingsPerformanceTab : public QWidget {
     Q_OBJECT
@@ -22,12 +24,14 @@ class SettingsPerformanceTab : public QWidget {
 public:
     /**
      * @enum Profile
-     * @brief System hardware optimization profiles.
+     * @brief Compilation scope levels governing system packages vs source builds.
      */
     enum class Profile {
-        Desktop = 0,    ///< Potente / Desktop: Everything compiled from source with extreme flags
-        Balanced = 1,   ///< Bilanciato: Everything from system precompiled packages
-        Custom = 2      ///< Fine-grained custom compiler flags via Compiler Wizard
+        SystemPackages = 0, ///< Level 1: System Packages (No Compilation / Zero build)
+        MissingOnly = 1,    ///< Level 2: Missing Components Only
+        AllStable = 2,      ///< Level 3: All Stable Components
+        AllSource = 3,      ///< Level 4: All From Source (Including Unrecommended)
+        Custom = 4          ///< Fine-grained custom compiler flags via Compiler Wizard
     };
 
     /**
@@ -58,6 +62,11 @@ public:
     void onBuildSucceeded();
 
     /**
+     * @brief Updates Liquid Glass card styling and controls to match the active theme.
+     */
+    void updateThemeStyles();
+
+    /**
      * @brief Returns chosen optimization level ("O2" or "O3").
      */
     QString optimizationLevel() const { return m_optLevel; }
@@ -85,45 +94,39 @@ signals:
     void openExtensionsTabRequested();
 
 private slots:
-    /**
-     * @brief Selects one of the hardware profiles.
-     * @param profile Target profile.
-     */
     void selectProfile(Profile profile);
-
-    /**
-     * @brief Opens the interactive Compiler Wizard dialog.
-     */
     void openCompilerWizard();
+    void onProfileComboChanged(int index);
+    void onStandbyComboChanged(int index);
 
 private:
     void setupUi();
-    void updateProfileButtons(Profile active);
+    QWidget *createSettingRow(const QString &title, QWidget *control, QWidget *parent, const QString &subtitle = QString());
     Profile detectActiveProfile() const;
+    void syncProfileUi();
 
-    Profile m_activeProfile = Profile::Balanced;
-    Profile m_initialProfile = Profile::Balanced;
+    Profile m_activeProfile = Profile::MissingOnly;
+    Profile m_initialProfile = Profile::MissingOnly;
 
     QString m_optLevel;
     QString m_initialOptLevel;
     QString m_initialCpuProfile;
     QString m_initialCustomFlags;
 
-    QPushButton *m_btnProfileDesktop = nullptr;
-    QPushButton *m_btnProfileBalanced = nullptr;
-    QPushButton *m_btnProfileCustom = nullptr;
+    // Card 1: Component Optimization
+    QGroupBox *m_grpCompiler = nullptr;
+    QComboBox *m_comboProfile = nullptr;
+    QPushButton *m_btnWizard = nullptr;
+    QLabel *m_lblOptHint = nullptr;
+    QLabel *m_lblIsolationNotice = nullptr;
 
-    QLabel *m_lblProfileDesc = nullptr;
+    // Card 2: Cache & GPU Acceleration
+    QGroupBox *m_grpAcceleration = nullptr;
+    CapsuleToggleSwitch *m_switchPreload = nullptr;
+    CapsuleToggleSwitch *m_switchGpu = nullptr;
 
-    QCheckBox *m_chkEnablePreload = nullptr;
-
-    QPushButton *m_btnStandbyMinus = nullptr;
-    QPushButton *m_btnStandbyPlus = nullptr;
-    QLabel *m_lblStandbyValue = nullptr;
-    int m_standbyMinutes = 0;
-
-    QCheckBox *m_chkEnableGpu = nullptr;
-    QLabel *m_lblGpuRenderer = nullptr;
-    QLabel *m_lblGpuDriver = nullptr;
-    QLabel *m_lblGpuVramNotice = nullptr;
+    // Card 3: Background Standby
+    QGroupBox *m_grpStandby = nullptr;
+    QComboBox *m_comboStandby = nullptr;
+    QPushButton *m_btnResetNotices = nullptr;
 };

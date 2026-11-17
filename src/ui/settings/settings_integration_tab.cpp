@@ -4,25 +4,261 @@
  */
 
 #include "settings_integration_tab.h"
+#include "settings_appearance_tab.h"
 #include "desktop_integrator.h"
 #include "theme_manager.h"
+#include "dialogs/frameless_dialog.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QComboBox>
-#include <QCheckBox>
-#include <QMessageBox>
+#include <QLineEdit>
 #include <QScrollArea>
 #include <QFrame>
+#include <QDialog>
+#include <QClipboard>
+#include <QGuiApplication>
+#include <QKeyEvent>
+#include <QTimer>
+#include <QSettings>
+#include <QSignalBlocker>
+
+namespace {
+
+/**
+ * @class SpaceShortcutTestDialog
+ * @brief Interactive modal dialog that captures key presses to verify Spacebar responsiveness.
+ */
+class SpaceShortcutTestDialog : public FramelessDialog {
+public:
+    explicit SpaceShortcutTestDialog(QWidget *parent = nullptr)
+        : FramelessDialog(parent)
+        , m_spaceDetected(false)
+    {
+        setWindowTitle(SettingsIntegrationTab::tr("Spacebar Key Test"));
+        resize(420, 160);
+        setModal(true);
+
+        auto *layout = contentLayout();
+        layout->setSpacing(12);
+        layout->setContentsMargins(4, 4, 4, 4);
+
+        auto *lblTitle = new QLabel(SettingsIntegrationTab::tr("<h3>🧪 Testing Spacebar Key</h3>"), this);
+        lblTitle->setAlignment(Qt::AlignCenter);
+        layout->addWidget(lblTitle);
+
+        m_lblStatus = new QLabel(
+            SettingsIntegrationTab::tr("Press the <b>Spacebar</b> on your keyboard now to verify key capture."),
+            this
+        );
+        m_lblStatus->setAlignment(Qt::AlignCenter);
+        m_lblStatus->setWordWrap(true);
+        layout->addWidget(m_lblStatus);
+
+        auto *hBox = new QHBoxLayout();
+        auto *btnCancel = new QPushButton(SettingsIntegrationTab::tr("Close"), this);
+        btnCancel->setObjectName(QStringLiteral("IntegrationActionBtn"));
+        btnCancel->setFocusPolicy(Qt::NoFocus);
+        btnCancel->installEventFilter(this);
+        connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+        hBox->addStretch();
+        hBox->addWidget(btnCancel);
+        layout->addLayout(hBox);
+
+        setFocusPolicy(Qt::StrongFocus);
+    }
+
+    bool spaceDetected() const { return m_spaceDetected; }
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override {
+        if (event->type() == QEvent::KeyPress) {
+            auto *keyEvent = static_cast<QKeyEvent *>(event);
+            if (keyEvent->key() == Qt::Key_Space) {
+                onSpacePressed();
+                return true;
+            }
+        }
+        return FramelessDialog::eventFilter(watched, event);
+    }
+
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Space) {
+            onSpacePressed();
+            return;
+        }
+        FramelessDialog::keyPressEvent(event);
+    }
+
+private:
+    void onSpacePressed() {
+        m_spaceDetected = true;
+        m_lblStatus->setText(SettingsIntegrationTab::tr("<b style='color:#10b981; font-size: 13px;'>✅ Spacebar detected successfully!</b>"));
+        QTimer::singleShot(600, this, &QDialog::accept);
+    }
+
+    QLabel *m_lblStatus = nullptr;
+    bool m_spaceDetected = false;
+};
+
+/**
+ * @class UnsupportedSystemGuideDialog
+ * @brief Guided setup dialog providing instructions for configuring global shortcuts on unsupported desktops.
+ */
+class UnsupportedSystemGuideDialog : public FramelessDialog {
+public:
+    explicit UnsupportedSystemGuideDialog(QWidget *parent = nullptr)
+        : FramelessDialog(parent)
+    {
+        setWindowTitle(SettingsIntegrationTab::tr("Shortcut Setup Guide (Unsupported Systems)"));
+        resize(540, 390);
+        setModal(true);
+
+        auto *layout = contentLayout();
+        layout->setSpacing(12);
+        layout->setContentsMargins(4, 4, 4, 4);
+        layout->setContentsMargins(20, 18, 20, 18);
+
+        auto *lblHeader = new QLabel(SettingsIntegrationTab::tr("<h3>📋 Shortcut Setup for Unsupported Desktops</h3>"), this);
+        layout->addWidget(lblHeader);
+
+        auto *lblDesc = new QLabel(
+            SettingsIntegrationTab::tr("On window managers or desktops without direct file manager plugins (e.g. XFCE, i3, Sway, LXQt), "
+                                      "you can configure a global system shortcut (e.g. <b>Ctrl+Space</b> or <b>Super+Space</b>) "
+                                      "to launch BubezView."),
+            this
+        );
+        lblDesc->setWordWrap(true);
+        layout->addWidget(lblDesc);
+
+        auto *grpCmd = new QGroupBox(SettingsIntegrationTab::tr("Command to execute"), this);
+        auto *cmdLayout = new QHBoxLayout(grpCmd);
+        cmdLayout->setContentsMargins(10, 8, 10, 8);
+        cmdLayout->setSpacing(8);
+
+        QString cmdText = QCoreApplication::applicationFilePath();
+        if (cmdText.isEmpty()) {
+            cmdText = QStringLiteral("bubezview");
+        }
+
+        QLineEdit *editCmd = new QLineEdit(cmdText, grpCmd);
+        editCmd->setReadOnly(true);
+        editCmd->setStyleSheet(QStringLiteral("font-family: monospace; font-size: 11px; padding: 4px;"));
+        cmdLayout->addWidget(editCmd, 1);
+
+        QPushButton *btnCopy = new QPushButton(SettingsIntegrationTab::tr("Copy"), grpCmd);
+        btnCopy->setObjectName(QStringLiteral("IntegrationActionBtn"));
+        connect(btnCopy, &QPushButton::clicked, this, [btnCopy, cmdText]() {
+            if (auto *cb = QGuiApplication::clipboard()) {
+                cb->setText(cmdText);
+            }
+            btnCopy->setText(SettingsIntegrationTab::tr("Copied!"));
+            QTimer::singleShot(1500, btnCopy, [btnCopy]() {
+                btnCopy->setText(SettingsIntegrationTab::tr("Copy"));
+            });
+        });
+        cmdLayout->addWidget(btnCopy);
+        layout->addWidget(grpCmd);
+
+        auto *lblSteps = new QLabel(
+            SettingsIntegrationTab::tr("<b>Desktop-specific setup steps:</b><br>"
+                                      "• <b>XFCE:</b> Settings → Keyboard → Application Shortcuts → Add → enter command → press <i>Ctrl+Space</i>.<br>"
+                                      "• <b>GNOME:</b> Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts → Add.<br>"
+                                      "• <b>KDE Plasma:</b> System Settings → Shortcuts → Custom Shortcuts → Edit → New Global Shortcut.<br>"
+                                      "• <b>i3 / Sway:</b> Add <code>bindsym $mod+space exec %1</code> to your config file.")
+                                      .arg(cmdText),
+            this
+        );
+        lblSteps->setWordWrap(true);
+        lblSteps->setTextFormat(Qt::RichText);
+        layout->addWidget(lblSteps);
+
+        layout->addStretch();
+
+        auto *btnBox = new QHBoxLayout();
+        btnBox->addStretch();
+        auto *btnClose = new QPushButton(SettingsIntegrationTab::tr("Close"), this);
+        btnClose->setObjectName(QStringLiteral("IntegrationActionBtn"));
+        connect(btnClose, &QPushButton::clicked, this, &QDialog::accept);
+        btnBox->addWidget(btnClose);
+        layout->addLayout(btnBox);
+    }
+};
+
+} // namespace
+
+static QString primaryFileManagerName()
+{
+    switch (DesktopIntegrator::currentDesktop()) {
+    case DesktopIntegrator::DesktopEnv::KDE:
+        return QStringLiteral("Dolphin");
+    case DesktopIntegrator::DesktopEnv::GNOME:
+        return QStringLiteral("Nautilus");
+    case DesktopIntegrator::DesktopEnv::Cinnamon:
+        return QStringLiteral("Nemo");
+    case DesktopIntegrator::DesktopEnv::XFCE:
+        return QStringLiteral("Thunar");
+    default:
+        return QStringLiteral("File Manager");
+    }
+}
+
+static QFrame *createDivider(QWidget *parent)
+{
+    QFrame *line = new QFrame(parent);
+    line->setObjectName(QStringLiteral("RowDivider"));
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Plain);
+    return line;
+}
 
 SettingsIntegrationTab::SettingsIntegrationTab(QWidget *parent)
     : QWidget(parent)
 {
     setupUi();
     refreshStatuses();
+    updateThemeStyles();
+}
+
+QWidget *SettingsIntegrationTab::createSettingRow(
+    const QString &title,
+    QWidget *control,
+    QWidget *parent,
+    QWidget *extraWidget,
+    const QString &subtitle)
+{
+    QWidget *rowWidget = new QWidget(parent);
+    QHBoxLayout *rowLayout = new QHBoxLayout(rowWidget);
+    rowLayout->setContentsMargins(0, 2, 0, 2);
+    rowLayout->setSpacing(10);
+
+    QVBoxLayout *textLayout = new QVBoxLayout();
+    textLayout->setContentsMargins(0, 0, 0, 0);
+    textLayout->setSpacing(1);
+
+    QLabel *lblTitle = new QLabel(title, rowWidget);
+    lblTitle->setObjectName(QStringLiteral("RowTitle"));
+    textLayout->addWidget(lblTitle);
+
+    if (!subtitle.trimmed().isEmpty()) {
+        QLabel *lblSub = new QLabel(subtitle, rowWidget);
+        lblSub->setObjectName(QStringLiteral("RowSubtitle"));
+        lblSub->setWordWrap(true);
+        textLayout->addWidget(lblSub);
+    }
+
+    rowLayout->addLayout(textLayout, 1);
+
+    if (extraWidget) {
+        rowLayout->addWidget(extraWidget, 0, Qt::AlignVCenter);
+    }
+    if (control) {
+        rowLayout->addWidget(control, 0, Qt::AlignVCenter);
+    }
+
+    return rowWidget;
 }
 
 void SettingsIntegrationTab::setupUi()
@@ -37,104 +273,235 @@ void SettingsIntegrationTab::setupUi()
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
     QWidget *content = new QWidget(scrollArea);
-    QVBoxLayout *layout = new QVBoxLayout(content);
-    layout->setSpacing(10);
-    layout->setContentsMargins(14, 14, 14, 14);
+    QVBoxLayout *contentLayout = new QVBoxLayout(content);
+    contentLayout->setContentsMargins(14, 4, 14, 6);
+    contentLayout->setSpacing(8);
 
-    QLabel *header = new QLabel(QString(tr("Detected desktop environment: <b>%1</b>")).arg(DesktopIntegrator::desktopName()), content);
-    header->setStyleSheet("color: #888; margin-bottom: 2px;");
-    layout->addWidget(header);
+    m_lblHeader = new QLabel(QString(tr("Detected desktop environment: <b>%1</b>")).arg(DesktopIntegrator::desktopName()), content);
+    m_lblHeader->setObjectName(QStringLiteral("IntegrationHeaderLabel"));
+    contentLayout->addWidget(m_lblHeader);
 
-    // 1. Dolphin Group
-    QGroupBox *grpDolphin = new QGroupBox(tr("Dolphin (KDE Plasma)"), content);
-    QVBoxLayout *layDolphin = new QVBoxLayout(grpDolphin);
-    layDolphin->setSpacing(8);
-    layDolphin->setContentsMargins(12, 10, 12, 12);
+    const QString fmName = primaryFileManagerName();
 
-    QHBoxLayout *rowDolphinStatus = new QHBoxLayout();
-    m_lblDolphinStatus = new QLabel(grpDolphin);
-    m_btnDolphinToggle = new QPushButton(grpDolphin);
-    m_btnDolphinToggle->setCursor(Qt::PointingHandCursor);
-    m_btnDolphinToggle->setMinimumWidth(160);
-    connect(m_btnDolphinToggle, &QPushButton::clicked, this, &SettingsIntegrationTab::toggleDolphin);
-    rowDolphinStatus->addWidget(m_lblDolphinStatus, 1);
-    rowDolphinStatus->addWidget(m_btnDolphinToggle);
-    layDolphin->addLayout(rowDolphinStatus);
+    // 1. File Manager & Spacebar Integration Card
+    m_grpQuickLook = new QGroupBox(tr("File Manager && Quick Look"), content);
+    QVBoxLayout *layQuickLook = new QVBoxLayout(m_grpQuickLook);
+    layQuickLook->setContentsMargins(12, 10, 12, 8);
+    layQuickLook->setSpacing(4);
 
-    QHBoxLayout *rowDolphinKey = new QHBoxLayout();
-    QLabel *lblKey = new QLabel(tr("Trigger shortcut in Dolphin:"), grpDolphin);
-    m_comboDolphinShortcut = new QComboBox(grpDolphin);
-    m_comboDolphinShortcut->setCursor(Qt::PointingHandCursor);
-    m_comboDolphinShortcut->addItem(tr("Space (Mac-style Quick Look)"), "Space");
-    m_comboDolphinShortcut->addItem(tr("Ctrl + Space (Safe non-conflicting)"), "Ctrl+Space");
+    m_switchSpace = new CapsuleToggleSwitch(m_grpQuickLook);
+    connect(m_switchSpace, &QAbstractButton::toggled, this, &SettingsIntegrationTab::onSpacePreviewToggled);
 
-    QString curKey = DesktopIntegrator::currentDolphinShortcut();
-    int keyIdx = m_comboDolphinShortcut->findData(curKey);
-    if (keyIdx >= 0) {
-        m_comboDolphinShortcut->setCurrentIndex(keyIdx);
+    m_btnTestSpace = new QPushButton(tr("Test Spacebar"), m_grpQuickLook);
+    m_btnTestSpace->setObjectName(QStringLiteral("IntegrationActionBtn"));
+    m_btnTestSpace->setCursor(Qt::PointingHandCursor);
+    connect(m_btnTestSpace, &QPushButton::clicked, this, &SettingsIntegrationTab::onTestSpaceClicked);
+
+    m_switchFallback = new CapsuleToggleSwitch(m_grpQuickLook);
+    connect(m_switchFallback, &QAbstractButton::toggled, this, &SettingsIntegrationTab::onFallbackShortcutToggled);
+
+    m_btnGuide = new QPushButton(tr("Setup Guide..."), m_grpQuickLook);
+    m_btnGuide->setObjectName(QStringLiteral("IntegrationActionBtn"));
+    m_btnGuide->setCursor(Qt::PointingHandCursor);
+    connect(m_btnGuide, &QPushButton::clicked, this, &SettingsIntegrationTab::onUnsupportedGuideClicked);
+
+    QString row1Title;
+    if (DesktopIntegrator::currentDesktop() == DesktopIntegrator::DesktopEnv::Other) {
+        row1Title = tr("Spacebar preview in File Manager");
+    } else {
+        row1Title = tr("Spacebar preview in %1").arg(fmName);
     }
-    rowDolphinKey->addWidget(lblKey);
-    rowDolphinKey->addWidget(m_comboDolphinShortcut, 1);
-    layDolphin->addLayout(rowDolphinKey);
 
-    layout->addWidget(grpDolphin);
+    QWidget *row1 = createSettingRow(
+        row1Title,
+        m_switchSpace,
+        m_grpQuickLook,
+        m_btnTestSpace
+    );
+    QWidget *row2 = createSettingRow(
+        tr("Ctrl+Space shortcut (for unsupported systems)"),
+        m_switchFallback,
+        m_grpQuickLook,
+        m_btnGuide
+    );
 
-    // 2. GNOME Nautilus & Cinnamon Nemo Group
-    QGroupBox *grpGnome = new QGroupBox(tr("GNOME Nautilus / Nemo"), content);
-    QHBoxLayout *rowGnome = new QHBoxLayout(grpGnome);
-    rowGnome->setContentsMargins(12, 10, 12, 12);
-    m_lblGnomeStatus = new QLabel(grpGnome);
-    m_btnGnomeToggle = new QPushButton(grpGnome);
-    m_btnGnomeToggle->setCursor(Qt::PointingHandCursor);
-    m_btnGnomeToggle->setMinimumWidth(160);
-    connect(m_btnGnomeToggle, &QPushButton::clicked, this, &SettingsIntegrationTab::toggleGnomeNemo);
-    rowGnome->addWidget(m_lblGnomeStatus, 1);
-    rowGnome->addWidget(m_btnGnomeToggle);
-    layout->addWidget(grpGnome);
+    layQuickLook->addWidget(row1);
+    layQuickLook->addWidget(createDivider(m_grpQuickLook));
+    layQuickLook->addWidget(row2);
+    contentLayout->addWidget(m_grpQuickLook);
 
-    // 3. Context Menu (Right Click) Group
-    QGroupBox *grpContext = new QGroupBox(tr("Context Menu (Right Click)"), content);
-    QHBoxLayout *rowContext = new QHBoxLayout(grpContext);
-    rowContext->setContentsMargins(12, 10, 12, 12);
-    m_lblContextStatus = new QLabel(grpContext);
-    m_btnContextToggle = new QPushButton(grpContext);
-    m_btnContextToggle->setCursor(Qt::PointingHandCursor);
-    m_btnContextToggle->setMinimumWidth(160);
-    connect(m_btnContextToggle, &QPushButton::clicked, this, &SettingsIntegrationTab::toggleContextMenu);
-    rowContext->addWidget(m_lblContextStatus, 1);
-    rowContext->addWidget(m_btnContextToggle);
-    layout->addWidget(grpContext);
+    // 2. System Integration (Context Menu & Launcher) Card
+    m_grpSystem = new QGroupBox(tr("System Integration"), content);
+    QVBoxLayout *laySystem = new QVBoxLayout(m_grpSystem);
+    laySystem->setContentsMargins(12, 10, 12, 8);
+    laySystem->setSpacing(4);
 
-    // 4. App Launcher Menu (.desktop)
-    QGroupBox *grpAppMenu = new QGroupBox(tr("System Application Menu"), content);
-    QHBoxLayout *rowAppMenu = new QHBoxLayout(grpAppMenu);
-    rowAppMenu->setContentsMargins(12, 10, 12, 12);
-    m_lblAppMenuStatus = new QLabel(grpAppMenu);
-    m_btnAppMenuToggle = new QPushButton(grpAppMenu);
-    m_btnAppMenuToggle->setCursor(Qt::PointingHandCursor);
-    m_btnAppMenuToggle->setMinimumWidth(160);
-    connect(m_btnAppMenuToggle, &QPushButton::clicked, this, &SettingsIntegrationTab::toggleAppMenu);
-    rowAppMenu->addWidget(m_lblAppMenuStatus, 1);
-    rowAppMenu->addWidget(m_btnAppMenuToggle);
-    layout->addWidget(grpAppMenu);
+    m_switchContextMenu = new CapsuleToggleSwitch(m_grpSystem);
+    connect(m_switchContextMenu, &QAbstractButton::toggled, this, &SettingsIntegrationTab::onContextMenuToggled);
 
-    // 5. Office Engine Integration Group
-    QGroupBox *grpOffice = new QGroupBox(tr("Office Documents Integration"), content);
-    QVBoxLayout *layOffice = new QVBoxLayout(grpOffice);
-    layOffice->setContentsMargins(12, 10, 12, 12);
+    m_switchAppMenu = new CapsuleToggleSwitch(m_grpSystem);
+    connect(m_switchAppMenu, &QAbstractButton::toggled, this, &SettingsIntegrationTab::onAppMenuToggled);
 
-    m_chkUseLibreOffice = new QCheckBox(tr("Use LibreOffice for preview (high-fidelity PDF conversion)"), grpOffice);
-    m_chkUseLibreOffice->setCursor(Qt::PointingHandCursor);
-    m_chkUseLibreOffice->setChecked(ThemeManager::useLibreOffice());
-    connect(m_chkUseLibreOffice, &QCheckBox::toggled, this, &SettingsIntegrationTab::onUseLibreOfficeToggled);
-    layOffice->addWidget(m_chkUseLibreOffice);
+    QWidget *rowCtx = createSettingRow(
+        tr("Mouse right-click context menu"),
+        m_switchContextMenu,
+        m_grpSystem
+    );
+    QWidget *rowApp = createSettingRow(
+        tr("Application launcher menu"),
+        m_switchAppMenu,
+        m_grpSystem
+    );
 
-    layout->addWidget(grpOffice);
+    laySystem->addWidget(rowCtx);
+    laySystem->addWidget(createDivider(m_grpSystem));
+    laySystem->addWidget(rowApp);
+    contentLayout->addWidget(m_grpSystem);
 
-    layout->addStretch();
+    // 3. Office Documents Card
+    m_grpOffice = new QGroupBox(tr("Office Documents"), content);
+    QVBoxLayout *layOffice = new QVBoxLayout(m_grpOffice);
+    layOffice->setContentsMargins(12, 10, 12, 8);
+    layOffice->setSpacing(4);
 
+    m_switchLibreOffice = new CapsuleToggleSwitch(m_grpOffice);
+    connect(m_switchLibreOffice, &QAbstractButton::toggled, this, &SettingsIntegrationTab::onUseLibreOfficeToggled);
+
+    QWidget *rowOffice = createSettingRow(
+        tr("High-fidelity preview (requires LibreOffice)"),
+        m_switchLibreOffice,
+        m_grpOffice
+    );
+
+    layOffice->addWidget(rowOffice);
+    contentLayout->addWidget(m_grpOffice);
+
+    contentLayout->addStretch();
     scrollArea->setWidget(content);
     rootLayout->addWidget(scrollArea);
+}
+
+void SettingsIntegrationTab::refreshStatuses()
+{
+    const QSignalBlocker b1(m_switchSpace);
+    const QSignalBlocker b2(m_switchFallback);
+    const QSignalBlocker b3(m_switchContextMenu);
+    const QSignalBlocker b4(m_switchAppMenu);
+    const QSignalBlocker b5(m_switchLibreOffice);
+
+    if (m_lblHeader) {
+        m_lblHeader->setText(QString(tr("Detected desktop environment: <b>%1</b>")).arg(DesktopIntegrator::desktopName()));
+    }
+
+    const auto de = DesktopIntegrator::currentDesktop();
+    bool spaceEnabled = false;
+    bool fallbackActive = false;
+
+    QSettings settings("Bubez", "BubezView");
+    fallbackActive = settings.value(QStringLiteral("Integration/FallbackShortcut"), false).toBool();
+
+    if (de == DesktopIntegrator::DesktopEnv::KDE) {
+        spaceEnabled = DesktopIntegrator::isDolphinEnabled();
+        if (DesktopIntegrator::currentDolphinShortcut() == QLatin1String("Ctrl+Space")) {
+            fallbackActive = true;
+        }
+    } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+        spaceEnabled = DesktopIntegrator::isGnomeNemoEnabled();
+    } else {
+        spaceEnabled = DesktopIntegrator::isDolphinEnabled() || DesktopIntegrator::isGnomeNemoEnabled();
+        if (DesktopIntegrator::currentDolphinShortcut() == QLatin1String("Ctrl+Space")) {
+            fallbackActive = true;
+        }
+    }
+
+    if (m_switchSpace) {
+        m_switchSpace->setCheckedAnimated(spaceEnabled);
+    }
+    if (m_switchFallback) {
+        m_switchFallback->setCheckedAnimated(fallbackActive);
+        m_switchFallback->setEnabled(true);
+    }
+
+    if (m_switchContextMenu) {
+        m_switchContextMenu->setCheckedAnimated(DesktopIntegrator::isContextMenuEnabled());
+    }
+    if (m_switchAppMenu) {
+        m_switchAppMenu->setCheckedAnimated(DesktopIntegrator::isAppMenuInstalled());
+    }
+
+    if (m_switchLibreOffice) {
+        m_switchLibreOffice->setCheckedAnimated(ThemeManager::useLibreOffice());
+    }
+}
+
+void SettingsIntegrationTab::onSpacePreviewToggled(bool checked)
+{
+    const auto de = DesktopIntegrator::currentDesktop();
+    const QString shortcut = (m_switchFallback && m_switchFallback->isChecked())
+        ? QStringLiteral("Ctrl+Space")
+        : QStringLiteral("Space");
+
+    if (checked) {
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            DesktopIntegrator::enableDolphin(shortcut);
+        } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+            DesktopIntegrator::enableGnomeNemo();
+        } else {
+            DesktopIntegrator::enableDolphin(shortcut);
+            DesktopIntegrator::enableGnomeNemo();
+        }
+    } else {
+        if (m_switchFallback && m_switchFallback->isChecked() &&
+            (de == DesktopIntegrator::DesktopEnv::KDE || de == DesktopIntegrator::DesktopEnv::Other)) {
+            DesktopIntegrator::enableDolphin(QStringLiteral("Ctrl+Space"));
+        } else {
+            if (de == DesktopIntegrator::DesktopEnv::KDE) {
+                DesktopIntegrator::disableDolphin();
+            } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+                DesktopIntegrator::disableGnomeNemo();
+            } else {
+                DesktopIntegrator::disableDolphin();
+                DesktopIntegrator::disableGnomeNemo();
+            }
+        }
+    }
+}
+
+void SettingsIntegrationTab::onFallbackShortcutToggled(bool checked)
+{
+    const auto de = DesktopIntegrator::currentDesktop();
+    const QString shortcut = checked ? QStringLiteral("Ctrl+Space") : QStringLiteral("Space");
+
+    if (de == DesktopIntegrator::DesktopEnv::KDE || de == DesktopIntegrator::DesktopEnv::Other) {
+        if (m_switchSpace && m_switchSpace->isChecked()) {
+            DesktopIntegrator::enableDolphin(shortcut);
+        } else if (checked) {
+            DesktopIntegrator::enableDolphin(QStringLiteral("Ctrl+Space"));
+        } else {
+            DesktopIntegrator::disableDolphin();
+        }
+    }
+
+    QSettings settings("Bubez", "BubezView");
+    settings.setValue(QStringLiteral("Integration/FallbackShortcut"), checked);
+}
+
+void SettingsIntegrationTab::onContextMenuToggled(bool checked)
+{
+    if (checked) {
+        DesktopIntegrator::enableContextMenu();
+    } else {
+        DesktopIntegrator::disableContextMenu();
+    }
+}
+
+void SettingsIntegrationTab::onAppMenuToggled(bool checked)
+{
+    if (checked) {
+        DesktopIntegrator::installAppMenu();
+    } else {
+        DesktopIntegrator::uninstallAppMenu();
+    }
 }
 
 void SettingsIntegrationTab::onUseLibreOfficeToggled(bool checked)
@@ -142,96 +509,145 @@ void SettingsIntegrationTab::onUseLibreOfficeToggled(bool checked)
     ThemeManager::setUseLibreOffice(checked);
 }
 
-void SettingsIntegrationTab::refreshStatuses()
+void SettingsIntegrationTab::onTestSpaceClicked()
 {
-    // Dolphin
-    bool dolOn = DesktopIntegrator::isDolphinEnabled();
-    QString shortcutName = DesktopIntegrator::currentDolphinShortcut();
-    if (dolOn) {
-        m_lblDolphinStatus->setText(QString(tr("🟢 <b>Enabled</b> (%1 opens BubezView in Dolphin)")).arg(shortcutName));
-        m_btnDolphinToggle->setText(tr("Disable Dolphin Shortcut"));
-    } else {
-        m_lblDolphinStatus->setText(tr("⚪ <b>Disabled</b>"));
-        m_btnDolphinToggle->setText(tr("✅ Enable Dolphin Shortcut"));
-    }
-
-    if (m_comboDolphinShortcut) {
-        int idx = m_comboDolphinShortcut->findData(shortcutName);
-        if (idx >= 0) {
-            m_comboDolphinShortcut->setCurrentIndex(idx);
-        }
-    }
-
-    // GNOME / Nemo
-    bool gnOn = DesktopIntegrator::isGnomeNemoEnabled();
-    m_lblGnomeStatus->setText(gnOn ? tr("🟢 <b>Enabled</b> (DBus and Sushi forward ready)") : tr("⚪ <b>Disabled</b>"));
-    m_btnGnomeToggle->setText(gnOn ? tr("Disable for GNOME") : tr("✅ Enable for GNOME/Mint"));
-
-    // Context Menu
-    bool ctxOn = DesktopIntegrator::isContextMenuEnabled();
-    m_lblContextStatus->setText(ctxOn ? tr("🟢 <b>Present</b> in file manager right-click menu") : tr("⚪ <b>Not configured</b>"));
-    m_btnContextToggle->setText(ctxOn ? tr("Remove from Right Click") : tr("✅ Add to Right Click"));
-
-    // App Menu
-    bool appOn = DesktopIntegrator::isAppMenuInstalled();
-    m_lblAppMenuStatus->setText(appOn ? tr("🟢 <b>Installed</b> in system menu and 'Open With...'") : tr("⚪ <b>Not present</b>"));
-    m_btnAppMenuToggle->setText(appOn ? tr("Remove from Menu") : tr("✅ Add to App Menu"));
+    SpaceShortcutTestDialog dlg(this);
+    dlg.exec();
 }
 
-void SettingsIntegrationTab::toggleDolphin()
+void SettingsIntegrationTab::onUnsupportedGuideClicked()
 {
-    if (DesktopIntegrator::isDolphinEnabled()) {
-        DesktopIntegrator::disableDolphin();
-        QMessageBox::information(this, tr("Dolphin"), tr("Dolphin shortcut for BubezView removed."));
-    } else {
-        QString chosenKey = "Space";
-        if (m_comboDolphinShortcut) {
-            chosenKey = m_comboDolphinShortcut->currentData().toString();
-        }
-        DesktopIntegrator::enableDolphin(chosenKey);
-        QMessageBox::information(this, tr("Dolphin"), QString(tr("Dolphin shortcut '%1' enabled successfully!")).arg(chosenKey));
-    }
-    refreshStatuses();
+    UnsupportedSystemGuideDialog dlg(this);
+    dlg.exec();
 }
 
-void SettingsIntegrationTab::toggleGnomeNemo()
+void SettingsIntegrationTab::updateThemeStyles()
 {
-    if (DesktopIntegrator::isGnomeNemoEnabled()) {
-        DesktopIntegrator::disableGnomeNemo();
-        QMessageBox::information(this, tr("GNOME / Nemo"), tr("GNOME/Nemo integration removed."));
-    } else {
-        DesktopIntegrator::enableGnomeNemo();
-        QMessageBox::information(
-            this,
-            tr("GNOME / Nemo"),
-            tr("Integration for GNOME (Nautilus) and Linux Mint (Nemo) enabled successfully!\n\n"
-               "✓ DBus services registered for BubezView.\n"
-               "✓ Sushi and Nemo-Preview compatibility ready.")
-        );
-    }
-    refreshStatuses();
-}
+    const ThemePreset active = ThemeManager::effectivePreset(ThemeManager::currentPreset());
 
-void SettingsIntegrationTab::toggleContextMenu()
-{
-    if (DesktopIntegrator::isContextMenuEnabled()) {
-        DesktopIntegrator::disableContextMenu();
-        QMessageBox::information(this, tr("Right Click"), tr("Context menu items removed."));
-    } else {
-        DesktopIntegrator::enableContextMenu();
-        QMessageBox::information(this, tr("Right Click"), tr("'Preview with BubezView' items added to right-click menu successfully!"));
-    }
-    refreshStatuses();
-}
+    QString cardBg;
+    QString cardBorder;
+    QString pillBg;
+    QString pillBorder;
+    QString pillColor;
+    QString titleColor;
+    QString subColor;
+    QString dividerColor;
+    QString btnHoverBg;
+    QString btnHoverBorder;
+    QString btnPressedBg;
 
-void SettingsIntegrationTab::toggleAppMenu()
-{
-    if (DesktopIntegrator::isAppMenuInstalled()) {
-        DesktopIntegrator::uninstallAppMenu();
-        QMessageBox::information(this, tr("Application Menu"), tr("Icon removed from application menu."));
+    if (active == ThemePreset::ZincGray) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(56, 57, 62, 0.78), stop:0.5 rgba(46, 47, 51, 0.82), stop:1 rgba(38, 39, 43, 0.88))");
+        cardBorder = QStringLiteral("rgba(255, 255, 255, 0.12)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        pillBorder = QStringLiteral("rgba(255, 255, 255, 0.22)");
+        pillColor = QStringLiteral("#ffffff");
+        titleColor = QStringLiteral("#ffffff");
+        subColor = QStringLiteral("rgba(255, 255, 255, 0.70)");
+        dividerColor = QStringLiteral("rgba(255, 255, 255, 0.09)");
+        btnHoverBg = QStringLiteral("rgba(255, 255, 255, 0.15)");
+        btnHoverBorder = QStringLiteral("rgba(255, 255, 255, 0.35)");
+        btnPressedBg = QStringLiteral("rgba(255, 255, 255, 0.08)");
+    } else if (active == ThemePreset::ModernLight || active == ThemePreset::BreezeLight) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.70), stop:0.5 rgba(246, 248, 251, 0.65), stop:1 rgba(238, 241, 246, 0.60))");
+        cardBorder = QStringLiteral("rgba(15, 23, 42, 0.09)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e2e6ec)");
+        pillBorder = QStringLiteral("rgba(0, 0, 0, 0.14)");
+        pillColor = QStringLiteral("#334155");
+        titleColor = QStringLiteral("#1e293b");
+        subColor = QStringLiteral("#64748b");
+        dividerColor = QStringLiteral("rgba(15, 23, 42, 0.08)");
+        btnHoverBg = QStringLiteral("#f1f5f9");
+        btnHoverBorder = QStringLiteral("#0284c7");
+        btnPressedBg = QStringLiteral("#e2e8f0");
     } else {
-        DesktopIntegrator::installAppMenu();
-        QMessageBox::information(this, tr("Application Menu"), tr("BubezView successfully added to application menu and 'Open With...' menu!"));
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 41, 59, 0.65), stop:0.5 rgba(22, 30, 46, 0.70), stop:1 rgba(15, 22, 34, 0.78))");
+        cardBorder = QStringLiteral("rgba(56, 189, 248, 0.22)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #253347, stop:1 #1a2434)");
+        pillBorder = QStringLiteral("rgba(56, 189, 248, 0.38)");
+        pillColor = QStringLiteral("#7dd3fc");
+        titleColor = QStringLiteral("#f8fafc");
+        subColor = QStringLiteral("rgba(226, 232, 240, 0.72)");
+        dividerColor = QStringLiteral("rgba(255, 255, 255, 0.08)");
+        btnHoverBg = QStringLiteral("rgba(56, 189, 248, 0.18)");
+        btnHoverBorder = QStringLiteral("rgba(56, 189, 248, 0.50)");
+        btnPressedBg = QStringLiteral("rgba(56, 189, 248, 0.10)");
     }
-    refreshStatuses();
+
+    const QString style = QString(
+        "QLabel#IntegrationHeaderLabel {"
+        "  color: %1;"
+        "  font-size: 12px;"
+        "  font-weight: 500;"
+        "  margin-bottom: 0px;"
+        "}"
+        "QGroupBox {"
+        "  font-weight: 600;"
+        "  font-size: 12px;"
+        "  color: %1;"
+        "  border: 1px solid %2;"
+        "  border-radius: 12px;"
+        "  background: %3;"
+        "  margin-top: 10px;"
+        "  padding: 10px 12px 8px 12px;"
+        "}"
+        "QGroupBox::title {"
+        "  subcontrol-origin: margin;"
+        "  subcontrol-position: top left;"
+        "  left: 12px;"
+        "  top: 1px;"
+        "  padding: 1px 10px;"
+        "  background: %4;"
+        "  color: %5;"
+        "  border: 1px solid %6;"
+        "  border-radius: 6px;"
+        "  font-size: 11px;"
+        "  font-weight: bold;"
+        "}"
+        "QLabel#RowTitle {"
+        "  color: %1;"
+        "  font-size: 12px;"
+        "  font-weight: 600;"
+        "  background: transparent;"
+        "}"
+        "QLabel#RowSubtitle {"
+        "  color: %7;"
+        "  font-size: 11px;"
+        "  font-weight: 400;"
+        "  background: transparent;"
+        "}"
+        "QFrame#RowDivider {"
+        "  background-color: %8;"
+        "  max-height: 1px;"
+        "  min-height: 1px;"
+        "  border: none;"
+        "  margin: 2px 0px;"
+        "}"
+        "QPushButton#IntegrationActionBtn {"
+        "  background: %4;"
+        "  color: %5;"
+        "  border: 1px solid %6;"
+        "  border-radius: 6px;"
+        "  padding: 3px 10px;"
+        "  font-size: 11px;"
+        "  font-weight: 500;"
+        "}"
+        "QPushButton#IntegrationActionBtn:hover {"
+        "  background: %9;"
+        "  border-color: %10;"
+        "}"
+        "QPushButton#IntegrationActionBtn:pressed {"
+        "  background: %11;"
+        "}"
+    ).arg(titleColor, cardBorder, cardBg, pillBg, pillColor, pillBorder, subColor, dividerColor,
+          btnHoverBg, btnHoverBorder, btnPressedBg);
+
+    setStyleSheet(style);
+
+    if (m_switchSpace) m_switchSpace->update();
+    if (m_switchFallback) m_switchFallback->update();
+    if (m_switchContextMenu) m_switchContextMenu->update();
+    if (m_switchAppMenu) m_switchAppMenu->update();
+    if (m_switchLibreOffice) m_switchLibreOffice->update();
 }

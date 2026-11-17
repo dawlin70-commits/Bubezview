@@ -3,8 +3,19 @@
 #include "theme_manager.h"
 #include "first_run_wizard.h"
 #include "plugin_manager.h"
+#include "settings_dialog.h"
+#include "settings_extensions_tab.h"
+#include "compiler_wizard_dialog.h"
+#include "diagnostic_report_dialog.h"
+#include "settings_performance_tab.h"
 #include "gpu_acceleration_manager.h"
+#include "share_dialog.h"
+#include "image_resize_dialog.h"
+#include "goto_folder_dialog.h"
+#include "pdf_repair_dialog.h"
+#include "ocr_dialog.h"
 #include <QApplication>
+#include <QComboBox>
 #include <QCommandLineParser>
 #include <QFileDialog>
 #include <QStyleFactory>
@@ -237,6 +248,13 @@ int main(int argc, char *argv[])
     );
     parser.addOption(wizardOption);
 
+    QCommandLineOption settingsSnapshotsOption(
+        "settings-snapshots",
+        QCoreApplication::translate("main", "Generate snapshots of all settings tabs and exit."),
+        "directory"
+    );
+    parser.addOption(settingsSnapshotsOption);
+
     parser.addPositionalArgument("file", QCoreApplication::translate("main", "File or folder to preview (optional)"));
 
     parser.process(app);
@@ -265,6 +283,351 @@ int main(int argc, char *argv[])
 
     // Discover and load modular plugins (.so)
     PluginManager::instance().discoverPlugins();
+
+    if (parser.isSet(settingsSnapshotsOption)) {
+        QString outDir = parser.value(settingsSnapshotsOption);
+        QDir().mkpath(outDir);
+
+        static QTranslator itTranslator;
+        if (itTranslator.load(QStringLiteral(":/translations/bubezview_it.qm")) ||
+            itTranslator.load(QStringLiteral("/home/davide/Progetti/BubezView/build_deb/translations/bubezview_it.qm"))) {
+            app.installTranslator(&itTranslator);
+        }
+
+        auto captureTabsForPreset = [&](ThemePreset preset, const QString &suffix) {
+            ThemeManager::setPreset(preset);
+            ThemeManager::applyTheme(&app, nullptr);
+
+            for (int i = 0; i < 5; ++i) {
+                SettingsDialog dlg(nullptr, static_cast<SettingsDialog::TabIndex>(i));
+                dlg.show();
+                for (int w = 0; w < 10; ++w) {
+                    app.processEvents();
+                    QThread::msleep(20);
+                }
+                QPixmap pix = dlg.grab();
+                pix.save(QString("%1/settings_tab_%2_%3.png").arg(outDir, QString::number(i), suffix));
+
+                if (i == 3 && suffix == "zinc" && dlg.extensionsTab()) {
+                    QStringList otherCats = {QStringLiteral("Archive"), QStringLiteral("Media"), QStringLiteral("Office"), QStringLiteral("Image")};
+                    QStringList otherFiles = {QStringLiteral("archivi"), QStringLiteral("media"), QStringLiteral("ufficio"), QStringLiteral("grafica")};
+                    for (int c = 0; c < otherCats.size(); ++c) {
+                        dlg.extensionsTab()->selectCategory(otherCats[c]);
+                        for (int w = 0; w < 10; ++w) {
+                            app.processEvents();
+                            QThread::msleep(20);
+                        }
+                        QPixmap cpix = dlg.grab();
+                        cpix.save(QString("%1/settings_tab_3_categoria_%2.png").arg(outDir, otherFiles[c]));
+                    }
+                    dlg.extensionsTab()->selectCategory(QStringLiteral("PDF"));
+                }
+            }
+        };
+
+        captureTabsForPreset(ThemePreset::ZincGray, "zinc");
+        captureTabsForPreset(ThemePreset::DarkSlate, "dark");
+        captureTabsForPreset(ThemePreset::ModernLight, "light");
+
+        // Capture Compiler Wizard dialog showing cleaned-up 8 flags
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            CompilerWizardDialog wizard;
+            wizard.resize(840, 680);
+            wizard.applyPreset(3);
+            wizard.show();
+            for (int w = 0; w < 10; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            QPixmap pixW = wizard.grab();
+            pixW.save(QString("%1/compiler_wizard_dialog.png").arg(outDir));
+        }
+
+        // Capture Settings Tab 2 with System Packages selected (Wizard disabled)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            SettingsDialog dlg(nullptr, SettingsDialog::TabIndex::Performance);
+            auto *perfTab = dlg.findChild<SettingsPerformanceTab*>();
+            if (perfTab) {
+                auto *combo = perfTab->findChild<QComboBox*>();
+                if (combo) {
+                    combo->setCurrentIndex(0); // Pacchetti di sistema (Nessuna compilazione)
+                }
+            }
+            dlg.show();
+            for (int w = 0; w < 10; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            QPixmap pixSys = dlg.grab();
+            pixSys.save(QString("%1/settings_tab_2_system_packages.png").arg(outDir));
+        }
+
+        // Capture Settings Tab 3 with Category 1 (Documents / PDF) selected
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            SettingsDialog dlg(nullptr, SettingsDialog::TabIndex::Extensions);
+            auto *catTabs = dlg.findChild<QTabWidget*>("ExtensionCategoryTabs");
+            if (catTabs && catTabs->count() > 1) {
+                catTabs->setCurrentIndex(1); // Documenti (PDF)
+            }
+            dlg.show();
+            for (int w = 0; w < 12; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            QPixmap pixDocs = dlg.grab();
+            pixDocs.save(QString("%1/settings_tab_3_category_documents.png").arg(outDir));
+        }
+
+        // Capture Diagnostic Report Dialog - Component Health Check (Runtime Mode, No Dev Warnings)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            DiagnosticReportDialog diagDlg;
+            QList<QPair<QString, bool>> subRes = {
+                {QString::fromUtf8("Supporto Font Asiatici (poppler-data)"), true},
+                {QString::fromUtf8("Estrattore Immagini (pdfimages)"), true}
+            };
+            diagDlg.setRuntimeReportData(
+                QString::fromUtf8("Visualizzatore PDF"),
+                true,
+                QStringLiteral("pkg-config --modversion poppler-qt6 2>/dev/null || echo 'poppler-qt6 present'"),
+                QStringLiteral("22.12.0\nPoppler Qt6 runtime engine active and operational.\nAll vector and text rendering hooks verified."),
+                subRes,
+                0
+            );
+            diagDlg.show();
+            for (int w = 0; w < 10; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            QPixmap pixDiagSingle = diagDlg.grab();
+            pixDiagSingle.save(QString("%1/diagnostic_dialog_single_zinc.png").arg(outDir));
+        }
+
+        // Capture Diagnostic Report Dialog - Build Prerequisites Check
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            DiagnosticReportDialog diagBuild;
+            QStringList missing = {QStringLiteral("libpoppler-qt6-dev")};
+            QString buildLog = QString::fromUtf8(
+                "=== Visualizzatore PDF: Build Prerequisites Inspection ===\n"
+                "✓ Build System: CMake detected.\n"
+                "✓ Compiler Toolchain: C++ compiler (g++/clang++) detected.\n"
+                "✓ Package Locator: pkg-config detected.\n"
+                "❌ C/C++ Headers: 'poppler-qt6' development headers NOT found.\n"
+                "   -> Install via package manager: apt install libpoppler-qt6-dev\n"
+                "✓ Source Management: git detected."
+            );
+            diagBuild.setBuildReadinessReportData(
+                QString::fromUtf8("Visualizzatore PDF"),
+                false,
+                missing,
+                buildLog
+            );
+            diagBuild.show();
+            for (int w = 0; w < 10; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            QPixmap pixDiagBuild = diagBuild.grab();
+            pixDiagBuild.save(QString("%1/diagnostic_dialog_build_prerequisites.png").arg(outDir));
+        }
+
+        // Capture Diagnostic Report Dialog - Global 3-Section System Audit (ZincGray)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            DiagnosticReportDialog diagGlobal;
+            QStringList failures;
+            QStringList missingResources = {QString::fromUtf8("Dizionario Italiano OCR (tesseract-ocr-ita)")};
+            QStringList readyEngines = {QString::fromUtf8("Visualizzatore Archivi (LibArchive)")};
+            QStringList blockedEngines = {
+                QString::fromUtf8("Visualizzatore PDF (mancano: libpoppler-qt6-dev)"),
+                QString::fromUtf8("Media Player (mancano: libmpv-dev)")
+            };
+            QString fullReport = QString::fromUtf8(
+                "BUBEZVIEW — STATO COMPONENTI E SISTEMA\n"
+                "Data: 2026-11-14 21:05\n\n"
+                "[MODULI RUNTIME] (12/12 Operativi)\n"
+                "• Visualizzatore PDF: OPERATIVO (22.12.0)\n"
+                "• Estrazione Immagini: OPERATIVO (pdfimages 22.12.0)\n"
+                "• Supporto Font Asiatici: OPERATIVO (/usr/share/poppler/cMap)\n"
+                "• Linearizzazione & Ottimizzazione: OPERATIVO (qpdf 11.3.0)\n"
+                "• Riconoscimento Testo OCR: OPERATIVO (tesseract 5.3.0)\n"
+                "• Firma Digitale & Crittografia: OPERATIVO (OpenSSL 3.0.15)\n"
+                "• Gestione Archivi: OPERATIVO (libarchive 3.7.4)\n"
+                "• Compressione Zstandard: OPERATIVO (zstd v1.5.4)\n"
+                "• Compressione XZ: OPERATIVO (xz 5.4.1)\n"
+                "• Elaboratore Audio DSP: OPERATIVO (FFTW3 DSP Engine)\n"
+                "• Metadati Audio: OPERATIVO (TagLib Engine)\n"
+                "• Interfaccia Grafica Nativa: OPERATIVO (Qt6 GUI)\n\n"
+                "[COMPONENTI NON INSTALLATI & ACCESSORI]\n"
+                "Non installati (2):\n"
+                "  • 7-Zip (7zz)\n"
+                "  • MuPDF\n\n"
+                "Accessori mancanti (1):\n"
+                "  • Dizionario Italiano OCR (tesseract-ocr-ita)\n\n"
+                "[SEZIONE 3] IDONEITÀ AMBIENTE DI COMPILAZIONE (TUTTI I MOTORI)\n"
+                "Motori pronti a compilare (1):\n"
+                "  • Visualizzatore Archivi (LibArchive)\n\n"
+                "Motori con dipendenze di build mancanti (2):\n"
+                "  • Visualizzatore PDF (mancano: libpoppler-qt6-dev)\n"
+                "  • Media Player (mancano: libmpv-dev)\n\n"
+                "================================================================================\n"
+            );
+            diagGlobal.setGlobalExtendedReportData(12, 12, failures, missingResources, readyEngines, blockedEngines, fullReport);
+            diagGlobal.show();
+            for (int w = 0; w < 10; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            QPixmap pixDiagGlobal = diagGlobal.grab();
+            pixDiagGlobal.save(QString("%1/diagnostic_dialog_global_zinc.png").arg(outDir));
+        }
+
+        // Capture Diagnostic Report Dialog - Copied to Clipboard visual feedback
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            DiagnosticReportDialog diagCopied;
+            diagCopied.setReportData(
+                QString::fromUtf8("Resoconto diagnostico - Visualizzatore PDF"),
+                QString::fromUtf8("Visualizzatore PDF"),
+                true,
+                QStringLiteral("pkg-config --modversion poppler-qt6 2>/dev/null || echo 'poppler-qt6 present'"),
+                QStringLiteral("22.12.0"),
+                0
+            );
+            // Simulate copy click
+            auto *btnCopy = diagCopied.findChild<QPushButton*>();
+            if (btnCopy) {
+                btnCopy->click();
+            }
+            diagCopied.show();
+            for (int w = 0; w < 10; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            QPixmap pixCopied = diagCopied.grab();
+            pixCopied.save(QString("%1/diagnostic_dialog_copied_feedback.png").arg(outDir));
+        }
+
+        // Capture FirstRunWizard 4 Pages (ZincGray Theme)
+        {
+            qputenv("XDG_CURRENT_DESKTOP", "KDE");
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            FirstRunWizard wizard;
+            wizard.resize(750, 510);
+            wizard.show();
+            QStringList pageNames = {
+                QStringLiteral("wizard_page_0_welcome.png"),
+                QStringLiteral("wizard_page_1_spacebar.png"),
+                QStringLiteral("wizard_page_2_modules.png"),
+                QStringLiteral("wizard_page_3_performance.png")
+            };
+            for (int p = 0; p < pageNames.size(); ++p) {
+                for (int w = 0; w < 10; ++w) {
+                    app.processEvents();
+                    QThread::msleep(20);
+                }
+                QPixmap pixW = wizard.grab();
+                pixW.save(QString("%1/%2").arg(outDir, pageNames[p]));
+                if (p < pageNames.size() - 1) {
+                    wizard.next();
+                }
+            }
+            wizard.close();
+
+            // Capture Page 0 in Modern Light theme
+            {
+                ThemeManager::setPreset(ThemePreset::ModernLight);
+                FirstRunWizard wizardLight;
+                wizardLight.resize(750, 510);
+                wizardLight.show();
+                for (int w = 0; w < 10; ++w) {
+                    app.processEvents();
+                    QThread::msleep(20);
+                }
+                wizardLight.grab().save(QString("%1/wizard_page_0_welcome_light.png").arg(outDir));
+                wizardLight.close();
+            }
+
+            // Also capture Page 1 in unsupported desktop environment to show the guide/fallback
+            qputenv("XDG_CURRENT_DESKTOP", "XFCE");
+            FirstRunWizard wizardFallback;
+            wizardFallback.resize(750, 510);
+            wizardFallback.show();
+            wizardFallback.next(); // Go to Page 1
+            for (int w = 0; w < 10; ++w) {
+                app.processEvents();
+                QThread::msleep(20);
+            }
+            wizardFallback.grab().save(QString("%1/wizard_page_1_spacebar_fallback.png").arg(outDir));
+            wizardFallback.close();
+        }
+
+        // Capture Share Dialog (Zinc Theme)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            ShareDialog shareDlg(QStringLiteral("/tmp/sample_photo.jpg"));
+            shareDlg.show();
+            for (int w = 0; w < 10; ++w) { app.processEvents(); QThread::msleep(20); }
+            QPixmap pix = shareDlg.grab();
+            pix.save(QString("%1/dialog_share_zinc.png").arg(outDir));
+            shareDlg.close();
+        }
+
+        // Capture Image Resize Dialog (Zinc Theme)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            ImageResizeDialog resizeDlg(3840, 2160);
+            resizeDlg.show();
+            for (int w = 0; w < 10; ++w) { app.processEvents(); QThread::msleep(20); }
+            QPixmap pix = resizeDlg.grab();
+            pix.save(QString("%1/dialog_resize_zinc.png").arg(outDir));
+            resizeDlg.close();
+        }
+
+        // Capture Goto Folder Dialog (Zinc Theme)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            GotoFolderDialog gotoDlg(QStringLiteral("/home/davide/Documents"));
+            gotoDlg.show();
+            for (int w = 0; w < 10; ++w) { app.processEvents(); QThread::msleep(20); }
+            QPixmap pix = gotoDlg.grab();
+            pix.save(QString("%1/dialog_goto_folder_zinc.png").arg(outDir));
+            gotoDlg.close();
+        }
+
+        // Capture PDF Repair Dialog (Zinc Theme)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            PdfRepairDialog repairDlg(QStringLiteral("/home/user/Documents/Damaged_Guide.pdf"));
+            repairDlg.show();
+            for (int w = 0; w < 10; ++w) { app.processEvents(); QThread::msleep(20); }
+            QPixmap pix = repairDlg.grab();
+            pix.save(QString("%1/dialog_pdf_repair_zinc.png").arg(outDir));
+            repairDlg.close();
+        }
+
+        // Capture OCR Dialog (Zinc Theme)
+        {
+            ThemeManager::setPreset(ThemePreset::ZincGray);
+            OcrDialog ocrDlg(QString::fromUtf8("Sample Recognized Document Text\nBubezView OCR Engine"),
+                             QStringLiteral("Document.pdf"),
+                             QStringLiteral("/home/user/Document.pdf"),
+                             true, 0, 1, nullptr);
+            ocrDlg.show();
+            for (int w = 0; w < 10; ++w) { app.processEvents(); QThread::msleep(20); }
+            QPixmap pix = ocrDlg.grab();
+            pix.save(QString("%1/dialog_ocr_zinc.png").arg(outDir));
+            ocrDlg.close();
+        }
+
+        // Restore default
+        ThemeManager::setPreset(ThemePreset::DarkSlate);
+        return 0;
+    }
 
     MainWindow window;
     window.setDaemonMode(parser.isSet(previewerOption));

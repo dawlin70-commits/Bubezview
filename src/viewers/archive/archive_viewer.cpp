@@ -820,6 +820,83 @@ void ArchiveViewer::updateTheme()
             "   border-right: none;"
             "}\n" + ThemeManager::scrollBarStyleSheet(preset)
         );
+    } else if (preset == ThemePreset::ZincGray) {
+        // Zinc Gray Theme (#36373b base, #585960 pills/controls)
+        m_topBar->setStyleSheet("background-color: #36373b; border-bottom: 1px solid rgba(255, 255, 255, 0.12);");
+        m_pillBadge->setStyleSheet(
+            "#ArchivePillBadge {"
+            "   background-color: #585960;"
+            "   border: 1px solid rgba(255, 255, 255, 0.22);"
+            "   border-radius: 13px;"
+            "}"
+        );
+        m_pillText->setStyleSheet("border: none; background: transparent; color: #ffffff; font-size: 11px; font-weight: 500;");
+
+        m_searchEdit->setStyleSheet(
+            "QLineEdit {"
+            "   background-color: #2a2b2e;"
+            "   color: #ffffff;"
+            "   border: 1px solid rgba(255, 255, 255, 0.18);"
+            "   border-radius: 13px;"
+            "   padding: 2px 8px;"
+            "   font-size: 11px;"
+            "}"
+        );
+
+        QString btnStyleZinc =
+            "QPushButton {"
+            "   background-color: #585960;"
+            "   color: #ffffff;"
+            "   border: 1px solid rgba(255, 255, 255, 0.20);"
+            "   border-radius: 13px;"
+            "   padding: 2px 10px;"
+            "   font-size: 11px;"
+            "   font-weight: 500;"
+            "}"
+            "QPushButton:hover {"
+            "   background-color: #82838a;"
+            "}";
+        if (m_addBtn) m_addBtn->setStyleSheet(btnStyleZinc);
+        m_extractBtn->setStyleSheet(btnStyleZinc);
+        m_testBtn->setStyleSheet(btnStyleZinc);
+
+        m_treeWidget->setStyleSheet(
+            "QTreeWidget {"
+            "   background-color: #494a4f;"
+            "   color: #ffffff;"
+            "   border: none;"
+            "   font-size: 13px;"
+            "}"
+            "QTreeWidget::item {"
+            "   height: 38px;"
+            "   padding-left: 6px;"
+            "   padding-right: 12px;"
+            "   border-bottom: 1px solid rgba(255, 255, 255, 0.08);"
+            "}"
+            "QTreeWidget::item:hover {"
+            "   background-color: #55565c;"
+            "}"
+            "QTreeWidget::item:selected {"
+            "   background-color: #727379;"
+            "   color: #ffffff;"
+            "}"
+            "QHeaderView::section {"
+            "   background-color: #3f4044;"
+            "   color: #d1d5db;"
+            "   padding-left: 12px;"
+            "   padding-right: 12px;"
+            "   padding-top: 6px;"
+            "   padding-bottom: 6px;"
+            "   border: none;"
+            "   border-right: 1px solid rgba(255, 255, 255, 0.12);"
+            "   border-bottom: 1px solid rgba(255, 255, 255, 0.16);"
+            "   font-weight: 500;"
+            "   font-size: 12px;"
+            "}"
+            "QHeaderView::section:last {"
+            "   border-right: none;"
+            "}\n" + ThemeManager::scrollBarStyleSheet(preset)
+        );
     }
 }
 
@@ -1596,7 +1673,7 @@ void ArchiveViewer::extractFiles(const QStringList &filterPaths, const QString &
     }
     // 2. Optional performance recommendation: standard archives (ZIP, TAR, unencrypted 7z, ISO, etc.)
     else if (!isLinuxArchive && sevenZBin.isEmpty()) {
-        QSettings settings;
+        QSettings settings("Bubez", "BubezView");
         const bool skipPrompt = settings.value(QStringLiteral("archive/skip_7zip_prompt"), false).toBool();
         if (!skipPrompt) {
             QMessageBox prompt(this);

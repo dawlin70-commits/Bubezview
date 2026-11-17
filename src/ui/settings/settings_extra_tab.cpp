@@ -7,12 +7,16 @@
 #include "first_run_wizard.h"
 #include "plugin_manager.h"
 #include "build_config.h"
+#include "theme_manager.h"
+#include "desktop_integrator.h"
+#include "preload_cache_manager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QComboBox>
+#include <QListView>
 #include <QPushButton>
 #include <QMessageBox>
 #include <QSettings>
@@ -25,10 +29,42 @@
 #include <QScreen>
 #include <QFile>
 #include <QDir>
+#include <QDirIterator>
+#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QProcess>
 
 #ifndef BUBEZ_OPT_LEVEL
 #define BUBEZ_OPT_LEVEL "O2"
 #endif
+
+static qint64 calculateDirectorySize(const QString &dirPath)
+{
+    qint64 total = 0;
+    QDir dir(dirPath);
+    if (!dir.exists()) return 0;
+
+    QDirIterator it(dirPath, QDir::Files | QDir::Hidden | QDir::NoSymLinks, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        it.next();
+        total += it.fileInfo().size();
+    }
+    return total;
+}
+
+static QString formatBytesHuman(qint64 bytes)
+{
+    if (bytes < 1024) {
+        return QString("%1 B").arg(bytes);
+    } else if (bytes < 1024 * 1024) {
+        return QString("%1 KB").arg(QString::number(bytes / 1024.0, 'f', 1));
+    } else if (bytes < 1024 * 1024 * 1024) {
+        return QString("%1 MB").arg(QString::number(bytes / (1024.0 * 1024.0), 'f', 1));
+    } else {
+        return QString("%1 GB").arg(QString::number(bytes / (1024.0 * 1024.0 * 1024.0), 'f', 2));
+    }
+}
 
 SettingsExtraTab::SettingsExtraTab(QWidget *parent)
     : QWidget(parent)
@@ -49,30 +85,89 @@ void SettingsExtraTab::setupUi()
 
     QWidget *content = new QWidget(scrollArea);
     QVBoxLayout *layout = new QVBoxLayout(content);
-    layout->setSpacing(14);
-    layout->setContentsMargins(14, 14, 14, 14);
+    layout->setSpacing(10);
+    layout->setContentsMargins(14, 8, 14, 8);
 
-    // 1. Debugging & Diagnostics Mode Group
-    QGroupBox *grpDebug = new QGroupBox(tr("Debugging & Diagnostics"), content);
-    QVBoxLayout *layDebug = new QVBoxLayout(grpDebug);
-    layDebug->setContentsMargins(12, 10, 12, 12);
+    // =========================================================================
+    // Card 1: Maintenance & Recovery (Manutenzione & Ripristino)
+    // =========================================================================
+    m_grpMaintenance = new QGroupBox(tr("Maintenance && Recovery"), content);
+    QVBoxLayout *layMaint = new QVBoxLayout(m_grpMaintenance);
+    layMaint->setContentsMargins(14, 12, 14, 12);
+    layMaint->setSpacing(10);
+
+    m_lblMaintSub = new QLabel(
+        tr("Rerun initial setup wizard, repair desktop associations and quick-look shortcuts, clear thumbnail cache, or uninstall."),
+        m_grpMaintenance
+    );
+    m_lblMaintSub->setObjectName(QStringLiteral("RowSubtitle"));
+    m_lblMaintSub->setWordWrap(true);
+    layMaint->addWidget(m_lblMaintSub);
+
+    QHBoxLayout *layMaintBtns = new QHBoxLayout();
+    layMaintBtns->setContentsMargins(0, 0, 0, 0);
+    layMaintBtns->setSpacing(10);
+
+    m_btnRunWizard = new QPushButton(tr("🚀 Setup Wizard..."), m_grpMaintenance);
+    m_btnRunWizard->setCursor(Qt::PointingHandCursor);
+    m_btnRunWizard->setMinimumHeight(36);
+    m_btnRunWizard->setToolTip(tr("Rerun the initial configuration wizard to customize appearance, skins, and presets"));
+    connect(m_btnRunWizard, &QPushButton::clicked, this, &SettingsExtraTab::launchSetupWizard);
+
+    m_btnReinstall = new QPushButton(tr("🔄 Repair Integrations"), m_grpMaintenance);
+    m_btnReinstall->setCursor(Qt::PointingHandCursor);
+    m_btnReinstall->setMinimumHeight(36);
+    m_btnReinstall->setToolTip(tr("Restore desktop menu launcher, file manager right-click menus, and spacebar quick-look"));
+    connect(m_btnReinstall, &QPushButton::clicked, this, &SettingsExtraTab::reinstallIntegrations);
+
+    m_btnClearCache = new QPushButton(tr("🧹 Clear Cache"), m_grpMaintenance);
+    m_btnClearCache->setCursor(Qt::PointingHandCursor);
+    m_btnClearCache->setMinimumHeight(36);
+    m_btnClearCache->setToolTip(tr("Clear thumbnail caches and temporary session files from ~/.cache/Bubez"));
+    connect(m_btnClearCache, &QPushButton::clicked, this, &SettingsExtraTab::clearThumbnailCache);
+
+    m_btnUninstall = new QPushButton(tr("🗑️ Uninstall..."), m_grpMaintenance);
+    m_btnUninstall->setCursor(Qt::PointingHandCursor);
+    m_btnUninstall->setMinimumHeight(36);
+    m_btnUninstall->setToolTip(tr("Cleanly uninstall BubezView and unregister desktop components"));
+    connect(m_btnUninstall, &QPushButton::clicked, this, &SettingsExtraTab::uninstallApplication);
+
+    layMaintBtns->addWidget(m_btnRunWizard);
+    layMaintBtns->addWidget(m_btnReinstall);
+    layMaintBtns->addWidget(m_btnClearCache);
+    layMaintBtns->addWidget(m_btnUninstall);
+    layMaint->addLayout(layMaintBtns);
+
+    layout->addWidget(m_grpMaintenance);
+
+    // =========================================================================
+    // Card 2: Diagnostics & Bug Reports (Diagnostica & Segnalazione Bug)
+    // =========================================================================
+    m_grpDebug = new QGroupBox(tr("Diagnostics && Bug Reports"), content);
+    QVBoxLayout *layDebug = new QVBoxLayout(m_grpDebug);
+    layDebug->setContentsMargins(14, 12, 14, 12);
     layDebug->setSpacing(10);
 
-    QLabel *lblDebugIntro = new QLabel(
-        tr("Manage diagnostic tracing, session logs, and developer compilation levels. In case of issues, you can inspect real-time logs or copy a complete diagnostic report."),
-        grpDebug
+    m_lblDebugSub = new QLabel(
+        tr("Configure logging verbosity or copy technical specifications for bug reporting."),
+        m_grpDebug
     );
-    lblDebugIntro->setWordWrap(true);
-    lblDebugIntro->setStyleSheet("color: #64748b; font-size: 11px;");
-    layDebug->addWidget(lblDebugIntro);
+    m_lblDebugSub->setObjectName(QStringLiteral("RowSubtitle"));
+    m_lblDebugSub->setWordWrap(true);
+    layDebug->addWidget(m_lblDebugSub);
 
     QHBoxLayout *rowCombo = new QHBoxLayout();
-    QLabel *lblMode = new QLabel(tr("<b>Diagnostic Mode:</b>"), grpDebug);
-    m_comboDebugLevel = new QComboBox(grpDebug);
+    rowCombo->setContentsMargins(0, 0, 0, 0);
+    rowCombo->setSpacing(10);
+    QLabel *lblMode = new QLabel(tr("Diagnostic Mode:"), m_grpDebug);
+    lblMode->setObjectName(QStringLiteral("RowTitle"));
+
+    m_comboDebugLevel = new QComboBox(m_grpDebug);
+    m_comboDebugLevel->setView(new QListView(m_comboDebugLevel));
     m_comboDebugLevel->setCursor(Qt::PointingHandCursor);
     m_comboDebugLevel->addItem(tr("Disabled — Standard User Mode (Optimal performance)"), 0);
-    m_comboDebugLevel->addItem(tr("Level 1: Lightweight Log (No recompile, session log & CLI output)"), 1);
-    m_comboDebugLevel->addItem(tr("Level 2: Medium Debug (-O1 with symbols, fast incremental build)"), 2);
+    m_comboDebugLevel->addItem(tr("Level 1: Lightweight Log (Session logs to ~/.cache and CLI)"), 1);
+    m_comboDebugLevel->addItem(tr("Level 2: Medium Debug (-O1 with debug symbols)"), 2);
     m_comboDebugLevel->addItem(tr("Level 3: Deep Debug (-O0 full symbols & frame pointers)"), 3);
 
     QSettings settings("Bubez", "BubezView");
@@ -96,59 +191,37 @@ void SettingsExtraTab::setupUi()
     rowCombo->addWidget(m_comboDebugLevel, 1);
     layDebug->addLayout(rowCombo);
 
-    m_lblDebugStatus = new QLabel(grpDebug);
+    m_lblDebugStatus = new QLabel(m_grpDebug);
     m_lblDebugStatus->setWordWrap(true);
-    m_lblDebugStatus->setStyleSheet("QLabel { background-color: rgba(100, 116, 139, 0.08); border: 1px solid rgba(100, 116, 139, 0.2); border-radius: 6px; padding: 8px 12px; font-size: 11px; }");
     layDebug->addWidget(m_lblDebugStatus);
     updateDebugStatusLabel();
 
-    QLabel *lblTermHint = new QLabel(
-        tr("💡 <b>Live Terminal Debugging:</b> To trace crashes, console errors, or real-time events live without modifying compiler flags, run in terminal: <code>bubezview --debug</code>"),
-        grpDebug
+    QHBoxLayout *layBottomAction = new QHBoxLayout();
+    layBottomAction->setContentsMargins(0, 2, 0, 0);
+    layBottomAction->setSpacing(12);
+
+    m_lblTermHint = new QLabel(
+        tr("💡 Terminal trace: <code>bubezview --debug</code>"),
+        m_grpDebug
     );
-    lblTermHint->setWordWrap(true);
-    lblTermHint->setStyleSheet("QLabel { background-color: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); border-radius: 6px; padding: 8px 12px; font-size: 11px; }");
-    layDebug->addWidget(lblTermHint);
+    m_lblTermHint->setTextFormat(Qt::RichText);
+    layBottomAction->addWidget(m_lblTermHint, 1, Qt::AlignVCenter);
 
-    QHBoxLayout *layReport = new QHBoxLayout();
-    QLabel *lblReportDesc = new QLabel(tr("Copy full system specifications, active compiler flags, soft dependencies, and session debug logs:"), grpDebug);
-    lblReportDesc->setWordWrap(true);
-    lblReportDesc->setStyleSheet("color: #475569; font-size: 11px;");
+    m_btnCopyReport = new QPushButton(tr("📋 Copy System Report"), m_grpDebug);
+    m_btnCopyReport->setCursor(Qt::PointingHandCursor);
+    m_btnCopyReport->setMinimumHeight(32);
+    connect(m_btnCopyReport, &QPushButton::clicked, this, &SettingsExtraTab::copyFullReportToClipboard);
+    layBottomAction->addWidget(m_btnCopyReport, 0, Qt::AlignVCenter);
 
-    QPushButton *btnCopyReport = new QPushButton(tr("📋 Copy Full Diagnostics Report"), grpDebug);
-    btnCopyReport->setCursor(Qt::PointingHandCursor);
-    btnCopyReport->setMinimumWidth(220);
-    btnCopyReport->setStyleSheet("QPushButton { background-color: #0284c7; color: white; font-weight: bold; padding: 6px 14px; border-radius: 4px; } QPushButton:hover { background-color: #0369a1; }");
-    connect(btnCopyReport, &QPushButton::clicked, this, &SettingsExtraTab::copyFullReportToClipboard);
+    layDebug->addLayout(layBottomAction);
 
-    layReport->addWidget(lblReportDesc, 1);
-    layReport->addWidget(btnCopyReport);
-    layDebug->addLayout(layReport);
-
-    layout->addWidget(grpDebug);
-
-    // 2. Guided Setup & Maintenance Group
-    QGroupBox *grpWizard = new QGroupBox(tr("Setup & Maintenance"), content);
-    QHBoxLayout *layWizard = new QHBoxLayout(grpWizard);
-    layWizard->setContentsMargins(12, 10, 12, 12);
-
-    QLabel *lblWizard = new QLabel(tr("Re-run the initial onboarding assistant to reconfigure desktop integrations, shortcut triggers, and default settings:"), grpWizard);
-    lblWizard->setWordWrap(true);
-    lblWizard->setStyleSheet("color: #475569; font-size: 11px;");
-
-    QPushButton *btnRunWizard = new QPushButton(tr("Run Setup Wizard..."), grpWizard);
-    btnRunWizard->setCursor(Qt::PointingHandCursor);
-    btnRunWizard->setMinimumWidth(180);
-    connect(btnRunWizard, &QPushButton::clicked, this, &SettingsExtraTab::launchSetupWizard);
-
-    layWizard->addWidget(lblWizard, 1);
-    layWizard->addWidget(btnRunWizard);
-    layout->addWidget(grpWizard);
-
-    layout->addStretch();
+    layout->addWidget(m_grpDebug);
+    layout->addStretch(1);
 
     scrollArea->setWidget(content);
     rootLayout->addWidget(scrollArea);
+
+    updateThemeStyles();
 }
 
 void SettingsExtraTab::updateDebugStatusLabel()
@@ -161,26 +234,17 @@ void SettingsExtraTab::updateDebugStatusLabel()
 
     switch (idx) {
     case 0:
-        m_lblDebugStatus->setText(QString(tr("🟢 <b>Current Status: Standard User Mode</b><br>"
-                                             "• Configured Optimization: <b>-%1</b> (Compiled binary: <b>-%2</b>)<br>"
-                                             "• Verbose Logging: <b>Disabled</b><br>"
-                                             "• Peak runtime performance and battery efficiency enabled.")).arg(configuredOpt, compiledOpt));
+        m_lblDebugStatus->setText(QString(tr("● <b>Standard User Mode:</b> Optimization -%1 (binary: -%2) • Logging disabled • Peak performance"))
+                                  .arg(configuredOpt, compiledOpt));
         break;
     case 1:
-        m_lblDebugStatus->setText(QString(tr("🟡 <b>Current Status: Level 1 — Lightweight Log</b><br>"
-                                             "• Configured Optimization: <b>-%1</b> (No recompilation required)<br>"
-                                             "• Verbose Logging: <b>Active</b><br>"
-                                             "• Session logs streamed live to terminal and <code>~/.cache/Bubez/BubezView/bubezview.log</code>.")).arg(compiledOpt));
+        m_lblDebugStatus->setText(QString(tr("● <b>Level 1 (Lightweight Log):</b> Verbose logging active to terminal and <code>~/.cache/Bubez/BubezView/bubezview.log</code>")));
         break;
     case 2:
-        m_lblDebugStatus->setText(QString(tr("🟠 <b>Current Status: Level 2 — Medium Debug (-O1)</b><br>"
-                                             "• Optimization: <b>-O1</b> with debug symbols (<code>-g</code>)<br>"
-                                             "• Fast incremental recompile; suitable for general bug tracking.")));
+        m_lblDebugStatus->setText(QString(tr("● <b>Level 2 (Medium Debug):</b> Recompiled with -O1 -g for incremental bug tracing")));
         break;
     case 3:
-        m_lblDebugStatus->setText(QString(tr("🔴 <b>Current Status: Level 3 — Deep Debug (-O0)</b><br>"
-                                             "• Optimization: <b>-O0</b> (Unoptimized with full debug symbols and frame pointers)<br>"
-                                             "• Maximum debuggability for GDB, Valgrind, and backtraces.")));
+        m_lblDebugStatus->setText(QString(tr("● <b>Level 3 (Deep Debug):</b> -O0 unoptimized with full symbols & frame pointers for GDB/Valgrind")));
         break;
     default:
         break;
@@ -385,6 +449,7 @@ void SettingsExtraTab::copyFullReportToClipboard()
     report << QString("- Office converter (libreoffice): %1").arg(checkCmd("libreoffice"));
     report << QString("- OCR engine (tesseract): %1").arg(checkCmd("tesseract"));
     report << QString("- PDF repair (qpdf): %1").arg(checkCmd("qpdf"));
+    report << QString("- MuPDF engine (mutool): %1").arg(checkCmd("mutool"));
     report << QString("- PDF image extractor (pdfimages): %1").arg(checkCmd("pdfimages"));
     report << QString("- Multimedia fallback (ffmpeg): %1").arg(checkCmd("ffmpeg"));
 
@@ -397,7 +462,24 @@ void SettingsExtraTab::copyFullReportToClipboard()
     if (logDir.isEmpty()) {
         logDir = QDir::homePath() + "/.cache/BubezView";
     }
-    const QString logFilePath = logDir + "/bubezview.log";
+
+    QStringList candidateLogPaths = {
+        logDir + "/bubezview.log",
+        QDir::homePath() + "/.cache/Bubez/BubezView/bubezview.log",
+        QDir::homePath() + "/.cache/BubezView/bubezview.log"
+    };
+    candidateLogPaths.removeDuplicates();
+
+    QString logFilePath;
+    for (const QString &candidate : candidateLogPaths) {
+        if (QFile::exists(candidate)) {
+            logFilePath = candidate;
+            break;
+        }
+    }
+    if (logFilePath.isEmpty()) {
+        logFilePath = candidateLogPaths.first();
+    }
 
     QFile file(logFilePath);
     if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -435,4 +517,480 @@ void SettingsExtraTab::launchSetupWizard()
         emit setupWizardCompleted();
         emit themeChanged();
     }
+}
+
+void SettingsExtraTab::reinstallIntegrations()
+{
+    const auto de = DesktopIntegrator::currentDesktop();
+    const QString deName = DesktopIntegrator::desktopName();
+
+    // 1. Install desktop app launcher (.desktop in ~/.local/share/applications)
+    DesktopIntegrator::installAppMenu();
+
+    // 2. Install context menu actions (Nautilus, Nemo, Dolphin)
+    DesktopIntegrator::enableContextMenu();
+
+    // 3. Install desktop-specific QuickLook integration (Spacebar trigger)
+    QString chosenShortcut = QStringLiteral("Space");
+    if (de == DesktopIntegrator::DesktopEnv::KDE) {
+        chosenShortcut = DesktopIntegrator::currentDolphinShortcut();
+        DesktopIntegrator::enableDolphin(chosenShortcut);
+    } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+        DesktopIntegrator::enableGnomeNemo();
+    } else {
+        DesktopIntegrator::enableDolphin(chosenShortcut);
+        DesktopIntegrator::enableGnomeNemo();
+    }
+
+    // 4. Update system desktop databases
+    const QString home = QDir::homePath();
+    QProcess::execute(QStringLiteral("update-desktop-database"), QStringList() << (home + QStringLiteral("/.local/share/applications")));
+    if (de == DesktopIntegrator::DesktopEnv::KDE) {
+        QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca6"), QStringList() << QStringLiteral("--noincremental"));
+        QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca5"), QStringList() << QStringLiteral("--noincremental"));
+    }
+
+    const QString msg = tr("Le integrazioni desktop per <b>%1</b> sono state ripristinate con successo!<br><br>"
+                           "• <b>Menu Applicazioni:</b> Registrato <code>bubezview.desktop</code> in <code>~/.local/share/applications</code><br>"
+                           "• <b>Menu Contestuale:</b> Azioni del file manager attive (Dolphin / Nautilus / Nemo)<br>"
+                           "• <b>Anteprima Rapida (QuickLook):</b> Scorciatoia <b>%2</b> riconfigurata<br>"
+                           "• <b>Cache di Sistema:</b> Database desktop e sycoca aggiornati.")
+                           .arg(deName, chosenShortcut);
+
+    QMessageBox::information(this, tr("Integrazioni Ripristinate"), msg);
+}
+
+void SettingsExtraTab::clearThumbnailCache()
+{
+    // Clear in-memory preload image cache
+    PreloadCacheManager::instance().clear();
+
+    const QString home = QDir::homePath();
+    QStringList cachePaths = {
+        QStandardPaths::writableLocation(QStandardPaths::CacheLocation),
+        home + QStringLiteral("/.cache/Bubez/BubezView"),
+        home + QStringLiteral("/.cache/BubezView"),
+        home + QStringLiteral("/.cache/Bubez")
+    };
+    cachePaths.removeDuplicates();
+
+    qint64 totalFreed = 0;
+    int filesRemoved = 0;
+
+    for (const QString &path : cachePaths) {
+        if (path.isEmpty() || !QDir(path).exists()) continue;
+
+        totalFreed += calculateDirectorySize(path);
+
+        QDir dir(path);
+        const QFileInfoList entries = dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden);
+        for (const QFileInfo &fi : entries) {
+            if (fi.isDir()) {
+                QDir subDir(fi.absoluteFilePath());
+                subDir.removeRecursively();
+            } else {
+                QFile::remove(fi.absoluteFilePath());
+                filesRemoved++;
+            }
+        }
+    }
+
+    const QString msg = tr("La cache di BubezView è stata svuotata con successo!<br><br>"
+                           "• <b>Spazio liberato su disco:</b> %1<br>"
+                           "• <b>File temporanei rimossi:</b> %2<br>"
+                           "• <b>Cache in memoria:</b> azzerata e rilasciata")
+                           .arg(formatBytesHuman(totalFreed), QString::number(filesRemoved));
+
+    QMessageBox::information(this, tr("Cache Svuotata"), msg);
+}
+
+void SettingsExtraTab::uninstallApplication()
+{
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Disinstalla BubezView"));
+    dlg.setMinimumWidth(460);
+
+    QVBoxLayout *dlgLay = new QVBoxLayout(&dlg);
+    dlgLay->setSpacing(12);
+    dlgLay->setContentsMargins(18, 18, 18, 18);
+
+    QLabel *lblTitle = new QLabel(tr("<h3>Disinstallazione di BubezView</h3>"), &dlg);
+    dlgLay->addWidget(lblTitle);
+
+    QLabel *lblDesc = new QLabel(
+        tr("Stai per rimuovere <b>BubezView</b> dal tuo account utente.<br><br>"
+           "Verranno rimossi i seguenti componenti di sistema:<br>"
+           "• Eseguibili utente (<code>~/.local/bin/bubezview*</code>)<br>"
+           "• Estensioni e moduli (<code>~/.local/lib/bubezview/</code>)<br>"
+           "• Collegamento menu applicazioni (<code>bubezview.desktop</code>)<br>"
+           "• Azioni contestuali del file manager (Dolphin, Nautilus, Nemo)"),
+        &dlg
+    );
+    lblDesc->setWordWrap(true);
+    dlgLay->addWidget(lblDesc);
+
+    QCheckBox *chkCache = new QCheckBox(tr("Svuota e rimuovi la cache miniature (~/.cache/Bubez)"), &dlg);
+    chkCache->setChecked(true);
+    dlgLay->addWidget(chkCache);
+
+    QCheckBox *chkConfig = new QCheckBox(tr("Rimuovi impostazioni personali, cronologia e layout (~/.config/Bubez)"), &dlg);
+    chkConfig->setChecked(false);
+    dlgLay->addWidget(chkConfig);
+
+    QLabel *lblWarn = new QLabel(tr("<span style='color: #ef4444; font-weight: 500;'>⚠️ Al termine della disinstallazione, l'applicazione verrà chiusa.</span>"), &dlg);
+    lblWarn->setWordWrap(true);
+    dlgLay->addWidget(lblWarn);
+
+    QDialogButtonBox *btnBox = new QDialogButtonBox(&dlg);
+    QPushButton *btnCancel = btnBox->addButton(tr("Annulla"), QDialogButtonBox::RejectRole);
+    btnCancel->setCursor(Qt::PointingHandCursor);
+    QPushButton *btnConfirm = btnBox->addButton(tr("Disinstalla Ora"), QDialogButtonBox::AcceptRole);
+    btnConfirm->setCursor(Qt::PointingHandCursor);
+    btnConfirm->setStyleSheet(
+        QStringLiteral("QPushButton {"
+                       "  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #dc2626, stop:1 #b91c1c);"
+                       "  color: white;"
+                       "  font-weight: bold;"
+                       "  padding: 6px 14px;"
+                       "  border: 1px solid rgba(239, 68, 68, 0.4);"
+                       "  border-radius: 6px;"
+                       "}"
+                       "QPushButton:hover {"
+                       "  background: #ef4444;"
+                       "}")
+    );
+
+    connect(btnBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(btnBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    dlgLay->addWidget(btnBox);
+
+    if (dlg.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    const QString home = QDir::homePath();
+
+    // 1. Remove Desktop Integrations
+    DesktopIntegrator::uninstallAppMenu();
+    DesktopIntegrator::disableDolphin();
+    DesktopIntegrator::disableGnomeNemo();
+    DesktopIntegrator::disableContextMenu();
+
+    QFile::remove(home + QStringLiteral("/.local/share/applications/bubezview.desktop"));
+    QFile::remove(home + QStringLiteral("/.local/share/kio/servicemenus/bubezview.desktop"));
+    QFile::remove(home + QStringLiteral("/.local/share/kservices5/ServiceMenus/bubezview.desktop"));
+    QFile::remove(home + QStringLiteral("/.local/share/nautilus/scripts/Preview with BubezView"));
+    QFile::remove(home + QStringLiteral("/.local/share/nautilus/scripts/Anteprima con BubezView"));
+    QFile::remove(home + QStringLiteral("/.local/share/nemo/actions/bubezview.nemo_action"));
+
+    QDir shareDir(home + QStringLiteral("/.local/share/bubezview"));
+    if (shareDir.exists()) shareDir.removeRecursively();
+    QDir shareDirBubez(home + QStringLiteral("/.local/share/BubezView"));
+    if (shareDirBubez.exists()) shareDirBubez.removeRecursively();
+
+    // 2. Remove Binaries
+    QFile::remove(home + QStringLiteral("/.local/bin/bubezview"));
+    QFile::remove(home + QStringLiteral("/.local/bin/bubezview-dev"));
+
+    // 3. Remove Modular Plugins
+    QDir libDir(home + QStringLiteral("/.local/lib/bubezview"));
+    if (libDir.exists()) {
+        libDir.removeRecursively();
+    }
+
+    // 4. Optionally Remove Cache
+    if (chkCache->isChecked()) {
+        QDir c1(home + QStringLiteral("/.cache/Bubez"));
+        if (c1.exists()) c1.removeRecursively();
+        QDir c2(home + QStringLiteral("/.cache/BubezView"));
+        if (c2.exists()) c2.removeRecursively();
+    }
+
+    // 5. Optionally Remove Config
+    if (chkConfig->isChecked()) {
+        QDir cfg1(home + QStringLiteral("/.config/Bubez"));
+        if (cfg1.exists()) cfg1.removeRecursively();
+        QDir cfg2(home + QStringLiteral("/.config/BubezView"));
+        if (cfg2.exists()) cfg2.removeRecursively();
+    }
+
+    // 6. Update Desktop Database
+    QProcess::execute(QStringLiteral("update-desktop-database"), QStringList() << (home + QStringLiteral("/.local/share/applications")));
+    QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca6"), QStringList() << QStringLiteral("--noincremental"));
+    QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca5"), QStringList() << QStringLiteral("--noincremental"));
+
+    // 7. Inform user and exit application
+    QMessageBox::information(
+        nullptr,
+        tr("Disinstallazione Completata"),
+        tr("<b>BubezView</b> è stato rimosso con successo dal sistema.<br><br>"
+           "Grazie per aver utilizzato BubezView! L'applicazione verrà ora chiusa.")
+    );
+
+    QCoreApplication::quit();
+}
+
+void SettingsExtraTab::updateThemeStyles()
+{
+    const ThemePreset active = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    const bool dark = ThemeManager::isDarkTheme();
+
+    QString cardBg;
+    QString cardBorder;
+    QString pillBg;
+    QString pillBorder;
+    QString pillColor;
+    QString textCol;
+    QString comboBg;
+    QString comboBorder;
+    QString comboPopupBg;
+    QString comboSelectionBg;
+    QString comboSelectionText;
+    QString hoverBorder;
+    QString btnBg;
+    QString btnHover;
+
+    if (active == ThemePreset::ZincGray) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(56, 57, 62, 0.78), stop:0.5 rgba(46, 47, 51, 0.82), stop:1 rgba(38, 39, 43, 0.88))");
+        cardBorder = QStringLiteral("rgba(255, 255, 255, 0.12)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        pillBorder = QStringLiteral("rgba(255, 255, 255, 0.22)");
+        pillColor = QStringLiteral("#ffffff");
+        textCol = QStringLiteral("#ffffff");
+
+        comboBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        comboBorder = QStringLiteral("rgba(255, 255, 255, 0.22)");
+        comboPopupBg = QStringLiteral("#2a2b2e");
+        comboSelectionBg = QStringLiteral("#585960");
+        comboSelectionText = QStringLiteral("#ffffff");
+        hoverBorder = QStringLiteral("rgba(255, 255, 255, 0.40)");
+
+        btnBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        btnHover = QStringLiteral("#63646c");
+    } else if (active == ThemePreset::ModernLight || active == ThemePreset::BreezeLight) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.70), stop:0.5 rgba(246, 248, 251, 0.65), stop:1 rgba(238, 241, 246, 0.60))");
+        cardBorder = QStringLiteral("rgba(15, 23, 42, 0.09)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e2e6ec)");
+        pillBorder = QStringLiteral("rgba(0, 0, 0, 0.14)");
+        pillColor = QStringLiteral("#334155");
+        textCol = QStringLiteral("#1e293b");
+
+        comboBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e8ebf0)");
+        comboBorder = QStringLiteral("rgba(0, 0, 0, 0.14)");
+        comboPopupBg = QStringLiteral("#f8fafc");
+        comboSelectionBg = QStringLiteral("#0284c7");
+        comboSelectionText = QStringLiteral("#ffffff");
+        hoverBorder = QStringLiteral("#0284c7");
+
+        btnBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0284c7, stop:1 #0369a1)");
+        btnHover = QStringLiteral("#0ea5e9");
+    } else {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 41, 59, 0.65), stop:0.5 rgba(22, 30, 46, 0.70), stop:1 rgba(15, 22, 34, 0.78))");
+        cardBorder = QStringLiteral("rgba(56, 189, 248, 0.22)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #253347, stop:1 #1a2434)");
+        pillBorder = QStringLiteral("rgba(56, 189, 248, 0.38)");
+        pillColor = QStringLiteral("#7dd3fc");
+        textCol = QStringLiteral("#f8fafc");
+
+        comboBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #253347, stop:1 #1a2434)");
+        comboBorder = QStringLiteral("rgba(56, 189, 248, 0.38)");
+        comboPopupBg = QStringLiteral("#151c28");
+        comboSelectionBg = QStringLiteral("#0284c7");
+        comboSelectionText = QStringLiteral("#ffffff");
+        hoverBorder = QStringLiteral("#38bdf8");
+
+        btnBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0284c7, stop:1 #0369a1)");
+        btnHover = QStringLiteral("#0ea5e9");
+    }
+
+    const QString style = QString(
+        "QGroupBox {"
+        "  font-weight: 600;"
+        "  font-size: 12px;"
+        "  color: %1;"
+        "  border: 1px solid %2;"
+        "  border-radius: 14px;"
+        "  background: %3;"
+        "  margin-top: 14px;"
+        "  padding: 16px 14px 12px 14px;"
+        "}"
+        "QGroupBox::title {"
+        "  subcontrol-origin: margin;"
+        "  subcontrol-position: top left;"
+        "  left: 14px;"
+        "  top: 1px;"
+        "  padding: 2px 12px;"
+        "  background: %4;"
+        "  color: %5;"
+        "  border: 1px solid %6;"
+        "  border-radius: 8px;"
+        "  font-size: 11px;"
+        "  font-weight: bold;"
+        "}"
+        "QLabel {"
+        "  color: %1;"
+        "  font-size: 12px;"
+        "  font-weight: 500;"
+        "  background: transparent;"
+        "}"
+        "QPushButton {"
+        "  background: %13;"
+        "  color: #ffffff;"
+        "  border: 1px solid %6;"
+        "  border-radius: 10px;"
+        "  padding: 6px 14px;"
+        "  font-weight: 600;"
+        "  font-size: 11px;"
+        "}"
+        "QPushButton:hover {"
+        "  background: %14;"
+        "  border-color: %8;"
+        "}"
+        "QComboBox {"
+        "  background: %7;"
+        "  color: %1;"
+        "  border: 1px solid %6;"
+        "  border-radius: 10px;"
+        "  padding: 6px 30px 6px 12px;"
+        "  font-size: 12px;"
+        "  min-height: 26px;"
+        "}"
+        "QComboBox:hover {"
+        "  border-color: %8;"
+        "}"
+        "QComboBox::drop-down {"
+        "  border: none;"
+        "  subcontrol-origin: padding;"
+        "  subcontrol-position: top right;"
+        "  width: 24px;"
+        "}"
+        "QComboBox::down-arrow {"
+        "  image: url(%9);"
+        "  width: 12px;"
+        "  height: 12px;"
+        "  margin-right: 6px;"
+        "}"
+        "QComboBox QAbstractItemView {"
+        "  background: %10;"
+        "  color: %1;"
+        "  border: 1px solid %2;"
+        "  border-radius: 10px;"
+        "  selection-background-color: %11;"
+        "  selection-color: %12;"
+        "  padding: 4px;"
+        "  outline: none;"
+        "}"
+        "QComboBox QAbstractItemView::item {"
+        "  min-height: 26px;"
+        "  padding: 5px 12px;"
+        "  border-radius: 6px;"
+        "  color: %1;"
+        "  background: transparent;"
+        "}"
+        "QComboBox QAbstractItemView::item:selected, QComboBox QAbstractItemView::item:hover {"
+        "  background-color: %11;"
+        "  color: %12;"
+        "}"
+    ).arg(textCol, cardBorder, cardBg, pillBg, pillColor, pillBorder, comboBg, hoverBorder,
+          dark ? QStringLiteral(":/icons/chevron_down_light.svg") : QStringLiteral(":/icons/chevron_down_dark.svg"),
+          comboPopupBg, comboSelectionBg, comboSelectionText, btnBg, btnHover);
+
+    setStyleSheet(style);
+
+    const QString popupViewStyle = QString(
+        "QListView {"
+        "  background-color: %1;"
+        "  color: %2;"
+        "  border: 1px solid %3;"
+        "  border-radius: 8px;"
+        "  padding: 4px;"
+        "  outline: none;"
+        "}"
+        "QListView::item {"
+        "  min-height: 26px;"
+        "  padding: 5px 12px;"
+        "  border-radius: 6px;"
+        "  color: %2;"
+        "  background: transparent;"
+        "}"
+        "QListView::item:hover, QListView::item:selected {"
+        "  background-color: %4;"
+        "  color: %5;"
+        "}"
+    ).arg(comboPopupBg, textCol, cardBorder, comboSelectionBg, comboSelectionText);
+
+    if (m_comboDebugLevel && m_comboDebugLevel->view()) {
+        m_comboDebugLevel->view()->setStyleSheet(popupViewStyle);
+    }
+
+    if (m_btnUninstall) {
+        m_btnUninstall->setStyleSheet(
+            QStringLiteral("QPushButton {"
+                           "  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #dc2626, stop:1 #b91c1c);"
+                           "  color: #ffffff;"
+                           "  border: 1px solid rgba(239, 68, 68, 0.4);"
+                           "  border-radius: 8px;"
+                           "  padding: 6px 14px;"
+                           "  font-weight: 600;"
+                           "  font-size: 11px;"
+                           "}"
+                           "QPushButton:hover {"
+                           "  background: #ef4444;"
+                           "  border-color: #fca5a5;"
+                           "}"
+                           "QPushButton:pressed {"
+                           "  background: #991b1b;"
+                           "}")
+        );
+    }
+
+    if (m_btnCopyReport) {
+        m_btnCopyReport->setStyleSheet(
+            QStringLiteral("QPushButton {"
+                           "  background-color: #0284c7;"
+                           "  color: #ffffff;"
+                           "  border: 1px solid #38bdf8;"
+                           "  border-radius: 8px;"
+                           "  padding: 6px 14px;"
+                           "  font-weight: 600;"
+                           "  font-size: 11px;"
+                           "}"
+                           "QPushButton:hover {"
+                           "  background-color: #0369a1;"
+                           "  border-color: #7dd3fc;"
+                           "}")
+        );
+    }
+
+    if (m_lblDebugStatus) {
+        if (dark) {
+            m_lblDebugStatus->setStyleSheet(
+                QStringLiteral("QLabel {"
+                               "  background-color: rgba(255, 255, 255, 0.05);"
+                               "  border: 1px solid rgba(255, 255, 255, 0.10);"
+                               "  border-radius: 8px;"
+                               "  padding: 6px 10px;"
+                               "  font-size: 11px;"
+                               "  color: #94a3b8;"
+                               "}")
+            );
+        } else {
+            m_lblDebugStatus->setStyleSheet(
+                QStringLiteral("QLabel {"
+                               "  background-color: rgba(15, 23, 42, 0.04);"
+                               "  border: 1px solid rgba(15, 23, 42, 0.08);"
+                               "  border-radius: 8px;"
+                               "  padding: 6px 10px;"
+                               "  font-size: 11px;"
+                               "  color: #475569;"
+                               "}")
+            );
+        }
+    }
+
+    const QString subColor = (active == ThemePreset::ZincGray) ? QStringLiteral("#a1a1aa") :
+                             (dark ? QStringLiteral("#94a3b8") : QStringLiteral("#64748b"));
+    if (m_lblMaintSub) m_lblMaintSub->setStyleSheet(QStringLiteral("color: %1; font-size: 11px;").arg(subColor));
+    if (m_lblDebugSub) m_lblDebugSub->setStyleSheet(QStringLiteral("color: %1; font-size: 11px;").arg(subColor));
+    if (m_lblTermHint) m_lblTermHint->setStyleSheet(QStringLiteral("color: %1; font-size: 11px;").arg(subColor));
 }

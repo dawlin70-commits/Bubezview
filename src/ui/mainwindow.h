@@ -87,6 +87,7 @@ private:
     MinimalHeaderBar *m_minimalHeaderBar;
     QWidget *m_breadcrumbWidget;
     QHBoxLayout *m_breadcrumbLayout;
+    QString m_lastBreadcrumbDir;
     QLabel *m_fileIndexLabel;
     QLabel *m_fileInfoLabel;
     QLabel *m_statusLabel;

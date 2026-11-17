@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "frameless_dialog.h"
 #include <QLabel>
 #include <QProgressBar>
 #include <QPushButton>
@@ -16,7 +16,7 @@
 /**
  * @brief Dialog that informs users about a new version and executes in-app updates.
  */
-class UpdateDialog : public QDialog {
+class UpdateDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

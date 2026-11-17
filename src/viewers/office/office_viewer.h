@@ -11,6 +11,8 @@
 #include <QByteArray>
 #include <QThread>
 #include <QProcess>
+#include <QPointer>
+#include <atomic>
 
 class IPdfViewer;
 
@@ -31,7 +33,6 @@ protected:
 private:
     QString m_sourcePath;
     std::atomic<bool> m_cancelled{false};
-    QProcess *m_process{nullptr};
 };
 
 /**
@@ -124,7 +125,7 @@ private:
     IPdfViewer *m_pdfViewer;
     QTextBrowser *m_textBrowser;
 
-    OfficeConvertWorker *m_worker;
+    QPointer<OfficeConvertWorker> m_worker;
     QString m_currentFilePath;
     QString m_convertedPdfPath;
     int m_wordCount;

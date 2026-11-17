@@ -67,7 +67,7 @@ public:
      * @param initialPos Fallback position if initialRect is invalid.
      */
     void showText(const QString &text, const QFont &font, const QColor &textColor,
-                  PdfTextBgMode bgMode, const QColor &bgColor,
+                  PdfTextBgMode bgMode = PdfTextBgMode::Transparent, const QColor &bgColor = QColor(),
                   const QRect &initialRect = QRect(), const QPoint &initialPos = QPoint());
 
     /**
@@ -208,6 +208,8 @@ public:
     QColor textBgColor() const { return m_textBgColor; }
     void setTextBgColor(const QColor &color);
     QImage image() const { return m_image; }
+    void fitToPageWidth();
+    void fitToFullPage();
     qreal watermarkAngle() const { return m_angle; }
     qreal watermarkOpacity() const { return m_opacity; }
     int watermarkStyle() const { return m_watermarkStyle; }
@@ -235,6 +237,11 @@ public:
     QRect dragHandleRect() const;
 
 signals:
+    /**
+     * @brief Emitted when placement vs in-place edit mode toggles.
+     */
+    void placementModeChanged(bool isPlacement);
+
     /**
      * @brief Emitted whenever the box position or size changes during user interaction.
      */
@@ -265,12 +272,20 @@ signals:
      */
     void cutAreaRequested();
 
-
+    /**
+     * @brief Emitted when the user requests copying selectable vector text from the selected area.
+     */
+    void copyAreaTextRequested();
 
     /**
-     * @brief Emitted when the user requests copying the selected area.
+     * @brief Emitted when the user requests copying the selected area as an image.
      */
     void copyAreaRequested();
+
+    /**
+     * @brief Emitted when the user requests OCR recognition on the selected area.
+     */
+    void ocrAreaRequested();
 
     /**
      * @brief Emitted when the user presses Undo (Ctrl+Z).
@@ -310,8 +325,8 @@ private:
     QString m_text;
     QFont m_font;
     QColor m_color;
-    bool m_whiteout = true;
-    PdfTextBgMode m_textBgMode = PdfTextBgMode::Auto;
+    bool m_whiteout = false;
+    PdfTextBgMode m_textBgMode = PdfTextBgMode::Transparent;
     QColor m_textBgColor = Qt::white;
     Qt::Alignment m_textAlignment = Qt::AlignLeft;
     QImage m_image;
@@ -333,8 +348,10 @@ private:
     int m_shapeStrokeWidth = 2;
     QColor m_shapeStrokeColor = QColor(QStringLiteral("#ef4444"));
     QColor m_shapeFillColor = Qt::transparent;
-    QPoint m_shapeLocalStart;
-    QPoint m_shapeLocalEnd;
+    QPoint m_shapeLocalStart = QPoint(-1, -1);
+    QPoint m_shapeLocalEnd = QPoint(-1, -1);
+    QPoint m_dragStartShapeLocalStart = QPoint(-1, -1);
+    QPoint m_dragStartShapeLocalEnd = QPoint(-1, -1);
 
     // Inline canvas text editor
     QTextEdit *m_inlineTextEdit = nullptr;
@@ -352,7 +369,15 @@ private:
     QPushButton *m_btnRedactCustom = nullptr;
     QPushButton *m_btnApply = nullptr;
     QPushButton *m_btnApplyAndContinue = nullptr;
+    QPushButton *m_btnFitWidth = nullptr;
+    QPushButton *m_btnFitPage = nullptr;
     QPushButton *m_btnCutArea = nullptr;
+    QPushButton *m_btnCopyText = nullptr;
     QPushButton *m_btnCopyArea = nullptr;
+    QPushButton *m_btnOcrArea = nullptr;
     QPushButton *m_btnCancel = nullptr;
+    QPushButton *m_btnFontStatus = nullptr;
+
+    void updateFontStatusBadge();
+    void onFontStatusClicked();
 };

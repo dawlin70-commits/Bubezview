@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "frameless_dialog.h"
 #include <QListWidget>
 #include <QLineEdit>
 #include <QPushButton>
@@ -11,7 +11,7 @@
  * @brief Modal dialog allowing the user to select an installed desktop application
  * or browse for a custom binary to open the current file with.
  */
-class OpenWithDialog : public QDialog
+class OpenWithDialog : public FramelessDialog
 {
     Q_OBJECT
 

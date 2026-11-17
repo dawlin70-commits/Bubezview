@@ -239,7 +239,7 @@ private:
     QCheckBox *m_chkWhiteout = nullptr;
     QToolButton *m_btnCloseText = nullptr;
     QColor m_textColor = Qt::black;
-    PdfTextBgMode m_textBgMode = PdfTextBgMode::Auto;
+    PdfTextBgMode m_textBgMode = PdfTextBgMode::Transparent;
     QColor m_textBgColor = Qt::white;
 
     // --- 2. Highlighter Page Controls ---
@@ -256,19 +256,19 @@ private:
 
     // --- 3. Shapes Page Controls ---
     QWidget *m_shapesPage = nullptr;
-    QButtonGroup *m_shapeTypeGroup = nullptr;
-    QToolButton *m_btnShapeRect = nullptr;
-    QToolButton *m_btnShapeArrow = nullptr;
-    QToolButton *m_btnShapeCircle = nullptr;
-    QToolButton *m_btnShapeLine = nullptr;
+    QToolButton *m_btnShapeSelector = nullptr;
+    QMenu *m_menuShapes = nullptr;
+    int m_activeShapeType = 0;
     QComboBox *m_cmbShapeStrokeWidth = nullptr;
     QToolButton *m_btnShapeStrokeColor = nullptr;
-    QToolButton *m_btnShapeFillTransp = nullptr;
     QToolButton *m_btnShapeFillColor = nullptr;
     QToolButton *m_btnCloseShapes = nullptr;
     QColor m_strokeColor = QColor(QStringLiteral("#ef4444")); // Red default
     QColor m_fillColor = Qt::transparent;
-    QList<QToolButton*> m_shapePaletteButtons;
+
+    void updateShapeSelectorButton();
+    void updateStrokeColorButton();
+    void updateFillColorButton();
 
     // --- 4. Redaction Page Controls ---
     QWidget *m_redactPage = nullptr;

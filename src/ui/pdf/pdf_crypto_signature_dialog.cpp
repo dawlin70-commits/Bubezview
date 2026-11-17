@@ -30,7 +30,7 @@ PdfCryptoSignatureDialog::PdfCryptoSignatureDialog(const QString &filePath,
                                                    const QList<PdfDigitalSignatureInfo> &preverifiedSigs,
                                                    int defaultTab,
                                                    QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_filePath(filePath)
     , m_signatures(preverifiedSigs)
     , m_tabs(nullptr)
@@ -54,9 +54,9 @@ PdfCryptoSignatureDialog::PdfCryptoSignatureDialog(const QString &filePath,
 
 void PdfCryptoSignatureDialog::setupUi(int defaultTab)
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(14, 14, 14, 14);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     m_tabs = new QTabWidget(this);
 
@@ -240,9 +240,10 @@ QList<PdfDigitalSignatureInfo> PdfCryptoSignatureDialog::verifyDocumentSignature
 
     // 1. Check if it is a .p7m (CAdES) file
     if (filePath.endsWith(".p7m", Qt::CaseInsensitive)) {
+        const QString opensslExe = BuildConfig::opensslExecutable();
         QProcess proc;
         // Inspect PKCS#7 / CMS certificate info using openssl pkcs7
-        proc.start("openssl", {"pkcs7", "-inform", "DER", "-in", filePath, "-print_certs", "-noout", "-text"});
+        proc.start(opensslExe, {"pkcs7", "-inform", "DER", "-in", filePath, "-print_certs", "-noout", "-text"});
         proc.waitForFinished(4000);
         QString certText = QString::fromUtf8(proc.readAllStandardOutput() + proc.readAllStandardError());
 
@@ -252,7 +253,7 @@ QList<PdfDigitalSignatureInfo> PdfCryptoSignatureDialog::verifyDocumentSignature
         if (tmpOut.open()) {
             QString tmpPath = tmpOut.fileName();
             tmpOut.close();
-            verifyProc.start("openssl", {"cms", "-verify", "-inform", "DER", "-in", filePath, "-noverify", "-out", tmpPath});
+            verifyProc.start(opensslExe, {"cms", "-verify", "-inform", "DER", "-in", filePath, "-noverify", "-out", tmpPath});
             verifyProc.waitForFinished(5000);
         }
         bool cmsValid = (verifyProc.exitCode() == 0);
@@ -287,7 +288,7 @@ QList<PdfDigitalSignatureInfo> PdfCryptoSignatureDialog::verifyDocumentSignature
     }
 
     // 2. Standard PDF: check with pdfsig
-    QString pdfsigExe = QStandardPaths::findExecutable("pdfsig");
+    QString pdfsigExe = BuildConfig::pdfsigExecutable();
     if (pdfsigExe.isEmpty()) return results;
 
     QProcess proc;
@@ -342,7 +343,7 @@ QList<PdfDigitalSignatureInfo> PdfCryptoSignatureDialog::verifyDocumentSignature
 
 bool PdfCryptoSignatureDialog::extractPdfFromP7m(const QString &p7mPath, const QString &outputPdfPath, QString *verifyOut)
 {
-    QString opensslExe = QStandardPaths::findExecutable("openssl");
+    QString opensslExe = BuildConfig::opensslExecutable();
     if (opensslExe.isEmpty()) return false;
 
     // 1. Try standard DER CMS verification/extraction without CA chain enforcement (-noverify checks digest integrity)
@@ -417,8 +418,9 @@ void PdfCryptoSignatureDialog::onGenerateSelfSignedClicked()
     cleanCn.replace(QLatin1Char('/'), QLatin1Char('-'));
     cleanCn.replace(QLatin1Char('='), QLatin1Char('-'));
     QString subj = QString("/CN=%1/O=BubezView Personal Digital ID").arg(cleanCn);
+    const QString opensslExe = BuildConfig::opensslExecutable();
     QProcess reqProc;
-    reqProc.start("openssl", {
+    reqProc.start(opensslExe, {
         "req", "-x509", "-newkey", "rsa:2048",
         "-keyout", keyPath,
         "-out", crtPath,
@@ -436,7 +438,7 @@ void PdfCryptoSignatureDialog::onGenerateSelfSignedClicked()
 
     // 2. Export to PKCS#12 (.p12) with friendly name "bubez_signer"
     QProcess p12Proc;
-    p12Proc.start("openssl", {
+    p12Proc.start(opensslExe, {
         "pkcs12", "-export",
         "-out", p12Path,
         "-inkey", keyPath,
@@ -502,13 +504,14 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
         QString pemCert = tmpDir.filePath("signer_cert.pem");
         QString pemKey  = tmpDir.filePath("signer_key.pem");
 
+        const QString opensslExe = BuildConfig::opensslExecutable();
         // Extract cert and key from .p12
         QProcess extCert;
-        extCert.start("openssl", {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "pass:" + password});
+        extCert.start(opensslExe, {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "pass:" + password});
         extCert.waitForFinished(5000);
 
         QProcess extKey;
-        extKey.start("openssl", {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "pass:" + password});
+        extKey.start(opensslExe, {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "pass:" + password});
         extKey.waitForFinished(5000);
 
         if (extCert.exitCode() != 0 || extKey.exitCode() != 0) {
@@ -518,7 +521,7 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
         }
 
         QProcess cmsSign;
-        cmsSign.start("openssl", {
+        cmsSign.start(opensslExe, {
             "cms", "-sign", "-binary", "-nodetach",
             "-in", m_filePath,
             "-signer", pemCert,
@@ -548,9 +551,9 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
     }
 
     // Standard PDF PAdES signature via pdfsig + temporary NSS db (or fallback if NSS tools unavailable)
-    QString pdfsigExe   = QStandardPaths::findExecutable("pdfsig");
-    QString certutilExe = QStandardPaths::findExecutable("certutil");
-    QString pk12utilExe = QStandardPaths::findExecutable("pk12util");
+    QString pdfsigExe   = BuildConfig::pdfsigExecutable();
+    QString certutilExe = BuildConfig::findExecutable("certutil");
+    QString pk12utilExe = BuildConfig::findExecutable("pk12util");
 
     // If source is a .p7m file and user wants PAdES .pdf output, extract inner PDF first
     QString pdfSourceForPades = m_filePath;
@@ -642,12 +645,13 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
     QString pemCert = tmpDir.filePath("signer_cert.pem");
     QString pemKey  = tmpDir.filePath("signer_key.pem");
 
+    const QString opensslExe = BuildConfig::opensslExecutable();
     QProcess extCert;
-    extCert.start("openssl", {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "pass:" + password});
+    extCert.start(opensslExe, {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "pass:" + password});
     extCert.waitForFinished(5000);
 
     QProcess extKey;
-    extKey.start("openssl", {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "pass:" + password});
+    extKey.start(opensslExe, {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "pass:" + password});
     extKey.waitForFinished(5000);
 
     if (extCert.exitCode() != 0 || extKey.exitCode() != 0) {
@@ -657,7 +661,7 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
     }
 
     QProcess cmsSign;
-    cmsSign.start("openssl", {
+    cmsSign.start(opensslExe, {
         "cms", "-sign", "-binary", "-nodetach",
         "-in", m_filePath,
         "-signer", pemCert,

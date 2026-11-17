@@ -28,6 +28,8 @@
 #include "fallback_notice_dialog.h"
 #include "build_config.h"
 #include "package_manager_helper.h"
+#include "ui/pdf/pdf_image_extract_dialog.h"
+#include "ui/pdf/pdf_repair_dialog.h"
 #include <QProgressDialog>
 #include <QCheckBox>
 #include <QFileIconProvider>
@@ -43,6 +45,7 @@
 #include <cmath>
 #include <QTemporaryFile>
 #include <QApplication>
+#include <QToolTip>
 #include <QScrollBar>
 #include <QAbstractScrollArea>
 #include <QClipboard>
@@ -58,8 +61,31 @@
 #include <QPainter>
 #include <QPrinter>
 #include <QPrintDialog>
+#include <QEventLoop>
 
 namespace {
+
+QPixmap copyLogicalRect(const QPixmap &source, const QRect &logicalRect)
+{
+    if (source.isNull() || !logicalRect.isValid() || logicalRect.isEmpty()) {
+        return QPixmap();
+    }
+    const qreal dpr = source.devicePixelRatio();
+    const QRect physicalRect(
+        qRound(logicalRect.x() * dpr),
+        qRound(logicalRect.y() * dpr),
+        qRound(logicalRect.width() * dpr),
+        qRound(logicalRect.height() * dpr)
+    );
+    const QRect bounded = physicalRect.intersected(source.rect());
+    if (bounded.isEmpty()) {
+        return QPixmap();
+    }
+    QPixmap cropped = source.copy(bounded);
+    cropped.setDevicePixelRatio(dpr);
+    return cropped;
+}
+
 /**
  * @brief Dynamic stacked widget whose minimum size hint only reflects the active viewer,
  * preventing inactive engine cards or unsupported file inspectors from forcing large minimum sizes.
@@ -103,6 +129,7 @@ public:
 #include "share_dialog.h"
 #include "share_manager.h"
 #include "filmstrip_widget.h"
+#include "dialogs/unified_export_dialog.h"
 #include "image_inspector_dialog.h"
 #include "image_resize_dialog.h"
 #include <QVariantAnimation>
@@ -181,15 +208,7 @@ protected:
             break;
         }
 
-        const QRectF mappedRect = tx.mapRect(QRectF(bounds));
-        if (!mappedRect.contains(QRectF(bounds))) {
-            QPainterPath outer;
-            outer.addRect(QRectF(bounds));
-            QPainterPath inner;
-            inner.addRect(mappedRect);
-            p.fillPath(outer.subtracted(inner), m_bgColor);
-        }
-
+        p.fillRect(bounds, m_bgColor);
         p.setTransform(tx);
         p.drawPixmap(bounds, m_pixmap);
     }
@@ -234,12 +253,18 @@ BaseSkin::BaseSkin(QWidget *parent)
 
     restoreWindowGeometry();
 
-    QSettings settings;
+    QSettings settings("Bubez", "BubezView");
+    if (!settings.contains("ui/filmstrip")) {
+        QSettings legacySettings("BubezView", "BubezView");
+        if (legacySettings.contains("ui/filmstrip")) {
+            settings.setValue("ui/filmstrip", legacySettings.value("ui/filmstrip"));
+        }
+    }
     m_filmstripWanted = settings.value("ui/filmstrip", false).toBool();
 
     m_centralContainer = new QWidget(this);
     m_centralContainer->setObjectName("centralContainer");
-    m_centralContainer->setAutoFillBackground(true);
+    m_centralContainer->setAutoFillBackground(false);
     QVBoxLayout *centralLayout = new QVBoxLayout(m_centralContainer);
     centralLayout->setContentsMargins(0, 0, 0, 0);
     centralLayout->setSpacing(0);
@@ -466,22 +491,57 @@ IPdfViewer *BaseSkin::ensurePdfViewerCreated()
     if (m_pdfViewer) {
         return m_pdfViewer;
     }
-    // Native Core Base PDF Viewer is always available out-of-the-box
-    auto *basePdf = new PdfBaseViewer(this);
-    connect(basePdf, &PdfBaseViewer::requestStudio, this, [this]() {
-        setEditMode(!isEditMode());
-    });
-    m_pdfViewer = basePdf;
+    IPdfViewer *newViewer = nullptr;
+    if (PluginManager::instance().isEngineAvailable(FileCategory::Pdf)) {
+        auto *vw = PluginManager::instance().createViewer(FileCategory::Pdf, this);
+        newViewer = dynamic_cast<IPdfViewer*>(vw);
+    }
+    if (!newViewer) {
+        newViewer = new PdfBaseViewer(this);
+    }
+    m_pdfViewer = newViewer;
 
     if (m_pdfViewer) {
-        QWidget *oldW = m_stackedWidget->widget(2);
-        m_stackedWidget->removeWidget(oldW);
-        delete oldW;
-        m_stackedWidget->insertWidget(2, m_pdfViewer->widget());
+        safeReplaceStackedWidget(2, m_pdfViewer->widget());
         m_pdfViewer->updateTheme();
+        if (auto *qobj = dynamic_cast<QObject*>(m_pdfViewer)) {
+            connect(qobj, SIGNAL(scanTextRequested()), this, SLOT(extractOcrCurrentFile()));
+            connect(qobj, SIGNAL(scanSnippetRequested(QImage)), this, SLOT(extractOcrSnippet(QImage)));
+        }
+        if (auto *basePdf = dynamic_cast<PdfBaseViewer*>(m_pdfViewer)) {
+            connect(basePdf, &PdfBaseViewer::requestStudio, this, [this]() {
+                setEditMode(!isEditMode());
+            });
+            connect(basePdf, &PdfBaseViewer::savePageAsPdfRequested, this, &BaseSkin::saveCurrentPageAsPdf);
+            connect(basePdf, &PdfBaseViewer::savePageAsImageRequested, this, &BaseSkin::saveCurrentPageAsImage);
+            connect(basePdf, &PdfBaseViewer::saveAsRequested, this, &BaseSkin::saveAsCurrentFile);
+            connect(basePdf, &PdfBaseViewer::exportRequested, this, &BaseSkin::exportCurrentFileAs);
+            connect(basePdf, &PdfBaseViewer::scanTextRequested, this, &BaseSkin::extractOcrCurrentFile);
+            connect(basePdf, &PdfBaseViewer::scanSnippetRequested, this, &BaseSkin::extractOcrSnippet);
+        }
         onViewerInitialized(FileCategory::Pdf);
     }
     return m_pdfViewer;
+}
+
+void BaseSkin::safeReplaceStackedWidget(int index, QWidget *newWidget)
+{
+    if (!m_stackedWidget || !newWidget) return;
+
+    QWidget *oldW = m_stackedWidget->widget(index);
+    const bool wasCurrent = (m_stackedWidget->currentWidget() == oldW);
+
+    m_stackedWidget->insertWidget(index, newWidget);
+    if (wasCurrent) {
+        m_stackedWidget->setCurrentWidget(newWidget);
+        newWidget->show();
+    }
+    if (oldW && oldW != newWidget) {
+        oldW->hide();
+        m_stackedWidget->removeWidget(oldW);
+        oldW->setParent(nullptr);
+        oldW->deleteLater();
+    }
 }
 
 bool BaseSkin::promotePdfViewerToStudio()
@@ -508,7 +568,12 @@ bool BaseSkin::promotePdfViewerToStudio()
     }
 
     int curPage = m_pdfViewer->currentPage();
+    double curZoom = m_pdfViewer->zoomFactor();
     QString curPath = m_currentFilePath;
+    int curRot = 0;
+    if (auto *baseVw = dynamic_cast<PdfBaseViewer*>(m_pdfViewer)) {
+        curRot = baseVw->rotationDegrees();
+    }
 
     IViewerWidget *vw = PluginManager::instance().createViewer(FileCategory::Pdf, this);
     IPdfViewer *studioPdf = dynamic_cast<IPdfViewer*>(vw);
@@ -517,19 +582,73 @@ bool BaseSkin::promotePdfViewerToStudio()
         return false;
     }
 
-    // Replace in stacked widget
-    QWidget *oldW = m_stackedWidget->widget(2);
-    m_stackedWidget->removeWidget(oldW);
-    delete oldW;
+    QPixmap preSnap;
+    const bool useCrossFade = (ThemeManager::currentTransition() != TransitionEffect::None &&
+                               m_stackedWidget && m_stackedWidget->isVisible() &&
+                               QGuiApplication::platformName() != QLatin1String("offscreen"));
+    if (useCrossFade) {
+        preSnap = m_stackedWidget->grab();
+    }
+
+    if (m_stackedWidget) {
+        m_stackedWidget->setUpdatesEnabled(false);
+    }
 
     m_pdfViewer = studioPdf;
-    m_stackedWidget->insertWidget(2, m_pdfViewer->widget());
+    safeReplaceStackedWidget(2, m_pdfViewer->widget());
+    if (m_currentCategory == FileCategory::Pdf) {
+        m_stackedWidget->setCurrentIndex(2);
+    }
     m_pdfViewer->updateTheme();
     onViewerInitialized(FileCategory::Pdf);
 
+    if (auto *qobj = dynamic_cast<QObject*>(m_pdfViewer)) {
+        connect(qobj, SIGNAL(scanTextRequested()), this, SLOT(extractOcrCurrentFile()));
+        connect(qobj, SIGNAL(scanSnippetRequested(QImage)), this, SLOT(extractOcrSnippet(QImage)));
+    }
+
     if (!curPath.isEmpty() && QFile::exists(curPath)) {
         m_pdfViewer->loadFile(curPath);
-        m_pdfViewer->goToPage(curPage);
+        if (curRot != 0) {
+            if (curRot == 90) m_pdfViewer->rotateClockwise();
+            else if (curRot == 180) { m_pdfViewer->rotateClockwise(); m_pdfViewer->rotateClockwise(); }
+            else if (curRot == 270) m_pdfViewer->rotateCounterClockwise();
+        }
+        // Only apply explicit zoom if user had customized it away from fit-to-width default
+        if (curZoom > 0.05 && !qFuzzyCompare(curZoom, 1.0)) {
+            m_pdfViewer->setZoomFactor(curZoom);
+        }
+        if (curPage > 0) {
+            m_pdfViewer->goToPage(curPage);
+        }
+    }
+
+    if (m_stackedWidget) {
+        m_stackedWidget->setUpdatesEnabled(true);
+    }
+
+    if (useCrossFade && !preSnap.isNull() && m_transitionOverlay && m_animGroup) {
+        if (m_animGroup->state() == QAbstractAnimation::Running) {
+            m_animGroup->stop();
+        }
+        m_animGroup->clear();
+        m_transitionOverlay->resetOverlay();
+        m_transitionOverlay->setGeometry(m_stackedWidget->geometry());
+        QColor bgColor = m_imageViewer ? m_imageViewer->canvasBackgroundColor() : palette().window().color();
+        m_transitionOverlay->begin(preSnap, bgColor, TransitionEffect::CrossFade, true);
+
+        auto *progressAnim = new QVariantAnimation(m_animGroup);
+        progressAnim->setDuration(150);
+        progressAnim->setStartValue(0.0);
+        progressAnim->setEndValue(1.0);
+        progressAnim->setEasingCurve(QEasingCurve::InOutQuad);
+        connect(progressAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &val) {
+            if (m_transitionOverlay) {
+                m_transitionOverlay->setProgress(val.toReal());
+            }
+        });
+        m_animGroup->addAnimation(progressAnim);
+        m_animGroup->start();
     }
     return true;
 }
@@ -542,10 +661,7 @@ IArchiveViewer *BaseSkin::ensureArchiveViewerCreated()
     auto *av = PluginManager::instance().createViewer(FileCategory::Archive, this);
     m_archiveViewer = dynamic_cast<IArchiveViewer*>(av);
     if (m_archiveViewer) {
-        QWidget *oldW = m_stackedWidget->widget(3);
-        m_stackedWidget->removeWidget(oldW);
-        delete oldW;
-        m_stackedWidget->insertWidget(3, m_archiveViewer->widget());
+        safeReplaceStackedWidget(3, m_archiveViewer->widget());
         m_archiveViewer->setOnFilePreviewRequested([this](const QString &extractedFilePath, const QString &archiveOriginPath, const QString &internalEntryPath) {
             m_archiveOriginPath = archiveOriginPath;
             if (m_archiveViewer) {
@@ -572,7 +688,7 @@ IMediaViewer *BaseSkin::ensureMediaViewerCreated()
 
     if (!m_mediaViewer || (canUseMpv && isSystemViewer) || (!canUseMpv && !isSystemViewer)) {
         if (m_mediaViewer) {
-            m_mediaViewer->stop();
+            m_mediaViewer->clear();
         }
         IMediaViewer *newViewer = nullptr;
         if (canUseMpv) {
@@ -582,11 +698,8 @@ IMediaViewer *BaseSkin::ensureMediaViewerCreated()
         if (!newViewer) {
             newViewer = new SystemMediaViewer(this);
         }
-        QWidget *oldW = m_stackedWidget->widget(4);
-        m_stackedWidget->removeWidget(oldW);
-        delete oldW;
         m_mediaViewer = newViewer;
-        m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
+        safeReplaceStackedWidget(4, m_mediaViewer->widget());
         m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
             openFile(path);
         });
@@ -661,13 +774,12 @@ bool BaseSkin::promoteMediaViewerToStudio()
         return false;
     }
 
-    m_mediaViewer->stop();
-    QWidget *oldW = m_stackedWidget->widget(4);
-    m_stackedWidget->removeWidget(oldW);
-    delete oldW;
-
+    m_mediaViewer->clear();
     m_mediaViewer = studioMv;
-    m_stackedWidget->insertWidget(4, m_mediaViewer->widget());
+    safeReplaceStackedWidget(4, m_mediaViewer->widget());
+    if (m_currentCategory == FileCategory::Media) {
+        m_stackedWidget->setCurrentIndex(4);
+    }
     m_mediaViewer->setSiblingFiles(m_siblingFiles);
     m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
         openFile(path);
@@ -690,10 +802,7 @@ OfficeViewer *BaseSkin::ensureOfficeViewerCreated()
         return m_officeViewer;
     }
     m_officeViewer = new OfficeViewer(this);
-    QWidget *oldW = m_stackedWidget->widget(5);
-    m_stackedWidget->removeWidget(oldW);
-    delete oldW;
-    m_stackedWidget->insertWidget(5, m_officeViewer);
+    safeReplaceStackedWidget(5, m_officeViewer);
     onViewerInitialized(FileCategory::Office);
     return m_officeViewer;
 }
@@ -704,10 +813,7 @@ FolderViewer *BaseSkin::ensureFolderViewerCreated()
         return m_folderViewer;
     }
     m_folderViewer = new FolderViewer(this);
-    QWidget *oldW = m_stackedWidget->widget(6);
-    m_stackedWidget->removeWidget(oldW);
-    delete oldW;
-    m_stackedWidget->insertWidget(6, m_folderViewer);
+    safeReplaceStackedWidget(6, m_folderViewer);
 
     connect(m_folderViewer, &FolderViewer::folderLoaded, this, [this](const QString &folderPath, int, qint64) {
         if (m_currentCategory == FileCategory::Folder && !folderPath.isEmpty()) {
@@ -716,21 +822,7 @@ FolderViewer *BaseSkin::ensureFolderViewerCreated()
         }
     });
     connect(m_folderViewer, &FolderViewer::filePreviewRequested, this, [this](const QString &path) {
-        if (ThemeManager::currentTransition() == TransitionEffect::None || !m_galleryTransition || !m_folderViewer) {
-            openFile(path);
-            return;
-        }
-
-        // Morphing zoom from card to full viewer (half-speed 260ms)
-        QPixmap galleryPix = m_stackedWidget->grab();
-        QRect cardRect = m_folderViewer->cardRectForPath(path);
-
-        openFile(path);
-
-        QPixmap viewerPix = m_stackedWidget->grab();
-        m_galleryTransition->setGeometry(m_stackedWidget->geometry());
-        m_galleryTransition->start(galleryPix, viewerPix, cardRect,
-                                   GalleryZoomTransition::Direction::ZoomInToViewer, 450);
+        openFileFromGalleryWithZoom(path);
     });
     connect(m_folderViewer, &FolderViewer::itemContextMenuRequested, this, [this](const QPoint &globalPos, const QString &) {
         showContextMenuAt(globalPos);
@@ -803,12 +895,6 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         m_stackedWidget->setCurrentIndex(1);
         opened = m_textViewer->loadFile(m_currentFilePath);
     } else if (m_currentCategory == FileCategory::Pdf) {
-        if (!m_isEditMode && m_pdfViewer && !dynamic_cast<PdfBaseViewer*>(m_pdfViewer)) {
-            QWidget *oldW = m_stackedWidget->widget(2);
-            m_stackedWidget->removeWidget(oldW);
-            delete oldW;
-            m_pdfViewer = nullptr;
-        }
         if (!ensurePdfViewerCreated()) {
             m_enginePromptCard->setTargetFile(FileCategory::Pdf, m_currentFilePath);
             m_stackedWidget->setCurrentWidget(m_enginePromptCard);
@@ -976,6 +1062,15 @@ void BaseSkin::onFileLoaded(const QString &filePath, FileCategory category)
 void BaseSkin::scanDirectory(const QString &currentFilePath)
 {
     QFileInfo info(currentFilePath);
+    const QString absPath = info.absoluteFilePath();
+
+    // Fast path: if file is already present in sibling list, avoid redundant disk scan
+    const int existingIdx = m_siblingFiles.indexOf(absPath);
+    if (existingIdx != -1) {
+        m_currentIndex = existingIdx;
+        return;
+    }
+
     QDir dir = info.dir();
 
     QDir::Filters filters = QDir::Files;
@@ -1216,6 +1311,11 @@ void BaseSkin::showFileInfo()
         return;
     }
 
+    if (m_stackedWidget && m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+        m_pdfViewer->showDocumentInfo();
+        return;
+    }
+
     QFileInfo fi(targetPath);
     QString info = QString(
         "<b>" + tr("Name:") + "</b> %1<br>"
@@ -1274,35 +1374,29 @@ void BaseSkin::exportCurrentFileAs()
 {
     if (m_currentFilePath.isEmpty() || !QFile::exists(m_currentFilePath)) return;
 
-    QFileInfo fi(m_currentFilePath);
-    QString baseName = fi.completeBaseName();
-    QString defaultExportPath = fi.dir().filePath(baseName + "_exported");
-
-    QString filter;
-    QString selectedFilter;
-
-    if (m_currentCategory == FileCategory::Image) {
-        filter = tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;BMP Image (*.bmp);;TIFF Image (*.tiff);;PDF Document (*.pdf);;All Files (*)");
-        defaultExportPath += ".png";
-    } else if (m_currentCategory == FileCategory::Text) {
-        filter = tr("Plain Text (*.txt);;Markdown Document (*.md);;HTML Document (*.html);;PDF Document (*.pdf);;All Files (*)");
-        defaultExportPath += ".txt";
-    } else if (m_currentCategory == FileCategory::Pdf) {
-        filter = tr("PDF Document (*.pdf);;PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;WebP Image (*.webp);;TIFF Image (*.tiff);;BMP Image (*.bmp);;Plain Text (*.txt);;All Files (*)");
-        defaultExportPath += ".pdf";
-    } else if (m_currentCategory == FileCategory::Office) {
-        filter = tr("PDF Document (*.pdf);;Plain Text (*.txt);;HTML Document (*.html);;All Files (*)");
-        defaultExportPath += ".pdf";
-    } else {
-        filter = tr("All Files (*)");
-        defaultExportPath = fi.dir().filePath(tr("copy_") + fi.fileName());
+    int curPage = 0;
+    int totalPages = 1;
+    if (m_currentCategory == FileCategory::Pdf && m_pdfViewer) {
+        curPage = m_pdfViewer->currentPage();
+        totalPages = m_pdfViewer->pageCount();
     }
 
-    QString targetPath = QFileDialog::getSaveFileName(this, tr("Export As"), defaultExportPath, filter, &selectedFilter);
+    UnifiedExportDialog dlg(m_currentCategory, m_currentFilePath, curPage, totalPages, this);
+    int res = dlg.exec();
+    if (res == UnifiedExportDialog::ExtractImages) {
+        extractPdfImages(m_currentFilePath);
+        return;
+    }
+    if (res != QDialog::Accepted) {
+        return;
+    }
+
+    QString targetPath = dlg.targetPath();
     if (targetPath.isEmpty()) return;
 
+    QString ext = dlg.selectedFormat();
+    bool allPages = dlg.isAllPages();
     bool success = false;
-    QString ext = QFileInfo(targetPath).suffix().toLower();
 
     // Dispatch export transformation based on active viewer category and requested destination extension
     if (m_currentCategory == FileCategory::Image && m_imageViewer) {
@@ -1348,31 +1442,8 @@ void BaseSkin::exportCurrentFileAs()
                 success = true;
             }
         } else if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "webp" || ext == "tiff" || ext == "bmp") {
-            int totalPages = m_pdfViewer->pageCount();
-            int curPage = m_pdfViewer->currentPage();
-            bool exportAll = false;
-
-            if (totalPages > 1) {
-                QMessageBox msgBox(this);
-                msgBox.setWindowTitle(tr("Export PDF as Image"));
-                msgBox.setIcon(QMessageBox::Question);
-                msgBox.setText(tr("This PDF contains %1 pages.<br>Which pages would you like to export as <b>%2</b>?")
-                                   .arg(totalPages)
-                                   .arg(ext.toUpper()));
-                QPushButton *btnCurrent = msgBox.addButton(tr("Current Page (Page %1)").arg(curPage + 1), QMessageBox::ActionRole);
-                QPushButton *btnAll = msgBox.addButton(tr("All Pages (%1)").arg(totalPages), QMessageBox::ActionRole);
-                QPushButton *btnCancel = msgBox.addButton(QMessageBox::Cancel);
-                msgBox.setDefaultButton(btnCurrent);
-                msgBox.exec();
-
-                if (msgBox.clickedButton() == btnCancel) {
-                    return;
-                }
-                exportAll = (msgBox.clickedButton() == btnAll);
-            }
-
-            if (!exportAll) {
-                QImage pageImg = m_pdfViewer->renderPageForOcr(curPage, 150);
+            if (!allPages) {
+                QImage pageImg = m_pdfViewer->renderPageForOcr(curPage, 300);
                 if (!pageImg.isNull()) {
                     success = pageImg.save(targetPath);
                 }
@@ -1383,7 +1454,7 @@ void BaseSkin::exportCurrentFileAs()
                 int exportedCount = 0;
 
                 for (int p = 0; p < totalPages; ++p) {
-                    QImage pageImg = m_pdfViewer->renderPageForOcr(p, 150);
+                    QImage pageImg = m_pdfViewer->renderPageForOcr(p, 300);
                     if (!pageImg.isNull()) {
                         QString pageFilePath = QString("%1/%2_%3.%4")
                                                    .arg(baseDir)
@@ -1398,8 +1469,12 @@ void BaseSkin::exportCurrentFileAs()
                 success = (exportedCount > 0);
             }
         } else if (ext == "pdf") {
-            if (QFile::exists(targetPath)) QFile::remove(targetPath);
-            success = QFile::copy(m_currentFilePath, targetPath);
+            if (!allPages) {
+                QString err;
+                success = m_pdfViewer->saveCurrentPageAsPdf(targetPath, &err);
+            } else {
+                success = m_pdfViewer->saveAs(targetPath);
+            }
         } else {
             if (QFile::exists(targetPath)) QFile::remove(targetPath);
             success = QFile::copy(m_currentFilePath, targetPath);
@@ -1446,9 +1521,11 @@ void BaseSkin::exportCurrentFileAs()
     }
 
     if (success) {
-        QMessageBox::information(this, tr("Export As"), tr("File exported successfully to:\n%1").arg(targetPath));
+        QMessageBox::information(this, tr("Export Successful"),
+            tr("File exported successfully to:\n%1").arg(targetPath));
     } else {
-        QMessageBox::warning(this, tr("Export Error"), tr("Could not export file to:\n%1").arg(targetPath));
+        QMessageBox::warning(this, tr("Export Error"),
+            tr("Failed to export file to:\n%1").arg(targetPath));
     }
 }
 
@@ -1473,16 +1550,25 @@ void BaseSkin::deleteCurrentFile()
 
     // Utilize FreeDesktop trash spec via QFile::moveToTrash for safe recovery
     if (QFile::moveToTrash(fileToDelete)) {
+        PreloadCacheManager::instance().remove(fileToDelete);
         if (!m_siblingFiles.isEmpty() && indexToRemove >= 0 && indexToRemove < m_siblingFiles.size()) {
             m_siblingFiles.removeAt(indexToRemove);
             if (m_siblingFiles.isEmpty()) {
                 m_currentIndex = -1;
                 m_currentFilePath.clear();
-                setWindowTitle(tr("BubezView"));
-                if (m_stackedWidget->currentIndex() == 0) m_imageViewer->clear();
-                else if (m_stackedWidget->currentIndex() == 1) m_textViewer->clear();
-                else if (m_stackedWidget->currentIndex() == 2) m_pdfViewer->clear();
-                else if (m_stackedWidget->currentIndex() == 3) m_archiveViewer->clear();
+                updateWindowTitle();
+                updateStatusBar();
+                if (m_imageViewer) m_imageViewer->clear();
+                if (m_textViewer) m_textViewer->clear();
+                if (m_pdfViewer) m_pdfViewer->clear();
+                if (m_archiveViewer) m_archiveViewer->clear();
+                if (m_mediaViewer) m_mediaViewer->clear();
+                if (m_officeViewer) m_officeViewer->clear();
+                if (m_folderViewer) m_folderViewer->clear();
+                if (m_filmstrip) {
+                    m_filmstrip->clear();
+                    m_filmstrip->hide();
+                }
             } else {
                 // Navigate seamlessly to adjacent sibling file
                 if (indexToRemove >= m_siblingFiles.size()) {
@@ -1625,6 +1711,72 @@ void BaseSkin::extractOcrCurrentFile()
                                    currentPage,
                                    totalPages,
                                    pageRenderer,
+                                   this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->show();
+    dlg->raise();
+    dlg->activateWindow();
+}
+
+void BaseSkin::extractOcrSnippet(const QImage &snippetImage)
+{
+    if (snippetImage.isNull() || snippetImage.width() < 4 || snippetImage.height() < 4) return;
+
+    if (!OcrManager::instance().isTesseractInstalled()) {
+        if (!PackageManagerHelper::installComponentInteractive("tesseract", this)) {
+            return;
+        }
+        if (!OcrManager::instance().isTesseractInstalled()) {
+            return;
+        }
+    }
+
+    auto tempFile = std::make_unique<QTemporaryFile>(QDir::tempPath() + "/bubez_ocr_snippet_XXXXXX.png");
+    tempFile->setAutoRemove(false);
+    if (!tempFile->open()) return;
+    QString snippetPath = tempFile->fileName();
+    snippetImage.save(snippetPath, "PNG");
+    tempFile->close();
+
+    const QStringList installedLangs = OcrManager::instance().installedLanguages();
+    QString sysLang = OcrManager::instance().detectSystemLanguageCode();
+    QString chosenLang;
+    if (installedLangs.contains("ita") && installedLangs.contains("eng")) {
+        chosenLang = "ita+eng";
+    } else if (installedLangs.contains(sysLang)) {
+        chosenLang = sysLang;
+    } else if (installedLangs.contains("eng")) {
+        chosenLang = "eng";
+    } else if (!installedLangs.isEmpty()) {
+        chosenLang = installedLangs.first();
+    } else {
+        chosenLang = "eng";
+    }
+
+    QString text, err;
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    bool ok = OcrManager::instance().runOcr(snippetPath, chosenLang, text, err);
+    QApplication::restoreOverrideCursor();
+
+    if (!ok && text.isEmpty()) {
+        QMessageBox::warning(this, tr("OCR Tesseract"),
+            tr("Tesseract encountered an error on snippet:<br><code>%1</code>").arg(err.toHtmlEscaped()));
+        QFile::remove(snippetPath);
+        return;
+    }
+
+    QString trimmedText = text.trimmed();
+    QApplication::clipboard()->setText(trimmedText);
+    int wordCount = trimmedText.isEmpty() ? 0 : trimmedText.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts).count();
+    QToolTip::showText(QCursor::pos(), tr("✓ OCR Text copied to clipboard (%1 words)").arg(wordCount));
+
+    OcrDialog *dlg = new OcrDialog(trimmedText,
+                                   QFileInfo(m_currentFilePath).fileName() + tr(" (Area)"),
+                                   snippetPath,
+                                   false,
+                                   0,
+                                   1,
+                                   nullptr,
                                    this);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
     dlg->show();
@@ -1990,19 +2142,23 @@ void BaseSkin::closeEvent(QCloseEvent *event)
     QSettings settings("Bubez", "BubezView");
     int keepAliveMin = settings.value("background_keep_alive_minutes", 0).toInt();
 
-    if (keepAliveMin > 0) {
+    if (keepAliveMin != 0) {
         event->ignore();
         hide();
         m_isDaemonMode = true;
 
-        if (!m_backgroundTimer) {
-            m_backgroundTimer = new QTimer(this);
-            m_backgroundTimer->setSingleShot(true);
-            connect(m_backgroundTimer, &QTimer::timeout, this, []() {
-                qApp->quit();
-            });
+        if (keepAliveMin > 0) {
+            if (!m_backgroundTimer) {
+                m_backgroundTimer = new QTimer(this);
+                m_backgroundTimer->setSingleShot(true);
+                connect(m_backgroundTimer, &QTimer::timeout, this, []() {
+                    qApp->quit();
+                });
+            }
+            m_backgroundTimer->start(keepAliveMin * 60 * 1000);
+        } else if (m_backgroundTimer && m_backgroundTimer->isActive()) {
+            m_backgroundTimer->stop();
         }
-        m_backgroundTimer->start(keepAliveMin * 60 * 1000);
     } else {
         if (!m_isDaemonMode) {
             // Ensure process exits completely and does not leave zombie background processes
@@ -2018,13 +2174,13 @@ void BaseSkin::saveWindowGeometry()
         return;
     }
 
-    // Do not overwrite normal preview geometry when temporarily maximized in edit mode
-    if (m_isEditMode) {
+    // Do not overwrite normal preview geometry when temporarily in edit mode or page organizer
+    if (m_isEditMode || (m_pdfViewer && m_pdfViewer->isPageGridOrganizerActive())) {
         return;
     }
 
     QSettings settings("Bubez", "BubezView");
-    if (!settings.value("remember_geometry", true).toBool()) {
+    if (!settings.value("remember_geometry", false).toBool()) {
         return;
     }
 
@@ -2046,7 +2202,7 @@ void BaseSkin::restoreWindowGeometry()
     const QSize defaultSize(780, 540);
 
     QSettings settings("Bubez", "BubezView");
-    const bool remember = settings.value("remember_geometry", true).toBool();
+    const bool remember = settings.value("remember_geometry", false).toBool();
 
     bool restored = false;
     if (remember) {
@@ -2332,30 +2488,32 @@ void BaseSkin::setEditMode(bool editMode)
     }
 }
 
+void BaseSkin::handleEscapeAction()
+{
+    if (m_pdfViewer && m_pdfViewer->isPageGridOrganizerActive()) {
+        m_pdfViewer->hidePageGridOrganizer();
+        return;
+    }
+    if (m_isEditMode) {
+        setEditMode(false);
+        return;
+    }
+    if (!m_archiveOriginPath.isEmpty() && QFile::exists(m_archiveOriginPath)) {
+        QString returnArchive = m_archiveOriginPath;
+        m_archiveOriginPath.clear();
+        m_archiveEntries.clear();
+        m_archiveCurrentEntryIndex = -1;
+        openFile(returnArchive);
+        return;
+    }
+    close();
+}
+
 void BaseSkin::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
     case Qt::Key_Escape:
-        if (m_pdfViewer && m_pdfViewer->isPageGridOrganizerActive()) {
-            m_pdfViewer->hidePageGridOrganizer();
-            event->accept();
-            return;
-        }
-        if (m_isEditMode) {
-            setEditMode(false);
-            event->accept();
-            return;
-        }
-        if (!m_archiveOriginPath.isEmpty() && QFile::exists(m_archiveOriginPath)) {
-            QString returnArchive = m_archiveOriginPath;
-            m_archiveOriginPath.clear();
-            m_archiveEntries.clear();
-            m_archiveCurrentEntryIndex = -1;
-            openFile(returnArchive);
-            event->accept();
-            return;
-        }
-        close();
+        handleEscapeAction();
         event->accept();
         break;
     case Qt::Key_Q:
@@ -2475,26 +2633,62 @@ bool BaseSkin::eventFilter(QObject *watched, QEvent *event)
         // Only enforce preview rules on this window and its embedded viewers
         // (Never intercept events from separate modal/sub-dialogs, or when in Edit Mode)
         if (widget && widget->window() == this && !m_isEditMode) {
-            int key = keyEvent->key();
-            switch (key) {
-            case Qt::Key_Space:
-            case Qt::Key_Escape:
-                close();
-                return true;
-            case Qt::Key_Right:
-                nextFile();
-                return true;
-            case Qt::Key_Left:
-                prevFile();
-                return true;
-            case Qt::Key_Down:
-                scrollCurrentView(1);
-                return true;
-            case Qt::Key_Up:
-                scrollCurrentView(-1);
-                return true;
-            default:
-                break;
+            // Never intercept typing or navigation within text input fields or search bars
+            QWidget *w = widget;
+            bool isInput = false;
+            while (w) {
+                if (qobject_cast<QLineEdit*>(w) ||
+                    qobject_cast<QTextEdit*>(w) ||
+                    qobject_cast<QPlainTextEdit*>(w) ||
+                    qobject_cast<QAbstractSpinBox*>(w) ||
+                    (m_searchBar && (w == m_searchBar || m_searchBar->isAncestorOf(w)))) {
+                    isInput = true;
+                    break;
+                }
+                w = w->parentWidget();
+            }
+
+            if (!isInput) {
+                int key = keyEvent->key();
+                const bool isFolderActive = (m_stackedWidget && m_stackedWidget->currentIndex() == 6);
+
+                switch (key) {
+                case Qt::Key_Space:
+                    if (!isFolderActive) {
+                        close();
+                        return true;
+                    }
+                    break;
+                case Qt::Key_Escape:
+                    handleEscapeAction();
+                    return true;
+                case Qt::Key_Right:
+                    if (!isFolderActive) {
+                        nextFile();
+                        return true;
+                    }
+                    break;
+                case Qt::Key_Left:
+                    if (!isFolderActive) {
+                        prevFile();
+                        return true;
+                    }
+                    break;
+                case Qt::Key_Down:
+                    if (!isFolderActive) {
+                        scrollCurrentView(1);
+                        return true;
+                    }
+                    break;
+                case Qt::Key_Up:
+                    if (!isFolderActive) {
+                        scrollCurrentView(-1);
+                        return true;
+                    }
+                    break;
+                default:
+                    break;
+                }
             }
         }
     }
@@ -2556,6 +2750,8 @@ void BaseSkin::rotateCurrentRight()
         if (!m_isEditMode) {
             saveCurrentImage(true);
         }
+    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+        m_pdfViewer->rotateClockwise();
     }
     updateWindowTitle();
     updateStatusBar();
@@ -2568,6 +2764,8 @@ void BaseSkin::rotateCurrentLeft()
         if (!m_isEditMode) {
             saveCurrentImage(true);
         }
+    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+        m_pdfViewer->rotateCounterClockwise();
     }
     updateWindowTitle();
     updateStatusBar();
@@ -2627,14 +2825,13 @@ void BaseSkin::extractPdfImages(const QString &filePath)
             }
         }
     }
+    if (target.isEmpty()) {
+        target = m_currentFilePath;
+    }
     if (target.isEmpty() || !QFile::exists(target)) return;
 
-    if (ensurePdfViewerCreated() && promotePdfViewerToStudio() && m_pdfViewer) {
-        m_pdfViewer->openPdfImageExtractDialog(target, this);
-    } else if (m_enginePromptCard) {
-        m_enginePromptCard->setTargetFile(FileCategory::Pdf, target);
-        m_stackedWidget->setCurrentWidget(m_enginePromptCard);
-    }
+    PdfImageExtractDialog dlg(target, this);
+    dlg.exec();
 }
 
 void BaseSkin::openPdfRepairDialog(const QString &filePath)
@@ -2653,12 +2850,14 @@ void BaseSkin::openPdfRepairDialog(const QString &filePath)
     if (target.isEmpty() && m_currentCategory == FileCategory::Pdf) {
         target = m_currentFilePath;
     }
+    if (target.isEmpty() || !QFile::exists(target)) return;
 
-    if (ensurePdfViewerCreated() && promotePdfViewerToStudio() && m_pdfViewer) {
-        m_pdfViewer->openPdfRepairDialog(target, this);
-    } else if (m_enginePromptCard) {
-        m_enginePromptCard->setTargetFile(FileCategory::Pdf, target);
-        m_stackedWidget->setCurrentWidget(m_enginePromptCard);
+    PdfRepairDialog dlg(target, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        QString repPath = dlg.repairedFilePath();
+        if (!repPath.isEmpty() && QFile::exists(repPath)) {
+            openFile(repPath);
+        }
     }
 }
 
@@ -2734,13 +2933,45 @@ void BaseSkin::fitCurrent()
     }
 }
 
+void BaseSkin::fitWidthCurrent()
+{
+    if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
+        m_imageViewer->fitToWindow();
+    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+        m_pdfViewer->fitToWidth();
+    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        m_officeViewer->pdfViewer()->fitToWidth();
+    }
+}
+
+void BaseSkin::fitPageCurrent()
+{
+    if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
+        m_imageViewer->fitToWindow();
+    } else if (m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
+        m_pdfViewer->fitToPage();
+    } else if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
+        m_officeViewer->pdfViewer()->fitToPage();
+    }
+}
+
 void BaseSkin::toggleZoomTool(bool active)
 {
     if (m_pdfViewer) {
         m_pdfViewer->toggleZoomTool(active);
     }
     if (m_imageViewer) {
-        m_imageViewer->setZoomToolActive(active);
+        if (!active) {
+            m_imageViewer->setZoomToolActive(false);
+            if (m_imageViewer->canvasWidget()) {
+                m_imageViewer->canvasWidget()->setCursor(Qt::ArrowCursor);
+            }
+        } else {
+            m_imageViewer->setZoomToolActive(false);
+            if (m_imageViewer->canvasWidget()) {
+                m_imageViewer->canvasWidget()->setCursor(Qt::OpenHandCursor);
+            }
+        }
     }
     if (m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
         m_officeViewer->pdfViewer()->toggleZoomTool(active);
@@ -2753,7 +2984,7 @@ bool BaseSkin::isZoomToolActive() const
         return m_pdfViewer->isZoomToolActive();
     }
     if (m_stackedWidget->currentIndex() == 0 && m_imageViewer) {
-        return m_imageViewer->isZoomToolActive();
+        return m_imageViewer->canvasWidget() && m_imageViewer->canvasWidget()->cursor().shape() == Qt::OpenHandCursor;
     }
     if (m_stackedWidget->currentIndex() == 5 && m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) {
         return m_officeViewer->pdfViewer()->isZoomToolActive();
@@ -2827,17 +3058,7 @@ void BaseSkin::openCurrentFolderInGallery()
         }
 
         if (!targetPath.isEmpty()) {
-            if (ThemeManager::currentTransition() != TransitionEffect::None && m_galleryTransition && m_folderViewer) {
-                QPixmap galleryPix = m_stackedWidget->grab();
-                QRect cardRect = m_folderViewer->cardRectForPath(targetPath);
-                openFile(targetPath);
-                QPixmap viewerPix = m_stackedWidget->grab();
-                m_galleryTransition->setGeometry(m_stackedWidget->geometry());
-                m_galleryTransition->start(galleryPix, viewerPix, cardRect,
-                                           GalleryZoomTransition::Direction::ZoomInToViewer, 450);
-                return;
-            }
-            openFile(targetPath);
+            openFileFromGalleryWithZoom(targetPath);
             return;
         }
         return;
@@ -2852,24 +3073,118 @@ void BaseSkin::openCurrentFolderInGallery()
         dir = fi.isDir() ? fi.absoluteFilePath() : fi.absolutePath();
     }
 
-    if (ThemeManager::currentTransition() != TransitionEffect::None && m_galleryTransition && m_folderViewer) {
-        QPixmap viewerPix = m_stackedWidget->grab();
-        openFile(dir);
-        if (!m_previousFilePathBeforeGallery.isEmpty()) {
-            m_folderViewer->selectItemByPath(m_previousFilePathBeforeGallery, false);
-        }
-        QPixmap galleryPix = m_stackedWidget->grab();
-        QRect cardRect = m_folderViewer->cardRectForPath(m_previousFilePathBeforeGallery);
-        m_galleryTransition->setGeometry(m_stackedWidget->geometry());
-        m_galleryTransition->start(viewerPix, galleryPix, cardRect,
-                                   GalleryZoomTransition::Direction::ZoomOutToGallery, 450);
+    returnToFolderWithZoom(dir, m_previousFilePathBeforeGallery);
+}
+
+void BaseSkin::openFileFromGalleryWithZoom(const QString &filePath)
+{
+    if (ThemeManager::currentTransition() == TransitionEffect::None || !m_galleryTransition || !m_folderViewer) {
+        openFile(filePath);
         return;
     }
 
-    openFile(dir);
-    if (!m_previousFilePathBeforeGallery.isEmpty() && m_folderViewer) {
-        m_folderViewer->selectItemByPath(m_previousFilePathBeforeGallery, false);
+    m_folderViewer->ensureThumbnailForPath(filePath);
+    const QRect oldStackGeom = m_stackedWidget->geometry();
+    QRect cardRect = m_folderViewer->cardRectForPath(filePath);
+    QRect thumbRect = m_folderViewer->thumbnailRectForPath(filePath);
+    const QPoint fvOffset = m_folderViewer->mapTo(m_stackedWidget, QPoint(0, 0));
+    cardRect.translate(fvOffset);
+    thumbRect.translate(fvOffset);
+
+    const QPixmap galleryPix = m_stackedWidget->grab();
+    const QRect stackLocal = m_stackedWidget->rect();
+    const QPixmap cardThumb = copyLogicalRect(galleryPix, cardRect.intersected(stackLocal));
+    const QPixmap thumbPix = copyLogicalRect(galleryPix, thumbRect.intersected(stackLocal));
+
+    m_folderViewer->setCardHiddenForTransition(filePath, true);
+    const QPixmap emptySlotGalleryPix = m_stackedWidget->grab();
+    m_folderViewer->setCardHiddenForTransition(QString(), false);
+
+    openFile(filePath);
+
+    if (m_centralContainer && m_centralContainer->layout()) {
+        m_centralContainer->layout()->activate();
     }
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+    const QRect newStackGeom = m_stackedWidget->geometry();
+    const QPixmap viewerPix = m_stackedWidget->grab();
+    const QPoint stackShift = oldStackGeom.topLeft() - newStackGeom.topLeft();
+    cardRect.translate(stackShift);
+    thumbRect.translate(stackShift);
+
+    m_galleryTransition->setGeometry(newStackGeom);
+    m_galleryTransition->start(emptySlotGalleryPix, viewerPix, cardRect,
+                               GalleryZoomTransition::Direction::ZoomInToViewer, 220,
+                               cardThumb, thumbRect, thumbPix, m_stackedWidget->rect());
+}
+
+void BaseSkin::returnToFolderWithZoom(const QString &dir, const QString &targetFilePath)
+{
+    if (ThemeManager::currentTransition() == TransitionEffect::None || !m_galleryTransition) {
+        openFile(dir);
+        if (!targetFilePath.isEmpty() && m_folderViewer) {
+            m_folderViewer->selectItemByPath(targetFilePath, true);
+        }
+        return;
+    }
+
+    const QRect oldStackGeom = m_stackedWidget->geometry();
+    const QPixmap viewerPix = m_stackedWidget->grab();
+
+    openFile(dir);
+
+    if (!m_folderViewer) {
+        return;
+    }
+
+    if (m_centralContainer && m_centralContainer->layout()) {
+        m_centralContainer->layout()->activate();
+    }
+    if (m_folderViewer->layout()) {
+        m_folderViewer->layout()->activate();
+    }
+    if (m_folderViewer->listWidget()) {
+        m_folderViewer->listWidget()->doItemsLayout();
+    }
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+    if (!targetFilePath.isEmpty()) {
+        m_folderViewer->ensureThumbnailForPath(targetFilePath);
+        m_folderViewer->selectItemByPath(targetFilePath, true);
+        if (m_folderViewer->listWidget()) {
+            m_folderViewer->listWidget()->doItemsLayout();
+        }
+    }
+
+    const QRect newStackGeom = m_stackedWidget->geometry();
+    QRect cardRect = m_folderViewer->cardRectForPath(targetFilePath);
+    QRect thumbRect = m_folderViewer->thumbnailRectForPath(targetFilePath);
+    const QPoint fvOffset = m_folderViewer->mapTo(m_stackedWidget, QPoint(0, 0));
+    cardRect.translate(fvOffset);
+    thumbRect.translate(fvOffset);
+
+    const QPixmap normalGalleryPix = m_stackedWidget->grab();
+    const QRect stackLocal = m_stackedWidget->rect();
+    const QPixmap cardThumb = copyLogicalRect(normalGalleryPix, cardRect.intersected(stackLocal));
+    const QPixmap thumbPix = copyLogicalRect(normalGalleryPix, thumbRect.intersected(stackLocal));
+
+    m_folderViewer->setCardHiddenForTransition(targetFilePath, true);
+    const QPixmap emptySlotGalleryPix = m_stackedWidget->grab();
+
+    const QRect viewerRectInOverlay(oldStackGeom.topLeft() - newStackGeom.topLeft(), oldStackGeom.size());
+
+    // Keep target card hidden underneath so the zoom creates the card seamlessly into the slot without double-render
+    connect(m_galleryTransition, &GalleryZoomTransition::finished, this, [this]() {
+        if (m_folderViewer) {
+            m_folderViewer->setCardHiddenForTransition(QString(), false);
+        }
+    }, Qt::SingleShotConnection);
+
+    m_galleryTransition->setGeometry(newStackGeom);
+    m_galleryTransition->start(viewerPix, emptySlotGalleryPix, cardRect,
+                               GalleryZoomTransition::Direction::ZoomOutToGallery, 220,
+                               cardThumb, thumbRect, thumbPix, viewerRectInOverlay);
 }
 
 void BaseSkin::renameCurrentFolderItem()
@@ -3200,7 +3515,7 @@ void BaseSkin::toggleFilmstrip()
 void BaseSkin::setFilmstripVisible(bool visible)
 {
     m_filmstripWanted = visible;
-    QSettings settings("BubezView", "BubezView");
+    QSettings settings("Bubez", "BubezView");
     settings.setValue("ui/filmstrip", visible);
 
     if (m_currentCategory != FileCategory::Folder && m_filmstripWanted && !m_siblingFiles.isEmpty()) {
@@ -3300,36 +3615,55 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
         menu.addSeparator();
     }
 
-    // 1. Standard actions: Copy & Copy Path
+    // 1. Standard actions: Copy
     QAction *actCopy = menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy"), this, &BaseSkin::copyToClipboard);
     actCopy->setShortcut(QKeySequence("Ctrl+C"));
-
-    QAction *actCopyPath = menu.addAction(QIcon::fromTheme("edit-copy-path"), tr("Copy Path"), this, [targetPath]() {
-        QApplication::clipboard()->setText(targetPath);
-    });
-    actCopyPath->setShortcut(QKeySequence("Ctrl+Shift+C"));
 
     menu.addSeparator();
 
     // 2. Open With... & Share submenus
-    QMenu *menuOpenWith = menu.addMenu(QIcon::fromTheme("system-run"), tr("Open With..."));
-    QList<AppInfo> apps = AppLauncher::getAssociatedApps(targetPath);
-    if (!apps.isEmpty()) {
-        for (const AppInfo &app : apps) {
-            QIcon icon = app.iconName.isEmpty() ? QIcon::fromTheme("application-x-executable") : QIcon::fromTheme(app.iconName);
-            menuOpenWith->addAction(icon, app.name, this, [targetPath, app]() {
-                AppLauncher::launchApp(app, targetPath);
-            });
+    if (m_currentCategory == FileCategory::Folder) {
+        QMenu *menuOpenWith = menu.addMenu(QIcon::fromTheme("system-run"), tr("Open With..."));
+        QList<AppInfo> apps = AppLauncher::getAssociatedApps(targetPath);
+        if (!apps.isEmpty()) {
+            for (const AppInfo &app : apps) {
+                QIcon icon = app.iconName.isEmpty() ? QIcon::fromTheme("application-x-executable") : QIcon::fromTheme(app.iconName);
+                menuOpenWith->addAction(icon, app.name, this, [targetPath, app]() {
+                    AppLauncher::launchApp(app, targetPath);
+                });
+            }
+            menuOpenWith->addSeparator();
         }
-        menuOpenWith->addSeparator();
+        menuOpenWith->addAction(QIcon::fromTheme("applications-other"), tr("Other Application..."), this, &BaseSkin::openWithOther);
     }
-    menuOpenWith->addAction(QIcon::fromTheme("applications-other"), tr("Other Application..."), this, &BaseSkin::openWithOther);
 
     QMenu *menuShare = menu.addMenu(QIcon::fromTheme("document-share"), tr("Share"));
+    QAction *actCopyPath = menuShare->addAction(QIcon::fromTheme("edit-copy-path"), tr("Copy File Path"), this, [targetPath]() {
+        QApplication::clipboard()->setText(targetPath);
+    });
+    actCopyPath->setShortcut(QKeySequence("Ctrl+Shift+C"));
+    menuShare->addSeparator();
+
+    if (m_currentCategory != FileCategory::Folder) {
+        QMenu *menuOpenWithApp = menuShare->addMenu(QIcon::fromTheme("system-run"), tr("Share with Application..."));
+        QList<AppInfo> apps = AppLauncher::getAssociatedApps(targetPath);
+        if (!apps.isEmpty()) {
+            for (const AppInfo &app : apps) {
+                QIcon icon = app.iconName.isEmpty() ? QIcon::fromTheme("application-x-executable") : QIcon::fromTheme(app.iconName);
+                menuOpenWithApp->addAction(icon, app.name, this, [targetPath, app]() {
+                    AppLauncher::launchApp(app, targetPath);
+                });
+            }
+            menuOpenWithApp->addSeparator();
+        }
+        menuOpenWithApp->addAction(QIcon::fromTheme("applications-other"), tr("Other Application..."), this, &BaseSkin::openWithOther);
+        menuShare->addSeparator();
+    }
+
     ShareManager shareMgr(this, [targetPath]() { return targetPath; });
     shareMgr.populateMenu(menuShare);
 
-    if (m_isEditMode || m_currentCategory == FileCategory::Folder) {
+    if (m_currentCategory == FileCategory::Folder) {
         menu.addAction(QIcon::fromTheme("package-x-generic"), tr("Compress / Create Archive..."), this, &BaseSkin::openCreateArchiveDialog);
     }
 
@@ -3349,40 +3683,34 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
                 menu.addAction(QIcon::fromTheme("object-rotate-right"), tr("Rotate 90° Right"), this, &BaseSkin::rotateCurrentRight);
                 menu.addAction(QIcon::fromTheme("object-rotate-left"), tr("Rotate 90° Left"), this, &BaseSkin::rotateCurrentLeft);
                 menu.addAction(QIcon::fromTheme("object-flip-horizontal"), tr("Flip Horizontally"), this, &BaseSkin::flipCurrentHorizontal);
+                menu.addSeparator();
             }
-            menu.addAction(QIcon::fromTheme("zoom-fit-best"), tr("Fit to Window"), this, &BaseSkin::fitCurrent);
-            menu.addAction(QIcon::fromTheme("zoom-original"), tr("Original Size (100%)"), this, &BaseSkin::resetZoomCurrent);
-            menu.addSeparator();
             menu.addAction(QIcon::fromTheme("document-save-as"), tr("Save As..."), this, &BaseSkin::saveAsCurrentFile);
             menu.addAction(QIcon::fromTheme("document-export"), tr("Convert / Export in Other Formats..."), this, &BaseSkin::exportCurrentFileAs);
             menu.addSeparator();
         }
     } else if (activeCategory == FileCategory::Pdf) {
         if (m_currentCategory != FileCategory::Folder) {
-            menu.addAction(QIcon::fromTheme("zoom-fit-best"), tr("Fit to Width"), this, &BaseSkin::fitCurrent);
-            menu.addAction(QIcon::fromTheme("zoom-original"), tr("Original Size (100%)"), this, &BaseSkin::resetZoomCurrent);
-            menu.addSeparator();
-            menu.addAction(QIcon::fromTheme("document-save"), tr("Save Current Page as PDF..."), this, &BaseSkin::saveCurrentPageAsPdf);
-            menu.addAction(QIcon::fromTheme("image-x-generic"), tr("Save Current Page as Image..."), this, &BaseSkin::saveCurrentPageAsImage);
             menu.addAction(QIcon::fromTheme("document-save-as"), tr("Save As..."), this, &BaseSkin::saveAsCurrentFile);
             menu.addAction(QIcon::fromTheme("document-export"), tr("Export in Other Formats..."), this, &BaseSkin::exportCurrentFileAs);
+            menu.addSeparator();
+        } else {
+            // PDF Tools when selecting a PDF card in Folder view
+            if (BuildConfig::isQpdfAvailable()) {
+                menu.addAction(QIcon::fromTheme("document-edit"), tr("Organize PDF Pages..."), this, [this, targetPath]() {
+                    openPdfPageOrganizer(targetPath);
+                });
+                menu.addAction(QIcon::fromTheme("tools-check"), tr("Repair PDF..."), this, [this, targetPath]() {
+                    openPdfRepairDialog(targetPath);
+                });
+            }
+            if (BuildConfig::isPdfimagesAvailable()) {
+                menu.addAction(QIcon::fromTheme("image-x-generic"), tr("Extract Images from PDF..."), this, [this, targetPath]() {
+                    extractPdfImages(targetPath);
+                });
+            }
+            menu.addSeparator();
         }
-
-        // PDF Tools available in both direct PDF viewer and when selecting a PDF card in Folder view
-        if (m_isEditMode && BuildConfig::isQpdfAvailable()) {
-            menu.addAction(QIcon::fromTheme("document-edit"), tr("Organize PDF Pages..."), this, [this, targetPath]() {
-                openPdfPageOrganizer(targetPath);
-            });
-            menu.addAction(QIcon::fromTheme("tools-check"), tr("Repair PDF..."), this, [this, targetPath]() {
-                openPdfRepairDialog(targetPath);
-            });
-        }
-        if (BuildConfig::isPdfimagesAvailable()) {
-            menu.addAction(QIcon::fromTheme("image-x-generic"), tr("Extract Images from PDF..."), this, [this, targetPath]() {
-                extractPdfImages(targetPath);
-            });
-        }
-        menu.addSeparator();
     } else if (activeCategory == FileCategory::Text && !isFolder) {
         if (m_currentCategory != FileCategory::Folder) {
             menu.addAction(QIcon::fromTheme("edit-find"), tr("Find in Document..."), this, &BaseSkin::searchInDocument);

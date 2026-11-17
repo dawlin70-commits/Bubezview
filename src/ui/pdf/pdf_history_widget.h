@@ -6,7 +6,7 @@
 #pragma once
 
 #include <QWidget>
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QScrollArea>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -52,7 +52,7 @@ private:
  * @class PdfHistoryWidget
  * @brief Spacious scrollable carousel of visual snapshots allowing 1-click restore to past edits.
  */
-class PdfHistoryWidget : public QDialog
+class PdfHistoryWidget : public FramelessDialog
 {
     Q_OBJECT
 

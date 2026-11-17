@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QImage>
 #include <QPainterPath>
 #include <vector>
@@ -63,7 +63,7 @@ private:
 /**
  * @brief Comprehensive dialog supporting freehand drawing, image import with background removal, and saved signature management.
  */
-class PdfSignatureDialog : public QDialog
+class PdfSignatureDialog : public FramelessDialog
 {
     Q_OBJECT
 

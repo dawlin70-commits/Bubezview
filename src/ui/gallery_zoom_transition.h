@@ -49,13 +49,21 @@ public:
      * @param targetPix Snapshot of the view after the transition.
      * @param cardRect Geometry of the clicked or target card in coordinates of this overlay.
      * @param direction ZoomInToViewer or ZoomOutToGallery.
-     * @param durationMs Animation duration in milliseconds (default 450ms, cinematic slow-motion).
+     * @param durationMs Animation duration in milliseconds (default 360ms).
+     * @param cardThumbnail Optional isolated pixmap of the full card for pixel-perfect slot landing.
+     * @param thumbRect Optional exact geometry of the thumbnail/icon within cardRect.
+     * @param thumbPixmap Optional isolated pixmap of the thumbnail/icon region.
+     * @param viewerRect Optional source/target viewer geometry within overlay when layout height shifts.
      */
     void start(const QPixmap &sourcePix,
                const QPixmap &targetPix,
                const QRect &cardRect,
                Direction direction,
-               int durationMs = 450);
+               int durationMs = 360,
+               const QPixmap &cardThumbnail = QPixmap(),
+               const QRect &thumbRect = QRect(),
+               const QPixmap &thumbPixmap = QPixmap(),
+               const QRect &viewerRect = QRect());
 
     /**
      * @brief Immediately stops any active animation and hides the overlay.
@@ -85,7 +93,11 @@ private:
     QVariantAnimation *m_anim;
     QPixmap m_sourcePix;
     QPixmap m_targetPix;
+    QPixmap m_cardThumbnail;
+    QPixmap m_thumbPixmap;
     QRect m_cardRect;
+    QRect m_thumbRect;
+    QRect m_viewerRect;
     Direction m_direction;
     qreal m_progress;
 };

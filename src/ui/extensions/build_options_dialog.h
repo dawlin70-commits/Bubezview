@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QRadioButton>
 #include <QCheckBox>
 #include <QLabel>
@@ -20,12 +20,15 @@
  * @brief GUI manager allowing users to select CPU optimization, toggle optional modules,
  * and trigger incremental non-interactive recompilation directly from the UI.
  */
-class BuildOptionsDialog : public QDialog {
+class BuildOptionsDialog : public FramelessDialog {
     Q_OBJECT
 
 public:
     explicit BuildOptionsDialog(QWidget *parent = nullptr);
     ~BuildOptionsDialog() override;
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void onSaveClicked();
@@ -37,6 +40,8 @@ private:
     void setupUi();
     void loadFromConfig();
     void saveToConfig();
+    void terminateProcessGroup();
+    bool isBuilding() const;
 
     // CPU Profile
     QRadioButton *m_radioCpuNative;

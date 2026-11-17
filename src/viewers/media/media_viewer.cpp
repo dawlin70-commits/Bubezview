@@ -1014,6 +1014,9 @@ bool MediaViewer::loadFile(const QString &filePath)
 
     // Load media file via libmpv
     qDebug() << "[BubezView-Audio] loadFile executing for:" << targetPath << "BitPerfect:" << m_isBitPerfect << "Device:" << m_currentAudioDevice;
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "vid", m_isAudioOnly ? "no" : "auto");
+    }
     QByteArray pathBytes = targetPath.toUtf8();
     const char *cmd[] = {"loadfile", pathBytes.constData(), "replace", nullptr};
     mpv_command(m_mpv, cmd);
@@ -1522,7 +1525,7 @@ void MediaViewer::toggleLoop()
 void MediaViewer::updateTheme()
 {
     ThemePreset preset = ThemeManager::currentPreset();
-    bool isDark = (preset == ThemePreset::DarkSlate || preset == ThemePreset::BreezeDark);
+    bool isDark = ThemeManager::isDark(preset);
 
     QColor mainIconColor = isDark ? QColor("#cbd5e1") : QColor("#e2e8f0");
     QColor subIconColor = QColor("#94a3b8");

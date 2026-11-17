@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QStringList>
 
 class QListWidget;
@@ -18,7 +18,7 @@ class QProcess;
  * it performs font deduplication, structure linearization, and bookmark preservation.
  * Otherwise, it falls back to Poppler's pdfunite with proactive guidance.
  */
-class PdfMergeDialog : public QDialog
+class PdfMergeDialog : public FramelessDialog
 {
     Q_OBJECT
 

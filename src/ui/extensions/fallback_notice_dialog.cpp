@@ -22,7 +22,7 @@ FallbackNoticeDialog::FallbackNoticeDialog(const QString &componentId,
                                            const QString &displayName,
                                            const QString &executablePath,
                                            QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_componentId(componentId)
     , m_chkDontShowAgain(nullptr)
     , m_wantsCompilation(false)
@@ -31,9 +31,9 @@ FallbackNoticeDialog::FallbackNoticeDialog(const QString &componentId,
     setWindowIcon(QIcon(":/icons/info.svg"));
     setMinimumWidth(480);
 
-    auto *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(16);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    auto *mainLayout = contentLayout();
+    mainLayout->setSpacing(14);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     // Header area with icon and informative text
     auto *headerLayout = new QHBoxLayout();
@@ -94,14 +94,14 @@ FallbackNoticeDialog::FallbackNoticeDialog(const QString &componentId,
 bool FallbackNoticeDialog::isNoticeSuppressed(const QString &componentId)
 {
     if (componentId.isEmpty()) return false;
-    QSettings settings;
+    QSettings settings("Bubez", "BubezView");
     return settings.value(QString("Performance/suppressFallbackNotice_%1").arg(componentId.trimmed().toLower()), false).toBool();
 }
 
 void FallbackNoticeDialog::setNoticeSuppressed(const QString &componentId, bool suppress)
 {
     if (componentId.isEmpty()) return;
-    QSettings settings;
+    QSettings settings("Bubez", "BubezView");
     settings.setValue(QString("Performance/suppressFallbackNotice_%1").arg(componentId.trimmed().toLower()), suppress);
 }
 

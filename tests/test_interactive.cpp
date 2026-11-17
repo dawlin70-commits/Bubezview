@@ -58,6 +58,7 @@ private slots:
     void testFolderLoadingAndRules();
     void testSubfolderNavigationAndReturn();
     void testRapidNavigationStress();
+    void testRapidNextPrevNavigation();
     void testThemeSwitching();
     void testFilePreviewFromFolder();
     void testTextSearchForwardAndWrap();
@@ -255,6 +256,36 @@ void TestInteractive::testRapidNavigationStress()
             QTest::keyClick(&window, Qt::Key_Backspace);
             QTest::qWait(30);
         }
+    }
+}
+
+void TestInteractive::testRapidNextPrevNavigation()
+{
+    MainWindow window;
+    window.resize(1000, 700);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    QString startFile = m_testDirPath + "/carta_millimetrica_calibrated_p1.png";
+    MainWindow::OpenResult res = window.openFile(startFile);
+    QCOMPARE(res, MainWindow::OpenResult::Success);
+
+    for (int i = 0; i < 50; ++i) {
+        fprintf(stderr, "\n[STRESS] Next Iteration %d, current file: %s\n", i, qPrintable(window.currentFilePath()));
+        fflush(stderr);
+        window.nextFile();
+        fprintf(stderr, "[STRESS] Finished nextFile(), new file: %s\n", qPrintable(window.currentFilePath()));
+        fflush(stderr);
+        QTest::qWait(20);
+    }
+
+    for (int i = 0; i < 50; ++i) {
+        fprintf(stderr, "\n[STRESS] Prev Iteration %d, current file: %s\n", i, qPrintable(window.currentFilePath()));
+        fflush(stderr);
+        window.prevFile();
+        fprintf(stderr, "[STRESS] Finished prevFile(), new file: %s\n", qPrintable(window.currentFilePath()));
+        fflush(stderr);
+        QTest::qWait(20);
     }
 }
 
@@ -592,7 +623,7 @@ void TestInteractive::testSettingsDialogUI()
     dlg.setCurrentTab(SettingsDialog::TabIndex::Appearance);
     QTest::qWait(80);
     QPixmap pixApp = dlg.grab();
-    pixApp.save("/home/davide/.gemini/antigravity/brain/7555969d-f634-4d62-a346-0ee189f59a3a/settings_appearance.png");
+    pixApp.save("/home/davide/.gemini/antigravity/brain/4e70622e-50ab-4665-afcd-a70645769460/settings_appearance_tab_updated.png");
 
     // 2. Capture integration tab
     dlg.setCurrentTab(SettingsDialog::TabIndex::DesktopIntegration);
@@ -760,23 +791,25 @@ void TestInteractive::testFirstRunWizard()
     wizard.show();
     QVERIFY(QTest::qWaitForWindowExposed(&wizard));
 
-    // Verify 3 onboarding wizard pages (Welcome -> Spacebar Test -> Additional Options)
-    QCOMPARE(wizard.pageIds().count(), 3);
+    // Verify 4 onboarding wizard pages (Welcome -> Spacebar -> Modules -> Performance)
+    QCOMPARE(wizard.pageIds().count(), 4);
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Welcome));
-    QTest::qWait(100);
-    wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page0_welcome.png");
+    QTest::qWait(50);
 
-    // Advance to Page 1 (Dedicated Spacebar Test & Trigger Fallback - Auto Passed)
+    // Advance to Page 1 (Dedicated Spacebar Test & Integration - Auto Passed)
     wizard.next();
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Spacebar));
-    QTest::qWait(150);
-    wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page1_spacebar.png");
+    QTest::qWait(50);
 
-    // Advance to Page 2 (Additional Options: Modules, Performance & Navigation)
+    // Advance to Page 2 (Functional Modules)
     wizard.next();
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Modules));
-    QTest::qWait(100);
-    wizard.grab().save("/home/davide/.gemini/antigravity/brain/8466bc25-4ae4-4586-8bb5-2ec02a7ab3e7/wizard_page2_modules.png");
+    QTest::qWait(50);
+
+    // Advance to Page 3 (Hardware Performance & CPU Compilation)
+    wizard.next();
+    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Performance));
+    QTest::qWait(50);
 
     wizard.close();
 

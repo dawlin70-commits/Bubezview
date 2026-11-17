@@ -4,9 +4,11 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 #include <QMap>
 #include <functional>
 #include <memory>
+#include <atomic>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -130,14 +132,42 @@ public:
     bool installTesseractSystemPackage(QWidget *parent = nullptr, QString *outError = nullptr);
 
     /**
+     * @brief Result item for multi-page batch OCR operations.
+     */
+    struct PageOcrResult {
+        int pageIndex = 0;   ///< 0-based page index
+        QString text;        ///< Recognized text for this page
+        QString error;       ///< Error message if recognition failed
+        bool success = false;///< True if recognition completed successfully
+    };
+
+    /**
      * @brief Executes Tesseract OCR on a given image file.
      * @param imagePath Absolute path to the input image.
      * @param langCode Language specification (e.g. "ita", "eng", or "ita+eng").
      * @param outText Output string to store extracted text.
      * @param outError Output string to store error diagnostics if execution fails.
+     * @param threadLimit Optional limit on OpenMP threads (-1 uses auto-detection / ideal thread count).
      * @return True if OCR succeeded.
      */
-    bool runOcr(const QString &imagePath, const QString &langCode, QString &outText, QString &outError);
+    bool runOcr(const QString &imagePath, const QString &langCode, QString &outText, QString &outError, int threadLimit = -1);
+
+    /**
+     * @brief Executes OCR concurrently across multiple page images utilizing all available CPU cores.
+     *
+     * Distributes page recognition across a worker pool scaled to QThread::idealThreadCount().
+     * Guarantees that results in the returned vector are sorted strictly in ascending page order.
+     *
+     * @param imagePaths Ordered list of absolute paths to page images.
+     * @param langCode Target language code.
+     * @param progressCallback Optional callback reporting (completedPages, totalPages).
+     * @param cancelFlag Optional atomic flag to abort pending/in-flight tasks.
+     * @return Vector of PageOcrResult ordered by page index.
+     */
+    QVector<PageOcrResult> runBatchOcr(const QStringList &imagePaths,
+                                       const QString &langCode,
+                                       std::function<void(int completed, int total)> progressCallback = nullptr,
+                                       std::atomic<bool> *cancelFlag = nullptr);
 
 signals:
     /**

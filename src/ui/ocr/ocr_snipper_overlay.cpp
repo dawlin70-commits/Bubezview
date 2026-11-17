@@ -40,6 +40,11 @@ void OcrSnipperOverlay::setHighDpiCropper(std::function<QImage(const QRectF &)> 
     m_highDpiCropper = cropper;
 }
 
+void OcrSnipperOverlay::setRectCropper(std::function<QImage(const QRect &)> cropper)
+{
+    m_rectCropper = cropper;
+}
+
 void OcrSnipperOverlay::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
@@ -113,7 +118,9 @@ void OcrSnipperOverlay::mouseReleaseEvent(QMouseEvent *event)
 
         if (selRect.width() >= 8 && selRect.height() >= 8) {
             QImage snippet;
-            if (m_highDpiCropper && width() > 0 && height() > 0) {
+            if (m_rectCropper) {
+                snippet = m_rectCropper(selRect);
+            } else if (m_highDpiCropper && width() > 0 && height() > 0) {
                 QRectF normRect(selRect.x() / static_cast<double>(width()),
                                 selRect.y() / static_cast<double>(height()),
                                 selRect.width() / static_cast<double>(width()),

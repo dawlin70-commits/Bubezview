@@ -10,6 +10,8 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <QTemporaryFile>
+#include <QTemporaryDir>
+#include <QThread>
 #include <QDir>
 #include <QFont>
 
@@ -21,7 +23,7 @@ OcrDialog::OcrDialog(const QString &initialText,
                      int totalPages,
                      std::function<QImage(int)> pageRenderer,
                      QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_sourceName(sourceName)
     , m_sourcePath(sourcePath)
     , m_isPdf(isPdf)
@@ -44,10 +46,48 @@ OcrDialog::OcrDialog(const QString &initialText,
             this, &OcrDialog::refreshLanguagesCombo);
 }
 
+OcrDialog::~OcrDialog()
+{
+    if (m_cancelFlag) {
+        m_cancelFlag->store(true);
+    }
+    if (m_workerThread && m_workerThread->joinable()) {
+        m_workerThread->join();
+    }
+}
+
+void OcrDialog::closeEvent(QCloseEvent *event)
+{
+    if (m_cancelFlag) {
+        m_cancelFlag->store(true);
+    }
+    if (m_workerThread && m_workerThread->joinable()) {
+        m_workerThread->join();
+    }
+    QDialog::closeEvent(event);
+}
+
+void OcrDialog::setControlsBusy(bool busy)
+{
+    m_isExtracting = busy;
+    m_btnRunOcr->setText(busy ? tr("⏹️ Cancel") : tr("⚡ Re-extract"));
+    m_btnRunOcr->setToolTip(busy ? tr("Cancel in-progress OCR extraction")
+                                 : tr("Re-run OCR recognition with the chosen language"));
+    m_btnRunOcr->setEnabled(true);
+
+    if (m_btnScopePage) m_btnScopePage->setEnabled(!busy);
+    if (m_btnScopeAll) m_btnScopeAll->setEnabled(!busy);
+    if (m_btnSnipArea) m_btnSnipArea->setEnabled(!busy);
+    m_comboLanguage->setEnabled(!busy);
+    m_btnSettingsGear->setEnabled(!busy);
+    m_btnCleanText->setEnabled(!busy);
+    m_progressBar->setVisible(busy);
+}
+
 void OcrDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(14, 14, 14, 14);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(10);
 
     // 1. Top Header (Document Info + Stats)
@@ -228,80 +268,142 @@ void OcrDialog::handleScopeAllClicked()
 
 void OcrDialog::runExtraction()
 {
+    if (m_isExtracting) {
+        if (m_cancelFlag) {
+            m_cancelFlag->store(true);
+        }
+        m_btnRunOcr->setEnabled(false);
+        m_btnRunOcr->setText(tr("Cancelling..."));
+        return;
+    }
+
+    if (m_workerThread && m_workerThread->joinable()) {
+        m_workerThread->join();
+    }
+
     QString langCode = currentSelectedLanguageCode();
     if (langCode.isEmpty()) langCode = "eng";
 
-    m_btnRunOcr->setEnabled(false);
-    m_progressBar->setVisible(true);
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+    auto cancelFlag = std::make_shared<std::atomic<bool>>(false);
+    m_cancelFlag = cancelFlag;
+    setControlsBusy(true);
 
-    if (m_isPdf && m_pageRenderer) {
-        if (m_isShowingFullDoc) {
-            // Extract all pages sequentially
-            m_progressBar->setRange(0, m_totalPages);
-            m_progressBar->setValue(0);
+    if (m_isPdf && m_pageRenderer && m_isShowingFullDoc) {
+        // Multi-page PDF extraction using concurrent multi-core worker pool
+        int idealCores = QThread::idealThreadCount();
+        m_progressBar->setRange(0, m_totalPages);
+        m_progressBar->setValue(0);
+        m_progressBar->setFormat(tr("Extracting with %1 CPU cores: %v / %m pages (%p%)").arg(idealCores > 0 ? idealCores : 4));
 
-            QStringList allPagesText;
-            for (int i = 0; i < m_totalPages; ++i) {
-                m_progressBar->setValue(i);
-                QApplication::processEvents();
+        auto tempDir = std::make_shared<QTemporaryDir>();
+        tempDir->setAutoRemove(true);
+
+        m_workerThread = std::make_unique<std::thread>([this, langCode, cancelFlag, tempDir]() {
+            QStringList imagePaths;
+            const int total = m_totalPages;
+
+            // Render all pages
+            for (int i = 0; i < total; ++i) {
+                if (cancelFlag->load()) break;
 
                 QImage pageImg = m_pageRenderer(i);
                 if (!pageImg.isNull()) {
-                    QTemporaryFile tempFile(QDir::tempPath() + "/bubez_ocr_page_XXXXXX.png");
-                    tempFile.setAutoRemove(true);
-                    if (tempFile.open()) {
-                        pageImg.save(tempFile.fileName(), "PNG");
-                        tempFile.close();
-
-                        QString text, err;
-                        if (OcrManager::instance().runOcr(tempFile.fileName(), langCode, text, err)) {
-                            allPagesText.append(QString("=== %1 %2 / %3 ===\n\n%4\n")
-                                .arg(tr("PAGE"), QString::number(i + 1), QString::number(m_totalPages), text));
-                        }
-                    }
+                    QString imgPath = tempDir->filePath(QString("page_%1.png").arg(i, 5, 10, QChar('0')));
+                    pageImg.save(imgPath, "PNG");
+                    imagePaths.append(imgPath);
+                } else {
+                    imagePaths.append(QString());
                 }
             }
-            m_progressBar->setValue(m_totalPages);
-            m_fullDocText = allPagesText.join("\n\n");
-            m_textEdit->setPlainText(m_fullDocText);
-        } else {
-            // Single page
-            m_progressBar->setRange(0, 0); // Indeterminate
-            QImage pageImg = m_pageRenderer(m_currentPage);
-            if (!pageImg.isNull()) {
-                QTemporaryFile tempFile(QDir::tempPath() + "/bubez_ocr_page_XXXXXX.png");
-                tempFile.setAutoRemove(true);
-                if (tempFile.open()) {
-                    pageImg.save(tempFile.fileName(), "PNG");
-                    tempFile.close();
 
-                    QString text, err;
-                    if (OcrManager::instance().runOcr(tempFile.fileName(), langCode, text, err)) {
-                        m_singlePageText = text;
-                        m_textEdit->setPlainText(m_singlePageText);
-                    } else {
-                        QMessageBox::warning(this, tr("OCR Error"), err);
-                    }
+            if (cancelFlag->load()) {
+                QMetaObject::invokeMethod(this, [this]() {
+                    setControlsBusy(false);
+                }, Qt::QueuedConnection);
+                return;
+            }
+
+            // Distribute OCR across all CPU cores
+            auto results = OcrManager::instance().runBatchOcr(imagePaths, langCode, [this](int completed, int) {
+                QMetaObject::invokeMethod(this, [this, completed]() {
+                    m_progressBar->setValue(completed);
+                }, Qt::QueuedConnection);
+            }, cancelFlag.get());
+
+            if (cancelFlag->load()) {
+                QMetaObject::invokeMethod(this, [this]() {
+                    setControlsBusy(false);
+                }, Qt::QueuedConnection);
+                return;
+            }
+
+            // Assemble results strictly in page order
+            QStringList allPagesText;
+            for (const auto &res : results) {
+                if (res.success && !res.text.trimmed().isEmpty()) {
+                    allPagesText.append(QString("=== %1 %2 / %3 ===\n\n%4\n")
+                        .arg(tr("PAGE"), QString::number(res.pageIndex + 1), QString::number(total), res.text.trimmed()));
                 }
             }
-        }
+
+            QString fullText = allPagesText.join("\n\n");
+
+            QMetaObject::invokeMethod(this, [this, fullText]() {
+                m_fullDocText = fullText;
+                m_textEdit->setPlainText(fullText);
+                setControlsBusy(false);
+                updateStats();
+            }, Qt::QueuedConnection);
+        });
     } else {
-        // Single Image file
-        m_progressBar->setRange(0, 0);
-        QString text, err;
-        if (OcrManager::instance().runOcr(m_sourcePath, langCode, text, err)) {
-            m_singlePageText = text;
-            m_textEdit->setPlainText(m_singlePageText);
-        } else {
-            QMessageBox::warning(this, tr("OCR Error"), err);
-        }
-    }
+        // Single page or image file
+        m_progressBar->setRange(0, 0); // Indeterminate marquee
+        m_progressBar->setFormat(tr("Recognizing text..."));
 
-    QApplication::restoreOverrideCursor();
-    m_progressBar->setVisible(false);
-    m_btnRunOcr->setEnabled(true);
-    updateStats();
+        auto tempDir = std::make_shared<QTemporaryDir>();
+        tempDir->setAutoRemove(true);
+
+        m_workerThread = std::make_unique<std::thread>([this, langCode, cancelFlag, tempDir]() {
+            QString inputPath;
+            if (m_isPdf && m_pageRenderer) {
+                QImage pageImg = m_pageRenderer(m_currentPage);
+                if (!pageImg.isNull()) {
+                    inputPath = tempDir->filePath("single_page.png");
+                    pageImg.save(inputPath, "PNG");
+                }
+            } else {
+                inputPath = m_sourcePath;
+            }
+
+            if (inputPath.isEmpty() || !QFile::exists(inputPath) || cancelFlag->load()) {
+                QMetaObject::invokeMethod(this, [this]() {
+                    setControlsBusy(false);
+                }, Qt::QueuedConnection);
+                return;
+            }
+
+            QString text, err;
+            bool ok = OcrManager::instance().runOcr(inputPath, langCode, text, err);
+
+            if (cancelFlag->load()) {
+                QMetaObject::invokeMethod(this, [this]() {
+                    setControlsBusy(false);
+                }, Qt::QueuedConnection);
+                return;
+            }
+
+            QMetaObject::invokeMethod(this, [this, ok, text, err]() {
+                if (ok) {
+                    m_singlePageText = text;
+                    m_textEdit->setPlainText(text);
+                } else {
+                    QMessageBox::warning(this, tr("OCR Error"), err);
+                }
+                setControlsBusy(false);
+                updateStats();
+            }, Qt::QueuedConnection);
+        });
+    }
 }
 
 void OcrDialog::updateStats()
@@ -387,15 +489,68 @@ void OcrDialog::startAreaSnipping()
 
     // If viewing a PDF with high-res rendering available:
     if (m_isPdf && m_pageRenderer) {
-        overlay->setHighDpiCropper([this](const QRectF &normRect) -> QImage {
+        overlay->setRectCropper([this, target](const QRect &selRect) -> QImage {
+            QWidget *canvas = nullptr;
+            for (QWidget *child : target->findChildren<QWidget*>()) {
+                if (child->inherits("PdfPageWidget") || child->inherits("PdfBaseCanvas") ||
+                    child->metaObject()->className() == QStringLiteral("PdfPageWidget") ||
+                    child->metaObject()->className() == QStringLiteral("PdfBaseCanvas")) {
+                    canvas = child;
+                    break;
+                }
+            }
+            if (canvas && canvas->isVisible()) {
+                QPoint globalTL = target->mapToGlobal(selRect.topLeft());
+                QPoint canvasTL = canvas->mapFromGlobal(globalTL);
+                QPoint globalBR = target->mapToGlobal(selRect.bottomRight());
+                QPoint canvasBR = canvas->mapFromGlobal(globalBR);
+                QRect canvasSel = QRect(canvasTL, canvasBR).normalized();
+
+                int pageIdx = m_currentPage;
+                QMetaObject::invokeMethod(canvas, "pageIndexAtPos", Qt::DirectConnection,
+                                          Q_RETURN_ARG(int, pageIdx),
+                                          Q_ARG(QPoint, canvasSel.center()));
+                if (pageIdx < 0) {
+                    QMetaObject::invokeMethod(canvas, "activePage", Qt::DirectConnection,
+                                              Q_RETURN_ARG(int, pageIdx));
+                }
+                if (pageIdx < 0) pageIdx = m_currentPage;
+
+                QRect pr;
+                QMetaObject::invokeMethod(canvas, "pageRect", Qt::DirectConnection,
+                                          Q_RETURN_ARG(QRect, pr),
+                                          Q_ARG(int, pageIdx));
+
+                if (pr.isValid() && pr.width() > 0 && pr.height() > 0) {
+                    QRect selInPage = canvasSel.translated(-pr.topLeft());
+                    QRect intersected = selInPage.intersected(QRect(0, 0, pr.width(), pr.height()));
+                    if (intersected.width() >= 4 && intersected.height() >= 4) {
+                        QRectF normRect(static_cast<double>(intersected.x()) / pr.width(),
+                                        static_cast<double>(intersected.y()) / pr.height(),
+                                        static_cast<double>(intersected.width()) / pr.width(),
+                                        static_cast<double>(intersected.height()) / pr.height());
+                        QImage fullPage = m_pageRenderer(pageIdx);
+                        if (!fullPage.isNull()) {
+                            int rx = qBound(0, static_cast<int>(normRect.x() * fullPage.width()), fullPage.width() - 1);
+                            int ry = qBound(0, static_cast<int>(normRect.y() * fullPage.height()), fullPage.height() - 1);
+                            int rw = qBound(1, static_cast<int>(normRect.width() * fullPage.width()), fullPage.width() - rx);
+                            int rh = qBound(1, static_cast<int>(normRect.height() * fullPage.height()), fullPage.height() - ry);
+                            return fullPage.copy(rx, ry, rw, rh);
+                        }
+                    }
+                }
+            }
+
             QImage fullPage = m_pageRenderer(m_currentPage);
             if (fullPage.isNull()) return QImage();
-
+            QRectF normRect(selRect.x() / static_cast<double>(target->width()),
+                            selRect.y() / static_cast<double>(target->height()),
+                            selRect.width() / static_cast<double>(target->width()),
+                            selRect.height() / static_cast<double>(target->height()));
             int rx = qBound(0, static_cast<int>(normRect.x() * fullPage.width()), fullPage.width() - 1);
             int ry = qBound(0, static_cast<int>(normRect.y() * fullPage.height()), fullPage.height() - 1);
             int rw = qBound(1, static_cast<int>(normRect.width() * fullPage.width()), fullPage.width() - rx);
             int rh = qBound(1, static_cast<int>(normRect.height() * fullPage.height()), fullPage.height() - ry);
-
             return fullPage.copy(rx, ry, rw, rh);
         });
     }

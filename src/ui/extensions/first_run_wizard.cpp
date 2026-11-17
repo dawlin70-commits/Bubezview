@@ -9,9 +9,7 @@
 #include "theme_manager.h"
 #include "vector_icons.h"
 #include "cpu_info.h"
-#include "build_console_dialog.h"
 #include "package_manager_helper.h"
-#include "settings_dialog.h"
 
 #include <QSettings>
 #include <QStandardPaths>
@@ -20,9 +18,15 @@
 #include <QFileInfo>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QFrame>
 #include <QPushButton>
-#include <QRegularExpression>
+#include <QLabel>
+#include <QComboBox>
+#include <QRadioButton>
+#include <QCheckBox>
+#include <QSlider>
+#include <QStackedWidget>
 #include <QApplication>
 #include <QClipboard>
 #include <QDialog>
@@ -31,1158 +35,1263 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QGridLayout>
-#include <QSize>
-#include <QPixmap>
-
-#ifndef BUBEZ_OPT_LEVEL
-#define BUBEZ_OPT_LEVEL "O2"
-#endif
+#include <QLineEdit>
+#include <QPainter>
+#include <QPainterPath>
+#include <QListView>
 
 namespace {
 
 /**
- * @class SpaceShortcutTestDialog
- * @brief Interactive modal dialog that captures key presses to verify Spacebar responsiveness.
+ * @class UnsupportedSystemGuideDialog
+ * @brief Guided setup dialog providing instructions for configuring global shortcuts on unsupported desktops.
  */
-class SpaceShortcutTestDialog : public QDialog {
+class UnsupportedSystemGuideDialog : public FramelessDialog {
 public:
-    explicit SpaceShortcutTestDialog(QWidget *parent = nullptr)
-        : QDialog(parent)
-        , m_spaceDetected(false)
+    explicit UnsupportedSystemGuideDialog(QWidget *parent = nullptr)
+        : FramelessDialog(parent)
     {
-        setWindowTitle(FirstRunWizard::tr("Test Spacebar Shortcut"));
-        resize(440, 180);
-        auto *layout = new QVBoxLayout(this);
+        setDialogTitle(FirstRunWizard::tr("Guida Scorciatoia Desktop"));
+        resize(520, 360);
+        setModal(true);
+
+        auto *layout = contentLayout();
         layout->setSpacing(12);
-        layout->setContentsMargins(20, 18, 20, 18);
+        layout->setContentsMargins(16, 14, 16, 14);
 
-        auto *lblTitle = new QLabel(FirstRunWizard::tr("<h3>🧪 Testing Spacebar Key</h3>"), this);
-        lblTitle->setAlignment(Qt::AlignCenter);
-        layout->addWidget(lblTitle);
+        auto *lblHeader = new QLabel(FirstRunWizard::tr("<h3>📋 Configurazione Scorciatoia di Sistema</h3>"), this);
+        layout->addWidget(lblHeader);
 
-        m_lblStatus = new QLabel(
-            FirstRunWizard::tr("Please press the <b>Spacebar</b> on your keyboard now to verify key capture."),
+        auto *lblDesc = new QLabel(
+            FirstRunWizard::tr("Nei desktop o window manager senza supporto nativo al tasto Spazio nel file manager (es. XFCE, i3, Sway), "
+                               "puoi assegnare una scorciatoia globale (ad es. <b>Ctrl+Spazio</b>) per avviare BubezView con il comando sottostante."),
             this
         );
-        m_lblStatus->setAlignment(Qt::AlignCenter);
-        m_lblStatus->setWordWrap(true);
-        layout->addWidget(m_lblStatus);
+        lblDesc->setWordWrap(true);
+        layout->addWidget(lblDesc);
 
-        auto *hBox = new QHBoxLayout();
-        auto *btnCancel = new QPushButton(FirstRunWizard::tr("Cancel / Having Issues"), this);
-        btnCancel->setFocusPolicy(Qt::NoFocus);
-        btnCancel->installEventFilter(this);
-        connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
-        hBox->addStretch();
-        hBox->addWidget(btnCancel);
-        layout->addLayout(hBox);
+        auto *grpCmd = new QGroupBox(FirstRunWizard::tr("Comando da associare"), this);
+        auto *cmdLayout = new QHBoxLayout(grpCmd);
+        cmdLayout->setContentsMargins(10, 8, 10, 8);
+        cmdLayout->setSpacing(8);
 
-        setFocusPolicy(Qt::StrongFocus);
-    }
+        QString cmdText = QCoreApplication::applicationFilePath();
+        if (cmdText.isEmpty()) {
+            cmdText = QStringLiteral("bubezview");
+        }
 
-    bool spaceDetected() const { return m_spaceDetected; }
+        auto *editCmd = new QLineEdit(cmdText, grpCmd);
+        editCmd->setReadOnly(true);
+        editCmd->setStyleSheet(QStringLiteral("font-family: monospace; font-size: 11px; padding: 4px;"));
+        cmdLayout->addWidget(editCmd, 1);
 
-protected:
-    bool eventFilter(QObject *watched, QEvent *event) override {
-        if (event->type() == QEvent::KeyPress) {
-            auto *keyEvent = static_cast<QKeyEvent *>(event);
-            if (keyEvent->key() == Qt::Key_Space) {
-                m_spaceDetected = true;
-                m_lblStatus->setText(FirstRunWizard::tr("<b style='color:#10b981;'>✅ Spacebar detected successfully!</b>"));
-                QTimer::singleShot(350, this, &QDialog::accept);
-                return true;
+        auto *btnCopy = new QPushButton(FirstRunWizard::tr("📋 Copia"), grpCmd);
+        btnCopy->setCursor(Qt::PointingHandCursor);
+        connect(btnCopy, &QPushButton::clicked, this, [btnCopy, cmdText]() {
+            if (QClipboard *cb = QGuiApplication::clipboard()) {
+                cb->setText(cmdText);
             }
-        }
-        return QDialog::eventFilter(watched, event);
-    }
+            btnCopy->setText(FirstRunWizard::tr("✅ Copiato!"));
+            QTimer::singleShot(1500, btnCopy, [btnCopy]() {
+                btnCopy->setText(FirstRunWizard::tr("📋 Copia"));
+            });
+        });
+        cmdLayout->addWidget(btnCopy);
+        layout->addWidget(grpCmd);
 
-    void keyPressEvent(QKeyEvent *event) override {
-        if (event->key() == Qt::Key_Space) {
-            m_spaceDetected = true;
-            m_lblStatus->setText(FirstRunWizard::tr("<b style='color:#10b981;'>✅ Spacebar detected successfully!</b>"));
-            QTimer::singleShot(350, this, &QDialog::accept);
-            return;
-        }
-        QDialog::keyPressEvent(event);
-    }
+        auto *lblHint = new QLabel(
+            FirstRunWizard::tr("1. Apri le <b>Impostazioni Tastiera</b> del tuo ambiente desktop.<br>"
+                               "2. Aggiungi una scorciatoia personalizzata con il comando copiato sopra.<br>"
+                               "3. Premi la combinazione scelta (es. <b>Ctrl+Spazio</b>) per visualizzare i file."),
+            this
+        );
+        lblHint->setTextFormat(Qt::RichText);
+        layout->addWidget(lblHint);
 
-private:
-    QLabel *m_lblStatus = nullptr;
-    bool m_spaceDetected = false;
+        auto *btnRow = new QHBoxLayout();
+        btnRow->addStretch();
+        auto *btnClose = new QPushButton(FirstRunWizard::tr("Chiudi"), this);
+        btnClose->setCursor(Qt::PointingHandCursor);
+        connect(btnClose, &QPushButton::clicked, this, &QDialog::accept);
+        btnRow->addWidget(btnClose);
+        layout->addLayout(btnRow);
+    }
 };
 
 } // namespace
 
+/**
+ * @class TopBarPreviewWidget
+ * @brief Compact interactive visual widget rendering the sleek BubezView top bar
+ *        live for the 3 themes (Zinc Gray, Dark Slate, Modern Light).
+ */
+class TopBarPreviewWidget : public QWidget {
+public:
+    explicit TopBarPreviewWidget(QWidget *parent = nullptr)
+        : QWidget(parent)
+    {
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        setFixedHeight(40);
+        setTheme(QStringLiteral("zinc_gray"));
+    }
+
+    void setTheme(const QString &themeCode)
+    {
+        m_theme = themeCode;
+        if (themeCode == QLatin1String("dark_slate")) {
+            m_barBgTop = QColor("#1e2538");
+            m_barBgBottom = QColor("#131825");
+            m_barBorder = QColor(56, 189, 248, 80);
+            m_textColor = QColor("#f1f5f9");
+            m_btnBg = QColor(255, 255, 255, 20);
+            m_btnBorder = QColor(255, 255, 255, 35);
+        } else if (themeCode == QLatin1String("modern_light")) {
+            m_barBgTop = QColor("#ffffff");
+            m_barBgBottom = QColor("#e2e6ec");
+            m_barBorder = QColor(0, 0, 0, 40);
+            m_textColor = QColor("#1e293b");
+            m_btnBg = QColor(0, 0, 0, 16);
+            m_btnBorder = QColor(0, 0, 0, 32);
+        } else { // ZincGray default
+            m_barBgTop = QColor("#44454b");
+            m_barBgBottom = QColor("#2e2f33");
+            m_barBorder = QColor(255, 255, 255, 45);
+            m_textColor = QColor("#f3f4f6");
+            m_btnBg = QColor(255, 255, 255, 24);
+            m_btnBorder = QColor(255, 255, 255, 45);
+        }
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *) override
+    {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing, true);
+
+        const QRect r = rect();
+        const int radius = 9;
+
+        // Top Bar (Header)
+        QRect barRect = r.adjusted(1, 1, -1, -1);
+        QLinearGradient barGrad(barRect.topLeft(), barRect.bottomLeft());
+        barGrad.setColorAt(0.0, m_barBgTop);
+        barGrad.setColorAt(1.0, m_barBgBottom);
+
+        QPainterPath barPath;
+        barPath.addRoundedRect(barRect, radius, radius);
+        p.fillPath(barPath, barGrad);
+        p.setPen(QPen(m_barBorder, 1.0));
+        p.drawPath(barPath);
+
+        // Traffic lights (macOS dots on left)
+        int dotY = barRect.center().y();
+        int dotX = barRect.left() + 14;
+        const int dotSize = 10;
+        const int dotSpacing = 6;
+
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#ef4444"));
+        p.drawEllipse(dotX, dotY - dotSize / 2, dotSize, dotSize);
+        dotX += dotSize + dotSpacing;
+
+        p.setBrush(QColor("#f59e0b"));
+        p.drawEllipse(dotX, dotY - dotSize / 2, dotSize, dotSize);
+        dotX += dotSize + dotSpacing;
+
+        p.setBrush(QColor("#10b981"));
+        p.drawEllipse(dotX, dotY - dotSize / 2, dotSize, dotSize);
+
+        // Center Title & Document Icon
+        QFont titleFont = font();
+        titleFont.setPixelSize(11);
+        titleFont.setBold(true);
+        p.setFont(titleFont);
+        p.setPen(m_textColor);
+
+        const QString titleText = QStringLiteral("📄 anteprima_documento.pdf  [1/1]");
+        QRect textRect(barRect.left() + 70, barRect.top(), barRect.width() - 230, barRect.height());
+        p.drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, titleText);
+
+        // Action Buttons Mockup on Right
+        int btnW = 66;
+        int btnH = 22;
+        int btnY = barRect.center().y() - btnH / 2;
+        int rightX = barRect.right() - 10;
+
+        auto drawPillBtn = [&](const QString &label, bool primary) {
+            rightX -= btnW;
+            QRect btnR(rightX, btnY, btnW, btnH);
+            QColor bg = primary ? QColor("#0284c7") : m_btnBg;
+            QColor border = primary ? QColor("#0369a1") : m_btnBorder;
+            QColor txt = primary ? Qt::white : m_textColor;
+
+            p.setBrush(bg);
+            p.setPen(QPen(border, 1.0));
+            p.drawRoundedRect(btnR, 5, 5);
+
+            QFont btnFont = font();
+            btnFont.setPixelSize(10);
+            btnFont.setBold(primary);
+            p.setFont(btnFont);
+            p.setPen(txt);
+            p.drawText(btnR, Qt::AlignCenter, label);
+            rightX -= 6;
+        };
+
+        drawPillBtn(FirstRunWizard::tr("Modifica"), true);
+        drawPillBtn(FirstRunWizard::tr("Condividi"), false);
+    }
+
+private:
+    QString m_theme;
+    QColor m_barBgTop;
+    QColor m_barBgBottom;
+    QColor m_barBorder;
+    QColor m_textColor;
+    QColor m_btnBg;
+    QColor m_btnBorder;
+};
+
 FirstRunWizard::FirstRunWizard(QWidget *parent)
-    : QWizard(parent)
+    : FramelessDialog(parent)
 {
-    setWindowTitle(tr("BubezView Setup Wizard"));
-    setWizardStyle(QWizard::ModernStyle);
+    setDialogTitle(tr("Configurazione Guidata BubezView"));
+    setResizable(false);
 
-    // Never show back button on start page
-    setOption(QWizard::NoBackButtonOnStartPage, true);
-
-    // Spacious and responsive size for standard screens and high-DPI displays
-    setMinimumSize(680, 500);
-    int targetW = 760;
-    int targetH = 545;
+    int targetW = 750;
+    int targetH = 510;
     if (QScreen *screen = QGuiApplication::primaryScreen()) {
         const QRect avail = screen->availableGeometry();
-        targetW = qMin(targetW, qMax(680, avail.width() - 40));
-        targetH = qMin(targetH, qMax(500, avail.height() - 60));
+        targetW = qMin(targetW, qMax(720, avail.width() - 40));
+        targetH = qMin(targetH, qMax(490, avail.height() - 60));
     }
-    resize(targetW, targetH);
+    setFixedSize(targetW, targetH);
+    unsetCursor();
+    while (QGuiApplication::overrideCursor()) {
+        QGuiApplication::restoreOverrideCursor();
+    }
 
-    // Register 3 pages (Page_Welcome -> Page_Spacebar -> Page_Modules)
-    setPage(Page_Welcome, createWelcomePage());
-    setPage(Page_Spacebar, createSpacebarPage());
-    setPage(Page_Modules, createModulesPage());
-    setStartId(Page_Welcome);
+    auto *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(12, 10, 12, 10);
+    mainLayout->setSpacing(8);
 
-    // CustomButton1 for "Quick Start" on Page_Spacebar
-    setOption(QWizard::HaveCustomButton1, true);
-    setButtonText(QWizard::CustomButton1, tr("⚡ Quick Start (Recommended)"));
-    setButtonText(QWizard::NextButton, tr("Next >"));
-    setButtonText(QWizard::BackButton, tr("< Back"));
-    setButtonText(QWizard::FinishButton, tr("Finish && Launch BubezView"));
-    setButtonText(QWizard::CancelButton, tr("Cancel"));
+    // 4 Sequential Pages
+    m_pageStack = new QStackedWidget(this);
+    m_pageStack->addWidget(createWelcomePage());      // Page_Welcome = 0
+    m_pageStack->addWidget(createSpacebarPage());     // Page_Spacebar = 1
+    m_pageStack->addWidget(createModulesPage());      // Page_Modules = 2
+    m_pageStack->addWidget(createPerformancePage());  // Page_Performance = 3
+    mainLayout->addWidget(m_pageStack, 1);
 
-    connect(this, &QWizard::customButtonClicked, this, [this](int which) {
-        if (which == QWizard::CustomButton1) {
-            accept();
-        }
-    });
+    // Bottom Navigation Bar
+    auto *bottomLayout = new QHBoxLayout();
+    bottomLayout->setContentsMargins(4, 4, 4, 2);
+    bottomLayout->setSpacing(10);
 
-    auto alignHeaderSubtitle = [this]() {
-        for (QGridLayout *grid : findChildren<QGridLayout *>()) {
-            if (grid->parentWidget() != this && grid->columnCount() >= 2 && grid->columnMinimumWidth(0) > 0) {
-                grid->setColumnMinimumWidth(0, 0);
-                grid->setVerticalSpacing(2);
-                grid->setContentsMargins(14, 6, 14, 6);
-            }
-        }
-    };
+    m_btnCancel = new QPushButton(tr("Annulla"), this);
+    m_btnCancel->setCursor(Qt::PointingHandCursor);
+    connect(m_btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+    bottomLayout->addWidget(m_btnCancel);
 
-    connect(this, &QWizard::currentIdChanged, this, [this, alignHeaderSubtitle](int id) {
-        alignHeaderSubtitle();
+    bottomLayout->addStretch();
 
-        // Ensure Back button is hidden on first page
-        if (QAbstractButton *backBtn = button(QWizard::BackButton)) {
-            backBtn->setVisible(id != Page_Welcome);
-        }
+    m_btnBack = new QPushButton(tr("< Indietro"), this);
+    m_btnBack->setCursor(Qt::PointingHandCursor);
+    m_btnBack->setVisible(false);
+    connect(m_btnBack, &QPushButton::clicked, this, &FirstRunWizard::back);
+    bottomLayout->addWidget(m_btnBack);
 
-        // Quick Start button is visible ONLY on Page_Spacebar
-        if (QAbstractButton *quickBtn = button(QWizard::CustomButton1)) {
-            quickBtn->setVisible(id == Page_Spacebar);
-            if (id == Page_Spacebar) {
-                quickBtn->setStyleSheet(
-                    "QPushButton { background-color: #0284c7; color: #ffffff; font-weight: 700; "
-                    "padding: 5px 14px; border-radius: 5px; border: 1px solid #0369a1; }"
-                    "QPushButton:hover { background-color: #0369a1; }"
-                );
-            }
-        }
+    m_btnNext = new QPushButton(tr("Avanti >"), this);
+    m_btnNext->setCursor(Qt::PointingHandCursor);
+    connect(m_btnNext, &QPushButton::clicked, this, &FirstRunWizard::next);
+    bottomLayout->addWidget(m_btnNext);
 
-        // Next button text adjusts per page
-        if (id == Page_Welcome) {
-            setButtonText(QWizard::NextButton, tr("Next >"));
-        } else if (id == Page_Spacebar) {
-            setButtonText(QWizard::NextButton, tr("Additional Options >"));
-            runAutoSpacebarCheck();
-        }
-    });
-    QTimer::singleShot(0, this, alignHeaderSubtitle);
+    mainLayout->addLayout(bottomLayout);
+
+    goToPage(Page_Welcome);
+    updateThemeStyles();
 }
 
-QWizardPage *FirstRunWizard::createWelcomePage()
+void FirstRunWizard::next()
 {
-    auto *page = new QWizardPage(this);
-    page->setTitle(tr("Welcome to BubezView"));
-    page->setSubTitle(tr("Ultra-fast native Linux file viewer and instant preview studio."));
-
-    auto *layout = new QVBoxLayout(page);
-    layout->setSpacing(12);
-    layout->setContentsMargins(6, 4, 6, 4);
-
-    // =========================================================================
-    // 1. Hero Welcome Card (Official BubezView Logo + Value Prop + Hardware Pills)
-    // =========================================================================
-    auto *heroFrame = new QFrame(page);
-    heroFrame->setObjectName("wizardHeroFrame");
-    heroFrame->setStyleSheet(
-        "QFrame#wizardHeroFrame {"
-        "  background-color: rgba(2, 132, 199, 0.08);"
-        "  border: 1px solid rgba(56, 189, 248, 0.30);"
-        "  border-radius: 10px;"
-        "}"
-    );
-    auto *heroLayout = new QHBoxLayout(heroFrame);
-    heroLayout->setContentsMargins(18, 14, 18, 14);
-    heroLayout->setSpacing(18);
-
-    auto *lblLogo = new QLabel(heroFrame);
-    lblLogo->setAlignment(Qt::AlignCenter);
-    QPixmap brandPix(":/icons/bubezview.png");
-    if (!brandPix.isNull()) {
-        lblLogo->setPixmap(brandPix.scaled(68, 68, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    const int cur = currentId();
+    if (cur < Page_Performance) {
+        goToPage(cur + 1);
     } else {
-        lblLogo->setPixmap(VectorIcons::createIcon(VectorIcons::Type::Document, QColor("#38bdf8")).pixmap(56, 56));
+        accept();
     }
-    lblLogo->setFixedSize(72, 72);
-    heroLayout->addWidget(lblLogo, 0, Qt::AlignVCenter);
+}
 
-    auto *heroRight = new QVBoxLayout();
-    heroRight->setSpacing(8);
+void FirstRunWizard::back()
+{
+    const int cur = currentId();
+    if (cur > Page_Welcome) {
+        goToPage(cur - 1);
+    }
+}
 
-    auto *lblHeroTitle = new QLabel(
-        tr("<span style='font-size: 15px; font-weight: 700;'>Ready for Instant File Previews</span><br>"
-           "<span style='font-size: 12px; color: #64748b;'>"
-           "Core viewers (PDF, Images, Text, Archives, Audio/Video) work out of the box.<br>"
-           "Heavy studio tools are installed on demand with a single click only when you need them.</span>"),
-        heroFrame
-    );
-    lblHeroTitle->setWordWrap(true);
-    lblHeroTitle->setTextFormat(Qt::RichText);
-    heroRight->addWidget(lblHeroTitle);
+void FirstRunWizard::goToPage(int id)
+{
+    if (id < 0 || id >= m_pageStack->count()) return;
+    m_pageStack->setCurrentIndex(id);
 
-    // Hardware & Desktop Pill Badges Row
-    QString deName = DesktopIntegrator::desktopName();
-    QString cpuModel = CpuInfo::modelName();
-    if (cpuModel.isEmpty()) {
-        cpuModel = tr("Generic x86-64 Processor");
+    if (m_btnBack) {
+        m_btnBack->setVisible(id != Page_Welcome);
+    }
+    if (m_btnNext) {
+        if (id == Page_Performance) {
+            m_btnNext->setText(tr("Termina e Avvia BubezView"));
+        } else {
+            m_btnNext->setText(tr("Avanti >"));
+        }
     }
 
-    auto *pillsRow = new QHBoxLayout();
-    pillsRow->setSpacing(8);
-    pillsRow->setContentsMargins(0, 2, 0, 0);
+    if (id == Page_Spacebar) {
+        DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            DesktopIntegrator::enableDolphin("Space");
+        } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+            DesktopIntegrator::enableGnomeNemo();
+        }
+        DesktopIntegrator::enableContextMenu();
+        DesktopIntegrator::installAppMenu();
 
-    auto makeBadge = [heroFrame](const QString &text, const QString &accentHex) {
-        auto *badge = new QLabel(text, heroFrame);
-        badge->setTextFormat(Qt::RichText);
-        badge->setStyleSheet(QString(
-            "background-color: rgba(15, 23, 42, 0.35);"
-            "border: 1px solid %1;"
-            "border-radius: 9px;"
-            "padding: 3px 10px;"
-            "font-size: 11px; font-weight: 600;"
-        ).arg(accentHex));
-        return badge;
-    };
+        QSettings settings("Bubez", "BubezView");
+        const QString shortcut = (de == DesktopIntegrator::DesktopEnv::KDE ||
+                                  de == DesktopIntegrator::DesktopEnv::GNOME ||
+                                  de == DesktopIntegrator::DesktopEnv::Cinnamon) ? QStringLiteral("Space") : QStringLiteral("Ctrl+Space");
+        settings.setValue("shortcut", shortcut);
+        settings.setValue("integration/dolphin", true);
+        settings.setValue("integration/desktop", true);
+        settings.sync();
 
-    pillsRow->addWidget(makeBadge(QString("🎨 %1").arg(deName), "rgba(56, 189, 248, 0.45)"));
-    pillsRow->addWidget(makeBadge(
-        QString("⚡ %1 (%2T)").arg(cpuModel, QString::number(CpuInfo::logicalCores())),
-        "rgba(16, 185, 129, 0.45)"
-    ));
-    pillsRow->addWidget(makeBadge(tr("🚀 C++17 / Qt6 Native"), "rgba(139, 92, 246, 0.45)"));
-    pillsRow->addStretch(1);
+        runSpacebarAutoTest();
+    }
+}
 
-    heroRight->addLayout(pillsRow);
-    heroLayout->addLayout(heroRight, 1);
-    layout->addWidget(heroFrame);
+int FirstRunWizard::currentId() const
+{
+    return m_pageStack ? m_pageStack->currentIndex() : 0;
+}
 
-    // =========================================================================
-    // 2. Visual Style & Live Theme Cards
-    // =========================================================================
-    auto *groupTheme = new QGroupBox(tr("Visual Style && Theme (Click for Live Preview)"), page);
-    auto *themeLayout = new QVBoxLayout(groupTheme);
-    themeLayout->setContentsMargins(14, 12, 14, 12);
-    themeLayout->setSpacing(10);
+QWidget *FirstRunWizard::createWelcomePage()
+{
+    auto *page = new QWidget(this);
+    auto *layout = new QVBoxLayout(page);
+    layout->setSpacing(14);
+    layout->setContentsMargins(14, 12, 14, 12);
 
-    m_comboTheme = new QComboBox(groupTheme);
-    m_comboTheme->addItem(tr("Dark Slate"), "dark_slate");
-    m_comboTheme->addItem(tr("Breeze Dark"), "breeze_dark");
-    m_comboTheme->addItem(tr("Modern Light"), "modern_light");
-    m_comboTheme->addItem(tr("Breeze Light"), "breeze_light");
-    m_comboTheme->setVisible(false);
+    // Header
+    auto *headerBox = new QWidget(page);
+    auto *headerLay = new QVBoxLayout(headerBox);
+    headerLay->setContentsMargins(0, 0, 0, 0);
+    headerLay->setSpacing(2);
+    auto *lblTitle = new QLabel(tr("Benvenuto in BubezView"), headerBox);
+    lblTitle->setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8; background: transparent;");
+    auto *lblSub = new QLabel(tr("Visualizzatore nativo e anteprima file istantanea per Linux."), headerBox);
+    lblSub->setStyleSheet("font-size: 11px; opacity: 0.85; background: transparent;");
+    headerLay->addWidget(lblTitle);
+    headerLay->addWidget(lblSub);
+    layout->addWidget(headerBox);
 
-    auto *cardsRow = new QHBoxLayout();
-    cardsRow->setSpacing(8);
+    // Language Selector Card (Pre-selected with system language)
+    auto *grpLang = new QGroupBox(tr("Lingua dell'interfaccia"), page);
+    auto *layLang = new QHBoxLayout(grpLang);
+    layLang->setContentsMargins(14, 10, 14, 10);
+    layLang->setSpacing(12);
 
-    m_themeCardGroup = new QButtonGroup(this);
-    m_themeCardGroup->setExclusive(true);
+    auto *lblLangPrompt = new QLabel(grpLang);
+    lblLangPrompt->setStyleSheet("font-size: 11px; font-weight: 600;");
+    layLang->addWidget(lblLangPrompt);
 
-    auto makeThemeCard = [groupTheme](const QString &title, const QString &subtitle) {
-        auto *btn = new QPushButton(QString("%1\n%2").arg(title, subtitle), groupTheme);
+    m_comboLanguage = new QComboBox(grpLang);
+    m_comboLanguage->setView(new QListView(m_comboLanguage));
+    m_comboLanguage->setCursor(Qt::PointingHandCursor);
+    m_comboLanguage->addItem(QStringLiteral("Italiano"), QStringLiteral("it"));
+    m_comboLanguage->addItem(QStringLiteral("English"), QStringLiteral("en"));
+    m_comboLanguage->addItem(QStringLiteral("Français"), QStringLiteral("fr"));
+    m_comboLanguage->addItem(QStringLiteral("Español"), QStringLiteral("es"));
+    m_comboLanguage->addItem(QStringLiteral("Deutsch"), QStringLiteral("de"));
+
+    // Detect system language; fallback to English ("en") if unsupported
+    QString sysLocale = QLocale::system().name().toLower();
+    QString defaultCode = QStringLiteral("en");
+    bool matchedSystem = false;
+    QString detectedLangName;
+    if (sysLocale.startsWith(QLatin1String("it"))) { defaultCode = QStringLiteral("it"); matchedSystem = true; detectedLangName = QStringLiteral("Italiano"); }
+    else if (sysLocale.startsWith(QLatin1String("fr"))) { defaultCode = QStringLiteral("fr"); matchedSystem = true; detectedLangName = QStringLiteral("Français"); }
+    else if (sysLocale.startsWith(QLatin1String("es"))) { defaultCode = QStringLiteral("es"); matchedSystem = true; detectedLangName = QStringLiteral("Español"); }
+    else if (sysLocale.startsWith(QLatin1String("de"))) { defaultCode = QStringLiteral("de"); matchedSystem = true; detectedLangName = QStringLiteral("Deutsch"); }
+    else if (sysLocale.startsWith(QLatin1String("en"))) { defaultCode = QStringLiteral("en"); matchedSystem = true; detectedLangName = QStringLiteral("English"); }
+
+    if (matchedSystem) {
+        lblLangPrompt->setText(tr("Lingua di sistema rilevata (%1):").arg(detectedLangName));
+    } else {
+        lblLangPrompt->setText(tr("Lingua predefinita (Inglese — sistema non supportato):"));
+    }
+
+    int langIdx = m_comboLanguage->findData(defaultCode);
+    if (langIdx >= 0) {
+        m_comboLanguage->setCurrentIndex(langIdx);
+    }
+    layLang->addWidget(m_comboLanguage, 1);
+    layout->addWidget(grpLang);
+
+    // Live Theme Visual Preview Box & 3 Theme Cards
+    auto *grpTheme = new QGroupBox(tr("Aspetto && Tema Grafico"), page);
+    auto *layTheme = new QVBoxLayout(grpTheme);
+    layTheme->setContentsMargins(14, 12, 14, 12);
+    layTheme->setSpacing(12);
+
+    // Compact live preview mockup of the Bubez bar
+    m_barPreview = new TopBarPreviewWidget(grpTheme);
+    layTheme->addWidget(m_barPreview);
+
+    // 3 Theme selection buttons
+    auto *themeRow = new QHBoxLayout();
+    themeRow->setSpacing(10);
+
+    m_themeGroup = new QButtonGroup(this);
+    m_themeGroup->setExclusive(true);
+
+    auto makeThemeBtn = [grpTheme](const QString &title, const QString &sub) {
+        auto *btn = new QPushButton(QString("%1\n%2").arg(title, sub), grpTheme);
         btn->setCheckable(true);
         btn->setCursor(Qt::PointingHandCursor);
-        btn->setMinimumHeight(48);
+        btn->setMinimumHeight(46);
         return btn;
     };
 
-    m_btnThemeDarkSlate = makeThemeCard(tr("🌙 Dark Slate"), tr("Deep slate (#22262b)"));
-    m_btnThemeBreezeDark = makeThemeCard(tr("💎 Breeze Dark"), tr("KDE dark (#181b1d)"));
-    m_btnThemeModernLight = makeThemeCard(tr("☀️ Modern Light"), tr("Warm silver (#ececf0)"));
-    m_btnThemeBreezeLight = makeThemeCard(tr("🌤️ Breeze Light"), tr("Clean light (#eff0f1)"));
+    m_btnThemeZinc = makeThemeBtn(QStringLiteral("⬛ Zinc Gray"), tr("Studio scuro (#1e1f22)"));
+    m_btnThemeDarkSlate = makeThemeBtn(QStringLiteral("🟦 Dark Slate"), tr("Ardesia scuro (#22262b)"));
+    m_btnThemeModernLight = makeThemeBtn(QStringLiteral("⬜ Modern Light"), tr("Titanio chiaro (#e2e5ea)"));
 
-    m_themeCardGroup->addButton(m_btnThemeDarkSlate, 0);
-    m_themeCardGroup->addButton(m_btnThemeBreezeDark, 1);
-    m_themeCardGroup->addButton(m_btnThemeModernLight, 2);
-    m_themeCardGroup->addButton(m_btnThemeBreezeLight, 3);
+    m_themeGroup->addButton(m_btnThemeZinc, 0);
+    m_themeGroup->addButton(m_btnThemeDarkSlate, 1);
+    m_themeGroup->addButton(m_btnThemeModernLight, 2);
 
-    cardsRow->addWidget(m_btnThemeDarkSlate, 1);
-    cardsRow->addWidget(m_btnThemeBreezeDark, 1);
-    cardsRow->addWidget(m_btnThemeModernLight, 1);
-    cardsRow->addWidget(m_btnThemeBreezeLight, 1);
-    themeLayout->addLayout(cardsRow);
+    themeRow->addWidget(m_btnThemeZinc, 1);
+    themeRow->addWidget(m_btnThemeDarkSlate, 1);
+    themeRow->addWidget(m_btnThemeModernLight, 1);
+    layTheme->addLayout(themeRow);
 
-    connect(m_btnThemeDarkSlate, &QPushButton::clicked, this, [this]() { selectLiveTheme("dark_slate"); });
-    connect(m_btnThemeBreezeDark, &QPushButton::clicked, this, [this]() { selectLiveTheme("breeze_dark"); });
-    connect(m_btnThemeModernLight, &QPushButton::clicked, this, [this]() { selectLiveTheme("modern_light"); });
-    connect(m_btnThemeBreezeLight, &QPushButton::clicked, this, [this]() { selectLiveTheme("breeze_light"); });
-
-    m_chkFilmstrip = new QCheckBox(
-        tr("Show bottom thumbnail filmstrip when browsing folders or multi-page PDFs"),
-        groupTheme
-    );
-    m_chkFilmstrip->setCursor(Qt::PointingHandCursor);
-    m_chkFilmstrip->setStyleSheet("font-size: 11px;");
-    m_chkFilmstrip->setChecked(false);
-    themeLayout->addWidget(m_chkFilmstrip);
+    connect(m_btnThemeZinc, &QPushButton::clicked, this, [this]() { selectTheme("zinc_gray"); });
+    connect(m_btnThemeDarkSlate, &QPushButton::clicked, this, [this]() { selectTheme("dark_slate"); });
+    connect(m_btnThemeModernLight, &QPushButton::clicked, this, [this]() { selectTheme("modern_light"); });
 
     QString currentThemeCode = ThemeManager::presetToString(ThemeManager::currentPreset());
-    selectLiveTheme(currentThemeCode);
+    if (currentThemeCode != QLatin1String("dark_slate") && currentThemeCode != QLatin1String("modern_light")) {
+        currentThemeCode = QStringLiteral("zinc_gray");
+    }
+    selectTheme(currentThemeCode);
 
-    layout->addWidget(groupTheme);
+    layout->addWidget(grpTheme);
     layout->addStretch(1);
 
     return page;
 }
 
-void FirstRunWizard::selectLiveTheme(const QString &themeCode)
+void FirstRunWizard::styleThemeButton(QPushButton *btn, bool active)
 {
-    if (m_comboTheme) {
-        int idx = m_comboTheme->findData(themeCode);
-        if (idx >= 0) {
-            m_comboTheme->setCurrentIndex(idx);
-        }
-    }
+    if (!btn) return;
+    btn->setChecked(active);
 
-    auto styleCard = [](QPushButton *btn, bool active) {
-        if (!btn) return;
-        btn->setChecked(active);
-        if (active) {
+    const ThemePreset activePreset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    const bool isLight = (activePreset == ThemePreset::ModernLight || activePreset == ThemePreset::BreezeLight);
+
+    if (active) {
+        if (btn == m_btnThemeModernLight) {
             btn->setStyleSheet(
                 "QPushButton {"
-                "  background-color: rgba(2, 132, 199, 0.16);"
+                "  background-color: #ffffff;"
                 "  border: 2px solid #0284c7;"
                 "  border-radius: 8px;"
-                "  padding: 5px 8px;"
+                "  padding: 6px 4px;"
                 "  font-weight: 700;"
                 "  font-size: 11px;"
+                "  color: #0f172a;"
+                "}"
+            );
+        } else if (btn == m_btnThemeDarkSlate) {
+            btn->setStyleSheet(
+                "QPushButton {"
+                "  background-color: #1e2538;"
+                "  border: 2px solid #38bdf8;"
+                "  border-radius: 8px;"
+                "  padding: 6px 4px;"
+                "  font-weight: 700;"
+                "  font-size: 11px;"
+                "  color: #38bdf8;"
                 "}"
             );
         } else {
             btn->setStyleSheet(
                 "QPushButton {"
-                "  background-color: rgba(148, 163, 184, 0.08);"
-                "  border: 1px solid rgba(148, 163, 184, 0.30);"
+                "  background-color: #2e2f33;"
+                "  border: 2px solid #0284c7;"
                 "  border-radius: 8px;"
-                "  padding: 5px 8px;"
-                "  font-weight: 500;"
+                "  padding: 6px 4px;"
+                "  font-weight: 700;"
                 "  font-size: 11px;"
-                "}"
-                "QPushButton:hover {"
-                "  border: 1px solid rgba(56, 189, 248, 0.65);"
+                "  color: #38bdf8;"
                 "}"
             );
         }
-    };
-
-    styleCard(m_btnThemeDarkSlate, themeCode == QLatin1String("dark_slate"));
-    styleCard(m_btnThemeBreezeDark, themeCode == QLatin1String("breeze_dark"));
-    styleCard(m_btnThemeModernLight, themeCode == QLatin1String("modern_light"));
-    styleCard(m_btnThemeBreezeLight, themeCode == QLatin1String("breeze_light"));
-
-    ThemeManager::setPreset(ThemeManager::stringToPreset(themeCode));
-    ThemeManager::applyTheme(qApp, qobject_cast<QMainWindow *>(parentWidget()));
+    } else {
+        btn->setStyleSheet(
+            QString(
+                "QPushButton {"
+                "  background-color: %1;"
+                "  border: 1px solid %2;"
+                "  border-radius: 8px;"
+                "  padding: 6px 4px;"
+                "  font-weight: 500;"
+                "  font-size: 11px;"
+                "  color: %3;"
+                "}"
+                "QPushButton:hover {"
+                "  border: 1px solid %4;"
+                "}"
+            ).arg(
+                isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.07)",
+                isLight ? "rgba(0, 0, 0, 0.16)" : "rgba(255, 255, 255, 0.18)",
+                isLight ? "#1e293b" : "#f3f4f6",
+                isLight ? "#0284c7" : "rgba(56, 189, 248, 0.65)"
+            )
+        );
+    }
 }
 
-QWizardPage *FirstRunWizard::createSpacebarPage()
+void FirstRunWizard::selectTheme(const QString &themeCode)
 {
-    auto *page = new QWizardPage(this);
-    page->setTitle(tr("Instant Preview Setup"));
-    page->setSubTitle(tr("Press Space on any file in your file manager to open an immediate preview."));
+    ThemeManager::setPreset(ThemeManager::stringToPreset(themeCode));
+    ThemeManager::applyTheme(qApp, qobject_cast<QMainWindow *>(parentWidget()));
 
-    auto *layout = new QVBoxLayout(page);
-    layout->setSpacing(14);
-    layout->setContentsMargins(6, 4, 6, 4);
-
-    QString projectTrigger = QDir(QCoreApplication::applicationDirPath()).filePath("../trigger_bubez.sh");
-    QString triggerPath = QDir::homePath() + "/.local/share/bubezview/trigger_bubez.sh";
-    if (QFile::exists(projectTrigger)) {
-        triggerPath = QFileInfo(projectTrigger).canonicalFilePath();
+    if (m_barPreview) {
+        m_barPreview->setTheme(themeCode);
     }
 
-    // =========================================================================
-    // Dedicated Centerpiece Card: Automatic Test & Status
-    // =========================================================================
-    auto *groupSpace = new QGroupBox(tr("Spacebar Key Capture Test"), page);
-    auto *spaceLayout = new QVBoxLayout(groupSpace);
-    spaceLayout->setContentsMargins(18, 16, 18, 16);
-    spaceLayout->setSpacing(12);
+    styleThemeButton(m_btnThemeZinc, themeCode == QLatin1String("zinc_gray"));
+    styleThemeButton(m_btnThemeDarkSlate, themeCode == QLatin1String("dark_slate"));
+    styleThemeButton(m_btnThemeModernLight, themeCode == QLatin1String("modern_light"));
 
-    // Automatic Test Result Feedback Card (Populated automatically on entry)
-    m_lblTestResult = new QLabel(groupSpace);
-    m_lblTestResult->setTextFormat(Qt::RichText);
-    m_lblTestResult->setWordWrap(true);
-    spaceLayout->addWidget(m_lblTestResult);
+    updateThemeStyles();
+}
 
-    // Trigger Script Fallback Box: Shown if test fails, conflict occurs, or non-KDE desktop
-    m_triggerBox = new QWidget(groupSpace);
-    auto *trigLayout = new QVBoxLayout(m_triggerBox);
-    trigLayout->setContentsMargins(12, 10, 12, 10);
-    trigLayout->setSpacing(8);
-    m_triggerBox->setStyleSheet(
+QWidget *FirstRunWizard::createSpacebarPage()
+{
+    auto *page = new QWidget(this);
+    auto *layout = new QVBoxLayout(page);
+    layout->setSpacing(12);
+    layout->setContentsMargins(4, 2, 4, 4);
+
+    // Header
+    auto *headerBox = new QWidget(page);
+    auto *headerLay = new QVBoxLayout(headerBox);
+    headerLay->setContentsMargins(0, 0, 0, 0);
+    headerLay->setSpacing(2);
+    auto *lblTitle = new QLabel(tr("Integrazione Desktop & Tasto Spazio"), headerBox);
+    lblTitle->setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8; background: transparent;");
+    auto *lblSub = new QLabel(tr("Premi la barra Spaziatrice su qualsiasi file per aprire l'anteprima istantanea."), headerBox);
+    lblSub->setStyleSheet("font-size: 11px; opacity: 0.85; background: transparent;");
+    headerLay->addWidget(lblTitle);
+    headerLay->addWidget(lblSub);
+    layout->addWidget(headerBox);
+
+    // Automatic Test Card
+    auto *grpTest = new QGroupBox(tr("Stato Integrazione Tasto Spazio"), page);
+    auto *layTest = new QVBoxLayout(grpTest);
+    layTest->setContentsMargins(14, 12, 14, 12);
+    layTest->setSpacing(10);
+
+    m_lblTestStatus = new QLabel(grpTest);
+    m_lblTestStatus->setTextFormat(Qt::RichText);
+    m_lblTestStatus->setWordWrap(true);
+    layTest->addWidget(m_lblTestStatus);
+
+    // Fallback explanation card (shown if test does not pass / unsupported desktop)
+    m_cardFallback = new QWidget(grpTest);
+    auto *layFallback = new QVBoxLayout(m_cardFallback);
+    layFallback->setContentsMargins(12, 10, 12, 10);
+    layFallback->setSpacing(8);
+    m_cardFallback->setStyleSheet(
         "background-color: rgba(245, 158, 11, 0.08);"
         "border: 1px solid rgba(245, 158, 11, 0.35);"
         "border-radius: 8px;"
     );
 
-    auto *lblTrigDesc = new QLabel(
-        tr("<b>Trigger Fallback:</b> In your system keyboard shortcuts (KDE Plasma / GNOME / XFCE Shortcuts), "
-           "bind your desired shortcut (e.g. <b>Ctrl + Space</b>) to this script:"),
-        m_triggerBox
+    auto *lblFallTitle = new QLabel(
+        tr("<b>Configurazione Scorciatoia di Sistema:</b> Assegna una scorciatoia globale (es. <b>Ctrl + Spazio</b>) "
+           "nelle impostazioni tastiera del tuo desktop a questo comando:"),
+        m_cardFallback
     );
-    lblTrigDesc->setTextFormat(Qt::RichText);
-    lblTrigDesc->setWordWrap(true);
-    lblTrigDesc->setStyleSheet("border: none; background: transparent; font-size: 11px;");
-    trigLayout->addWidget(lblTrigDesc);
+    lblFallTitle->setTextFormat(Qt::RichText);
+    lblFallTitle->setWordWrap(true);
+    lblFallTitle->setStyleSheet("border: none; background: transparent; font-size: 11px;");
+    layFallback->addWidget(lblFallTitle);
 
-    auto *trigPathRow = new QHBoxLayout();
-    trigPathRow->setSpacing(8);
+    auto *cmdRow = new QHBoxLayout();
+    cmdRow->setSpacing(8);
+    QString cmdPath = QCoreApplication::applicationFilePath();
+    if (cmdPath.isEmpty()) cmdPath = QStringLiteral("bubezview");
 
-    m_lblTriggerHelp = new QLabel(
-        QString("<code style='color:#0284c7;'>%1</code>").arg(triggerPath),
-        m_triggerBox
-    );
-    m_lblTriggerHelp->setTextFormat(Qt::RichText);
-    m_lblTriggerHelp->setWordWrap(true);
-    m_lblTriggerHelp->setStyleSheet("border: none; background: transparent; font-size: 11px;");
-    trigPathRow->addWidget(m_lblTriggerHelp, 1);
+    auto *lblCmd = new QLabel(QString("<code style='color:#0284c7;'>%1</code>").arg(cmdPath), m_cardFallback);
+    lblCmd->setTextFormat(Qt::RichText);
+    lblCmd->setStyleSheet("border: none; background: transparent; font-size: 11px;");
+    cmdRow->addWidget(lblCmd, 1);
 
-    m_btnCopyTrigger = new QPushButton(tr("📋 Copy Path"), m_triggerBox);
-    m_btnCopyTrigger->setCursor(Qt::PointingHandCursor);
-    m_btnCopyTrigger->setStyleSheet("font-size: 11px; font-weight: 600; padding: 4px 12px;");
-    trigPathRow->addWidget(m_btnCopyTrigger);
-
-    trigLayout->addLayout(trigPathRow);
-
-    connect(m_btnCopyTrigger, &QPushButton::clicked, this, [this, triggerPath]() {
+    m_btnCopyCommand = new QPushButton(tr("📋 Copia comando"), m_cardFallback);
+    m_btnCopyCommand->setCursor(Qt::PointingHandCursor);
+    m_btnCopyCommand->setStyleSheet("font-size: 11px; font-weight: 600; padding: 4px 10px;");
+    connect(m_btnCopyCommand, &QPushButton::clicked, this, [this, cmdPath]() {
         if (QClipboard *cb = QGuiApplication::clipboard()) {
-            cb->setText(triggerPath);
+            cb->setText(cmdPath);
         }
-        if (m_btnCopyTrigger) {
-            m_btnCopyTrigger->setText(tr("✅ Copied!"));
-            QTimer::singleShot(1800, this, [this]() {
-                if (m_btnCopyTrigger) {
-                    m_btnCopyTrigger->setText(tr("📋 Copy Path"));
-                }
-            });
-        }
+        m_btnCopyCommand->setText(tr("✅ Copiato!"));
+        QTimer::singleShot(1500, this, [this]() {
+            if (m_btnCopyCommand) m_btnCopyCommand->setText(tr("📋 Copia comando"));
+        });
     });
+    cmdRow->addWidget(m_btnCopyCommand);
 
-    spaceLayout->addWidget(m_triggerBox);
-
-    // Optional manual test button row
-    auto *btnRow = new QHBoxLayout();
-    btnRow->setSpacing(12);
-
-    m_btnTestShortcut = new QPushButton(tr("🧪 Test Spacebar..."), groupSpace);
-    m_btnTestShortcut->setCursor(Qt::PointingHandCursor);
-    m_btnTestShortcut->setToolTip(tr("Optionally press the Spacebar on your keyboard to verify hardware responsiveness."));
-    m_btnTestShortcut->setStyleSheet(
-        "QPushButton {"
-        "  background-color: rgba(148, 163, 184, 0.12);"
-        "  border: 1px solid rgba(148, 163, 184, 0.35);"
-        "  border-radius: 6px; padding: 6px 14px; font-size: 11px; font-weight: 600;"
-        "}"
-        "QPushButton:hover {"
-        "  border: 1px solid rgba(56, 189, 248, 0.65);"
-        "}"
-    );
-    btnRow->addWidget(m_btnTestShortcut);
-    btnRow->addStretch(1);
-    spaceLayout->addLayout(btnRow);
-
-    connect(m_btnTestShortcut, &QPushButton::clicked, this, [this]() {
-        SpaceShortcutTestDialog dlg(this);
-        if (dlg.exec() == QDialog::Accepted && dlg.spaceDetected()) {
-            m_lblTestResult->setText(
-                tr("<div style='background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.40); border-radius: 8px; padding: 12px 16px;'>"
-                   "<b style='color:#10b981; font-size: 13px;'>✅ Physical Spacebar Press Verified!</b><br>"
-                   "<span style='font-size: 11px;'>Space key capture is confirmed and working on your hardware.</span>"
-                   "</div>")
-            );
-            m_useTriggerFallback = false;
-            if (m_triggerBox) {
-                m_triggerBox->setVisible(false);
-            }
-        } else {
-            m_lblTestResult->setText(
-                tr("<div style='background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.40); border-radius: 8px; padding: 12px 16px;'>"
-                   "<b style='color:#f59e0b; font-size: 13px;'>⚠️ Spacebar conflict reported — fallback trigger enabled below:</b>"
-                   "</div>")
-            );
-            m_useTriggerFallback = true;
-            if (m_triggerBox) {
-                m_triggerBox->setVisible(true);
-            }
-        }
+    m_btnGuide = new QPushButton(tr("Guida..."), m_cardFallback);
+    m_btnGuide->setCursor(Qt::PointingHandCursor);
+    m_btnGuide->setStyleSheet("font-size: 11px; font-weight: 600; padding: 4px 10px;");
+    connect(m_btnGuide, &QPushButton::clicked, this, [this]() {
+        UnsupportedSystemGuideDialog dlg(this);
+        dlg.exec();
     });
+    cmdRow->addWidget(m_btnGuide);
 
-    layout->addWidget(groupSpace);
+    layFallback->addLayout(cmdRow);
+    layTest->addWidget(m_cardFallback);
 
-    // Initial automatic check execution
-    runAutoSpacebarCheck();
+    layout->addWidget(grpTest);
 
-    // Friendly reminder note about Quick Start vs Additional Options
-    auto *lblHelp = new QLabel(
-        tr("💡 <b>Ready to go?</b> Click <b>⚡ Quick Start (Recommended)</b> below to launch immediately, "
-           "or <b>Additional Options &gt;</b> to customize background modules and CPU tuning."),
-        page
+    // Desktop Integration Checkbox (Selected by default)
+    auto *grpInteg = new QGroupBox(tr("Opzioni di Integrazione"), page);
+    auto *layInteg = new QVBoxLayout(grpInteg);
+    layInteg->setContentsMargins(14, 10, 14, 10);
+    layInteg->setSpacing(6);
+
+    m_chkDesktopIntegration = new QCheckBox(
+        tr("Abilita integrazione desktop (menu contestuale del mouse e associazione file manager)"),
+        grpInteg
     );
-    lblHelp->setTextFormat(Qt::RichText);
-    lblHelp->setWordWrap(true);
-    lblHelp->setStyleSheet(
-        "color: #0284c7; font-size: 11px; padding: 8px 12px; "
-        "background-color: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); "
-        "border-radius: 6px;"
-    );
-    layout->addWidget(lblHelp);
+    m_chkDesktopIntegration->setChecked(true);
+    m_chkDesktopIntegration->setCursor(Qt::PointingHandCursor);
+    m_chkDesktopIntegration->setStyleSheet("font-weight: 600; font-size: 11px;");
+    layInteg->addWidget(m_chkDesktopIntegration);
+
+    layout->addWidget(grpInteg);
     layout->addStretch(1);
 
+    runSpacebarAutoTest();
     return page;
 }
 
-void FirstRunWizard::runAutoSpacebarCheck()
+void FirstRunWizard::runSpacebarAutoTest()
 {
-    const DesktopIntegrator::DesktopEnv currentDe = DesktopIntegrator::currentDesktop();
+    const DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
     const QString deName = DesktopIntegrator::desktopName();
 
-    if (currentDe == DesktopIntegrator::DesktopEnv::KDE) {
-        m_useTriggerFallback = false;
-        if (m_lblTestResult) {
-            m_lblTestResult->setText(
-                tr("<div style='background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.40); border-radius: 8px; padding: 14px 16px;'>"
-                   "<div style='color: #10b981; font-weight: 700; font-size: 14px; margin-bottom: 4px;'>"
-                   "✅ Automatic Test Passed — Spacebar Ready!"
-                   "</div>"
-                   "<div style='font-size: 12px; line-height: 1.4;'>"
-                   "Environment: <b>KDE Plasma (Dolphin)</b>.<br>"
-                   "Single-key <b>Space</b> preview integration is verified and active with zero conflicts.<br>"
-                   "Press <b>Space</b> on any file in Dolphin to preview, and <b>Esc</b> to close."
-                   "</div>"
-                   "</div>")
-            );
+    const bool isSupported = (de == DesktopIntegrator::DesktopEnv::KDE ||
+                              de == DesktopIntegrator::DesktopEnv::GNOME ||
+                              de == DesktopIntegrator::DesktopEnv::Cinnamon);
+
+    if (isSupported) {
+        // Automatically enable and test the file manager integration
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            DesktopIntegrator::enableDolphin("Space");
+        } else {
+            DesktopIntegrator::enableGnomeNemo();
         }
-        if (m_triggerBox) {
-            m_triggerBox->setVisible(false);
+
+        bool verified = false;
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            verified = DesktopIntegrator::isDolphinEnabled();
+        } else {
+            verified = DesktopIntegrator::isGnomeNemoEnabled();
         }
-    } else if (currentDe == DesktopIntegrator::DesktopEnv::GNOME) {
-        // Native GNOME Nautilus previewer integration (replacing gnome-sushi via D-Bus and sushi script)
-        DesktopIntegrator::enableGnomeNemo();
-        m_useTriggerFallback = false;
-        if (m_lblTestResult) {
-            m_lblTestResult->setText(
-                tr("<div style='background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.40); border-radius: 8px; padding: 14px 16px;'>"
-                   "<div style='color: #10b981; font-weight: 700; font-size: 14px; margin-bottom: 4px;'>"
-                   "✅ Automatic Test Passed — Spacebar Ready!"
-                   "</div>"
-                   "<div style='font-size: 12px; line-height: 1.4;'>"
-                   "Environment: <b>GNOME (Nautilus)</b>.<br>"
-                   "Native D-Bus previewer integration (replacing <i>gnome-sushi</i>) is active and verified.<br>"
-                   "Press <b>Space</b> on any file in Nautilus to preview, and <b>Esc</b> to close."
-                   "</div>"
-                   "</div>")
-            );
-        }
-        if (m_triggerBox) {
-            m_triggerBox->setVisible(false);
-        }
-    } else if (currentDe == DesktopIntegrator::DesktopEnv::Cinnamon) {
-        // Native Cinnamon Nemo previewer integration (replacing nemo-preview via D-Bus and nemo-preview script)
-        DesktopIntegrator::enableGnomeNemo();
-        m_useTriggerFallback = false;
-        if (m_lblTestResult) {
-            m_lblTestResult->setText(
-                tr("<div style='background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.40); border-radius: 8px; padding: 14px 16px;'>"
-                   "<div style='color: #10b981; font-weight: 700; font-size: 14px; margin-bottom: 4px;'>"
-                   "✅ Automatic Test Passed — Spacebar Ready!"
-                   "</div>"
-                   "<div style='font-size: 12px; line-height: 1.4;'>"
-                   "Environment: <b>Cinnamon (Nemo)</b>.<br>"
-                   "Native Nemo previewer integration (replacing <i>nemo-preview</i>) is active and verified.<br>"
-                   "Press <b>Space</b> on any file in Nemo to preview, and <b>Esc</b> to close."
-                   "</div>"
-                   "</div>")
-            );
-        }
-        if (m_triggerBox) {
-            m_triggerBox->setVisible(false);
+
+        if (verified) {
+            if (m_lblTestStatus) {
+                m_lblTestStatus->setText(
+                    tr("<div style='background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.40); border-radius: 8px; padding: 14px 16px;'>"
+                       "<div style='color: #10b981; font-weight: 700; font-size: 13px; margin-bottom: 4px;'>"
+                       "✅ Integrazione attiva e tasto Spazio assegnato con successo per %1"
+                       "</div>"
+                       "<div style='font-size: 11px; line-height: 1.5;'>"
+                       "L'assegnazione è stata eseguita e verificata in automatico. Premi la <b>Barra Spaziatrice</b> su qualsiasi file nel file manager per aprire l'anteprima istantanea, ed <b>Esc</b> per chiuderla."
+                       "</div>"
+                       "</div>").arg(deName)
+                );
+            }
+            if (m_cardFallback) {
+                m_cardFallback->setVisible(false);
+            }
+        } else {
+            if (m_lblTestStatus) {
+                m_lblTestStatus->setText(
+                    tr("<div style='background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.40); border-radius: 8px; padding: 14px 16px;'>"
+                       "<div style='color: #f59e0b; font-weight: 700; font-size: 13px; margin-bottom: 4px;'>"
+                       "⚠️ Ambiente %1: assegnazione diretta non disponibile"
+                       "</div>"
+                       "<div style='font-size: 11px; line-height: 1.5;'>"
+                       "Per abilitare l'anteprima, configura una scorciatoia globale (ad es. <b>Ctrl+Spazio</b>) associata al comando sottostante."
+                       "</div>"
+                       "</div>").arg(deName)
+                );
+            }
+            if (m_cardFallback) {
+                m_cardFallback->setVisible(true);
+            }
         }
     } else {
-        m_useTriggerFallback = true;
-        if (m_lblTestResult) {
-            m_lblTestResult->setText(
+        if (m_lblTestStatus) {
+            m_lblTestStatus->setText(
                 tr("<div style='background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.40); border-radius: 8px; padding: 14px 16px;'>"
-                   "<div style='color: #f59e0b; font-weight: 700; font-size: 14px; margin-bottom: 4px;'>"
-                   "ℹ️ Desktop Detected: %1"
+                   "<div style='color: #f59e0b; font-weight: 700; font-size: 13px; margin-bottom: 4px;'>"
+                   "⚠️ Ambiente rilevato: %1 (tasto Spazio diretto non nativo)"
                    "</div>"
-                   "<div style='font-size: 12px; line-height: 1.4;'>"
-                   "Your desktop environment requires a global keyboard shortcut.<br>"
-                   "The trigger script below has been configured and is ready to copy into your system shortcut settings."
+                   "<div style='font-size: 11px; line-height: 1.5;'>"
+                   "Il tuo ambiente desktop richiede una scorciatoia di sistema globale per avviare l'anteprima."
                    "</div>"
                    "</div>").arg(deName)
             );
         }
-        if (m_triggerBox) {
-            m_triggerBox->setVisible(true);
+        if (m_cardFallback) {
+            m_cardFallback->setVisible(true);
         }
     }
 }
 
-QWizardPage *FirstRunWizard::createModulesPage()
+QWidget *FirstRunWizard::createModulesPage()
 {
-    auto *page = new QWizardPage(this);
-    page->setTitle(tr("Modules, Performance & Navigation"));
-    page->setSubTitle(tr("Fine-tune background modules, CPU optimization, and window behavior."));
+    auto *page = new QWidget(this);
+    auto *layout = new QVBoxLayout(page);
+    layout->setSpacing(12);
+    layout->setContentsMargins(4, 2, 4, 4);
 
-    auto *pageLayout = new QVBoxLayout(page);
-    pageLayout->setContentsMargins(6, 4, 6, 4);
-    pageLayout->setSpacing(8);
+    // Header
+    auto *headerBox = new QWidget(page);
+    auto *headerLay = new QVBoxLayout(headerBox);
+    headerLay->setContentsMargins(0, 0, 0, 0);
+    headerLay->setSpacing(2);
+    auto *lblTitle = new QLabel(tr("Moduli e Comparti Studio"), headerBox);
+    lblTitle->setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8; background: transparent;");
+    auto *lblSub = new QLabel(tr("Scegli come gestire i componenti avanzati per PDF, Audio, Video e Archivi."), headerBox);
+    lblSub->setStyleSheet("font-size: 11px; opacity: 0.85; background: transparent;");
+    headerLay->addWidget(lblTitle);
+    headerLay->addWidget(lblSub);
+    layout->addWidget(headerBox);
 
-    // =========================================================================
-    // 1. On-Demand Modules & Presets (Default: Minimal & On-Demand)
-    // =========================================================================
-    auto *groupModules = new QGroupBox(tr("1. Functional Modules && On-Demand Extensions"), page);
-    auto *modulesLayout = new QVBoxLayout(groupModules);
-    modulesLayout->setContentsMargins(12, 8, 12, 8);
-    modulesLayout->setSpacing(6);
+    // Primary Options
+    auto *grpModes = new QGroupBox(tr("Modalità di Attivazione"), page);
+    auto *layModes = new QVBoxLayout(grpModes);
+    layModes->setContentsMargins(14, 12, 14, 12);
+    layModes->setSpacing(10);
 
-    auto *presetsGrid = new QHBoxLayout();
-    presetsGrid->setSpacing(16);
-
-    m_radioPresetMinimal = new QRadioButton(groupModules);
-    m_radioPresetMinimal->setCursor(Qt::PointingHandCursor);
-    m_radioPresetMinimal->setToolTip(tr("Core viewers active immediately. Heavy tools install on demand only when needed."));
-
-    m_radioPresetFull = new QRadioButton(groupModules);
-    m_radioPresetFull->setCursor(Qt::PointingHandCursor);
-    m_radioPresetFull->setToolTip(tr("Pre-install all optional studio extensions right now."));
-
-    m_radioPresetCustom = new QRadioButton(tr("⚙️ Custom Selection"), groupModules);
-    m_radioPresetCustom->setCursor(Qt::PointingHandCursor);
-    m_radioPresetCustom->setToolTip(tr("Select specific extension categories below to install now."));
-
-    presetsGrid->addWidget(m_radioPresetMinimal);
-    presetsGrid->addWidget(m_radioPresetFull);
-    presetsGrid->addWidget(m_radioPresetCustom);
-    presetsGrid->addStretch(1);
-    modulesLayout->addLayout(presetsGrid);
-
-    auto *sep = new QFrame(groupModules);
-    sep->setFrameShape(QFrame::HLine);
-    sep->setFrameShadow(QFrame::Sunken);
-    sep->setStyleSheet("color: rgba(148, 163, 184, 0.25); margin: 2px 0;");
-    modulesLayout->addWidget(sep);
-
-    auto *gridCategories = new QGridLayout();
-    gridCategories->setHorizontalSpacing(20);
-    gridCategories->setVerticalSpacing(5);
-    gridCategories->setContentsMargins(4, 2, 4, 2);
-
-    auto makeCheckBox = [groupModules](VectorIcons::Type iconType, const QString &text, const QString &tooltip) {
-        QString safeText = text;
-        safeText.replace(QRegularExpression("(?<!&)&(?!&)"), "&&");
-        auto *chk = new QCheckBox(safeText, groupModules);
-        chk->setIcon(VectorIcons::createIcon(iconType));
-        chk->setIconSize(QSize(17, 17));
-        chk->setToolTip(tooltip);
-        chk->setStyleSheet("font-weight: 600; font-size: 11px;");
-        chk->setCursor(Qt::PointingHandCursor);
-        return chk;
-    };
-
-    m_chkCatDocs = makeCheckBox(
-        VectorIcons::Type::Pdf,
-        tr("Documents & Office (LibreOffice, OCR, QPDF, Signatures)"),
-        tr("Includes LibreOffice conversion, Tesseract OCR, QPDF repair, and PAdES digital signatures.")
+    m_radioOnDemand = new QRadioButton(tr("Modalità On-Demand (Consigliata)"), grpModes);
+    m_radioOnDemand->setCursor(Qt::PointingHandCursor);
+    m_radioOnDemand->setChecked(true);
+    m_radioOnDemand->setStyleSheet("font-weight: 700; font-size: 12px;");
+    auto *lblOnDemandDesc = new QLabel(
+        tr("Avvio ultra-leggero. I visualizzatori base sono subito pronti; i moduli pesanti si attivano con 1 clic solo alla prima apertura."),
+        grpModes
     );
-    m_chkCatArchives = makeCheckBox(
-        VectorIcons::Type::Zip,
-        tr("Archives & Disk Images (7-Zip, Multi-Core, ISO)"),
-        tr("Includes 7-Zip multi-core compression, encrypted archives, and ISO/IMG disk tools.")
+    lblOnDemandDesc->setStyleSheet("color: rgba(226, 232, 240, 0.75); font-size: 11px; margin-left: 22px;");
+
+    m_radioPrepareNow = new QRadioButton(tr("Prepara moduli adesso"), grpModes);
+    m_radioPrepareNow->setCursor(Qt::PointingHandCursor);
+    m_radioPrepareNow->setStyleSheet("font-weight: 700; font-size: 12px;");
+    auto *lblNowDesc = new QLabel(
+        tr("Configura e abilita subito tutti i comparti studio per l'utilizzo immediato offline."),
+        grpModes
     );
-    m_chkCatImages = makeCheckBox(
-        VectorIcons::Type::Image,
-        tr("Images & Graphics (Extended Codecs: WebP, TIFF, etc.)"),
-        tr("Includes extended image decoders for WebP, TIFF, TGA, ICNS, PSD, and JPEG-XL.")
-    );
-    m_chkCatVideo = makeCheckBox(
-        VectorIcons::Type::FolderVideos,
-        tr("Video & Movies (MPV GPU Acceleration)"),
-        tr("Includes high-performance libmpv video player with hardware GPU decoding.")
-    );
-    m_chkCatAudio = makeCheckBox(
-        VectorIcons::Type::Media,
-        tr("Music & Audio (10-Band Equalizer, TagLib Editor)"),
-        tr("Includes FFTW3 real-time spectrum analyzer, 10-band equalizer, and TagLib metadata editor.")
-    );
+    lblNowDesc->setStyleSheet("color: rgba(226, 232, 240, 0.75); font-size: 11px; margin-left: 22px;");
 
-    gridCategories->addWidget(m_chkCatDocs, 0, 0);
-    gridCategories->addWidget(m_chkCatVideo, 0, 1);
-    gridCategories->addWidget(m_chkCatArchives, 1, 0);
-    gridCategories->addWidget(m_chkCatAudio, 1, 1);
-    gridCategories->addWidget(m_chkCatImages, 2, 0);
+    layModes->addWidget(m_radioOnDemand);
+    layModes->addWidget(lblOnDemandDesc);
+    layModes->addSpacing(4);
+    layModes->addWidget(m_radioPrepareNow);
+    layModes->addWidget(lblNowDesc);
 
-    m_btnConfigureExtensions = new QPushButton(tr("⚙️ Individual Extensions..."), groupModules);
-    m_btnConfigureExtensions->setCursor(Qt::PointingHandCursor);
-    m_btnConfigureExtensions->setStyleSheet("font-size: 11px; padding: 2px 8px;");
-    gridCategories->addWidget(m_btnConfigureExtensions, 2, 1, Qt::AlignRight);
+    layout->addWidget(grpModes);
 
-    connect(m_btnConfigureExtensions, &QPushButton::clicked, this, [this]() {
-        SettingsDialog dlg(this, SettingsDialog::TabIndex::Extensions);
-        dlg.exec();
-        updateDynamicSummary();
-    });
+    // Module Checkbox Panel (hidden in On-Demand mode, visible and fully editable when Prepare Now is selected)
+    m_panelModulesNow = new QWidget(page);
+    auto *layPanel = new QVBoxLayout(m_panelModulesNow);
+    layPanel->setContentsMargins(0, 0, 0, 0);
+    layPanel->setSpacing(8);
 
-    modulesLayout->addLayout(gridCategories);
+    auto *grpItems = new QGroupBox(tr("Comparti da Abilitare Subito"), m_panelModulesNow);
+    auto *gridItems = new QGridLayout(grpItems);
+    gridItems->setContentsMargins(14, 10, 14, 10);
+    gridItems->setHorizontalSpacing(20);
+    gridItems->setVerticalSpacing(8);
 
-    m_lblDynamicSummary = new QLabel(groupModules);
-    m_lblDynamicSummary->setWordWrap(true);
-    m_lblDynamicSummary->setTextFormat(Qt::RichText);
-    m_lblDynamicSummary->setStyleSheet(
-        "font-size: 11px; padding: 6px 8px; "
-        "background-color: rgba(2, 132, 199, 0.07); "
-        "border: 1px solid rgba(2, 132, 199, 0.22); border-radius: 6px;"
-    );
-    modulesLayout->addWidget(m_lblDynamicSummary);
+    m_chkModDocs = new QCheckBox(tr("Documenti (PDF avanzati, OCR, Firme)"), grpItems);
+    m_chkModDocs->setChecked(true);
+    m_chkModDocs->setCursor(Qt::PointingHandCursor);
 
-    pageLayout->addWidget(groupModules);
+    m_chkModMedia = new QCheckBox(tr("Audio && Video (MPV, Equalizzatore)"), grpItems);
+    m_chkModMedia->setChecked(true);
+    m_chkModMedia->setCursor(Qt::PointingHandCursor);
 
-    // =========================================================================
-    // 2. Processor & Build Profile (Compact Side-by-Side)
-    // =========================================================================
-    auto *groupCpu = new QGroupBox(tr("2. Hardware Performance Profile"), page);
-    auto *cpuLayout = new QVBoxLayout(groupCpu);
-    cpuLayout->setContentsMargins(12, 6, 12, 6);
-    cpuLayout->setSpacing(4);
+    m_chkModArchives = new QCheckBox(tr("Archivi (7-Zip, Zstandard)"), grpItems);
+    m_chkModArchives->setChecked(true);
+    m_chkModArchives->setCursor(Qt::PointingHandCursor);
 
-    auto *cpuRadiosRow = new QHBoxLayout();
-    cpuRadiosRow->setSpacing(18);
+    m_chkModImages = new QCheckBox(tr("Grafica (WebP, TIFF, SVG)"), grpItems);
+    m_chkModImages->setChecked(true);
+    m_chkModImages->setCursor(Qt::PointingHandCursor);
 
-    m_radioCpuBalanced = new QRadioButton(
-        tr("📦 System Packages (Instant, zero compile wait)"),
-        groupCpu
-    );
-    m_radioCpuBalanced->setCursor(Qt::PointingHandCursor);
-    m_radioCpuBalanced->setStyleSheet("font-weight: 600; font-size: 11px;");
+    gridItems->addWidget(m_chkModDocs, 0, 0);
+    gridItems->addWidget(m_chkModMedia, 0, 1);
+    gridItems->addWidget(m_chkModArchives, 1, 0);
+    gridItems->addWidget(m_chkModImages, 1, 1);
 
-    m_radioCpuDesktop = new QRadioButton(
-        tr("🚀 Native CPU Tuning (-O3 -march=native)"),
-        groupCpu
-    );
-    m_radioCpuDesktop->setCursor(Qt::PointingHandCursor);
-    m_radioCpuDesktop->setStyleSheet("font-weight: 600; font-size: 11px;");
+    layPanel->addWidget(grpItems);
+    layout->addWidget(m_panelModulesNow);
 
-    cpuRadiosRow->addWidget(m_radioCpuBalanced);
-    cpuRadiosRow->addWidget(m_radioCpuDesktop);
-    cpuRadiosRow->addStretch(1);
-    cpuLayout->addLayout(cpuRadiosRow);
-
-    m_lblCpuDetectedNotice = new QLabel(groupCpu);
-    m_lblCpuDetectedNotice->setStyleSheet("color: #0284c7; font-size: 11px;");
-    m_lblCpuDetectedNotice->setWordWrap(true);
-    m_lblCpuDetectedNotice->setTextFormat(Qt::RichText);
-    cpuLayout->addWidget(m_lblCpuDetectedNotice);
-
-    auto updateCpuNotice = [this]() {
-        if (!m_lblCpuDetectedNotice) return;
-        const bool alreadyO3 = (QStringLiteral(BUBEZ_OPT_LEVEL) == QLatin1String("O3"));
-        if (m_radioCpuDesktop && m_radioCpuDesktop->isChecked()) {
-            if (alreadyO3) {
-                m_lblCpuDetectedNotice->setText(
-                    tr("<i>✅ Current binary is already built with native -O3 optimizations (zero extra compile wait).</i>")
-                );
-            } else {
-                m_lblCpuDetectedNotice->setText(
-                    tr("<i>ℹ️ BubezView will compile with aggressive -O3 native tuning for your CPU upon finish.</i>")
-                );
-            }
-        } else {
-            m_lblCpuDetectedNotice->setText(
-                tr("<i>✅ Uses distribution precompiled packages immediately with zero compilation time.</i>")
-            );
-        }
-    };
-
-    connect(m_radioCpuDesktop, &QRadioButton::toggled, this, [this, updateCpuNotice](bool) {
-        updateModuleOptionTexts();
-        updateCpuNotice();
-    });
-    connect(m_radioCpuBalanced, &QRadioButton::toggled, this, [this, updateCpuNotice](bool) {
-        updateModuleOptionTexts();
-        updateCpuNotice();
-    });
-
-    const bool alreadyO3 = (QStringLiteral(BUBEZ_OPT_LEVEL) == QLatin1String("O3"));
-    if (alreadyO3 && CpuInfo::recommendedProfile() == QLatin1String("native")) {
-        m_radioCpuDesktop->setChecked(true);
-    } else {
-        m_radioCpuBalanced->setChecked(true);
-    }
-    updateCpuNotice();
-
-    pageLayout->addWidget(groupCpu);
-
-    // =========================================================================
-    // 3. Navigation & Window Behavior (2x2 Grid)
-    // =========================================================================
-    auto *groupKeys = new QGroupBox(tr("3. Navigation && Window Memory"), page);
-    auto *keysGrid = new QGridLayout(groupKeys);
-    keysGrid->setContentsMargins(12, 6, 12, 6);
-    keysGrid->setHorizontalSpacing(18);
-    keysGrid->setVerticalSpacing(4);
-
-    m_chkCloseOnEsc = new QCheckBox(tr("Press Escape (Esc) to close the viewer"), groupKeys);
-    m_chkCloseOnEsc->setChecked(true);
-    m_chkCloseOnEsc->setStyleSheet("font-size: 11px;");
-
-    m_chkRememberGeometry = new QCheckBox(tr("Remember window size and position"), groupKeys);
-    m_chkRememberGeometry->setChecked(true);
-    m_chkRememberGeometry->setStyleSheet("font-size: 11px;");
-
-    m_chkPreloadCache = new QCheckBox(tr("Preload adjacent files for instant browsing"), groupKeys);
-    m_chkPreloadCache->setChecked(true);
-    m_chkPreloadCache->setStyleSheet("font-size: 11px;");
-
-    m_chkStandbyMode = new QCheckBox(tr("Release preview cache when idle (save RAM)"), groupKeys);
-    m_chkStandbyMode->setChecked(false);
-    m_chkStandbyMode->setStyleSheet("font-size: 11px;");
-
-    keysGrid->addWidget(m_chkCloseOnEsc, 0, 0);
-    keysGrid->addWidget(m_chkRememberGeometry, 0, 1);
-    keysGrid->addWidget(m_chkPreloadCache, 1, 0);
-    keysGrid->addWidget(m_chkStandbyMode, 1, 1);
-
-    pageLayout->addWidget(groupKeys);
-    pageLayout->addStretch(1);
-
-    // Wire preset radio buttons
-    connect(m_radioPresetFull, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            applyPreset(0);
-            updateModuleOptionTexts();
-        }
-    });
-    connect(m_radioPresetMinimal, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            applyPreset(1);
-            updateModuleOptionTexts();
-        }
-    });
-    connect(m_radioPresetCustom, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            updateModuleOptionTexts();
-            updateDynamicSummary();
+    // By default On-Demand is selected, so keep extra module panel cleanly hidden
+    m_panelModulesNow->setVisible(false);
+    connect(m_radioOnDemand, &QRadioButton::toggled, this, [this](bool onDemand) {
+        if (m_panelModulesNow) {
+            m_panelModulesNow->setVisible(!onDemand);
         }
     });
 
-    auto onCheckChanged = [this](bool) {
-        evaluatePresetFromCheckboxes();
-        updateModuleOptionTexts();
-    };
-    connect(m_chkCatDocs, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkCatArchives, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkCatImages, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkCatVideo, &QCheckBox::toggled, this, onCheckChanged);
-    connect(m_chkCatAudio, &QCheckBox::toggled, this, onCheckChanged);
-
-    // Default to Minimal & On-Demand on first run
-    QSettings settings("Bubez", "BubezView");
-    const QString savedPreset = settings.value("modules/preset", QStringLiteral("minimal")).toString();
-    if (savedPreset == QLatin1String("full")) {
-        m_radioPresetFull->setChecked(true);
-        applyPreset(0);
-    } else if (savedPreset == QLatin1String("custom")) {
-        m_syncingModules = true;
-        m_chkCatDocs->setChecked(settings.value("modules/category_documents_all", false).toBool());
-        m_chkCatArchives->setChecked(settings.value("modules/category_archives_all", false).toBool());
-        m_chkCatImages->setChecked(settings.value("modules/category_images_all", false).toBool());
-        m_chkCatVideo->setChecked(settings.value("modules/category_video_all", false).toBool());
-        m_chkCatAudio->setChecked(settings.value("modules/category_audio_all", false).toBool());
-        m_syncingModules = false;
-        evaluatePresetFromCheckboxes();
-    } else {
-        m_radioPresetMinimal->setChecked(true);
-        applyPreset(1);
-    }
-    updateModuleOptionTexts();
-
+    layout->addStretch(1);
     return page;
 }
 
-void FirstRunWizard::applyPreset(int presetIndex)
+QWidget *FirstRunWizard::createPerformancePage()
 {
-    m_syncingModules = true;
-    switch (presetIndex) {
-        case 0: // Complete Suite
-            if (m_chkCatDocs) m_chkCatDocs->setChecked(true);
-            if (m_chkCatImages) m_chkCatImages->setChecked(true);
-            if (m_chkCatVideo) m_chkCatVideo->setChecked(true);
-            if (m_chkCatAudio) m_chkCatAudio->setChecked(true);
-            if (m_chkCatArchives) m_chkCatArchives->setChecked(true);
-            break;
+    auto *page = new QWidget(this);
+    auto *layout = new QVBoxLayout(page);
+    layout->setSpacing(12);
+    layout->setContentsMargins(4, 2, 4, 4);
 
-        case 1: // Minimal & On-Demand
-            if (m_chkCatDocs) m_chkCatDocs->setChecked(false);
-            if (m_chkCatImages) m_chkCatImages->setChecked(false);
-            if (m_chkCatVideo) m_chkCatVideo->setChecked(false);
-            if (m_chkCatAudio) m_chkCatAudio->setChecked(false);
-            if (m_chkCatArchives) m_chkCatArchives->setChecked(false);
-            break;
+    // Header
+    auto *headerBox = new QWidget(page);
+    auto *headerLay = new QVBoxLayout(headerBox);
+    headerLay->setContentsMargins(0, 0, 0, 0);
+    headerLay->setSpacing(2);
+    auto *lblTitle = new QLabel(tr("Prestazioni & Compilazione"), headerBox);
+    lblTitle->setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8; background: transparent;");
+    auto *lblSub = new QLabel(tr("Livello di ottimizzazione per la tua CPU e tempo di riavvio rapido."), headerBox);
+    lblSub->setStyleSheet("font-size: 11px; opacity: 0.85; background: transparent;");
+    headerLay->addWidget(lblTitle);
+    headerLay->addWidget(lblSub);
+    layout->addWidget(headerBox);
 
-        default:
-            break;
+    // CPU Info Badge
+    QString cpuModel = CpuInfo::modelName();
+    if (cpuModel.isEmpty()) cpuModel = tr("Processore x86-64");
+    QString tier = CpuInfo::microarchitectureTier().toUpper();
+
+    auto *lblCpuPill = new QLabel(
+        QString("⚡ <b>%1</b> (%2 thread)  •  ISA: <b>x86-64-%3</b>")
+            .arg(cpuModel, QString::number(CpuInfo::logicalCores()), tier.isEmpty() ? QStringLiteral("v3") : tier),
+        page
+    );
+    lblCpuPill->setTextFormat(Qt::RichText);
+    lblCpuPill->setStyleSheet(
+        "background-color: rgba(2, 132, 199, 0.08); border: 1px solid rgba(56, 189, 248, 0.35); "
+        "border-radius: 8px; padding: 6px 12px; font-size: 11px;"
+    );
+    layout->addWidget(lblCpuPill);
+
+    // 3 Direct Compilation Strategy Cards (clean, instant, no confusing slider)
+    auto *grpTier = new QGroupBox(tr("Strategia di Compilazione / Esecuzione"), page);
+    auto *layTier = new QVBoxLayout(grpTier);
+    layTier->setContentsMargins(14, 12, 14, 12);
+    layTier->setSpacing(10);
+
+    auto *tierRow = new QHBoxLayout();
+    tierRow->setSpacing(10);
+
+    m_tierGroup = new QButtonGroup(this);
+    m_tierGroup->setExclusive(true);
+
+    auto makeTierBtn = [grpTier](const QString &title, const QString &sub) {
+        auto *btn = new QPushButton(QString("%1\n%2").arg(title, sub), grpTier);
+        btn->setCheckable(true);
+        btn->setCursor(Qt::PointingHandCursor);
+        btn->setMinimumHeight(46);
+        return btn;
+    };
+
+    m_btnTierSystem = makeTierBtn(tr("Pacchetti di Sistema"), tr("Precompilati standard"));
+    m_btnTierCpu = makeTierBtn(tr("Ottimizzato per CPU"), tr("Nativo -O3 (Consigliato)"));
+    m_btnTierFull = makeTierBtn(tr("Compilazione Completa"), tr("Workstation / Immutabili"));
+
+    m_tierGroup->addButton(m_btnTierSystem, 0);
+    m_tierGroup->addButton(m_btnTierCpu, 1);
+    m_tierGroup->addButton(m_btnTierFull, 2);
+
+    tierRow->addWidget(m_btnTierSystem, 1);
+    tierRow->addWidget(m_btnTierCpu, 1);
+    tierRow->addWidget(m_btnTierFull, 1);
+    layTier->addLayout(tierRow);
+
+    m_lblTierDesc = new QLabel(grpTier);
+    m_lblTierDesc->setTextFormat(Qt::RichText);
+    m_lblTierDesc->setWordWrap(true);
+    m_lblTierDesc->setStyleSheet("font-size: 11px; opacity: 0.85; margin-top: 4px; border: none; background: transparent;");
+    layTier->addWidget(m_lblTierDesc);
+
+    connect(m_btnTierSystem, &QPushButton::clicked, this, [this]() { selectCompilationTier(0); });
+    connect(m_btnTierCpu, &QPushButton::clicked, this, [this]() { selectCompilationTier(1); });
+    connect(m_btnTierFull, &QPushButton::clicked, this, [this]() { selectCompilationTier(2); });
+
+    selectCompilationTier(1); // Default to Recommended CPU native
+
+    layout->addWidget(grpTier);
+
+    // Fast Restart Standby Card with compact right-aligned combo
+    auto *grpStandby = new QGroupBox(tr("Riavvio Rapido (Standby in Memoria RAM)"), page);
+    auto *layStandby = new QHBoxLayout(grpStandby);
+    layStandby->setContentsMargins(14, 10, 14, 10);
+    layStandby->setSpacing(12);
+
+    auto *lblStandbyPrompt = new QLabel(tr("Tempo di permanenza in memoria:"), grpStandby);
+    lblStandbyPrompt->setStyleSheet("font-size: 11px; font-weight: 600;");
+    layStandby->addWidget(lblStandbyPrompt);
+    layStandby->addStretch();
+
+    m_comboStandby = new QComboBox(grpStandby);
+    m_comboStandby->setView(new QListView(m_comboStandby));
+    m_comboStandby->setCursor(Qt::PointingHandCursor);
+    m_comboStandby->setFixedWidth(220);
+    m_comboStandby->addItem(tr("Disattivato"), 0);
+    m_comboStandby->addItem(tr("10 minuti"), 10);
+    m_comboStandby->addItem(tr("30 minuti (Consigliato)"), 30);
+    m_comboStandby->addItem(tr("1 ora"), 60);
+    m_comboStandby->addItem(tr("Sempre attivo"), -1);
+
+    // Set 30 minutes by default
+    int idx30 = m_comboStandby->findData(30);
+    if (idx30 >= 0) {
+        m_comboStandby->setCurrentIndex(idx30);
     }
-    m_syncingModules = false;
-    updateDynamicSummary();
+    layStandby->addWidget(m_comboStandby);
+    layout->addWidget(grpStandby);
+
+    layout->addStretch(1);
+    return page;
 }
 
-void FirstRunWizard::evaluatePresetFromCheckboxes()
+void FirstRunWizard::styleTierButton(QPushButton *btn, bool active)
 {
-    if (m_syncingModules) return;
+    if (!btn) return;
+    btn->setChecked(active);
 
-    bool allChecked = (m_chkCatDocs && m_chkCatDocs->isChecked()) &&
-                      (m_chkCatImages && m_chkCatImages->isChecked()) &&
-                      (m_chkCatVideo && m_chkCatVideo->isChecked()) &&
-                      (m_chkCatAudio && m_chkCatAudio->isChecked()) &&
-                      (m_chkCatArchives && m_chkCatArchives->isChecked());
+    const ThemePreset activePreset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    const bool isLight = (activePreset == ThemePreset::ModernLight || activePreset == ThemePreset::BreezeLight);
 
-    bool allUnchecked = (!m_chkCatDocs || !m_chkCatDocs->isChecked()) &&
-                        (!m_chkCatImages || !m_chkCatImages->isChecked()) &&
-                        (!m_chkCatVideo || !m_chkCatVideo->isChecked()) &&
-                        (!m_chkCatAudio || !m_chkCatAudio->isChecked()) &&
-                        (!m_chkCatArchives || !m_chkCatArchives->isChecked());
-
-    m_syncingModules = true;
-    if (allChecked) {
-        if (m_radioPresetFull) m_radioPresetFull->setChecked(true);
-    } else if (allUnchecked) {
-        if (m_radioPresetMinimal) m_radioPresetMinimal->setChecked(true);
-    } else {
-        if (m_radioPresetCustom) m_radioPresetCustom->setChecked(true);
-    }
-    m_syncingModules = false;
-    updateDynamicSummary();
-}
-
-void FirstRunWizard::updateDynamicSummary()
-{
-    if (!m_lblDynamicSummary) return;
-
-    if (m_radioPresetMinimal && m_radioPresetMinimal->isChecked()) {
-        m_lblDynamicSummary->setText(
-            tr("<b>⚡ Minimal &amp; On-Demand (Active):</b> Core viewers (<b>PDF, Images, Text, Archives, Audio/Video</b>) "
-               "are ready immediately. Extra studio tools (<i>PDF Repair, OCR, LibreOffice, Digital Signatures, 7-Zip, MPV GPU</i>) "
-               "remain lightweight and ask for 1-click installation only when you use them.")
-        );
-    } else if (m_radioPresetFull && m_radioPresetFull->isChecked()) {
-        m_lblDynamicSummary->setText(
-            tr("<b>🚀 Complete Suite:</b> All optional studio extensions (<i>LibreOffice, Tesseract OCR, QPDF Repair, "
-               "Digital Signatures, MPV GPU, 10-Band Equalizer, 7-Zip</i>) will be verified and installed now.")
+    if (active) {
+        btn->setStyleSheet(
+            "QPushButton {"
+            "  background-color: rgba(2, 132, 199, 0.22);"
+            "  border: 2px solid #0284c7;"
+            "  border-radius: 8px;"
+            "  padding: 6px 4px;"
+            "  font-weight: 700;"
+            "  font-size: 11px;"
+            + QString("  color: %1;").arg(isLight ? "#0369a1" : "#38bdf8") +
+            "}"
         );
     } else {
-        QStringList selectedCats;
-        if (m_chkCatDocs && m_chkCatDocs->isChecked()) selectedCats << tr("Documents & Office");
-        if (m_chkCatArchives && m_chkCatArchives->isChecked()) selectedCats << tr("Archives & ISO");
-        if (m_chkCatVideo && m_chkCatVideo->isChecked()) selectedCats << tr("Video (MPV GPU)");
-        if (m_chkCatAudio && m_chkCatAudio->isChecked()) selectedCats << tr("Audio (Equalizer & TagLib)");
-        if (m_chkCatImages && m_chkCatImages->isChecked()) selectedCats << tr("Extended Image Codecs");
-
-        m_lblDynamicSummary->setText(
-            tr("<b>⚙️ Custom Selection:</b> Pre-installing extensions for: <b>%1</b>. "
-               "All other tools remain available on demand.")
-                .arg(selectedCats.join(", "))
+        btn->setStyleSheet(
+            QString(
+                "QPushButton {"
+                "  background-color: %1;"
+                "  border: 1px solid %2;"
+                "  border-radius: 8px;"
+                "  padding: 6px 4px;"
+                "  font-weight: 500;"
+                "  font-size: 11px;"
+                "  color: %3;"
+                "}"
+                "QPushButton:hover {"
+                "  border: 1px solid %4;"
+                "}"
+            ).arg(
+                isLight ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.07)",
+                isLight ? "rgba(0, 0, 0, 0.15)" : "rgba(255, 255, 255, 0.18)",
+                isLight ? "#1e293b" : "#f3f4f6",
+                isLight ? "#0284c7" : "rgba(56, 189, 248, 0.65)"
+            )
         );
     }
 }
 
-void FirstRunWizard::updateModuleOptionTexts()
+void FirstRunWizard::selectCompilationTier(int tier)
 {
-    if (!m_radioPresetFull || !m_radioPresetMinimal || !m_radioPresetCustom) return;
+    m_selectedTier = tier;
+    styleTierButton(m_btnTierSystem, tier == 0);
+    styleTierButton(m_btnTierCpu, tier == 1);
+    styleTierButton(m_btnTierFull, tier == 2);
 
-    m_radioPresetMinimal->setText(tr("⚡ Minimal && On-Demand (Recommended)"));
-    bool isHighPerformance = (m_radioCpuDesktop && m_radioCpuDesktop->isChecked());
-    if (isHighPerformance) {
-        m_radioPresetFull->setText(tr("🚀 Complete Suite (Host Compiled)"));
-    } else {
-        m_radioPresetFull->setText(tr("🚀 Complete Suite (System Packages)"));
+    if (m_lblTierDesc) {
+        if (tier == 0) {
+            m_lblTierDesc->setText(tr("💡 <b>Pacchetti di sistema:</b> Usa le librerie della distribuzione Linux. Nessun tempo di attesa, massima stabilità."));
+        } else if (tier == 1) {
+            m_lblTierDesc->setText(tr("⚡ <b>Consigliato:</b> Compila con ottimizzazioni hardware native (-O3, -march=native) per la massima fluidità e velocità di rendering."));
+        } else {
+            m_lblTierDesc->setText(tr("📦 <b>Compilazione completa:</b> Compila tutti i motori direttamente nello spazio utente (~/.local). Ideale per Fedora Silverblue e SteamOS."));
+        }
     }
-    m_radioPresetCustom->setText(tr("⚙️ Custom Selection"));
+}
+
+void FirstRunWizard::updateThemeStyles()
+{
+    FramelessDialog::updateThemeStyles();
+
+    const ThemePreset active = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    const bool isLight = (active == ThemePreset::ModernLight || active == ThemePreset::BreezeLight);
+
+    QString cardBg;
+    QString cardBorder;
+    QString pillBg;
+    QString pillBorder;
+    QString pillColor;
+    QString textCol;
+    QString comboBg;
+    QString comboBorder;
+
+    if (active == ThemePreset::ZincGray) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(56, 57, 62, 0.78), stop:0.5 rgba(46, 47, 51, 0.82), stop:1 rgba(38, 39, 43, 0.88))");
+        cardBorder = QStringLiteral("rgba(255, 255, 255, 0.12)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        pillBorder = QStringLiteral("rgba(255, 255, 255, 0.22)");
+        pillColor = QStringLiteral("#ffffff");
+        textCol = QStringLiteral("#f3f4f6");
+        comboBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        comboBorder = QStringLiteral("rgba(255, 255, 255, 0.22)");
+    } else if (isLight) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.85), stop:1 rgba(240, 243, 248, 0.80))");
+        cardBorder = QStringLiteral("rgba(15, 23, 42, 0.12)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e2e6ec)");
+        pillBorder = QStringLiteral("rgba(0, 0, 0, 0.14)");
+        pillColor = QStringLiteral("#1e293b");
+        textCol = QStringLiteral("#1e293b");
+        comboBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e8ebf0)");
+        comboBorder = QStringLiteral("rgba(0, 0, 0, 0.14)");
+    } else { // DarkSlate
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 41, 59, 0.65), stop:0.5 rgba(22, 30, 46, 0.70), stop:1 rgba(15, 22, 34, 0.78))");
+        cardBorder = QStringLiteral("rgba(56, 189, 248, 0.22)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #253347, stop:1 #1a2434)");
+        pillBorder = QStringLiteral("rgba(56, 189, 248, 0.38)");
+        pillColor = QStringLiteral("#7dd3fc");
+        textCol = QStringLiteral("#f8fafc");
+        comboBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #253347, stop:1 #1a2434)");
+        comboBorder = QStringLiteral("rgba(56, 189, 248, 0.38)");
+    }
+
+    const QString boxStyle = QString(
+        "QGroupBox {"
+        "  font-weight: 600;"
+        "  font-size: 12px;"
+        "  color: %1;"
+        "  border: 1px solid %2;"
+        "  border-radius: 12px;"
+        "  background: %3;"
+        "  margin-top: 12px;"
+        "  padding: 12px 14px 10px 14px;"
+        "}"
+        "QGroupBox::title {"
+        "  subcontrol-origin: margin;"
+        "  subcontrol-position: top left;"
+        "  left: 14px;"
+        "  top: 1px;"
+        "  padding: 2px 10px;"
+        "  background: %4;"
+        "  color: %5;"
+        "  border: 1px solid %6;"
+        "  border-radius: 6px;"
+        "  font-size: 11px;"
+        "  font-weight: bold;"
+        "}"
+        "QLabel { color: %1; }"
+        "QRadioButton { color: %1; }"
+        "QCheckBox { color: %1; }"
+        "QComboBox {"
+        "  background: %7;"
+        "  color: %1;"
+        "  border: 1px solid %8;"
+        "  border-radius: 8px;"
+        "  padding: 4px 10px;"
+        "}"
+    ).arg(textCol, cardBorder, cardBg, pillBg, pillColor, pillBorder, comboBg, comboBorder);
+
+    if (m_pageStack) {
+        m_pageStack->setStyleSheet(boxStyle);
+    }
+
+    // Refresh theme card buttons
+    QString curTheme = ThemeManager::presetToString(active);
+    styleThemeButton(m_btnThemeZinc, curTheme == QLatin1String("zinc_gray"));
+    styleThemeButton(m_btnThemeDarkSlate, curTheme == QLatin1String("dark_slate"));
+    styleThemeButton(m_btnThemeModernLight, curTheme == QLatin1String("modern_light"));
+
+    // Refresh compilation tier card buttons
+    styleTierButton(m_btnTierSystem, m_selectedTier == 0);
+    styleTierButton(m_btnTierCpu, m_selectedTier == 1);
+    styleTierButton(m_btnTierFull, m_selectedTier == 2);
+
+    // Style bottom navigation buttons
+    QString navBtnStyle;
+    if (isLight) {
+        navBtnStyle =
+            "QPushButton {"
+            "  background-color: #e2e8f0;"
+            "  color: #1e293b;"
+            "  border: 1px solid #cbd5e1;"
+            "  border-radius: 6px;"
+            "  padding: 6px 14px;"
+            "  font-weight: 600;"
+            "  font-size: 11px;"
+            "}"
+            "QPushButton:hover { background-color: #cbd5e1; }";
+    } else {
+        navBtnStyle =
+            "QPushButton {"
+            "  background-color: rgba(255, 255, 255, 0.08);"
+            "  color: #f3f4f6;"
+            "  border: 1px solid rgba(255, 255, 255, 0.14);"
+            "  border-radius: 6px;"
+            "  padding: 6px 14px;"
+            "  font-weight: 600;"
+            "  font-size: 11px;"
+            "}"
+            "QPushButton:hover { background-color: rgba(255, 255, 255, 0.15); }";
+    }
+
+    if (m_btnBack) m_btnBack->setStyleSheet(navBtnStyle);
+    if (m_btnCancel) m_btnCancel->setStyleSheet(navBtnStyle);
+
+    if (m_btnNext) {
+        m_btnNext->setStyleSheet(
+            "QPushButton {"
+            "  background-color: #0284c7;"
+            "  color: #ffffff;"
+            "  border: 1px solid #0369a1;"
+            "  border-radius: 6px;"
+            "  padding: 6px 16px;"
+            "  font-weight: 700;"
+            "  font-size: 11px;"
+            "}"
+            "QPushButton:hover {"
+            "  background-color: #0369a1;"
+            "}"
+        );
+    }
 }
 
 void FirstRunWizard::accept()
 {
     QSettings settings("Bubez", "BubezView");
 
-    // 1. Mark first run as completed
+    // 1. Mark first run completed
     settings.setValue("first_run_completed", true);
 
-    // 2. Hardware Performance Profile
-    BuildConfig &cfg = BuildConfig::instance();
-    bool isHighPerformance = (m_radioCpuDesktop && m_radioCpuDesktop->isChecked());
-    if (isHighPerformance) {
-        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::HighPerformance);
-    } else {
-        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::Balanced);
+    // 2. Language
+    if (m_comboLanguage) {
+        QString lang = m_comboLanguage->currentData().toString();
+        settings.setValue("language", lang);
     }
 
-    // 3. Execution of Compilation / Package Installation based on chosen categories
-    bool isFull = m_radioPresetFull && m_radioPresetFull->isChecked();
-    bool isMinimal = !m_radioPresetFull || (m_radioPresetMinimal && m_radioPresetMinimal->isChecked());
+    // 3. Defaults applied silently without asking:
+    ThemeManager::setUiScalePercent(100);
+    settings.setValue("ui_scale", 100);
 
-    bool enableDocsExt = isFull || (!isMinimal && m_chkCatDocs && m_chkCatDocs->isChecked());
-    bool enableImagesExt = isFull || (!isMinimal && m_chkCatImages && m_chkCatImages->isChecked());
-    bool enableVideoExt = isFull || (!isMinimal && m_chkCatVideo && m_chkCatVideo->isChecked());
-    bool enableAudioExt = isFull || (!isMinimal && m_chkCatAudio && m_chkCatAudio->isChecked());
-    bool enableArchivesExt = isFull || (!isMinimal && m_chkCatArchives && m_chkCatArchives->isChecked());
+    ThemeManager::setTransition(TransitionEffect::CrossFade);
+    settings.setValue("transition", static_cast<int>(TransitionEffect::CrossFade));
 
-    // Core viewer engines are always enabled
-    bool enablePdf = true;
-    bool enableImage = true;
-    bool enableVideo = true;
-    bool enableAudio = true;
-    bool enableArchive = true;
+    ThemeManager::setIconStyle(IconStyle::Linear);
+    settings.setValue("icon_style", static_cast<int>(IconStyle::Linear));
 
-    // Granular extension flags mapped from category choices
-    bool enableOffice = enableDocsExt;
-    bool enableOcr = enableDocsExt;
-    bool enableQpdf = enableDocsExt;
-    bool enableOpenSsl = enableDocsExt;
-    bool enableImageFormats = enableImagesExt;
-    bool enableMpv = enableVideoExt;
-    bool enableEqualizer = enableAudioExt;
-    bool enableTagLib = enableAudioExt;
-    bool enableSevenZip = enableArchivesExt;
+    settings.setValue("remember_geometry", false);
+    settings.setValue("quick_close_on_esc", true);
+    settings.setValue("quick_close_on_space", false);
+    settings.setValue("cache/preload_adjacent", true);
+    settings.setValue("ui/filmstrip", false);
+    settings.setValue("show_filmstrip", false);
 
-    settings.setValue("modules/pdf_enabled", enablePdf);
-    settings.setValue("modules/ocr_enabled", enableOcr);
-    settings.setValue("modules/qpdf_enabled", enableQpdf);
-    settings.setValue("modules/openssl_enabled", enableOpenSsl);
-    settings.setValue("modules/office_enabled", enableOffice);
-    settings.setValue("modules/image_enabled", enableImage);
-    settings.setValue("modules/image_formats_enabled", enableImageFormats);
-    settings.setValue("modules/video_enabled", enableVideo);
-    settings.setValue("modules/mpv_enabled", enableMpv);
-    settings.setValue("modules/audio_enabled", enableAudio);
-    settings.setValue("modules/equalizer_enabled", enableEqualizer);
-    settings.setValue("modules/taglib_enabled", enableTagLib);
-    settings.setValue("modules/archive_enabled", enableArchive);
-    settings.setValue("modules/sevenzip_enabled", enableSevenZip);
-    settings.setValue("modules/media_enabled", true);
-
-    settings.setValue("modules/category_documents_all", enableDocsExt);
-    settings.setValue("modules/category_images_all", enableImagesExt);
-    settings.setValue("modules/category_video_all", enableVideoExt);
-    settings.setValue("modules/category_audio_all", enableAudioExt);
-    settings.setValue("modules/category_archives_all", enableArchivesExt);
-    settings.setValue("modules/preset", isMinimal ? "minimal" : (isFull ? "full" : "custom"));
-
-    cfg.setEnableInternalOffice(enableOffice);
-    settings.setValue("office_use_libreoffice", enableOffice);
-
-    if (isHighPerformance) {
-        const bool alreadyO3 = (QStringLiteral(BUBEZ_OPT_LEVEL) == QLatin1String("O3"));
-        if (!alreadyO3 && (enablePdf || enableArchive || enableMpv)) {
-            BuildConsoleDialog console(this);
-            console.setWindowTitle(tr("Compiling BubezView — High Performance Profile"));
-            console.startBuild();
-            console.exec();
-        }
-
-        QStringList missingExts;
-        if (enableOcr && !PackageManagerHelper::isComponentInstalled("tesseract")) {
-            missingExts << PackageManagerHelper::packageNameForComponent("tesseract");
-        }
-        if (enableQpdf && !PackageManagerHelper::isComponentInstalled("qpdf")) {
-            missingExts << PackageManagerHelper::packageNameForComponent("qpdf");
-        }
-        if (enableSevenZip && !PackageManagerHelper::isComponentInstalled("7zip")) {
-            missingExts << PackageManagerHelper::packageNameForComponent("7zip");
-        }
-        if (enableMpv && !PackageManagerHelper::isComponentInstalled("mpv")) {
-            missingExts << PackageManagerHelper::packageNameForComponent("mpv");
-        }
-        if (!missingExts.isEmpty()) {
-            PackageManagerHelper::runPrivilegedInstall(missingExts, this);
-        }
-    } else {
-        QStringList componentsToCheck;
-        if (enablePdf) componentsToCheck << "engine-poppler";
-        if (enableArchive) componentsToCheck << "engine-libarchive";
-        if (enableOcr) componentsToCheck << "tesseract";
-        if (enableQpdf) componentsToCheck << "qpdf";
-        if (enableSevenZip) componentsToCheck << "7zip";
-        if (enableMpv) componentsToCheck << "mpv";
-
-        QStringList missingPackages;
-        for (const QString &cid : componentsToCheck) {
-            if (!PackageManagerHelper::isComponentInstalled(cid)) {
-                QString pkg = PackageManagerHelper::packageNameForComponent(cid);
-                if (!pkg.isEmpty() && !missingPackages.contains(pkg)) {
-                    missingPackages << pkg;
-                }
-            }
-        }
-        if (!missingPackages.isEmpty()) {
-            PackageManagerHelper::runPrivilegedInstall(missingPackages, this);
-        }
-    }
-
-    cfg.save();
-
-    // 4. Primary Shortcut and System Integrations
+    // 4. Desktop Integration & Spacebar
     DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
-    const bool nativeSpaceSupported = (de == DesktopIntegrator::DesktopEnv::KDE ||
-                                       de == DesktopIntegrator::DesktopEnv::GNOME ||
-                                       de == DesktopIntegrator::DesktopEnv::Cinnamon);
-    QString chosenShortcut = (m_useTriggerFallback || !nativeSpaceSupported) ? "Ctrl+Space" : "Space";
+    const bool isSupported = (de == DesktopIntegrator::DesktopEnv::KDE ||
+                              de == DesktopIntegrator::DesktopEnv::GNOME ||
+                              de == DesktopIntegrator::DesktopEnv::Cinnamon);
+    QString chosenShortcut = isSupported ? QStringLiteral("Space") : QStringLiteral("Ctrl+Space");
     settings.setValue("shortcut", chosenShortcut);
 
-    if (de == DesktopIntegrator::DesktopEnv::KDE) {
-        DesktopIntegrator::enableDolphin(chosenShortcut);
-    } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
-        DesktopIntegrator::enableGnomeNemo();
+    bool integrateDesktop = !m_chkDesktopIntegration || m_chkDesktopIntegration->isChecked();
+    if (integrateDesktop) {
+        DesktopIntegrator::installAppMenu();
+        DesktopIntegrator::enableContextMenu();
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            DesktopIntegrator::enableDolphin(chosenShortcut);
+        } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+            DesktopIntegrator::enableGnomeNemo();
+        }
     }
 
-    // 5. Appearance
-    if (m_comboTheme) {
-        QString themeCode = m_comboTheme->currentData().toString();
-        ThemeManager::setPreset(ThemeManager::stringToPreset(themeCode));
-    }
-    if (m_chkFilmstrip) {
-        settings.setValue("ui/filmstrip", m_chkFilmstrip->isChecked());
-        settings.setValue("show_filmstrip", m_chkFilmstrip->isChecked());
-    }
+    // 5. Office (LibreOffice): auto-detected quietly; if installed enable, else on-demand
+    bool hasLo = !QStandardPaths::findExecutable("libreoffice").isEmpty() ||
+                 !QStandardPaths::findExecutable("soffice").isEmpty();
+    settings.setValue("modules/office_enabled", hasLo);
+    settings.setValue("office_use_libreoffice", hasLo);
+    ThemeManager::setUseLibreOffice(hasLo);
 
-    // 6. Navigation, Behavior & Cache
-    if (m_chkCloseOnEsc) {
-        settings.setValue("quick_close_on_esc", m_chkCloseOnEsc->isChecked());
-    }
-    settings.setValue("quick_close_on_space", false);
+    // 6. Modules selection
+    bool prepareNow = m_radioPrepareNow && m_radioPrepareNow->isChecked();
+    bool enableDocs = prepareNow && m_chkModDocs && m_chkModDocs->isChecked();
+    bool enableMedia = prepareNow && m_chkModMedia && m_chkModMedia->isChecked();
+    bool enableArchives = prepareNow && m_chkModArchives && m_chkModArchives->isChecked();
+    bool enableImages = prepareNow && m_chkModImages && m_chkModImages->isChecked();
 
-    if (m_chkRememberGeometry) {
-        settings.setValue("remember_geometry", m_chkRememberGeometry->isChecked());
+    // Core viewer engines are always ready
+    settings.setValue("modules/pdf_enabled", true);
+    settings.setValue("modules/image_enabled", true);
+    settings.setValue("modules/video_enabled", true);
+    settings.setValue("modules/audio_enabled", true);
+    settings.setValue("modules/archive_enabled", true);
+    settings.setValue("modules/media_enabled", true);
+
+    settings.setValue("modules/ocr_enabled", enableDocs);
+    settings.setValue("modules/qpdf_enabled", enableDocs);
+    settings.setValue("modules/openssl_enabled", enableDocs);
+    settings.setValue("modules/mpv_enabled", enableMedia);
+    settings.setValue("modules/equalizer_enabled", enableMedia);
+    settings.setValue("modules/taglib_enabled", enableMedia);
+    settings.setValue("modules/sevenzip_enabled", enableArchives);
+    settings.setValue("modules/image_formats_enabled", enableImages);
+
+    settings.setValue("modules/preset", prepareNow ? "custom" : "minimal");
+
+    // 7. Compilation Strategy (3 levels)
+    int tier = m_selectedTier;
+    settings.setValue("build_tier", tier);
+    BuildConfig &cfg = BuildConfig::instance();
+    if (tier == 0) {
+        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::SystemPackages);
+    } else if (tier == 2) {
+        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::AllSource);
+    } else {
+        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::AllStable);
     }
-    if (m_chkPreloadCache) {
-        settings.setValue("cache/preload_adjacent", m_chkPreloadCache->isChecked());
-    }
-    if (m_chkStandbyMode) {
-        settings.setValue("cache/enable_standby", m_chkStandbyMode->isChecked());
-    }
+    cfg.save();
+
+    // 8. Fast Restart Standby (default 30 min)
+    int standbyMin = m_comboStandby ? m_comboStandby->currentData().toInt() : 30;
+    settings.setValue("background_keep_alive_minutes", standbyMin);
 
     settings.sync();
-    QWizard::accept();
+    FramelessDialog::accept();
 }

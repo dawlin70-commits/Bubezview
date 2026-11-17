@@ -4,6 +4,7 @@
  */
 
 #include "custom_source_dialog.h"
+#include "diagnostic_report_dialog.h"
 #include "core/system/package_manager_helper.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -25,7 +26,7 @@ CustomSourceDialog::CustomSourceDialog(const QString &componentId,
                                        const QString &diagnosticCommand,
                                        bool canCompile,
                                        QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_componentId(componentId)
     , m_config(initialConfig)
     , m_diagnosticCommand(diagnosticCommand)
@@ -58,9 +59,9 @@ CustomSourceDialog::CustomSourceDialog(const QString &componentId,
 
 void CustomSourceDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(14, 14, 14, 14);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     if (!m_canCompile) {
         // Non-compilable / system package component view
@@ -357,16 +358,31 @@ void CustomSourceDialog::testConnection()
 
     QProcess *proc = new QProcess(this);
     connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, [this, proc](int exitCode, QProcess::ExitStatus status) {
+            this, [this, proc, url](int exitCode, QProcess::ExitStatus status) {
         m_btnTestConnection->setEnabled(true);
         m_btnTestConnection->setText(tr("Test Connection"));
 
         if (status == QProcess::NormalExit && exitCode == 0) {
-            QMessageBox::information(this, tr("Connection Successful"),
-                tr("Successfully contacted the Git remote repository!"));
+            DiagnosticReportDialog::showReport(
+                this,
+                tr("Git Remote Connection Test"),
+                tr("Git Remote Repository"),
+                true,
+                QString("git ls-remote --heads %1").arg(url),
+                tr("Successfully contacted Git repository:\n%1").arg(url),
+                0
+            );
         } else {
-            QMessageBox::warning(this, tr("Connection Failed"),
-                tr("Failed to contact Git remote repository.<br>Please check the network connection and repository URL."));
+            QString err = QString::fromUtf8(proc->readAllStandardOutput() + proc->readAllStandardError()).trimmed();
+            DiagnosticReportDialog::showReport(
+                this,
+                tr("Git Remote Connection Failed"),
+                tr("Git Remote Repository"),
+                false,
+                QString("git ls-remote --heads %1").arg(url),
+                err.isEmpty() ? tr("Network timeout or invalid Git repository URL.") : err,
+                exitCode
+            );
         }
         proc->deleteLater();
     });
@@ -422,6 +438,7 @@ void CustomSourceDialog::runDiagnostic()
             proc->start(prog, parts);
         } else {
             m_txtDiagnosticOutput->setPlainText(tr("No diagnostic command available for %1.").arg(m_componentId));
+            proc->deleteLater();
         }
     }
 }

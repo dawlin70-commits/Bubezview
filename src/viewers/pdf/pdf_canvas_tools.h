@@ -27,7 +27,31 @@ enum class PdfShapeType {
     Ellipse = 1,
     Arrow = 2,
     Line = 3,
-    RoundedRectangle = 4
+    RoundedRectangle = 4,
+    Triangle = 5,
+    Diamond = 6,
+    Star = 7,
+    DoubleArrow = 8,
+    SmartShape = 9
+};
+
+/**
+ * @brief Output of freehand gesture recognition snapping to a clean geometric shape.
+ */
+struct RecognizedShapeResult {
+    int shapeType = 0;
+    QRect boundingBox;
+    QPoint startPt = QPoint(-1, -1);
+    QPoint endPt = QPoint(-1, -1);
+    QString name;
+};
+
+/**
+ * @brief Transformed boundary and pre-rotated image for Poppler's unrotated annotation coordinate space.
+ */
+struct PopplerAnnotationTransform {
+    QRectF boundary;
+    QImage image;
 };
 
 /**
@@ -138,6 +162,20 @@ public:
      */
     static QRect calculateStampRect(const QString &text, qreal angle, int fontSize,
                                     const QPoint &centerPos, int pageW, int pageH);
+
+    /**
+     * @brief Analyzes a freehand stroke and recognizes whether it approximates a Circle,
+     * Rectangle, Triangle, Diamond, Star, Line, or Arrow, snapping it to a clean vector shape.
+     */
+    static RecognizedShapeResult recognizeSmartShape(const QVector<QPoint> &points);
+
+    /**
+     * @brief Transforms a normalized screen boundary rectangle and raster stamp image
+     * into Poppler's native unrotated coordinate space, accounting for page rotation.
+     */
+    static PopplerAnnotationTransform transformForPoppler(const QRectF &screenNormRect,
+                                                          const QImage &image,
+                                                          int totalRotationDegrees);
 
     /**
      * @brief Samples the dominant background color around the perimeter of a given rectangle in a page image.

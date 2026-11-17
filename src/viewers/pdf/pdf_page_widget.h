@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 #include "pdf_transform_box.h"
+#include "pdf_document_ops.h"
 
 class QLineEdit;
 class QTimer;
@@ -33,6 +34,7 @@ namespace Poppler {
  */
 enum class PdfToolMode {
     SelectText,      ///< Standard cursor, word drag/double-click selection
+    Hand,            ///< Hand / Pan tool for continuous drag scrolling
     SelectArea,      ///< Rectangular area selection for copying, cutting, or moving graphics and text
     Zoom,            ///< Zoom tool mode, directional mouse wheel and click zooming
     Typewriter,      ///< Interactive text insertion / whiteout replacement
@@ -77,7 +79,7 @@ public:
     /**
      * @brief Returns current active page index.
      */
-    int activePage() const { return m_activePageIndex; }
+    Q_INVOKABLE int activePage() const { return m_activePageIndex; }
 
     /**
      * @brief Returns the 0-based page index intersecting vertical canvas coordinate y.
@@ -87,7 +89,7 @@ public:
     /**
      * @brief Returns the 0-based page index containing point pos in widget coordinates.
      */
-    int pageIndexAtPos(const QPoint &pos) const;
+    Q_INVOKABLE int pageIndexAtPos(const QPoint &pos) const;
 
     /**
      * @brief Sets the path to the PDF document on disk for precise layout/font analysis.
@@ -107,7 +109,7 @@ public:
     /**
      * @brief Returns the bounding rectangle of the given page in canvas coordinates.
      */
-    QRect pageRect(int pageIndex) const;
+    Q_INVOKABLE QRect pageRect(int pageIndex) const;
 
     /**
      * @brief Clears page cache and forces a full re-render.
@@ -195,6 +197,21 @@ public:
     void copySelectedArea();
 
     /**
+     * @brief Extracts selectable vector text contained inside the selected area and copies to clipboard.
+     */
+    void copySelectedAreaText();
+
+    /**
+     * @brief Copies the selected area as a high-resolution 300 DPI image to clipboard.
+     */
+    void copySelectedAreaImage();
+
+    /**
+     * @brief Performs OCR text recognition exclusively on the selected area snippet.
+     */
+    void ocrSelectedArea();
+
+    /**
      * @brief Checks if there is an active rectangular area selection.
      * @return True if an area is currently selected.
      */
@@ -240,14 +257,9 @@ public:
     void updateSelectedStampProperties(const QString &text, const QColor &color, qreal angle, int style, int fontSize);
 
     /**
-     * @brief Commits pending stamp or shape property changes to the PDF document.
+     * @brief Commits currently active transform box directly to the PDF document.
      */
-    void commitSelectedStampToPdf();
-
-    /**
-     * @brief Cancels any pending stamp commit without modifying the PDF document.
-     */
-    void cancelPendingStampCommit();
+    void commitActiveTransformBox();
 
     /**
      * @brief Activates the Shape tool with drawing options.
@@ -318,8 +330,6 @@ public:
      */
     void updateShapeProperties(int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
     void updateShapeProperties(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
-    void updateSelectedShapeProperties(int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor);
-    void deleteSelectedShape();
 
     /**
      * @brief Activates the 300 DPI high-resolution snapshot clipping tool.
@@ -359,11 +369,6 @@ public:
      * @brief Clears active highlight selection border.
      */
     void clearActiveHighlightSelection();
-
-    /**
-     * @brief Returns active highlight index in placed shapes (-1 if none selected).
-     */
-    int activeHighlightIndex() const { return m_activeHighlightIndex; }
 
     /**
      * @brief Replaces selected text directly from the contextual action bar without floating dialogs.
@@ -449,24 +454,11 @@ signals:
     void addStampAnnotationRequested(const QImage &image, const QRectF &normalizedRect);
 
     /**
-     * @brief Emitted when an existing shape/stamp annotation is moved to a new position.
-     * @param oldNormRect Previous normalized page boundary.
-     * @param newNormRect New normalized page boundary.
-     * @param stampImg Rendered image of the shape.
-     */
-    void moveStampAnnotationRequested(const QRectF &oldNormRect, const QRectF &newNormRect, const QImage &stampImg);
-
-    /**
-     * @brief Emitted when a stamp annotation is deleted from the page.
-     * @param normRect Normalized page boundary of the deleted shape.
-     */
-    void deleteStampAnnotationRequested(const QRectF &normRect);
-
-    /**
      * @brief Emitted when multiple stamp annotations are added in a single batch (e.g. text cut).
      * @param stamps List of image and normalized rect pairs.
      */
     void addStampAnnotationsRequested(const QList<QPair<QImage, QRectF>> &stamps);
+    void addStampAnnotationsForPageRequested(int pageIndex, const QList<QPair<QImage, QRectF>> &stamps);
 
     /**
      * @brief Emitted when a native vector text annotation is added to the page.
@@ -480,6 +472,15 @@ signals:
     void addTextAnnotationRequested(const QString &text, const QFont &font, const QColor &color,
                                     const QRectF &normalizedRect, bool whiteout, const QImage &bgImage = QImage(),
                                     const QRectF &bgNormalizedRect = QRectF());
+
+    /**
+     * @brief Emitted when the original text at pageIndex/pointRect should be erased/removed cleanly
+     * without stamping an opaque background (e.g. via vector redaction or annotation removal).
+     * @param pageIndex 0-based page index.
+     * @param pointRect Point bounding box in 72 DPI page point coordinates.
+     * @param normalizedRect Normalized page boundary (0.0 to 1.0 coordinates).
+     */
+    void eraseOriginalTextRequested(int pageIndex, const QRectF &pointRect, const QRectF &normalizedRect);
 
     /**
      * @brief Emitted when in-place text editing starts directly on canvas.
@@ -512,6 +513,15 @@ signals:
      * @param pointRect Bounding rectangle in 72 DPI page point coordinates.
      */
     void copyAreaRequested(const QRectF &pointRect);
+
+    /**
+     * @brief Emitted when the user requests scanning text in an area or current page.
+     */
+    void scanAreaRequested(const QRectF &pointRect);
+    void ocrAreaRequested(const QRectF &pointRect);
+    void scanSnippetRequested(const QImage &snippet);
+    void scanPageRequested();
+    void editModeRequested();
 
     /**
      * @brief Emitted when a directional zoom event occurs at the given widget coordinate.
@@ -570,6 +580,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
@@ -582,9 +593,10 @@ private slots:
     void onTransformBoxEditRequested();
 
 private:
+    void launchTextTransform(bool startInEditMode);
     void updateSelection(const QPoint &startPt, const QPoint &endPt);
     int findClosestBox(const QPoint &pt) const;
-    void commitShapeDrawing(const QRect &rect, const QPoint &startPt = QPoint(-1, -1), const QPoint &endPt = QPoint(-1, -1));
+    void commitShapeDrawing(const QRect &rect, const QPoint &startPt = QPoint(-1, -1), const QPoint &endPt = QPoint(-1, -1), int overrideShapeType = -1);
     QRect normalizeRect(const QPoint &p1, const QPoint &p2) const;
     void cancelTransitionAnimation();
 
@@ -612,6 +624,7 @@ private:
 
     // Middle-click panning
     bool m_isPanning;
+    bool m_spacePressed = false;
     QPoint m_panStartPos;
 
     // Snapshot & shape drag state
@@ -628,50 +641,17 @@ private:
     int m_shapeStrokeWidth;
     QColor m_shapeStrokeColor;
     QColor m_shapeFillColor;
-
-    // Continuous Shape Drawing & Direct Move State
-    struct PlacedShapeItem {
-        int id = 0;
-        int pageIndex = 0;
-        int shapeType = 0;
-        int strokeWidth = 2;
-        QColor strokeColor = Qt::black;
-        QColor fillColor = Qt::transparent;
-        QRect rect;
-        QPoint startPt = QPoint(-1, -1);
-        QPoint endPt = QPoint(-1, -1);
-        QRectF normRect;
-        QImage stampImage;
-
-        // Stamp-specific parameters
-        QString stampText;
-        qreal stampAngle = 0.0;
-        qreal stampOpacity = 0.90;
-        QColor stampColor = QColor(QStringLiteral("#dc2626"));
-        int stampStyle = 0;
-        int stampSize = 28;
-    };
-    QList<PlacedShapeItem> m_placedShapes;
-    int m_shapeIdCounter = 0;
-    int m_hoveredShapeIndex = -1;
-    int m_selectedShapeIndex = -1;
-    bool m_isMovingShape = false;
-    int m_movingShapeIndex = -1;
-    QPoint m_moveShapeStartMouse;
-    QRect m_moveShapeInitialRect;
-    QRect m_moveShapeCurrentRect;
-
-    // Deferred Whiteout for Move Operation (only applied on commit)
-    QRectF m_pendingMoveWhiteoutRect;
-
+    QVector<QPoint> m_smartShapePoints;
     // Pending Erased Block State & Collision Guardrail for Separate-Window Text Replacement
     QRectF m_pendingErasedPtRect;
     QRectF m_pendingErasedNormRect;
     QColor m_pendingErasedBgColor = Qt::white;
+    QImage m_pendingErasedPreviewPatch;
     QSet<int> m_pendingErasedBoxIndices;
     QSet<int> m_permanentlyErasedBoxIndices;
     QVector<QRectF> m_collidingTextPtRects;
     void updateTransformBoxCollision();
+    void updatePendingErasedPreviewPatch();
     void clearPendingErasedState();
 
     // Typewriter parameters
@@ -696,7 +676,6 @@ private:
     QColor m_highlighterColor;
     double m_highlighterOpacity;
     bool m_highlighterSpotlight = false;
-    int m_activeHighlightIndex = -1;
     QRectF m_selectedTextPtRect;
     QRectF m_selectedTextNormRect;
     int m_selectedTextPageIndex = -1;
@@ -704,11 +683,6 @@ private:
 
     // Continuous tool placement mode
     bool m_continuousMode;
-
-    // Debounced stamp property commit
-    QTimer *m_stampCommitTimer = nullptr;
-    int m_committingShapeIndex = -1;
-    QRectF m_commitOldNormRect;
 
     // Inline AcroForms text editor
     QLineEdit *m_inlineEditor;
@@ -727,37 +701,9 @@ private:
     };
     CopiedTextFormat m_lastCopiedTextFormat;
     void captureSelectedTextFormat();
-
-    // XML-based precise layout & font detection
-    struct PageFontSpec {
-        QString family;
-        double size = 12.0;
-        QColor color = Qt::black;
-        bool isBold = false;
-        bool isItalic = false;
-    };
-
-    struct PageTextElement {
-        QRectF rectPt;
-        int fontId = -1;
-        QString text;
-        QString family;
-        double size = 12.0;
-        QColor color = Qt::black;
-        bool isBold = false;
-        bool isItalic = false;
-    };
-
-    struct CachedPageLayout {
-        int pageIndex = -1;
-        QString filePath;
-        QMap<int, PageFontSpec> fonts;
-        QList<PageTextElement> elements;
-    };
+    bool detectTextFormatFromDocument(const QString &text);
 
     QString m_filePath;
-    CachedPageLayout m_cachedPageLayout;
-    bool parsePageXmlLayout(int pageIndex, double pageWidthPt, double pageHeightPt);
 
     // Multi-page continuous layout state
     void refreshActivePageData();

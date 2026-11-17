@@ -133,25 +133,25 @@ QString UpdateManager::currentVersion() const
 
 QString UpdateManager::findInstallerScript() const
 {
-    // Check known locations for C++ Installa or install.sh scripts
-    QStringList candidates = {
-        QCoreApplication::applicationDirPath() + "/Installa",
-        QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../Installa"),
-        QCoreApplication::applicationDirPath() + "/install.sh",
-        QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../install.sh"),
-        QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../install.sh"),
-        QDir::homePath() + "/.local/share/bubezview/install.sh",
-        QDir::homePath() + "/Progetti/BubezView/Installa",
-        QDir::homePath() + "/Progetti/BubezView/install.sh",
-        QDir::homePath() + "/Progetti/espertoneweb/install-bubezview.sh"
-    };
-
+    // Check known locations for C++ install.sh or Installa scripts
+    // Prioritize install.sh as it contains single-component recipe handlers (--build-component)
+    QStringList candidates;
     const QString devRoot = BuildConfig::projectDevRoot();
     if (!devRoot.isEmpty()) {
-        candidates << devRoot + "/bubezview_cpp/Installa";
-        candidates << devRoot + "/Installa";
         candidates << devRoot + "/install.sh";
+        candidates << devRoot + "/Installa";
+        candidates << devRoot + "/bubezview_cpp/Installa";
     }
+
+    candidates << QCoreApplication::applicationDirPath() + "/install.sh";
+    candidates << QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../install.sh");
+    candidates << QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../../install.sh");
+    candidates << QDir::homePath() + "/Progetti/BubezView/install.sh";
+    candidates << QDir::homePath() + "/.local/share/bubezview/install.sh";
+    candidates << QCoreApplication::applicationDirPath() + "/Installa";
+    candidates << QDir::cleanPath(QCoreApplication::applicationDirPath() + "/../Installa");
+    candidates << QDir::homePath() + "/Progetti/BubezView/Installa";
+    candidates << QDir::homePath() + "/Progetti/espertoneweb/install-bubezview.sh";
 
     for (const QString &path : candidates) {
         QFileInfo fi(path);

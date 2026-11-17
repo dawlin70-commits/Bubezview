@@ -19,11 +19,14 @@
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QTimer>
+#include <QProgressBar>
 
 PdfImageExtractDialog::PdfImageExtractDialog(const QString &pdfPath, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_pdfPath(pdfPath)
+    , m_extractProcess(nullptr)
     , m_headerLabel(nullptr)
+    , m_progressBar(nullptr)
     , m_statsLabel(nullptr)
     , m_listWidget(nullptr)
     , m_btnSelectAll(nullptr)
@@ -36,27 +39,44 @@ PdfImageExtractDialog::PdfImageExtractDialog(const QString &pdfPath, QWidget *pa
     setWindowTitle(tr("Extract Images from PDF — BubezView"));
     resize(720, 560);
     setupUi();
+
+    // Automatically begin extraction when shown
+    QTimer::singleShot(0, this, &PdfImageExtractDialog::startExtraction);
 }
 
 PdfImageExtractDialog::~PdfImageExtractDialog()
 {
+    if (m_extractProcess && m_extractProcess->state() != QProcess::NotRunning) {
+        m_extractProcess->kill();
+        m_extractProcess->waitForFinished(500);
+    }
     // QTemporaryDir automatically cleans up temporary files on destruction
 }
 
 void PdfImageExtractDialog::setupUi()
 {
-    auto *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
+    auto *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(12);
 
     // 1. Header Banner
     auto *headerLayout = new QHBoxLayout();
     m_headerLabel = new QLabel(this);
     m_headerLabel->setStyleSheet("font-size: 14px; font-weight: bold;");
-    m_headerLabel->setText(tr("Embedded Images in PDF"));
+    m_headerLabel->setText(tr("Extracting embedded images, please wait..."));
     headerLayout->addWidget(m_headerLabel);
     headerLayout->addStretch();
     mainLayout->addLayout(headerLayout);
+
+    m_progressBar = new QProgressBar(this);
+    m_progressBar->setRange(0, 0); // Animated indeterminate progress
+    m_progressBar->setFixedHeight(4);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setStyleSheet(
+        "QProgressBar { border: none; background: #334155; border-radius: 2px; }"
+        "QProgressBar::chunk { background: #38bdf8; border-radius: 2px; }"
+    );
+    mainLayout->addWidget(m_progressBar);
 
     // 2. Central Thumbnail Grid
     m_listWidget = new QListWidget(this);
@@ -130,19 +150,22 @@ void PdfImageExtractDialog::setupUi()
     mainLayout->addLayout(actionLayout);
 }
 
-int PdfImageExtractDialog::loadImages()
+void PdfImageExtractDialog::startExtraction()
 {
     m_images.clear();
     m_listWidget->clear();
 
     if (m_pdfPath.isEmpty() || !QFile::exists(m_pdfPath)) {
-        return -1;
+        m_headerLabel->setText(tr("Error: PDF file does not exist."));
+        if (m_progressBar) m_progressBar->hide();
+        return;
     }
 
-    // Verify pdfimages command availability (prioritizes locally built binary)
     QString pdfimagesExe = BuildConfig::pdfimagesExecutable();
     if (pdfimagesExe.isEmpty()) {
-        return -2; // Indicates poppler-utils package missing
+        m_headerLabel->setText(tr("Error: pdfimages command not found (install poppler-utils)."));
+        if (m_progressBar) m_progressBar->hide();
+        return;
     }
 
     FallbackNoticeDialog::checkAndPrompt("pdfimages", tr("Poppler Image Extractor (pdfimages)"), pdfimagesExe, this);
@@ -150,31 +173,76 @@ int PdfImageExtractDialog::loadImages()
 
     m_tempDir = std::make_unique<QTemporaryDir>();
     if (!m_tempDir->isValid()) {
-        return -1;
+        m_headerLabel->setText(tr("Error: Could not create temporary directory."));
+        if (m_progressBar) m_progressBar->hide();
+        return;
     }
 
-    // Run pdfimages -png to extract raw images in lossless PNG format
+    m_headerLabel->setText(tr("Extracting embedded images, please wait..."));
+    m_statsLabel->setText(tr("Scanning PDF for embedded images..."));
+    if (m_progressBar) m_progressBar->show();
+
     QString prefix = QDir(m_tempDir->path()).filePath("img");
     QStringList args;
     args << "-png" << m_pdfPath << prefix;
 
-    int exitCode = QProcess::execute(pdfimagesExe, args);
+    if (m_extractProcess) {
+        m_extractProcess->kill();
+        m_extractProcess->deleteLater();
+    }
+    m_extractProcess = new QProcess(this);
+    connect(m_extractProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &PdfImageExtractDialog::onProcessFinished);
+    m_extractProcess->start(pdfimagesExe, args);
+}
+
+void PdfImageExtractDialog::onProcessFinished(int exitCode)
+{
+    if (m_progressBar) {
+        m_progressBar->hide();
+    }
+
     if (exitCode != 0) {
         // Fallback without -png in case native format export is preferred
-        args.clear();
+        QString pdfimagesExe = BuildConfig::pdfimagesExecutable();
+        QString prefix = QDir(m_tempDir->path()).filePath("img");
+        QStringList args;
         args << m_pdfPath << prefix;
-        exitCode = QProcess::execute(pdfimagesExe, args);
+        int fbExit = QProcess::execute(pdfimagesExe, args);
+        if (fbExit != 0) {
+            m_headerLabel->setText(tr("No images could be extracted from this PDF."));
+            m_statsLabel->setText(tr("Extraction failed or no raster images present."));
+            return;
+        }
     }
 
-    if (exitCode != 0) {
-        return -1;
+    populateImagesFromDirectory();
+}
+
+void PdfImageExtractDialog::populateImagesFromDirectory()
+{
+    if (!m_tempDir || !m_tempDir->isValid()) {
+        m_headerLabel->setText(tr("No images found in this PDF."));
+        m_statsLabel->setText(tr("0 images"));
+        return;
     }
 
-    // Scan temporary directory for extracted images
     QDir dir(m_tempDir->path());
     QStringList filters;
     filters << "img*.*";
     QFileInfoList fileList = dir.entryInfoList(filters, QDir::Files, QDir::Name);
+
+    m_images.clear();
+    m_listWidget->clear();
+
+    if (fileList.isEmpty()) {
+        m_headerLabel->setText(tr("No embedded raster images found in this PDF."));
+        m_statsLabel->setText(tr("This document contains vector elements or plain text, but no extracted raster photos."));
+        m_btnSelectAll->setEnabled(false);
+        m_btnDeselectAll->setEnabled(false);
+        m_btnSaveSelected->setEnabled(false);
+        return;
+    }
 
     int index = 0;
     for (const QFileInfo &fi : fileList) {
@@ -229,12 +297,50 @@ int PdfImageExtractDialog::loadImages()
     }
 
     m_headerLabel->setText(tr("Embedded Images Found (%1)").arg(m_images.size()));
+    m_btnSelectAll->setEnabled(!m_images.isEmpty());
+    m_btnDeselectAll->setEnabled(!m_images.isEmpty());
     updateSelectionStats();
 
     if (!m_images.isEmpty()) {
         m_listWidget->setCurrentRow(0);
     }
+}
 
+int PdfImageExtractDialog::loadImages()
+{
+    m_images.clear();
+    m_listWidget->clear();
+
+    if (m_pdfPath.isEmpty() || !QFile::exists(m_pdfPath)) {
+        return -1;
+    }
+
+    QString pdfimagesExe = BuildConfig::pdfimagesExecutable();
+    if (pdfimagesExe.isEmpty()) {
+        return -2;
+    }
+
+    m_tempDir = std::make_unique<QTemporaryDir>();
+    if (!m_tempDir->isValid()) {
+        return -1;
+    }
+
+    QString prefix = QDir(m_tempDir->path()).filePath("img");
+    QStringList args;
+    args << "-png" << m_pdfPath << prefix;
+
+    int exitCode = QProcess::execute(pdfimagesExe, args);
+    if (exitCode != 0) {
+        args.clear();
+        args << m_pdfPath << prefix;
+        exitCode = QProcess::execute(pdfimagesExe, args);
+    }
+    if (exitCode != 0) {
+        return -1;
+    }
+
+    populateImagesFromDirectory();
+    if (m_progressBar) m_progressBar->hide();
     return m_images.size();
 }
 

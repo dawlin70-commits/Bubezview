@@ -1,11 +1,14 @@
 /**
  * @file extension_row_widget.cpp
- * @brief Implementation of the two-level compact row widget.
+ * @brief Implementation of the compact 2-column tile widget for extensions and modules.
  */
 
 #include "extension_row_widget.h"
+#include "diagnostic_report_dialog.h"
 #include "core/system/package_manager_helper.h"
 #include "core/system/build_config.h"
+#include "core/services/theme_manager.h"
+
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QProcess>
@@ -16,6 +19,32 @@
 #include <QThreadPool>
 #include <QPointer>
 #include <QMenu>
+#include <QAction>
+#include <QGuiApplication>
+#include <QClipboard>
+
+static QString componentIcon(const QString &id, const QString &category)
+{
+    if (id == QLatin1String("engine-poppler")) return QStringLiteral("📄");
+    if (id == QLatin1String("pdfimages")) return QStringLiteral("🖼️");
+    if (id == QLatin1String("poppler-data")) return QStringLiteral("🌐");
+    if (id == QLatin1String("qpdf")) return QStringLiteral("🔧");
+    if (id == QLatin1String("mupdf") || id == QLatin1String("libmupdf")) return QStringLiteral("⚡");
+    if (id == QLatin1String("tesseract")) return QStringLiteral("📝");
+    if (id == QLatin1String("openssl")) return QStringLiteral("🔒");
+    if (category == QLatin1String("Archive")) return QStringLiteral("📦");
+    if (category == QLatin1String("Media")) {
+        if (id.contains(QLatin1String("audio")) || id.contains(QLatin1String("taglib")) || id.contains(QLatin1String("fftw")))
+            return QStringLiteral("🎵");
+        return QStringLiteral("🎬");
+    }
+    if (category == QLatin1String("Office") || category == QLatin1String("OfficeImage")) {
+        if (id.contains(QLatin1String("image")) || id.contains(QLatin1String("format")))
+            return QStringLiteral("🎨");
+        return QStringLiteral("📑");
+    }
+    return QStringLiteral("⚙️");
+}
 
 ExtensionRowWidget::ExtensionRowWidget(const ExtensionModuleInfo &mod, QWidget *parent)
     : QFrame(parent)
@@ -23,38 +52,8 @@ ExtensionRowWidget::ExtensionRowWidget(const ExtensionModuleInfo &mod, QWidget *
     , m_updateAvailable(false)
 {
     m_sourceConfig = BuildConfig::instance().customSourceConfig(m_mod.id);
-    setObjectName("ExtensionRowWidget");
-    if (m_mod.isEngine) {
-        setStyleSheet(
-            "#ExtensionRowWidget {"
-            "    background-color: rgba(2, 132, 199, 0.05);"
-            "    border: 1px solid rgba(2, 132, 199, 0.28);"
-            "    border-left: 4px solid #0284c7;"
-            "    border-radius: 6px;"
-            "    margin-bottom: 4px;"
-            "}"
-            "#ExtensionRowWidget:hover {"
-            "    background-color: rgba(2, 132, 199, 0.09);"
-            "    border-color: rgba(2, 132, 199, 0.45);"
-            "    border-left: 4px solid #0284c7;"
-            "}"
-        );
-    } else {
-        setStyleSheet(
-            "#ExtensionRowWidget {"
-            "    background-color: rgba(255, 255, 255, 0.7);"
-            "    border: 1px solid rgba(148, 163, 184, 0.25);"
-            "    border-left: 3px solid #94a3b8;"
-            "    border-radius: 6px;"
-            "    margin-bottom: 3px;"
-            "}"
-            "#ExtensionRowWidget:hover {"
-            "    background-color: rgba(248, 250, 252, 0.95);"
-            "    border-color: rgba(100, 116, 139, 0.4);"
-            "    border-left: 3px solid #64748b;"
-            "}"
-        );
-    }
+    setObjectName(QStringLiteral("ExtensionRowWidget"));
+    setFixedHeight(46);
 
     setupUi();
     refreshState();
@@ -63,176 +62,269 @@ ExtensionRowWidget::ExtensionRowWidget(const ExtensionModuleInfo &mod, QWidget *
 void ExtensionRowWidget::setupUi()
 {
     QHBoxLayout *mainLay = new QHBoxLayout(this);
-    mainLay->setContentsMargins(12, 6, 12, 6);
-    mainLay->setSpacing(10);
+    mainLay->setContentsMargins(12, 4, 8, 4);
+    mainLay->setSpacing(8);
 
     // ==============================================================
-    // LEFT: Component Badge (Plugin / Extension) + Name + Info (i)
+    // LEFT: Component Icon & Name
     // ==============================================================
-    m_lblTitle = new QLabel(this);
-    if (m_mod.isEngine) {
-        m_lblTitle->setText(QString("<span style='background-color: #0284c7; color: white; font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.5px;'>%1</span> &nbsp;<b style='font-size: 12px; color: #0f172a;'>%2</b>")
-            .arg(tr("PLUGIN"), m_mod.displayName));
-    } else {
-        m_lblTitle->setText(QString("<span style='background-color: rgba(148, 163, 184, 0.22); color: #475569; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;'>%1</span> &nbsp;<b style='font-size: 12px; color: #1e293b;'>%2</b>")
-            .arg(tr("EXTENSION"), m_mod.displayName));
-    }
+    m_lblIcon = new QLabel(componentIcon(m_mod.id, m_mod.category), this);
+    m_lblIcon->setObjectName(QStringLiteral("TileIcon"));
+    m_lblIcon->setFixedWidth(24);
+    m_lblIcon->setAlignment(Qt::AlignCenter);
+    mainLay->addWidget(m_lblIcon);
+
+    m_lblTitle = new QLabel(m_mod.displayName, this);
+    m_lblTitle->setObjectName(QStringLiteral("TileTitle"));
+    m_lblTitle->setToolTip(m_mod.summary);
     m_lblTitle->setTextInteractionFlags(Qt::NoTextInteraction);
-    mainLay->addWidget(m_lblTitle);
-
-    m_btnInfo = new QPushButton("ⓘ", this);
-    m_btnInfo->setFixedSize(20, 20);
-    m_btnInfo->setCursor(Qt::PointingHandCursor);
-    m_btnInfo->setToolTip(tr("Show details, descriptions and technical capabilities"));
-    m_btnInfo->setStyleSheet(
-        "QPushButton {"
-        "    font-weight: bold; border-radius: 10px; background-color: rgba(100, 116, 139, 0.12); color: #475569; border: 1px solid rgba(100, 116, 139, 0.22); font-size: 11px;"
-        "}"
-        "QPushButton:hover {"
-        "    background-color: #0284c7; color: white; border-color: #0284c7;"
-        "}"
-    );
-    connect(m_btnInfo, &QPushButton::clicked, this, &ExtensionRowWidget::showFeatureDetails);
-    mainLay->addWidget(m_btnInfo);
-
-    mainLay->addStretch(1);
+    mainLay->addWidget(m_lblTitle, 1);
 
     // ==============================================================
-    // RIGHT: Clickable State Badge + [ Action ] + [ 🔧 Tools ]
+    // RIGHT: 3 Direct Action Buttons
+    // 1. Install / Uninstall / Health (🟢 / ⚪ / ⚠️)
+    // 2. Switch Package (📦) <-> Source (⚡)
+    // 3. Advanced Options (···)
     // ==============================================================
+    QHBoxLayout *actionLay = new QHBoxLayout();
+    actionLay->setContentsMargins(0, 0, 0, 0);
+    actionLay->setSpacing(6);
 
-    // 1. Clickable Status Badge (pill shape)
-    m_btnStateBadge = new QPushButton(this);
-    m_btnStateBadge->setCursor(Qt::PointingHandCursor);
-    m_btnStateBadge->setFixedHeight(24);
-    connect(m_btnStateBadge, &QPushButton::clicked, this, [this]() {
-        if (!m_mod.canCompile) return;
-        auto curMode = BuildConfig::instance().componentSourceMode(m_mod.id);
-        if (curMode == BuildConfig::ComponentSourceMode::LocalSource) {
-            BuildConfig::instance().setComponentSourceMode(m_mod.id, BuildConfig::ComponentSourceMode::SystemBinary);
-        } else {
-            BuildConfig::instance().setComponentSourceMode(m_mod.id, BuildConfig::ComponentSourceMode::LocalSource);
-        }
-        refreshState();
-        emit statusChanged();
-    });
-    mainLay->addWidget(m_btnStateBadge);
+    // Button 1: Install / Uninstall / Health
+    m_btnInstall = new QPushButton(this);
+    m_btnInstall->setObjectName(QStringLiteral("BtnInstallState"));
+    m_btnInstall->setCursor(Qt::PointingHandCursor);
+    m_btnInstall->setFixedSize(28, 26);
+    connect(m_btnInstall, &QPushButton::clicked, this, &ExtensionRowWidget::handleInstallClicked);
+    actionLay->addWidget(m_btnInstall);
 
-    // 2. Primary Action Button [ Installa / Disinstalla / Aggiorna ]
-    m_btnAction = new QPushButton(this);
-    m_btnAction->setCursor(Qt::PointingHandCursor);
-    m_btnAction->setFixedHeight(26);
-    m_btnAction->setMinimumWidth(82);
-    connect(m_btnAction, &QPushButton::clicked, this, &ExtensionRowWidget::handleActionClicked);
-    mainLay->addWidget(m_btnAction);
+    // Button 2: Switch between Package (📦) <-> Source (⚡)
+    m_btnSourceSwitch = new QPushButton(this);
+    m_btnSourceSwitch->setObjectName(QStringLiteral("BtnSourceSwitch"));
+    m_btnSourceSwitch->setCursor(Qt::PointingHandCursor);
+    m_btnSourceSwitch->setFixedSize(28, 26);
+    connect(m_btnSourceSwitch, &QPushButton::clicked, this, &ExtensionRowWidget::handleSourceSwitchClicked);
+    actionLay->addWidget(m_btnSourceSwitch);
 
-    // 3. Wrench Tools Button [ 🔧 ]
-    m_btnWrench = new QPushButton(this);
-    m_btnWrench->setCursor(Qt::PointingHandCursor);
-    m_btnWrench->setFixedSize(26, 26);
-    m_btnWrench->setIcon(QIcon(":/icons/wrench.svg"));
-    m_btnWrench->setIconSize(QSize(15, 15));
-    m_btnWrench->setToolTip(m_mod.canCompile ? tr("Source options, git repository & diagnostics")
-                                             : tr("System package information & diagnostic verification"));
-    m_btnWrench->setStyleSheet(
-        "QPushButton {"
-        "    background-color: rgba(100, 116, 139, 0.08);"
-        "    border: 1px solid rgba(100, 116, 139, 0.22);"
-        "    border-radius: 6px;"
-        "}"
-        "QPushButton:hover {"
-        "    background-color: rgba(2, 132, 199, 0.15);"
-        "    border-color: #0284c7;"
-        "}"
-    );
-    connect(m_btnWrench, &QPushButton::clicked, this, &ExtensionRowWidget::openCustomSourceDialog);
-    mainLay->addWidget(m_btnWrench);
+    // Button 3: Compact Options Button (···)
+    m_btnOptions = new QPushButton(QStringLiteral("···"), this);
+    m_btnOptions->setObjectName(QStringLiteral("ExtensionOptionsButton"));
+    m_btnOptions->setCursor(Qt::PointingHandCursor);
+    m_btnOptions->setFixedSize(28, 26);
+    m_btnOptions->setToolTip(tr("Advanced options (diagnostics, details, custom build paths)"));
+    connect(m_btnOptions, &QPushButton::clicked, this, &ExtensionRowWidget::openOptionsMenu);
+    actionLay->addWidget(m_btnOptions);
 
-    updateSourceToggleStyles();
+    mainLay->addLayout(actionLay, 0);
+
+    updateThemeStyles();
 }
 
-void ExtensionRowWidget::updateSourceToggleStyles()
+void ExtensionRowWidget::updateThemeStyles()
+{
+    const bool dark = ThemeManager::isDarkTheme();
+    const ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+
+    QString tileBg;
+    QString tileBorder;
+    QString tileHoverBg;
+    QString tileHoverBorder;
+    QString titleColor;
+    QString btnOptionsBg;
+    QString btnOptionsText;
+
+    if (preset == ThemePreset::ZincGray) {
+        tileBg = QStringLiteral("rgba(255, 255, 255, 0.05)");
+        tileBorder = QStringLiteral("rgba(255, 255, 255, 0.10)");
+        tileHoverBg = QStringLiteral("rgba(255, 255, 255, 0.09)");
+        tileHoverBorder = QStringLiteral("rgba(255, 255, 255, 0.24)");
+        titleColor = QStringLiteral("#ffffff");
+        btnOptionsBg = QStringLiteral("rgba(255, 255, 255, 0.08)");
+        btnOptionsText = QStringLiteral("#f4f4f5");
+    } else if (dark) {
+        tileBg = QStringLiteral("rgba(30, 41, 59, 0.40)");
+        tileBorder = QStringLiteral("rgba(56, 189, 248, 0.16)");
+        tileHoverBg = QStringLiteral("rgba(30, 41, 59, 0.65)");
+        tileHoverBorder = QStringLiteral("rgba(56, 189, 248, 0.32)");
+        titleColor = QStringLiteral("#f8fafc");
+        btnOptionsBg = QStringLiteral("rgba(56, 189, 248, 0.10)");
+        btnOptionsText = QStringLiteral("#38bdf8");
+    } else {
+        tileBg = QStringLiteral("rgba(0, 0, 0, 0.03)");
+        tileBorder = QStringLiteral("rgba(100, 116, 139, 0.18)");
+        tileHoverBg = QStringLiteral("rgba(0, 0, 0, 0.06)");
+        tileHoverBorder = QStringLiteral("rgba(2, 132, 199, 0.35)");
+        titleColor = QStringLiteral("#0f172a");
+        btnOptionsBg = QStringLiteral("rgba(100, 116, 139, 0.08)");
+        btnOptionsText = QStringLiteral("#475569");
+    }
+
+    const QString rowStyle = QString(
+        "QFrame#ExtensionRowWidget {"
+        "    background-color: %1;"
+        "    border: 1px solid %2;"
+        "    border-radius: 9px;"
+        "}"
+        "QFrame#ExtensionRowWidget:hover {"
+        "    background-color: %3;"
+        "    border: 1px solid %4;"
+        "}"
+    ).arg(tileBg, tileBorder, tileHoverBg, tileHoverBorder);
+
+    setStyleSheet(rowStyle);
+
+    if (m_lblTitle) {
+        m_lblTitle->setStyleSheet(QStringLiteral("font-size: 12px; font-weight: 600; color: %1; background: transparent; border: none;").arg(titleColor));
+    }
+    if (m_lblIcon) {
+        m_lblIcon->setStyleSheet(QStringLiteral("font-size: 16px; background: transparent; border: none;"));
+    }
+
+    if (m_btnOptions) {
+        m_btnOptions->setStyleSheet(QString(
+            "QPushButton#ExtensionOptionsButton {"
+            "    background-color: %1;"
+            "    color: %2;"
+            "    border: 1px solid rgba(255, 255, 255, 0.16);"
+            "    border-radius: 6px;"
+            "    font-weight: bold;"
+            "    font-size: 13px;"
+            "}"
+            "QPushButton#ExtensionOptionsButton:hover {"
+            "    background-color: rgba(255, 255, 255, 0.20);"
+            "    border-color: rgba(255, 255, 255, 0.35);"
+            "}"
+        ).arg(btnOptionsBg, btnOptionsText));
+    }
+
+    updateButtonStates();
+}
+
+void ExtensionRowWidget::updateButtonStates()
 {
     bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
     bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
     auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
+    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
 
-    if (!hasSys && !hasSrc) {
-        if (activeMode == BuildConfig::ComponentSourceMode::LocalSource && m_mod.canCompile) {
-            m_btnStateBadge->setEnabled(true);
-            m_btnStateBadge->setText(tr("⚡ Source (Pending Build)"));
-            m_btnStateBadge->setStyleSheet(
+    // -------------------------------------------------------------
+    // Button 1: Install / Uninstall / Health State (🟢 / ⚪ / ⚠️)
+    // -------------------------------------------------------------
+    if (m_btnInstall) {
+        m_btnInstall->setText(QString());
+        m_btnInstall->setIconSize(QSize(15, 15));
+        if (isInstalled) {
+            m_btnInstall->setIcon(QIcon(QStringLiteral(":/icons/status_ok.svg")));
+            m_btnInstall->setStyleSheet(
                 "QPushButton {"
-                "    background-color: rgba(2, 132, 199, 0.12); color: #0284c7; border: 1px dashed rgba(2, 132, 199, 0.6);"
-                "    border-radius: 12px; padding: 2px 9px; font-size: 11px; font-weight: 600;"
+                "    background-color: rgba(16, 185, 129, 0.16);"
+                "    border: 1px solid rgba(16, 185, 129, 0.40);"
+                "    border-radius: 6px;"
                 "}"
                 "QPushButton:hover {"
-                "    background-color: rgba(2, 132, 199, 0.22); border-color: #0284c7;"
+                "    background-color: rgba(239, 68, 68, 0.25);"
+                "    border-color: rgba(239, 68, 68, 0.50);"
                 "}"
             );
-            m_btnStateBadge->setToolTip(tr("Source build mode active (pending compilation).\nClick to switch to system package mode."));
+            if (hasSrc && (activeMode == BuildConfig::ComponentSourceMode::LocalSource || !hasSys)) {
+                m_btnInstall->setToolTip(tr("Installed from source into ~/.local.\nClick to remove compiled build of '%1'.").arg(m_mod.displayName));
+            } else {
+                m_btnInstall->setToolTip(tr("Installed and operational.\nClick to uninstall '%1'.").arg(m_mod.displayName));
+            }
         } else {
-            m_btnStateBadge->setEnabled(m_mod.canCompile);
-            m_btnStateBadge->setText(tr("Not installed"));
-            m_btnStateBadge->setStyleSheet(
+            m_btnInstall->setIcon(QIcon(QStringLiteral(":/icons/status_missing.svg")));
+            m_btnInstall->setStyleSheet(
                 "QPushButton {"
-                "    background-color: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);"
-                "    border-radius: 12px; padding: 2px 9px; font-size: 11px; font-weight: 500;"
+                "    background-color: rgba(255, 255, 255, 0.06);"
+                "    border: 1px solid rgba(255, 255, 255, 0.16);"
+                "    border-radius: 6px;"
                 "}"
                 "QPushButton:hover {"
-                "    background-color: rgba(148, 163, 184, 0.22); color: #475569;"
+                "    background-color: rgba(16, 185, 129, 0.25);"
+                "    border-color: #10b981;"
                 "}"
             );
-            m_btnStateBadge->setToolTip(m_mod.canCompile ? tr("Not installed.\nClick to switch to source compilation mode.")
-                                                         : tr("This component is neither installed nor compilable on this system."));
+            bool wantsSource = (activeMode == BuildConfig::ComponentSourceMode::LocalSource);
+            auto hwProfile = BuildConfig::instance().activeHardwareProfile();
+            if (hwProfile == BuildConfig::HardwareProfile::AllSource ||
+                hwProfile == BuildConfig::HardwareProfile::AllStable ||
+                (hwProfile == BuildConfig::HardwareProfile::MissingOnly && !hasSys)) {
+                wantsSource = true;
+            }
+            if (wantsSource && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
+                m_btnInstall->setToolTip(tr("Not installed.\nClick to compile '%1' from source into ~/.local.").arg(m_mod.displayName));
+            } else {
+                m_btnInstall->setToolTip(tr("Not installed.\nClick to install '%1'.").arg(m_mod.displayName));
+            }
         }
-    } else if (activeMode == BuildConfig::ComponentSourceMode::LocalSource) {
-        m_btnStateBadge->setEnabled(m_mod.canCompile);
-        m_btnStateBadge->setText(hasSrc ? tr("⚡ Compiled") : tr("⚡ Source (Pending Build)"));
-        m_btnStateBadge->setStyleSheet(
-            "QPushButton {"
-            "    background-color: rgba(2, 132, 199, 0.12); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.4);"
-            "    border-radius: 12px; padding: 2px 9px; font-size: 11px; font-weight: 600;"
-            "}"
-            "QPushButton:hover {"
-            "    background-color: rgba(2, 132, 199, 0.22); border-color: #0284c7;"
-            "}"
-        );
-        m_btnStateBadge->setToolTip(hasSrc ? tr("In use: built from source with native CPU optimization (-O3).\nClick to switch to system package.")
-                                           : tr("Source build mode active (pending compilation).\nClick to switch to system package."));
-    } else {
-        m_btnStateBadge->setEnabled(m_mod.canCompile);
-        m_btnStateBadge->setText(tr("📦 System"));
-        m_btnStateBadge->setStyleSheet(
-            "QPushButton {"
-            "    background-color: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.4);"
-            "    border-radius: 12px; padding: 2px 9px; font-size: 11px; font-weight: 600;"
-            "}"
-            "QPushButton:hover {"
-            "    background-color: rgba(16, 185, 129, 0.22); border-color: #059669;"
-            "}"
-        );
-        m_btnStateBadge->setToolTip(m_mod.canCompile ? tr("In use: official distribution package.\nClick to switch to source compilation.")
-                                                     : tr("In use: official distribution package."));
+    }
+
+    // -------------------------------------------------------------
+    // Button 2: Switch between Package (📦) <-> Source (⚡)
+    // -------------------------------------------------------------
+    if (m_btnSourceSwitch) {
+        m_btnSourceSwitch->setText(QString());
+        m_btnSourceSwitch->setIconSize(QSize(16, 16));
+        if (activeMode == BuildConfig::ComponentSourceMode::LocalSource) {
+            m_btnSourceSwitch->setIcon(QIcon(QStringLiteral(":/icons/source_lightning.svg")));
+            m_btnSourceSwitch->setEnabled(m_mod.canCompile);
+            m_btnSourceSwitch->setStyleSheet(
+                "QPushButton {"
+                "    background-color: rgba(56, 189, 248, 0.18);"
+                "    border: 1px solid rgba(56, 189, 248, 0.45);"
+                "    border-radius: 6px;"
+                "}"
+                "QPushButton:hover {"
+                "    background-color: rgba(16, 185, 129, 0.25);"
+                "    border-color: #10b981;"
+                "}"
+            );
+            m_btnSourceSwitch->setToolTip(tr("Native source build active.\nClick to switch to system distribution package."));
+        } else {
+            m_btnSourceSwitch->setIcon(QIcon(QStringLiteral(":/icons/binary_package.svg")));
+            if (m_mod.canCompile) {
+                m_btnSourceSwitch->setEnabled(true);
+                m_btnSourceSwitch->setStyleSheet(
+                    "QPushButton {"
+                    "    background-color: rgba(16, 185, 129, 0.14);"
+                    "    border: 1px solid rgba(16, 185, 129, 0.35);"
+                    "    border-radius: 6px;"
+                    "}"
+                    "QPushButton:hover {"
+                    "    background-color: rgba(56, 189, 248, 0.25);"
+                    "    border-color: #38bdf8;"
+                    "}"
+                );
+                m_btnSourceSwitch->setToolTip(tr("System package active.\nClick to switch to native source build mode."));
+            } else {
+                m_btnSourceSwitch->setEnabled(false);
+                m_btnSourceSwitch->setStyleSheet(
+                    "QPushButton {"
+                    "    background-color: rgba(255, 255, 255, 0.04);"
+                    "    border: 1px solid rgba(255, 255, 255, 0.10);"
+                    "    border-radius: 6px;"
+                    "}"
+                );
+                m_btnSourceSwitch->setToolTip(tr("System package active (source build not available for this component)."));
+            }
+        }
     }
 }
 
 void ExtensionRowWidget::refreshState()
 {
     ExtensionFeatureRegistry::refreshModuleStatus(m_mod);
-
-    updateSourceToggleStyles();
+    updateButtonStates();
 
     m_updateAvailable = false;
     m_candidateVersion.clear();
-    updateActionButtons();
 
-    // Query candidate version asynchronously or from cache so the GUI thread never stalls
+    // Query candidate version asynchronously so the GUI thread never stalls
     if (m_mod.isInstalled && !m_mod.isStaticCompiled) {
         if (PackageManagerHelper::isCandidateVersionCached(m_mod.id)) {
             m_candidateVersion = PackageManagerHelper::queryPackageCandidateVersion(m_mod.id);
             m_updateAvailable = !m_candidateVersion.isEmpty();
-            updateActionButtons();
+            updateButtonStates();
         } else {
             QPointer<ExtensionRowWidget> self = this;
             const QString compId = m_mod.id;
@@ -243,7 +335,7 @@ void ExtensionRowWidget::refreshState()
                         if (self) {
                             self->m_candidateVersion = candVer;
                             self->m_updateAvailable = true;
-                            self->updateActionButtons();
+                            self->updateButtonStates();
                         }
                     }, Qt::QueuedConnection);
                 }
@@ -252,104 +344,68 @@ void ExtensionRowWidget::refreshState()
     }
 }
 
-void ExtensionRowWidget::updateActionButtons()
-{
-    bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
-    bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
-    auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
-
-    if (activeMode == BuildConfig::ComponentSourceMode::LocalSource) {
-        // Local source mode: button is "Compile" (if not compiled) or "Remove" (if compiled)
-        if (hasSrc) {
-            m_btnAction->setText(tr("Remove"));
-            m_btnAction->setStyleSheet(
-                "QPushButton {"
-                "    background-color: rgba(100, 116, 139, 0.08); color: #475569; font-weight: 500; border: 1px solid rgba(100, 116, 139, 0.22); padding: 2px 10px; border-radius: 5px; font-size: 11px;"
-                "}"
-                "QPushButton:hover { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border-color: rgba(239, 68, 68, 0.35); }"
-            );
-            m_btnAction->setToolTip(tr("Removes locally compiled binaries from ~/.local/bin"));
-        } else {
-            m_btnAction->setText(tr("Compile"));
-            m_btnAction->setStyleSheet(
-                "QPushButton {"
-                "    background-color: #0284c7; color: white; font-weight: 600; border: 1px solid #0284c7; padding: 2px 10px; border-radius: 5px; font-size: 11px;"
-                "}"
-                "QPushButton:hover { background-color: #0369a1; }"
-            );
-            m_btnAction->setToolTip(tr("Compile this component from official source code with high-performance flags"));
-        }
-    } else {
-        // System binary mode: button is "Install", "Uninstall", or "Update"
-        if (m_updateAvailable) {
-            m_btnAction->setText(QString(tr("Update ↑ %1")).arg(m_candidateVersion));
-            m_btnAction->setStyleSheet(
-                "QPushButton {"
-                "    background-color: #059669; color: white; font-weight: 600; border: 1px solid #059669; padding: 2px 10px; border-radius: 5px; font-size: 11px;"
-                "}"
-                "QPushButton:hover { background-color: #047857; }"
-            );
-            m_btnAction->setToolTip(tr("An update (%1) is available in system repositories.").arg(m_candidateVersion));
-        } else if (hasSys) {
-            m_btnAction->setText(tr("Uninstall"));
-            m_btnAction->setStyleSheet(
-                "QPushButton {"
-                "    background-color: rgba(100, 116, 139, 0.08); color: #475569; font-weight: 500; border: 1px solid rgba(100, 116, 139, 0.22); padding: 2px 10px; border-radius: 5px; font-size: 11px;"
-                "}"
-                "QPushButton:hover { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border-color: rgba(239, 68, 68, 0.35); }"
-            );
-            m_btnAction->setToolTip(tr("Removes the package from the operating system"));
-        } else {
-            m_btnAction->setText(tr("Install"));
-            m_btnAction->setStyleSheet(
-                "QPushButton {"
-                "    background-color: #0284c7; color: white; font-weight: 600; border: 1px solid #0284c7; padding: 2px 10px; border-radius: 5px; font-size: 11px;"
-                "}"
-                "QPushButton:hover { background-color: #0369a1; }"
-            );
-            m_btnAction->setToolTip(tr("Installs the official package via the system package manager"));
-        }
-    }
-}
-
-void ExtensionRowWidget::handleActionClicked()
+void ExtensionRowWidget::handleInstallClicked()
 {
     bool success = false;
-    auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
     bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
     bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
+    auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
+    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
 
-    if (activeMode == BuildConfig::ComponentSourceMode::LocalSource) {
-        if (hasSrc) {
-            // Remove locally compiled build
-            if (QMessageBox::question(this, tr("Delete Compiled Binaries"),
-                    tr("Do you want to remove the compiled binaries of '%1' from ~/.local/bin?").arg(m_mod.displayName),
+    if (isInstalled) {
+        if (hasSrc && hasSys) {
+            QMessageBox msg(this);
+            msg.setWindowTitle(tr("Uninstall Options: %1").arg(m_mod.displayName));
+            msg.setText(tr("<h3>Uninstall Component: %1</h3>"
+                           "<p>This component is present both as a locally compiled build and as an OS system package.</p>"
+                           "<p>What would you like to remove?</p>").arg(m_mod.displayName));
+            QPushButton *btnRemoveSrc = msg.addButton(tr("🗑️ Remove Compiled Build Only"), QMessageBox::ActionRole);
+            QPushButton *btnUninstallAll = msg.addButton(tr("❌ Uninstall Completely (Source && System)"), QMessageBox::DestructiveRole);
+            msg.addButton(tr("Cancel"), QMessageBox::RejectRole);
+            msg.exec();
+
+            if (msg.clickedButton() == btnRemoveSrc) {
+                BuildConfig::removeLocalSourceBuild(m_mod.id);
+                success = true;
+            } else if (msg.clickedButton() == btnUninstallAll) {
+                BuildConfig::removeLocalSourceBuild(m_mod.id);
+                PackageManagerHelper::uninstallComponentInteractive(m_mod.id, this);
+                success = true;
+            }
+        } else if (hasSrc) {
+            if (QMessageBox::question(this, tr("Remove Compiled Build"),
+                    tr("Do you want to remove locally compiled binaries for '%1'?").arg(m_mod.displayName),
                     QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
                 BuildConfig::removeLocalSourceBuild(m_mod.id);
                 success = true;
             }
-        } else {
-            // Trigger compilation
-            QString targetId = m_mod.id;
-            if (PackageManagerHelper::isCompilableEngine(m_mod.id)) {
-                targetId = m_mod.id;
-            } else if (m_mod.category == "PDF") {
-                targetId = "engine-poppler";
-            } else if (m_mod.category == "Archive") {
-                targetId = "engine-libarchive";
+        } else if (hasSys) {
+            if (QMessageBox::question(this, tr("Uninstall Component"),
+                    tr("Do you want to uninstall '%1' from this system?").arg(m_mod.displayName),
+                    QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+                success = PackageManagerHelper::uninstallComponentInteractive(m_mod.id, this);
             }
-            success = PackageManagerHelper::triggerEngineCompilation(targetId, this);
         }
     } else {
-        // System package mode
-        if (m_updateAvailable) {
-            // Upgrade from repo
-            success = PackageManagerHelper::installComponentInteractive(m_mod.id, this);
-        } else if (hasSys) {
-            // Uninstall system package (with safety checks)
-            success = PackageManagerHelper::uninstallComponentInteractive(m_mod.id, this);
+        // Not installed: if user wants compilation and component is compilable, compile directly!
+        bool wantsSource = (activeMode == BuildConfig::ComponentSourceMode::LocalSource);
+        auto hwProfile = BuildConfig::instance().activeHardwareProfile();
+        if (hwProfile == BuildConfig::HardwareProfile::AllSource ||
+            hwProfile == BuildConfig::HardwareProfile::AllStable ||
+            (hwProfile == BuildConfig::HardwareProfile::MissingOnly && !hasSys)) {
+            wantsSource = true;
+        }
+
+        if (wantsSource && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
+            QString targetId = m_mod.id;
+            if (!PackageManagerHelper::isCompilableEngine(m_mod.id)) {
+                if (m_mod.category == QLatin1String("PDF")) targetId = QStringLiteral("engine-poppler");
+                else if (m_mod.category == QLatin1String("Archive")) targetId = QStringLiteral("engine-libarchive");
+                else if (m_mod.category == QLatin1String("Office")) targetId = QStringLiteral("engine-office");
+                else if (m_mod.category == QLatin1String("Media")) targetId = QStringLiteral("engine-mpv");
+            }
+            success = PackageManagerHelper::triggerEngineCompilation(targetId, this);
         } else {
-            // Install system package
             success = PackageManagerHelper::installComponentInteractive(m_mod.id, this);
         }
     }
@@ -360,90 +416,257 @@ void ExtensionRowWidget::handleActionClicked()
     }
 }
 
-void ExtensionRowWidget::runDiagnosticTest()
+void ExtensionRowWidget::handleSourceSwitchClicked()
 {
-    QProcess *proc = new QProcess(this);
-    QString cmd = m_mod.diagnosticCommand;
+    if (!m_mod.canCompile) return;
+    auto curMode = BuildConfig::instance().componentSourceMode(m_mod.id);
+    if (curMode == BuildConfig::ComponentSourceMode::LocalSource) {
+        BuildConfig::instance().setComponentSourceMode(m_mod.id, BuildConfig::ComponentSourceMode::SystemBinary);
+    } else {
+        BuildConfig::instance().setComponentSourceMode(m_mod.id, BuildConfig::ComponentSourceMode::LocalSource);
+    }
+    refreshState();
+    emit statusChanged();
+}
 
-    connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, [this, proc, cmd](int exitCode, QProcess::ExitStatus status) {
-        QString output = QString::fromUtf8(proc->readAllStandardOutput() + proc->readAllStandardError()).trimmed();
-        if (output.isEmpty()) output = (exitCode == 0) ? tr("Diagnostic command executed successfully with no errors.") : tr("Diagnostic command exited with error code %1.").arg(exitCode);
+void ExtensionRowWidget::openOptionsMenu()
+{
+    QMenu menu(this);
+    menu.setObjectName(QStringLiteral("ExtensionOptionsMenu"));
 
-        if (status == QProcess::NormalExit && exitCode == 0) {
-            QMessageBox::information(this, tr("Diagnostic Passed"),
-                tr("<p><b>%1</b> is working properly.</p><pre>%2</pre>").arg(m_mod.displayName, output.toHtmlEscaped()));
-        } else {
-            QMessageBox::warning(this, tr("Diagnostic Failed"),
-                tr("<p>Could not verify <b>%1</b>.</p><p>Command: <code>%2</code></p><pre>%3</pre>").arg(m_mod.displayName, cmd, output.toHtmlEscaped()));
-        }
-        proc->deleteLater();
+    const bool dark = ThemeManager::isDarkTheme();
+    if (dark) {
+        menu.setStyleSheet(
+            "QMenu#ExtensionOptionsMenu {"
+            "    background-color: #1e293b;"
+            "    border: 1px solid rgba(255, 255, 255, 0.15);"
+            "    border-radius: 8px;"
+            "    padding: 4px;"
+            "}"
+            "QMenu#ExtensionOptionsMenu::item {"
+            "    padding: 6px 14px;"
+            "    border-radius: 4px;"
+            "    color: #f1f5f9;"
+            "    font-size: 12px;"
+            "}"
+            "QMenu#ExtensionOptionsMenu::item:selected {"
+            "    background-color: #0284c7;"
+            "    color: #ffffff;"
+            "}"
+            "QMenu#ExtensionOptionsMenu::separator {"
+            "    height: 1px;"
+            "    background: rgba(255, 255, 255, 0.1);"
+            "    margin: 4px 6px;"
+            "}"
+        );
+    } else {
+        menu.setStyleSheet(
+            "QMenu#ExtensionOptionsMenu {"
+            "    background-color: #ffffff;"
+            "    border: 1px solid rgba(0, 0, 0, 0.12);"
+            "    border-radius: 8px;"
+            "    padding: 4px;"
+            "}"
+            "QMenu#ExtensionOptionsMenu::item {"
+            "    padding: 6px 14px;"
+            "    border-radius: 4px;"
+            "    color: #0f172a;"
+            "    font-size: 12px;"
+            "}"
+            "QMenu#ExtensionOptionsMenu::item:selected {"
+            "    background-color: #0284c7;"
+            "    color: #ffffff;"
+            "}"
+            "QMenu#ExtensionOptionsMenu::separator {"
+            "    height: 1px;"
+            "    background: rgba(0, 0, 0, 0.08);"
+            "    margin: 4px 6px;"
+            "}"
+        );
+    }
+
+    bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
+    bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
+    auto curMode = BuildConfig::instance().componentSourceMode(m_mod.id);
+
+    // 1. Diagnostics
+    QAction *actHealth = menu.addAction(tr("🩺 Run Diagnostic Verification..."));
+    connect(actHealth, &QAction::triggered, this, &ExtensionRowWidget::runRuntimeHealthCheck);
+
+    if (m_mod.canCompile) {
+        QAction *actBuild = menu.addAction(tr("🛠️ Check Compiler Prerequisites..."));
+        connect(actBuild, &QAction::triggered, this, &ExtensionRowWidget::runBuildReadinessCheck);
+    }
+
+    menu.addSeparator();
+
+    // 2. Technical Details & C++ Hooks
+    QAction *actDetails = menu.addAction(tr("🔍 Technical Details && C++ Hooks..."));
+    connect(actDetails, &QAction::triggered, this, &ExtensionRowWidget::showFeatureDetails);
+
+    // 3. Custom Source Configuration
+    if (m_mod.canCompile) {
+        QAction *actCustom = menu.addAction(tr("⚙️ Configure Custom Source && Flags..."));
+        connect(actCustom, &QAction::triggered, this, &ExtensionRowWidget::openCustomSourceDialog);
+    }
+
+    // 4. Copy diagnostic command or info to clipboard
+    QAction *actCopy = menu.addAction(tr("📋 Copy Component Information"));
+    connect(actCopy, &QAction::triggered, this, [this, hasSys, hasSrc, curMode]() {
+        QString info = QString("Component: %1 (%2)\nCategory: %3\nSystem Package: %4\nInstalled: %5 (System: %6, Source: %7)\nActive Mode: %8\nDiagnostic Command: %9")
+            .arg(m_mod.displayName, m_mod.id, m_mod.category, m_mod.systemPackage,
+                 (m_mod.isInstalled ? "Yes" : "No"), (hasSys ? "Yes" : "No"), (hasSrc ? "Yes" : "No"),
+                 (curMode == BuildConfig::ComponentSourceMode::LocalSource ? "LocalSource" : "SystemBinary"),
+                 m_mod.diagnosticCommand);
+        QGuiApplication::clipboard()->setText(info);
     });
 
-    QStringList parts = cmd.split(' ', Qt::SkipEmptyParts);
-    if (parts.isEmpty()) {
-        proc->deleteLater();
+    // 5. Contextual Uninstall/Removal
+    if (curMode == BuildConfig::ComponentSourceMode::LocalSource && hasSrc) {
+        menu.addSeparator();
+        QAction *actRemove = menu.addAction(tr("🗑️ Remove Local Source Build"));
+        connect(actRemove, &QAction::triggered, this, &ExtensionRowWidget::handleInstallClicked);
+    } else if (hasSys) {
+        menu.addSeparator();
+        QAction *actUninstall = menu.addAction(tr("🗑️ Uninstall System Package..."));
+        connect(actUninstall, &QAction::triggered, this, &ExtensionRowWidget::handleInstallClicked);
+    }
+
+    if (m_btnOptions) {
+        menu.exec(m_btnOptions->mapToGlobal(QPoint(0, m_btnOptions->height())));
+    }
+}
+
+void ExtensionRowWidget::runDiagnosticTest()
+{
+    auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
+    bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
+    if (m_mod.canCompile && activeMode == BuildConfig::ComponentSourceMode::LocalSource && !hasSrc) {
+        runBuildReadinessCheck();
+    } else {
+        runRuntimeHealthCheck();
+    }
+}
+
+void ExtensionRowWidget::runRuntimeHealthCheck()
+{
+    QString cmd = m_mod.diagnosticCommand.trimmed();
+    QList<QPair<QString, bool>> subResources;
+    for (const auto &sub : m_mod.subDependencies) {
+        subResources.append({sub.name, sub.isInstalled});
+    }
+
+    if (cmd.isEmpty()) {
+        DiagnosticReportDialog::showRuntimeReport(
+            this,
+            m_mod.displayName,
+            true,
+            QStringLiteral("(internal verification)"),
+            tr("Component is installed, active, and operational."),
+            subResources,
+            0
+        );
         return;
     }
 
-    QString prog = parts.takeFirst();
-    proc->start(prog, parts);
+    QProcess *proc = new QProcess(this);
+    connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, [this, proc, cmd, subResources](int exitCode, QProcess::ExitStatus status) {
+        QString outStr = QString::fromUtf8(proc->readAllStandardOutput());
+        QString errStr = QString::fromUtf8(proc->readAllStandardError());
+        QString output = (outStr + (errStr.isEmpty() ? "" : ("\n" + errStr))).trimmed();
+        if (output.isEmpty()) {
+            output = (exitCode == 0) ? tr("Runtime diagnostic command executed successfully.")
+                                     : tr("Runtime diagnostic command exited with error code %1.").arg(exitCode);
+        }
+
+        bool ok = (status == QProcess::NormalExit && exitCode == 0);
+        DiagnosticReportDialog::showRuntimeReport(
+            this,
+            m_mod.displayName,
+            ok,
+            cmd,
+            output,
+            subResources,
+            exitCode
+        );
+        proc->deleteLater();
+    });
+
+    proc->start(QStringLiteral("/bin/sh"), QStringList() << QStringLiteral("-c") << cmd);
+}
+
+void ExtensionRowWidget::runBuildReadinessCheck()
+{
+    QStringList missingList;
+    QString summaryLog;
+    bool ready = ExtensionFeatureRegistry::checkBuildReadiness(m_mod, missingList, summaryLog);
+
+    DiagnosticReportDialog::showBuildReadinessReport(
+        this,
+        m_mod.displayName,
+        ready,
+        missingList,
+        summaryLog
+    );
 }
 
 void ExtensionRowWidget::showFeatureDetails()
 {
     QDialog dlg(this);
     dlg.setWindowTitle(tr("%1 - Details & C++ Hooks").arg(m_mod.displayName));
-    dlg.resize(480, 360);
+    dlg.resize(520, 420);
 
     QVBoxLayout *lay = new QVBoxLayout(&dlg);
     lay->setSpacing(10);
-    lay->setContentsMargins(14, 14, 14, 14);
 
-    QLabel *lblHdr = new QLabel(QString("<h3>%1</h3><p style='color: #64748b;'>%2</p>")
-                                .arg(m_mod.displayName, m_mod.summary), &dlg);
-    lblHdr->setWordWrap(true);
-    lay->addWidget(lblHdr);
+    QLabel *hdr = new QLabel(QString("<b>%1</b> (%2)").arg(m_mod.displayName, m_mod.id), &dlg);
+    hdr->setStyleSheet(QStringLiteral("font-size: 14px;"));
+    lay->addWidget(hdr);
 
-    QTextBrowser *txt = new QTextBrowser(&dlg);
-    txt->setOpenExternalLinks(true);
-    QString html = "<h4>" + tr("Integrated C++ Methods & Capabilities:") + "</h4><ul>";
+    QLabel *lblSum = new QLabel(m_mod.summary, &dlg);
+    lblSum->setWordWrap(true);
+    lblSum->setStyleSheet(QStringLiteral("color: #94a3b8; font-size: 11px;"));
+    lay->addWidget(lblSum);
+
+    QTextBrowser *tb = new QTextBrowser(&dlg);
+    tb->setOpenExternalLinks(true);
+
+    QString html;
+    html += QString("<h3>%1</h3><ul>").arg(tr("Features enabled in BubezView:"));
     for (const auto &feat : m_mod.features) {
-        html += QString("<li><b>%1</b>: %2<br><span style='color: #64748b;'>UI:</span> %3<br><code style='color: #ef4444;'>%4</code></li><br>")
-                    .arg(feat.title, feat.description, feat.menuLocation, feat.codeHook);
+        html += QString("<li><b>%1</b>: %2<br/><small style='color: #0284c7;'>%3: %4 | %5: %6</small></li>")
+            .arg(feat.title, feat.description, tr("Hook"), feat.codeHook, tr("Menu"), feat.menuLocation);
     }
-    html += "</ul>";
+    html += QStringLiteral("</ul>");
 
     if (!m_mod.subDependencies.isEmpty()) {
-        html += "<h4>" + tr("Optional Sub-Dependencies:") + "</h4><ul>";
+        html += QString("<h3>%1</h3><ul>").arg(tr("Sub-dependencies & Language packs:"));
         for (const auto &sub : m_mod.subDependencies) {
-            html += QString("<li><b>%1</b> (<code>%2</code>): %3 - <i>%4</i></li>")
-                        .arg(sub.name, sub.systemPackage, sub.hint, sub.isInstalled ? tr("Installed") : tr("Missing"));
+            html += QString("<li><b>%1</b> (%2) — %3: <span style='color: %4;'>%5</span><br/><small style='color: #94a3b8;'>%6</small></li>")
+                .arg(sub.name, sub.systemPackage, tr("Status"), sub.isInstalled ? "#10b981" : "#ef4444",
+                     sub.isInstalled ? tr("Present") : tr("Missing"), sub.hint);
         }
-        html += "</ul>";
+        html += QStringLiteral("</ul>");
     }
 
-    txt->setHtml(html);
-    lay->addWidget(txt, 1);
+    tb->setHtml(html);
+    lay->addWidget(tb, 1);
 
-    QDialogButtonBox *box = new QDialogButtonBox(QDialogButtonBox::Close, &dlg);
-    connect(box, &QDialogButtonBox::rejected, &dlg, &QDialog::accept);
-    lay->addWidget(box);
+    QDialogButtonBox *bbox = new QDialogButtonBox(QDialogButtonBox::Close, &dlg);
+    connect(bbox, &QDialogButtonBox::rejected, &dlg, &QDialog::accept);
+    lay->addWidget(bbox);
 
     dlg.exec();
 }
 
 void ExtensionRowWidget::openCustomSourceDialog()
 {
-    m_sourceConfig = BuildConfig::instance().customSourceConfig(m_mod.id);
     CustomSourceDialog dlg(m_mod.id, m_sourceConfig, m_mod.diagnosticCommand, m_mod.canCompile, this);
     if (dlg.exec() == QDialog::Accepted) {
-        if (m_mod.canCompile) {
-            m_sourceConfig = dlg.config();
-            BuildConfig::instance().setCustomSourceConfig(m_mod.id, m_sourceConfig);
-            updateSourceToggleStyles();
-            updateActionButtons();
-            emit statusChanged();
-        }
+        m_sourceConfig = dlg.config();
+        BuildConfig::instance().setCustomSourceConfig(m_mod.id, m_sourceConfig);
+        refreshState();
+        emit statusChanged();
     }
 }

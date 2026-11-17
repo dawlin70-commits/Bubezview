@@ -77,11 +77,13 @@ public:
     void zoomOut() override;
     void resetZoom() override;
     void fitToWidth() override;
-    void fitToPage();
+    void fitToPage() override;
     void setZoomFactor(double factor) override;
+    void zoomAt(const QPoint &viewportPos, double factor);
     double zoomFactor() const override { return m_zoomFactor; }
-    void rotateClockwise() override {}
-    void rotateCounterClockwise() override {}
+    void rotateClockwise() override;
+    void rotateCounterClockwise() override;
+    int rotationDegrees() const { return m_rotationDegrees; }
 
     // --- Outlines & Bookmarks ---
     void toggleTocSidebar() override;
@@ -109,12 +111,12 @@ public:
     void updateTheme() override;
 
     // --- Core Read-Only Actions ---
-    void showDocumentInfo();
+    void showDocumentInfo() override;
     void printDocument();
 
     // --- IPdfViewer Studio Stubs / Delegations ---
-    void toggleZoomTool(bool active) override { Q_UNUSED(active); }
-    bool isZoomToolActive() const override { return false; }
+    void toggleZoomTool(bool active) override;
+    bool isZoomToolActive() const override;
     bool hasAreaSelection() const override { return false; }
     void openTypewriterDialog() override {}
     void startRedaction(const QColor & = Qt::black, bool = false) override {}
@@ -136,10 +138,17 @@ public:
     bool isPageGridOrganizerActive() const override { return false; }
     void hidePageGridOrganizer(int = -1) override {}
     void showPageGridOrganizer() override {}
-    void setEditMode(bool) override {}
-    bool isEditMode() const override { return false; }
+    void setEditMode(bool editMode) override;
+    bool isEditMode() const override { return m_isEditMode; }
+
+    PdfBaseCanvas *canvas() const { return m_canvas; }
+    Poppler::Document *document() const { return m_doc.get(); }
+    QString currentFilePath() const { return m_filePath; }
+
+    void setEditorOverlay(QWidget *overlay);
+    QWidget *editorOverlay() const { return m_editorOverlay; }
     bool save() override { return false; }
-    bool saveAs(const QString &) override { return false; }
+    bool saveAs(const QString &targetFilePath) override;
     bool isModified() const override { return false; }
     bool saveCurrentPageAsPdf(const QString &, QString * = nullptr) override;
     bool saveCurrentPageAsImage(const QString &outputPath, const QString &format = QStringLiteral("PNG"), int dpi = 300, QString *errorMsg = nullptr);
@@ -155,9 +164,16 @@ signals:
     void outlineAvailabilityChanged(bool available);
     void selectionChanged(bool hasSelection);
     void requestStudio();
+    void savePageAsPdfRequested();
+    void savePageAsImageRequested();
+    void saveAsRequested();
+    void exportRequested();
+    void scanTextRequested();
+    void scanSnippetRequested(const QImage &snippet);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    void showEvent(QShowEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
@@ -169,6 +185,8 @@ private:
     void populateOutline();
     void buildOutlineBranch(QStandardItem *parentItem, const QVector<Poppler::OutlineItem> &items);
     void updateNavControls();
+    void updateCanvasLayout();
+    void repositionHud();
     void showHud(bool autoHide = true);
     void hideHud();
 
@@ -177,8 +195,16 @@ private:
     int m_currentPage = 0;
     int m_pageCount = 0;
     double m_zoomFactor = 1.0;
+    int m_rotationDegrees = 0;
     bool m_fitToWidthMode = true;
+    bool m_fitToPageMode = false;
     bool m_hasOutline = false;
+
+    // Search state
+    int m_searchHighlightPage = -1;
+    int m_searchMatchIndex = -1;
+    QString m_lastSearchText;
+    bool m_lastSearchCase = false;
 
     // UI Structure
     QSplitter *m_splitter = nullptr;
@@ -199,16 +225,10 @@ private:
     QLabel *m_lblPageCount = nullptr;
     QToolButton *m_btnNext = nullptr;
 
-    QToolButton *m_btnZoomOut = nullptr;
-    QToolButton *m_btnZoomReset = nullptr;
-    QToolButton *m_btnZoomIn = nullptr;
-    QToolButton *m_btnFitWidth = nullptr;
-    QToolButton *m_btnInfo = nullptr;
-    QToolButton *m_btnPrint = nullptr;
-    QToolButton *m_btnToc = nullptr;
-    QPushButton *m_btnStudio = nullptr;
-
     QGraphicsOpacityEffect *m_hudOpacity = nullptr;
     QPropertyAnimation *m_hudAnim = nullptr;
     QTimer *m_hudTimer = nullptr;
+
+    bool m_isEditMode = false;
+    QWidget *m_editorOverlay = nullptr;
 };

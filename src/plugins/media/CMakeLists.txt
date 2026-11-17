@@ -10,6 +10,7 @@ if(MPV_FOUND)
 
     set(MEDIA_PLUGIN_SOURCES
         media_plugin.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
         ${CMAKE_SOURCE_DIR}/src/core/audio/audio_processor.cpp
         ${CMAKE_SOURCE_DIR}/src/core/audio/equalizer_manager.cpp
         ${CMAKE_SOURCE_DIR}/src/ui/audio/audio_tag_dialog.cpp

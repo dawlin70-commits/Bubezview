@@ -33,6 +33,7 @@ public:
      * @param mapper Function taking (normalizedRectF) and returning high-res QImage snippet.
      */
     void setHighDpiCropper(std::function<QImage(const QRectF &)> cropper);
+    void setRectCropper(std::function<QImage(const QRect &)> cropper);
 
 signals:
     /**
@@ -62,6 +63,7 @@ private:
     QPoint m_currentPoint;
     bool m_isSelecting;
     std::function<QImage(const QRectF &)> m_highDpiCropper;
+    std::function<QImage(const QRect &)> m_rectCropper;
 };
 
 #endif // OCR_SNIPPER_OVERLAY_H

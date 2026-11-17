@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QString>
 #include <QList>
 #include <QPixmap>
@@ -34,7 +34,7 @@ class CoverCardWidget;
  * from online music repositories (iTunes, Cover Art Archive), and pick
  * the exact desired cover in high resolution.
  */
-class CoverSelectionDialog : public QDialog {
+class CoverSelectionDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

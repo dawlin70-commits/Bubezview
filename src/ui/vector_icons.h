@@ -489,7 +489,17 @@ enum class UiIcon {
     Music,
     Repair,
     Save,
-    Zoom
+    Zoom,
+    Printer,
+    EditorDiscard,
+    EditorUndo,
+    EditorTimeline,
+    EditorText,
+    EditorInsert,
+    EditorSign,
+    EditorPages,
+    EditorSave,
+    EditorExport
 };
 
 /**
@@ -499,7 +509,7 @@ enum class UiIcon {
  * @param size Icon width and height in pixels.
  * @return QIcon containing the rendered vector graphic.
  */
-inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, qreal dpr) {
+inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, qreal dpr, bool bold = false) {
     int physicalSize = qRound(targetSize * dpr);
     QPixmap pix(physicalSize, physicalSize);
     pix.setDevicePixelRatio(dpr);
@@ -513,7 +523,8 @@ inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, 
     double scale = static_cast<double>(targetSize) / 24.0;
     p.scale(scale, scale);
 
-    QPen pen(color, 2.15, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    const qreal penWidth = bold ? 3.25 : 2.15;
+    QPen pen(color, penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     p.setPen(pen);
     p.setBrush(Qt::NoBrush);
 
@@ -743,29 +754,18 @@ inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, 
         break;
     }
     case UiIcon::Share: {
-        // macOS / Lucide styled share tray & arrow (scaled to fill 19-20px)
-        p.setPen(QPen(color, 2.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        QPainterPath tray;
-        tray.moveTo(2.5, 11.5);
-        tray.lineTo(2.5, 21.0);
-        tray.quadTo(2.5, 22.5, 4.0, 22.5);
-        tray.lineTo(20.0, 22.5);
-        tray.quadTo(21.5, 22.5, 21.5, 21.0);
-        tray.lineTo(21.5, 11.5);
-        p.drawPath(tray);
-
-        // Arrow pointing upward
-        p.drawLine(QPointF(12.0, 16.0), QPointF(12.0, 2.0));
-        QPainterPath arrow;
-        arrow.moveTo(6.0, 7.5);
-        arrow.lineTo(12.0, 2.0);
-        arrow.lineTo(18.0, 7.5);
-        p.drawPath(arrow);
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(Qt::NoBrush);
+        p.drawEllipse(QRectF(15.0, 2.0, 6.0, 6.0));
+        p.drawEllipse(QRectF(3.0, 9.0, 6.0, 6.0));
+        p.drawEllipse(QRectF(15.0, 16.0, 6.0, 6.0));
+        p.drawLine(QPointF(8.6, 10.7), QPointF(15.4, 6.3));
+        p.drawLine(QPointF(8.6, 13.3), QPointF(15.4, 17.7));
         break;
     }
     case UiIcon::Settings: {
-        // Gear / cog with center hole (bold 20px)
-        p.setPen(QPen(color, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        // Gear / cog with center hole (bold 22px)
+        p.setPen(QPen(color, 2.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         p.drawEllipse(QRectF(8.0, 8.0, 8.0, 8.0));
         p.drawEllipse(QRectF(4.0, 4.0, 16.0, 16.0));
         for (int i = 0; i < 8; ++i) {
@@ -778,7 +778,7 @@ inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, 
     }
     case UiIcon::Edit: {
         // Modern pencil icon
-        p.setPen(QPen(color, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setPen(QPen(color, 2.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         QPainterPath pencil;
         pencil.moveTo(17.5, 2.5);
         pencil.lineTo(21.5, 6.5);
@@ -1091,7 +1091,7 @@ inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, 
         break;
     }
     case UiIcon::Trash: {
-        p.setPen(QPen(color, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setPen(QPen(color, 2.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         // Lid
         p.drawLine(QPointF(4.0, 6.0), QPointF(20.0, 6.0));
         p.drawLine(QPointF(9.5, 6.0), QPointF(9.5, 3.5));
@@ -1223,6 +1223,185 @@ inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, 
         p.drawRoundedRect(QRectF(7.0, 13.0, 10.0, 7.0), 1.0, 1.0);
         break;
     }
+    case UiIcon::Printer: {
+        p.setPen(QPen(color, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(Qt::NoBrush);
+        // Top paper feeding slot
+        p.drawRoundedRect(QRectF(6.0, 2.5, 12.0, 6.0), 1.0, 1.0);
+        // Main printer body
+        QPainterPath body;
+        body.moveTo(3.5, 8.5);
+        body.lineTo(20.5, 8.5);
+        body.quadTo(22.0, 8.5, 22.0, 10.0);
+        body.lineTo(22.0, 16.5);
+        body.quadTo(22.0, 18.0, 20.5, 18.0);
+        body.lineTo(18.0, 18.0);
+        body.lineTo(18.0, 14.5);
+        body.lineTo(6.0, 14.5);
+        body.lineTo(6.0, 18.0);
+        body.lineTo(3.5, 18.0);
+        body.quadTo(2.0, 18.0, 2.0, 16.5);
+        body.lineTo(2.0, 10.0);
+        body.quadTo(2.0, 8.5, 3.5, 8.5);
+        body.closeSubpath();
+        p.drawPath(body);
+        // Status LED dot
+        p.setBrush(color);
+        p.setPen(Qt::NoPen);
+        p.drawEllipse(QRectF(18.0, 11.0, 2.0, 2.0));
+        // Bottom paper tray / printed document
+        p.setPen(QPen(color, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(Qt::NoBrush);
+        p.drawRoundedRect(QRectF(6.0, 13.5, 12.0, 8.0), 1.0, 1.0);
+        // Paper lines on printed document
+        p.drawLine(QPointF(8.5, 16.5), QPointF(15.5, 16.5));
+        p.drawLine(QPointF(8.5, 19.0), QPointF(13.5, 19.0));
+        break;
+    }
+    case UiIcon::EditorDiscard: {
+        p.setPen(QPen(color, 2.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.drawLine(QPointF(4.5, 4.5), QPointF(19.5, 19.5));
+        p.drawLine(QPointF(19.5, 4.5), QPointF(4.5, 19.5));
+        break;
+    }
+    case UiIcon::EditorUndo: {
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        QPainterPath arr;
+        arr.moveTo(9.0, 13.5);
+        arr.lineTo(4.5, 9.0);
+        arr.lineTo(9.0, 4.5);
+        p.drawPath(arr);
+
+        QPainterPath path;
+        path.moveTo(4.5, 9.0);
+        path.lineTo(15.0, 9.0);
+        path.arcTo(QRectF(9.5, 9.0, 11.0, 11.0), 90.0, -180.0);
+        path.lineTo(7.5, 20.0);
+        p.drawPath(path);
+        break;
+    }
+    case UiIcon::EditorTimeline: {
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        QPainterPath arc;
+        arc.arcMoveTo(QRectF(3.0, 3.0, 18.0, 18.0), 183.0);
+        arc.arcTo(QRectF(3.0, 3.0, 18.0, 18.0), 183.0, 325.0);
+        p.drawPath(arc);
+
+        QPainterPath arr;
+        arr.moveTo(3.0, 3.5);
+        arr.lineTo(3.0, 8.0);
+        arr.lineTo(7.5, 8.0);
+        p.drawPath(arr);
+
+        QPainterPath hands;
+        hands.moveTo(12.0, 7.0);
+        hands.lineTo(12.0, 12.0);
+        hands.lineTo(15.5, 14.5);
+        p.drawPath(hands);
+        break;
+    }
+    case UiIcon::EditorText: {
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        QPainterPath top;
+        top.moveTo(4.5, 8.0);
+        top.lineTo(4.5, 4.5);
+        top.lineTo(19.5, 4.5);
+        top.lineTo(19.5, 8.0);
+        p.drawPath(top);
+        p.drawLine(QPointF(12.0, 4.5), QPointF(12.0, 19.5));
+        p.drawLine(QPointF(7.5, 19.5), QPointF(16.5, 19.5));
+        break;
+    }
+    case UiIcon::EditorInsert: {
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.drawRoundedRect(QRectF(2.5, 2.5, 19.0, 19.0), 4.5, 4.5);
+        p.drawLine(QPointF(12.0, 7.5), QPointF(12.0, 16.5));
+        p.drawLine(QPointF(7.5, 12.0), QPointF(16.5, 12.0));
+        break;
+    }
+    case UiIcon::EditorSign: {
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        QPainterPath pen;
+        pen.moveTo(18.0, 2.5);
+        pen.quadTo(21.0, 2.5, 21.0, 5.5);
+        pen.lineTo(11.5, 15.0);
+        pen.lineTo(7.0, 16.0);
+        pen.lineTo(8.0, 11.5);
+        pen.closeSubpath();
+        p.drawPath(pen);
+        p.drawLine(QPointF(14.5, 6.0), QPointF(17.5, 9.0));
+
+        QPainterPath wave;
+        wave.moveTo(2.5, 20.5);
+        wave.cubicTo(6.0, 19.3, 9.5, 18.7, 13.5, 20.0);
+        wave.cubicTo(16.0, 20.8, 18.5, 20.8, 21.5, 20.0);
+        p.drawPath(wave);
+        break;
+    }
+    case UiIcon::EditorPages: {
+        p.setPen(QPen(color, 2.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.drawRoundedRect(QRectF(2.5, 4.5, 8.5, 12.5), 2.5, 2.5);
+        p.drawRoundedRect(QRectF(13.0, 7.0, 8.5, 12.5), 2.5, 2.5);
+        p.drawLine(QPointF(5.5, 1.8), QPointF(18.5, 1.8));
+        QPainterPath topArr;
+        topArr.moveTo(15.5, 0.0);
+        topArr.lineTo(18.5, 1.8);
+        topArr.lineTo(15.5, 3.6);
+        p.drawPath(topArr);
+
+        p.drawLine(QPointF(18.5, 22.2), QPointF(5.5, 22.2));
+        QPainterPath btmArr;
+        btmArr.moveTo(8.5, 24.0);
+        btmArr.lineTo(5.5, 22.2);
+        btmArr.lineTo(8.5, 20.4);
+        p.drawPath(btmArr);
+        break;
+    }
+    case UiIcon::EditorSave: {
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        QPainterPath disk;
+        disk.moveTo(18.0, 21.5);
+        disk.lineTo(6.0, 21.5);
+        disk.quadTo(2.5, 21.5, 2.5, 18.0);
+        disk.lineTo(2.5, 6.0);
+        disk.quadTo(2.5, 2.5, 6.0, 2.5);
+        disk.lineTo(15.5, 2.5);
+        disk.lineTo(21.5, 8.5);
+        disk.lineTo(21.5, 18.0);
+        disk.quadTo(21.5, 21.5, 18.0, 21.5);
+        p.drawPath(disk);
+
+        QPainterPath shutter;
+        shutter.moveTo(7.0, 2.5);
+        shutter.lineTo(7.0, 8.0);
+        shutter.lineTo(15.0, 8.0);
+        shutter.lineTo(15.0, 2.5);
+        p.drawPath(shutter);
+
+        p.drawRoundedRect(QRectF(6.5, 12.5, 11.0, 9.0), 1.5, 1.5);
+        break;
+    }
+    case UiIcon::EditorExport: {
+        p.setPen(QPen(color, 2.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        // Tray base
+        QPainterPath tray;
+        tray.moveTo(4.0, 14.5);
+        tray.lineTo(4.0, 18.5);
+        tray.quadTo(4.0, 21.0, 6.5, 21.0);
+        tray.lineTo(17.5, 21.0);
+        tray.quadTo(20.0, 21.0, 20.0, 18.5);
+        tray.lineTo(20.0, 14.5);
+        p.drawPath(tray);
+
+        // Arrow pointing upward
+        p.drawLine(QPointF(12.0, 15.0), QPointF(12.0, 3.0));
+        QPainterPath arr;
+        arr.moveTo(7.5, 7.5);
+        arr.lineTo(12.0, 3.0);
+        arr.lineTo(16.5, 7.5);
+        p.drawPath(arr);
+        break;
+    }
     }
 
     p.end();
@@ -1236,13 +1415,13 @@ inline QPixmap renderUiPixmap(UiIcon icon, const QColor &color, int targetSize, 
  * @param size Icon width and height in pixels.
  * @return QIcon containing 1x and 2x rendered vector graphics.
  */
-inline QIcon createUiIcon(UiIcon icon, const QColor &color = QColor("#cbd5e1"), int size = 24) {
+inline QIcon createUiIcon(UiIcon icon, const QColor &color = QColor("#cbd5e1"), int size = 24, bool bold = false) {
     QIcon qicon;
-    qicon.addPixmap(renderUiPixmap(icon, color, size, 1.0));
-    qicon.addPixmap(renderUiPixmap(icon, color, size, 1.5));
-    qicon.addPixmap(renderUiPixmap(icon, color, size, 1.75));
-    qicon.addPixmap(renderUiPixmap(icon, color, size, 2.0));
-    qicon.addPixmap(renderUiPixmap(icon, color, size, 3.0));
+    qicon.addPixmap(renderUiPixmap(icon, color, size, 1.0, bold));
+    qicon.addPixmap(renderUiPixmap(icon, color, size, 1.5, bold));
+    qicon.addPixmap(renderUiPixmap(icon, color, size, 1.75, bold));
+    qicon.addPixmap(renderUiPixmap(icon, color, size, 2.0, bold));
+    qicon.addPixmap(renderUiPixmap(icon, color, size, 3.0, bold));
     return qicon;
 }
 

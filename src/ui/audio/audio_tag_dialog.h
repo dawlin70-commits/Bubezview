@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QLineEdit>
 #include <QLabel>
 #include <QPushButton>
@@ -30,7 +30,7 @@ struct AudioTrackItem {
  * Employs a modern side-by-side layout: top actions toolbar, left panel with common album
  * metadata and cover art, and a full-height spacious tracklist table on the right.
  */
-class AudioTagDialog : public QDialog {
+class AudioTagDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

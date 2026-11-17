@@ -14,9 +14,15 @@
 #include <QApplication>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QCloseEvent>
+
+#if defined(Q_OS_UNIX)
+#include <signal.h>
+#include <unistd.h>
+#endif
 
 BuildOptionsDialog::BuildOptionsDialog(QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_radioCpuNative(nullptr)
     , m_radioCpuStandard(nullptr)
     , m_chkStaticPdf(nullptr)
@@ -43,17 +49,59 @@ BuildOptionsDialog::BuildOptionsDialog(QWidget *parent)
 
 BuildOptionsDialog::~BuildOptionsDialog()
 {
-    if (m_process && m_process->state() != QProcess::NotRunning) {
-        m_process->kill();
-        m_process->waitForFinished(1000);
+    terminateProcessGroup();
+}
+
+void BuildOptionsDialog::terminateProcessGroup()
+{
+    if (!m_process || m_process->state() == QProcess::NotRunning) {
+        return;
     }
+#if defined(Q_OS_UNIX)
+    qint64 pid = m_process->processId();
+    if (pid > 0) {
+        ::kill(-static_cast<pid_t>(pid), SIGTERM);
+        if (!m_process->waitForFinished(500)) {
+            ::kill(-static_cast<pid_t>(pid), SIGKILL);
+            m_process->waitForFinished(500);
+        }
+        return;
+    }
+#endif
+    m_process->kill();
+    m_process->waitForFinished(500);
+}
+
+bool BuildOptionsDialog::isBuilding() const
+{
+    return m_process && m_process->state() != QProcess::NotRunning;
+}
+
+void BuildOptionsDialog::closeEvent(QCloseEvent *event)
+{
+    if (isBuilding()) {
+        QMessageBox::StandardButton res = QMessageBox::question(
+            this,
+            tr("Compilation in Progress"),
+            tr("Recompilation is currently running. Do you want to cancel it and close?"),
+            QMessageBox::Yes | QMessageBox::No
+        );
+        if (res == QMessageBox::Yes) {
+            terminateProcessGroup();
+            event->accept();
+        } else {
+            event->ignore();
+            return;
+        }
+    }
+    FramelessDialog::closeEvent(event);
 }
 
 void BuildOptionsDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(14);
-    mainLayout->setContentsMargins(18, 18, 18, 18);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     QLabel *lblHeader = new QLabel(this);
     lblHeader->setText(QString("<h3>%1</h3><p>%2</p>")
@@ -245,6 +293,8 @@ void BuildOptionsDialog::onSaveClicked()
 
 void BuildOptionsDialog::onRecompileClicked()
 {
+    if (isBuilding()) return;
+
     saveToConfig();
 
     QString scriptPath = UpdateManager::instance().findInstallerScript();
@@ -290,12 +340,18 @@ void BuildOptionsDialog::onRecompileClicked()
     m_txtLog->clear();
     adjustSize();
 
-    m_process = new QProcess(this);
-    m_process->setProcessChannelMode(QProcess::MergedChannels);
-
-    connect(m_process, &QProcess::readyReadStandardOutput, this, &BuildOptionsDialog::onProcessOutput);
-    connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, &BuildOptionsDialog::onProcessFinished);
+    if (!m_process) {
+        m_process = new QProcess(this);
+        m_process->setProcessChannelMode(QProcess::MergedChannels);
+#if defined(Q_OS_UNIX)
+        m_process->setChildProcessModifier([]() {
+            ::setpgid(0, 0);
+        });
+#endif
+        connect(m_process, &QProcess::readyReadStandardOutput, this, &BuildOptionsDialog::onProcessOutput);
+        connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                this, &BuildOptionsDialog::onProcessFinished);
+    }
 
     QStringList args;
     args << "--cli" << "--update";

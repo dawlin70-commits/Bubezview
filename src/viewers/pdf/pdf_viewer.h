@@ -6,6 +6,7 @@
 #include <QTreeView>
 #include <QStandardItemModel>
 #include <QImage>
+#include <QTemporaryDir>
 #include <memory>
 #include "pdf_page_widget.h"
 
@@ -161,6 +162,11 @@ public:
     bool saveAs(const QString &targetPath);
 
     /**
+     * @brief Shows document properties and metadata dialog.
+     */
+    void showDocumentInfo() override;
+
+    /**
      * @brief Exports the currently viewed page to the given image or text format.
      * @param format Destination format extension ("png", "jpg", "webp", "tiff", "bmp", "txt").
      * @param outputPath Target file path on disk.
@@ -211,12 +217,13 @@ public slots:
     void zoomOut() override;
     void resetZoom() override;
     void fitToWidth() override;
+    void fitToPage() override;
     void setZoomFactor(double factor) override;
     void rotateClockwise();
     void rotateCounterClockwise();
     void zoomAt(const QPoint &viewportPos, double factor);
     void toggleZoomTool(bool active) override;
-    bool isZoomToolActive() const override { return m_zoomToolActive; }
+    bool isZoomToolActive() const override;
     void toggleTocSidebar() override;
     void setTocVisible(bool visible);
 
@@ -270,16 +277,18 @@ public slots:
 
     void onAddStampAnnotation(const QImage &image, const QRectF &normalizedRect);
     void onAddStampAnnotations(const QList<QPair<QImage, QRectF>> &stamps);
-    void onMoveStampAnnotation(const QRectF &oldNormRect, const QRectF &newNormRect, const QImage &stampImg);
-    void onDeleteStampAnnotation(const QRectF &normRect);
+    void onAddStampAnnotationsForPage(int pageIndex, const QList<QPair<QImage, QRectF>> &stamps);
     void onAddTextAnnotation(const QString &text, const QFont &font, const QColor &color,
                              const QRectF &normalizedRect, bool whiteout, const QImage &bgImage = QImage(),
                              const QRectF &bgNormalizedRect = QRectF());
+    void onEraseOriginalText(int pageIndex, const QRectF &pointRect, const QRectF &normalizedRect);
     void updateTextBgProperties(PdfTextBgMode mode, const QColor &color) override;
     void commitInPlaceTextEdit() override;
     void onSnapshotAreaSelected(const QRectF &pointRect);
     void onCutAreaRequested(const QRectF &pointRect);
     void onCopyAreaRequested(const QRectF &pointRect);
+    void onScanAreaRequested(const QRectF &pointRect);
+    void onOcrAreaRequested(const QRectF &pointRect);
     void onFormFieldModified();
 
     /**
@@ -347,6 +356,16 @@ signals:
      */
     void historyChanged();
 
+    /**
+     * @brief Emitted when OCR text scanning is requested from the viewer.
+     */
+    void scanTextRequested();
+
+    /**
+     * @brief Emitted when OCR text scanning is requested on a specific cropped snippet image.
+     */
+    void scanSnippetRequested(const QImage &snippet);
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
@@ -371,6 +390,14 @@ private:
     void pushUndoState(const QString &description = QString());
     void clearUndoRedoStacks();
     void resetDocument();
+    void loadEmbeddedFonts();
+    void scheduleEmbeddedFontsLoad();
+    void ensureEmbeddedFontsLoaded();
+    void unloadEmbeddedFonts();
+    QList<int> m_loadedFontIds;
+    std::unique_ptr<QTemporaryDir> m_tempFontDir;
+    bool m_embeddedFontsLoaded = false;
+    quint64 m_fontLoadGen = 0;
     void verifyAndRefreshSignatureBanner();
     QString currentDocumentSourcePath() const;
     QPixmap captureCurrentPageThumbnail() const;
@@ -405,6 +432,7 @@ private:
     QGraphicsOpacityEffect *m_hudOpacity = nullptr;
     QPropertyAnimation *m_hudAnim = nullptr;
     QTimer *m_hudTimer = nullptr;
+    QTimer *m_resizeTimer = nullptr;
 
     std::unique_ptr<Poppler::Document> m_doc;
     QString m_filePath;

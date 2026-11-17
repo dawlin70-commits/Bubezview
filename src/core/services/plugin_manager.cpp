@@ -6,6 +6,7 @@
 #include "plugin_manager.h"
 #include "interfaces/viewer_plugin_interface.h"
 #include "package_manager_helper.h"
+#include "build_config.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -139,15 +140,49 @@ bool PluginManager::isNativeSupported(const QString &filePath)
 
 void PluginManager::discoverPlugins()
 {
+    // First, verify whether existing loaded plugins still exist on disk
+    for (auto it = m_plugins.begin(); it != m_plugins.end(); ) {
+        if (it->loader && !it->filePath.isEmpty() && it->filePath != "builtin") {
+            if (!QFile::exists(it->filePath)) {
+                it->loader->unload();
+                delete it->loader;
+                it->loader = nullptr;
+                it = m_plugins.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
+
     QStringList searchDirs = {
         QCoreApplication::applicationDirPath() + "/plugins",
         QCoreApplication::applicationDirPath() + "/../plugins",
         QDir::homePath() + "/.local/lib/bubezview/plugins",
+        QDir::homePath() + "/.local/lib/x86_64-linux-gnu/bubezview/plugins",
+        QDir::homePath() + "/.local/lib64/bubezview/plugins",
+        QDir::homePath() + "/.local/share/bubezview/plugins",
         "/usr/local/lib/bubezview/plugins",
         "/usr/lib/bubezview/plugins"
     };
 
+    const QString devRoot = BuildConfig::projectDevRoot();
+    if (!devRoot.isEmpty()) {
+        searchDirs.append(devRoot + "/container/.local/lib/bubezview/plugins");
+        searchDirs.append(devRoot + "/container/.local/share/bubezview/plugins");
+        searchDirs.append(devRoot + "/build_deb/plugins/pdf");
+        searchDirs.append(devRoot + "/build_deb/plugins/archive");
+        searchDirs.append(devRoot + "/build_deb/plugins/media");
+        searchDirs.append(devRoot + "/build_deb/plugins");
+        searchDirs.append(devRoot + "/build_install/lib/bubezview/plugins");
+    }
+
     QSet<QString> loadedFileNames;
+    for (const auto &p : m_plugins) {
+        if (!p.filePath.isEmpty()) {
+            loadedFileNames.insert(QFileInfo(p.filePath).fileName());
+        }
+    }
+
     for (const QString &dirPath : searchDirs) {
         QDir dir(dirPath);
         if (!dir.exists()) continue;
@@ -171,9 +206,11 @@ void PluginManager::loadPluginFromFile(const QString &filePath)
     QPluginLoader *loader = new QPluginLoader(filePath, this);
     QObject *instance = loader->instance();
     if (!instance) {
+        qDebug() << "[PluginManager] Failed to load plugin from" << filePath << ":" << loader->errorString();
         delete loader;
         return;
     }
+    qDebug() << "[PluginManager] Successfully loaded plugin from" << filePath;
 
     auto *plugin = qobject_cast<ViewerPluginInterface*>(instance);
     if (!plugin) {
@@ -234,6 +271,50 @@ bool PluginManager::isEngineAvailable(FileCategory category) const
         }
     }
     return false;
+}
+
+bool PluginManager::unloadPlugin(const QString &pluginId)
+{
+    QString id = pluginId.trimmed().toLower();
+    if (id == "engine-poppler" || id == "poppler" || id == "poppler-qt6") id = "pdf";
+    else if (id == "engine-libarchive" || id == "libarchive") id = "archive";
+    else if (id == "engine-mpv" || id == "mpv" || id == "libmpv") id = "media";
+
+    auto it = m_plugins.find(id);
+    if (it == m_plugins.end()) {
+        return false;
+    }
+
+    if (it->loader) {
+        it->loader->unload();
+        delete it->loader;
+        it->loader = nullptr;
+    }
+    m_plugins.erase(it);
+    emit pluginsChanged();
+    return true;
+}
+
+bool PluginManager::unloadPlugin(FileCategory category)
+{
+    bool anyUnloaded = false;
+    for (auto it = m_plugins.begin(); it != m_plugins.end(); ) {
+        if (it->category == category) {
+            if (it->loader) {
+                it->loader->unload();
+                delete it->loader;
+                it->loader = nullptr;
+            }
+            it = m_plugins.erase(it);
+            anyUnloaded = true;
+        } else {
+            ++it;
+        }
+    }
+    if (anyUnloaded) {
+        emit pluginsChanged();
+    }
+    return anyUnloaded;
 }
 
 IViewerWidget *PluginManager::createViewer(FileCategory category, QWidget *parent)

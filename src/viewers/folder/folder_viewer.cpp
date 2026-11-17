@@ -187,41 +187,49 @@ bool isPreviewableTextFile(const QString &ext, const QString &fileName)
 
 } // namespace
 
+QImage ThumbnailWorker::renderFileThumbnail(const QString &path)
+{
+    QFileInfo fi(path);
+    if (!fi.exists() || fi.isDir()) {
+        return QImage();
+    }
+    QString ext = fi.suffix().toLower();
+
+    if (isPreviewableImageExt(ext)) {
+        QImageReader reader(path);
+        reader.setAutoTransform(true);
+        QSize sz = reader.size();
+        const QSize targetSize(220, 150);
+        if (sz.isValid() && sz.width() > 0 && sz.height() > 0) {
+            reader.setScaledSize(sz.scaled(targetSize, Qt::KeepAspectRatio));
+        } else if (ext == "svg") {
+            reader.setScaledSize(targetSize);
+        }
+        QImage img = reader.read();
+        if (!img.isNull() && (img.width() > targetSize.width() || img.height() > targetSize.height())) {
+            img = img.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
+        return img;
+    } else if (ext == "pdf") {
+        QImage img = PluginManager::renderPdfThumbnail(path, 220);
+        if (!img.isNull()) {
+            return img.scaled(220, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
+    } else if (isPreviewableTextFile(ext, fi.fileName())) {
+        return renderTextThumbnail(path);
+    }
+
+    return QImage();
+}
+
 void ThumbnailWorker::run()
 {
     for (const QString &path : m_filePaths) {
         if (m_isCancelled.load(std::memory_order_relaxed)) break;
 
-        QFileInfo fi(path);
-        QString ext = fi.suffix().toLower();
-
-        if (isPreviewableImageExt(ext)) {
-            QImageReader reader(path);
-            reader.setAutoTransform(true);
-            QSize sz = reader.size();
-            const QSize targetSize(220, 150);
-            if (sz.isValid() && sz.width() > 0 && sz.height() > 0) {
-                reader.setScaledSize(sz.scaled(targetSize, Qt::KeepAspectRatio));
-            } else if (ext == "svg") {
-                reader.setScaledSize(targetSize);
-            }
-            QImage img = reader.read();
-            if (!img.isNull()) {
-                if (img.width() > targetSize.width() || img.height() > targetSize.height()) {
-                    img = img.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                }
-                emit thumbnailReady(path, img);
-            }
-        } else if (ext == "pdf") {
-            QImage img = PluginManager::renderPdfThumbnail(path, 220);
-            if (!img.isNull()) {
-                emit thumbnailReady(path, img.scaled(220, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            }
-        } else if (isPreviewableTextFile(ext, fi.fileName())) {
-            QImage img = renderTextThumbnail(path);
-            if (!img.isNull()) {
-                emit thumbnailReady(path, img);
-            }
+        QImage img = renderFileThumbnail(path);
+        if (!img.isNull()) {
+            emit thumbnailReady(path, img);
         }
     }
 }
@@ -241,6 +249,17 @@ QSize FolderCardDelegate::sizeHint(const QStyleOptionViewItem & /*option*/, cons
 
 void FolderCardDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    FolderViewer *fv = qobject_cast<FolderViewer*>(parent());
+    if (!fv && option.widget) {
+        fv = qobject_cast<FolderViewer*>(option.widget->parentWidget());
+    }
+    if (fv && !fv->cardHiddenForTransition().isEmpty()) {
+        QString itemPath = index.data(Qt::UserRole).toString();
+        if (!itemPath.isEmpty() && itemPath == fv->cardHiddenForTransition()) {
+            return;
+        }
+    }
+
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setRenderHint(QPainter::SmoothPixmapTransform);
@@ -515,6 +534,7 @@ FolderViewer::FolderViewer(QWidget *parent)
     , m_previewCard(nullptr)
     , m_previewImgLabel(nullptr)
     , m_previewTextEdit(nullptr)
+    , m_metaScrollArea(nullptr)
     , m_previewTitleLabel(nullptr)
     , m_previewMetaLabel(nullptr)
     , m_btnOpenSelected(nullptr)
@@ -522,7 +542,13 @@ FolderViewer::FolderViewer(QWidget *parent)
     , m_itemCount(0)
     , m_totalSize(0)
 {
-    QSettings s("BubezView", "bubezview");
+    QSettings s("Bubez", "BubezView");
+    if (!s.contains("Gallery/ShowFolders")) {
+        QSettings legacy("BubezView", "bubezview");
+        if (legacy.contains("Gallery/ShowFolders")) {
+            s.setValue("Gallery/ShowFolders", legacy.value("Gallery/ShowFolders"));
+        }
+    }
     m_showFolders = s.value("Gallery/ShowFolders", false).toBool();
     setupUi();
 
@@ -764,9 +790,10 @@ void FolderViewer::setupUi()
 
     prevLayout->addWidget(headerWidget);
 
-    // Preview Card Container (rounded dark box)
+    // Preview Card Container (hidden to avoid duplicating grid thumbnails and wasting inspector space)
     m_previewCard = new QFrame(m_previewPane);
     m_previewCard->setFixedHeight(140);
+    m_previewCard->hide();
     QVBoxLayout *cardLayout = new QVBoxLayout(m_previewCard);
     cardLayout->setContentsMargins(8, 8, 8, 8);
     cardLayout->setSpacing(0);
@@ -784,26 +811,41 @@ void FolderViewer::setupUi()
     m_previewTextEdit->setVisible(false);
     cardLayout->addWidget(m_previewTextEdit);
 
-    prevLayout->addWidget(m_previewCard);
+    // Scrollable area for file metadata and properties (allows smooth mouse wheel scrolling)
+    m_metaScrollArea = new QScrollArea(m_previewPane);
+    m_metaScrollArea->setWidgetResizable(true);
+    m_metaScrollArea->setFrameShape(QFrame::NoFrame);
+    m_metaScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_metaScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_metaScrollArea->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+
+    QWidget *metaContainer = new QWidget(m_metaScrollArea);
+    metaContainer->setStyleSheet("background: transparent;");
+    QVBoxLayout *metaLayout = new QVBoxLayout(metaContainer);
+    metaLayout->setContentsMargins(0, 4, 2, 4);
+    metaLayout->setSpacing(8);
 
     // Item Title
-    m_previewTitleLabel = new QLabel(tr("Select an item"), m_previewPane);
+    m_previewTitleLabel = new QLabel(tr("Select an item"), metaContainer);
     m_previewTitleLabel->setStyleSheet("font-weight: bold; font-size: 13px;");
     m_previewTitleLabel->setWordWrap(true);
     m_previewTitleLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_previewTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    prevLayout->addWidget(m_previewTitleLabel);
+    metaLayout->addWidget(m_previewTitleLabel);
 
     // Metadata Card
-    m_previewMetaLabel = new QLabel(m_previewPane);
+    m_previewMetaLabel = new QLabel(metaContainer);
     m_previewMetaLabel->setStyleSheet("font-size: 11px; line-height: 1.4;");
     m_previewMetaLabel->setWordWrap(true);
     m_previewMetaLabel->setTextFormat(Qt::RichText);
     m_previewMetaLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_previewMetaLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    prevLayout->addWidget(m_previewMetaLabel);
+    metaLayout->addWidget(m_previewMetaLabel);
 
-    prevLayout->addStretch(1);
+    metaLayout->addStretch(1);
+    m_metaScrollArea->setWidget(metaContainer);
+
+    prevLayout->addWidget(m_metaScrollArea, 1);
 
     // Open Action Button at bottom of inspector
     m_btnOpenSelected = new QPushButton(tr("Open"), m_previewPane);
@@ -829,43 +871,105 @@ QString FolderViewer::selectedFilePath() const
     return QString();
 }
 
+namespace {
+
+QListWidgetItem *lookupItemByPath(const QHash<QString, QListWidgetItem*> &pathToItem, const QString &filePath)
+{
+    if (filePath.isEmpty()) return nullptr;
+    if (QListWidgetItem *it = pathToItem.value(filePath, nullptr)) return it;
+    if (QListWidgetItem *it = pathToItem.value(QFileInfo(filePath).absoluteFilePath(), nullptr)) return it;
+    return pathToItem.value(QFileInfo(filePath).canonicalFilePath(), nullptr);
+}
+
+} // namespace
+
 QRect FolderViewer::cardRectForPath(const QString &filePath) const
 {
     if (m_listWidget) {
-        QListWidgetItem *item = m_pathToItem.value(filePath, nullptr);
-        if (!item) {
-            item = m_pathToItem.value(QFileInfo(filePath).absoluteFilePath(), nullptr);
-        }
-        if (!item) {
-            item = m_pathToItem.value(QFileInfo(filePath).canonicalFilePath(), nullptr);
-        }
+        QListWidgetItem *item = lookupItemByPath(m_pathToItem, filePath);
         if (!item && m_listWidget->count() > 0) {
             item = m_listWidget->currentItem();
         }
         if (item) {
             QRect r = m_listWidget->visualItemRect(item);
-            if (r.isValid() && r.width() > 0 && r.height() > 0) {
-                QPoint globalPt = m_listWidget->viewport()->mapToGlobal(r.topLeft());
-                return QRect(mapFromGlobal(globalPt), r.size());
+            if (r.isValid() && r.width() > 0 && r.height() > 0 && m_listWidget->viewport()) {
+                QPoint localPt = m_listWidget->viewport()->mapTo(const_cast<FolderViewer*>(this), r.topLeft());
+                return QRect(localPt, r.size());
             }
         }
     }
-    int cw = 148;
-    int ch = 152;
+    const int cw = 148;
+    const int ch = 152;
     return QRect((width() - cw) / 2, (height() - ch) / 2, cw, ch);
+}
+
+QRect FolderViewer::thumbnailRectForPath(const QString &filePath) const
+{
+    QRect optionRect = cardRectForPath(filePath);
+    QRect cardRect = optionRect.adjusted(4, 4, -4, -4);
+    QRect thumbArea(cardRect.left() + 8, cardRect.top() + 8, cardRect.width() - 16, 94);
+
+    if (m_listWidget) {
+        QListWidgetItem *item = lookupItemByPath(m_pathToItem, filePath);
+        if (!item && m_listWidget->count() > 0) {
+            item = m_listWidget->currentItem();
+        }
+        if (item) {
+            QVariant thumbVar = item->data(Qt::UserRole + 2);
+            if (thumbVar.isValid() && !thumbVar.value<QPixmap>().isNull()) {
+                QPixmap pix = thumbVar.value<QPixmap>();
+                QSize scaledSize;
+                if (pix.width() <= thumbArea.width() && pix.height() <= thumbArea.height()) {
+                    scaledSize = pix.size();
+                } else {
+                    QSize bounded(qMin(pix.width(), thumbArea.width()), qMin(pix.height(), thumbArea.height()));
+                    scaledSize = pix.size().scaled(bounded, Qt::KeepAspectRatio);
+                }
+                int x = thumbArea.left() + (thumbArea.width() - scaledSize.width()) / 2;
+                int y = thumbArea.top() + (thumbArea.height() - scaledSize.height()) / 2;
+                return QRect(x, y, scaledSize.width(), scaledSize.height());
+            } else {
+                const int iconSize = 76;
+                int x = thumbArea.left() + (thumbArea.width() - iconSize) / 2;
+                int y = thumbArea.top() + (thumbArea.height() - iconSize) / 2;
+                return QRect(x, y, iconSize, iconSize);
+            }
+        }
+    }
+    return thumbArea;
+}
+
+void FolderViewer::ensureThumbnailForPath(const QString &filePath)
+{
+    if (!m_listWidget || filePath.isEmpty()) return;
+    QListWidgetItem *item = lookupItemByPath(m_pathToItem, filePath);
+    if (!item) return;
+
+    QVariant existing = item->data(Qt::UserRole + 2);
+    if (existing.isValid() && !existing.value<QPixmap>().isNull()) {
+        return;
+    }
+
+    QString targetPath = item->data(Qt::UserRole).toString();
+    QImage img = ThumbnailWorker::renderFileThumbnail(targetPath);
+    if (!img.isNull()) {
+        onThumbnailReady(targetPath, img);
+    }
+}
+
+void FolderViewer::setCardHiddenForTransition(const QString &filePath, bool hidden)
+{
+    m_cardHiddenForTransition = hidden ? filePath : QString();
+    if (m_listWidget && m_listWidget->viewport()) {
+        m_listWidget->viewport()->update();
+    }
 }
 
 void FolderViewer::selectItemByPath(const QString &filePath, bool ensureVisible)
 {
     if (!m_listWidget || filePath.isEmpty()) return;
 
-    QListWidgetItem *item = m_pathToItem.value(filePath, nullptr);
-    if (!item) {
-        item = m_pathToItem.value(QFileInfo(filePath).absoluteFilePath(), nullptr);
-    }
-    if (!item) {
-        item = m_pathToItem.value(QFileInfo(filePath).canonicalFilePath(), nullptr);
-    }
+    QListWidgetItem *item = lookupItemByPath(m_pathToItem, filePath);
 
     if (item) {
         m_listWidget->blockSignals(true);
@@ -876,8 +980,11 @@ void FolderViewer::selectItemByPath(const QString &filePath, bool ensureVisible)
             QRect r = m_listWidget->visualItemRect(item);
             QRect viewRect = m_listWidget->viewport()->rect();
             if (!viewRect.contains(r)) {
-                m_listWidget->scrollToItem(item, QAbstractItemView::EnsureVisible);
+                m_listWidget->scrollToItem(item, QAbstractItemView::PositionAtCenter);
             }
+        }
+        if (m_previewPane && m_previewPane->isVisible()) {
+            updateInspectorPane(item->data(Qt::UserRole).toString());
         }
     }
 }
@@ -886,7 +993,7 @@ void FolderViewer::setShowFolders(bool show)
 {
     if (m_showFolders == show) return;
     m_showFolders = show;
-    QSettings s("BubezView", "bubezview");
+    QSettings s("Bubez", "BubezView");
     s.setValue("Gallery/ShowFolders", show);
     if (!m_currentFolder.isEmpty()) {
         loadFolder(m_currentFolder, true);
@@ -1019,11 +1126,17 @@ bool FolderViewer::loadFolder(const QString &folderPath, bool forceReload)
     // Synchronize bookmarks sidebar active item
     updateBookmarksHighlight();
 
-    // Launch async thumbnail worker
+    // Launch async thumbnail worker guarded by current folder load generation
     if (!asyncThumbnailCandidates.isEmpty()) {
         ThumbnailWorker *worker = new ThumbnailWorker(asyncThumbnailCandidates);
         m_worker = worker;
-        connect(worker, &ThumbnailWorker::thumbnailReady, this, &FolderViewer::onThumbnailReady);
+        const quint64 gen = m_loadGeneration;
+        connect(worker, &ThumbnailWorker::thumbnailReady, this,
+                [this, gen](const QString &path, const QImage &img) {
+                    if (gen == m_loadGeneration) {
+                        onThumbnailReady(path, img);
+                    }
+                });
         connect(worker, &ThumbnailWorker::finished, worker, &QObject::deleteLater);
         worker->start();
     }
@@ -1118,6 +1231,8 @@ void FolderViewer::keyPressEvent(QKeyEvent *event)
 
 void FolderViewer::clear()
 {
+    ++m_loadGeneration;
+    m_cardHiddenForTransition.clear();
     if (m_worker) {
         disconnect(m_worker.data(), nullptr, nullptr, nullptr);
         m_worker->cancelAndWait();
@@ -1168,13 +1283,13 @@ void FolderViewer::updateTheme()
     ThemePreset preset = ThemeManager::currentPreset();
 
     if (!ThemeManager::isDark(preset)) {
-        QString winBg = (preset == ThemePreset::ModernLight) ? "#f5f5f7" : "#eff0f1";
-        QString cardBg = (preset == ThemePreset::ModernLight) ? "#ffffff" : "#fcfcfc";
-        QString borderCol = (preset == ThemePreset::ModernLight) ? "#d2d2d7" : "#bdc3c7";
-        QString textCol = (preset == ThemePreset::ModernLight) ? "#1d1d1f" : "#232629";
-        QString subTextCol = (preset == ThemePreset::ModernLight) ? "#6e6e73" : "#626569";
-        QString accentCol = (preset == ThemePreset::ModernLight) ? "#007aff" : "#3daee9";
-        QString hoverCol = (preset == ThemePreset::ModernLight) ? "#e5e5ea" : "#d8dbde";
+        QString winBg = (preset == ThemePreset::ModernLight) ? "#e2e5ea" : "#eff0f1";
+        QString cardBg = (preset == ThemePreset::ModernLight) ? "#f1f3f6" : "#fcfcfc";
+        QString borderCol = (preset == ThemePreset::ModernLight) ? "#c8cbd0" : "#bdc3c7";
+        QString textCol = (preset == ThemePreset::ModernLight) ? "#1e293b" : "#232629";
+        QString subTextCol = (preset == ThemePreset::ModernLight) ? "#64748b" : "#626569";
+        QString accentCol = (preset == ThemePreset::ModernLight) ? "#0284c7" : "#3daee9";
+        QString hoverCol = (preset == ThemePreset::ModernLight) ? "#d8dce2" : "#d8dbde";
 
         // Seamless sub-bar matching canvas background (no double horizontal divider line)
         m_topBar->setStyleSheet(QString("background-color: %1; border: none;").arg(winBg));
@@ -1531,6 +1646,180 @@ void FolderViewer::updateTheme()
                 "}"
             );
         }
+    } else if (preset == ThemePreset::ZincGray) {
+        // Zinc Gray Theme (#36373b base, #585960 pills/buttons)
+        m_topBar->setStyleSheet("background-color: #36373b; border: none;");
+        m_pillBadge->setStyleSheet(
+            "#FolderPillBadge {"
+            "   background-color: #585960;"
+            "   border: 1px solid rgba(255, 255, 255, 0.22);"
+            "   border-radius: 13px;"
+            "}"
+        );
+        m_pillText->setStyleSheet("border: none; background: transparent; color: #ffffff; font-size: 11px; font-weight: 500;");
+
+        m_btnUp->setStyleSheet(
+            "QPushButton {"
+            "   background-color: #585960;"
+            "   color: #ffffff;"
+            "   border: 1px solid rgba(255, 255, 255, 0.20);"
+            "   border-radius: 14px;"
+            "   padding: 0px 14px;"
+            "   font-size: 12px;"
+            "   font-weight: 600;"
+            "}"
+            "QPushButton:hover {"
+            "   background-color: #63646c;"
+            "}"
+            "QPushButton:disabled {"
+            "   background-color: rgba(255, 255, 255, 0.05);"
+            "   color: rgba(255, 255, 255, 0.25);"
+            "}"
+        );
+
+        if (m_filterEdit) {
+            m_filterEdit->setStyleSheet(
+                "QLineEdit {"
+                "   background-color: #3f4044;"
+                "   color: #ffffff;"
+                "   border: 1px solid rgba(255, 255, 255, 0.20);"
+                "   border-radius: 14px;"
+                "   padding: 2px 12px 2px 6px;"
+                "   font-size: 12px;"
+                "}"
+                "QLineEdit:hover {"
+                "   border-color: rgba(255, 255, 255, 0.35);"
+                "}"
+                "QLineEdit:focus {"
+                "   border: 1px solid #727379;"
+                "}"
+            );
+        }
+
+        if (m_btnToggleInspector) {
+            m_btnToggleInspector->setStyleSheet(
+                "QPushButton {"
+                "   background-color: #727379;"
+                "   color: #ffffff;"
+                "   border: 1px solid rgba(255, 255, 255, 0.25);"
+                "   border-radius: 14px;"
+                "   font-size: 12px;"
+                "   font-weight: 600;"
+                "   padding: 0px 14px;"
+                "}"
+                "QPushButton:hover {"
+                "   background-color: #82838a;"
+                "}"
+                "QPushButton:checked {"
+                "   background-color: #8a8b92;"
+                "   color: #ffffff;"
+                "}"
+            );
+        }
+
+        m_listWidget->setStyleSheet(
+            "QListWidget {"
+            "   background-color: #494a4f;"
+            "   border: none;"
+            "   padding: 6px 18px 16px 18px;"
+            "}\n" + ThemeManager::scrollBarStyleSheet(preset)
+        );
+
+        if (m_bookmarksWidget) {
+            m_bookmarksWidget->setStyleSheet(
+                "QListWidget {"
+                "   background-color: #3f4044;"
+                "   border-right: 1px solid rgba(255, 255, 255, 0.12);"
+                "   padding: 8px 0px;"
+                "   color: #d1d5db;"
+                "   font-size: 12px;"
+                "}"
+                "QListWidget::item {"
+                "   padding: 6px 12px;"
+                "   border-radius: 10px;"
+                "   margin: 1px 8px;"
+                "}"
+                "QListWidget::item:hover:!disabled {"
+                "   background-color: rgba(255, 255, 255, 0.10);"
+                "   color: #ffffff;"
+                "}"
+                "QListWidget::item:selected {"
+                "   background-color: #727379;"
+                "   color: #ffffff;"
+                "   font-weight: 600;"
+                "}"
+                "QListWidget::item:disabled {"
+                "   padding-top: 8px;"
+                "   padding-bottom: 2px;"
+                "   font-weight: bold;"
+                "   color: #9ca3af;"
+                "}"
+            );
+        }
+
+        if (m_previewPane) {
+            m_previewPane->setStyleSheet(
+                "QWidget {"
+                "   background-color: #505156;"
+                "   border-left: 1px solid rgba(255, 255, 255, 0.14);"
+                "}"
+            );
+        }
+
+        if (m_previewCard) {
+            m_previewCard->setStyleSheet(
+                "QFrame {"
+                "   background-color: #3f4044;"
+                "   border: 1px solid rgba(255, 255, 255, 0.20);"
+                "   border-radius: 14px;"
+                "}"
+            );
+        }
+
+        if (m_previewImgLabel) {
+            m_previewImgLabel->setStyleSheet("background-color: transparent; border: none; padding: 2px;");
+        }
+        if (m_inspectorBadge) {
+            m_inspectorBadge->setStyleSheet("color: #727379; font-size: 11px; font-weight: bold; letter-spacing: 0.8px;");
+        }
+        if (m_btnCloseInspector) {
+            m_btnCloseInspector->setStyleSheet("QPushButton { background-color: transparent; border: none; font-size: 11px; border-radius: 11px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.12); }");
+        }
+        if (m_previewTitleLabel) {
+            m_previewTitleLabel->setStyleSheet("font-weight: bold; font-size: 13px; color: #ffffff;");
+        }
+        if (m_previewMetaLabel) {
+            m_previewMetaLabel->setStyleSheet("color: #d1d5db; font-size: 11px; line-height: 1.4;");
+        }
+        if (m_previewTextEdit) {
+            m_previewTextEdit->setStyleSheet(
+                "QPlainTextEdit {"
+                "   background-color: #38393d;"
+                "   color: #ffffff;"
+                "   border: none;"
+                "   padding: 4px;"
+                "}"
+            );
+        }
+        if (m_btnOpenSelected) {
+            m_btnOpenSelected->setStyleSheet(
+                "QPushButton {"
+                "   background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #7a7b82, stop:1 #6a6b71);"
+                "   color: #ffffff;"
+                "   border: 1px solid rgba(255, 255, 255, 0.25);"
+                "   border-radius: 16px;"
+                "   font-size: 12px;"
+                "   font-weight: 600;"
+                "}"
+                "QPushButton:hover {"
+                "   background-color: #82838a;"
+                "}"
+                "QPushButton:disabled {"
+                "   background-color: #38393d;"
+                "   color: #6b7280;"
+                "}"
+            );
+        }
     } else { // BreezeDark
         // Seamless top bar matching #17191c canvas background
         m_topBar->setStyleSheet("background-color: #17191c; border: none;");
@@ -1742,7 +2031,13 @@ void FolderViewer::toggleInspector()
 
 QStringList FolderViewer::customBookmarks() const
 {
-    QSettings settings("BubezView", "BubezView");
+    QSettings settings("Bubez", "BubezView");
+    if (!settings.contains("FolderViewer/CustomBookmarks")) {
+        QSettings legacy("BubezView", "BubezView");
+        if (legacy.contains("FolderViewer/CustomBookmarks")) {
+            return legacy.value("FolderViewer/CustomBookmarks").toStringList();
+        }
+    }
     return settings.value("FolderViewer/CustomBookmarks").toStringList();
 }
 
@@ -1753,7 +2048,7 @@ void FolderViewer::addCustomBookmark(const QString &folderPath)
     QStringList bms = customBookmarks();
     if (!bms.contains(canonical)) {
         bms.append(canonical);
-        QSettings settings("BubezView", "BubezView");
+        QSettings settings("Bubez", "BubezView");
         settings.setValue("FolderViewer/CustomBookmarks", bms);
         populateBookmarks();
     }
@@ -1764,7 +2059,7 @@ void FolderViewer::removeCustomBookmark(const QString &folderPath)
     QString canonical = QDir(folderPath).canonicalPath();
     QStringList bms = customBookmarks();
     if (bms.removeAll(canonical) > 0 || bms.removeAll(folderPath) > 0) {
-        QSettings settings("BubezView", "BubezView");
+        QSettings settings("Bubez", "BubezView");
         settings.setValue("FolderViewer/CustomBookmarks", bms);
         populateBookmarks();
     }

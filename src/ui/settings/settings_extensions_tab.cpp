@@ -6,16 +6,23 @@
 #include "settings_extensions_tab.h"
 #include "extension_feature_model.h"
 #include "extension_row_widget.h"
+#include "diagnostic_report_dialog.h"
+#include "theme_manager.h"
+#include "build_config.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QLabel>
+#include <QPushButton>
 #include <QFrame>
-#include <QTabWidget>
-#include <QScrollArea>
+#include <QProcess>
+#include <QDateTime>
 
 SettingsExtensionsTab::SettingsExtensionsTab(QWidget *parent)
     : QWidget(parent)
+    , m_activeCategory(QStringLiteral("PDF"))
 {
     setupUi();
 }
@@ -23,160 +30,190 @@ SettingsExtensionsTab::SettingsExtensionsTab(QWidget *parent)
 void SettingsExtensionsTab::setupUi()
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setSpacing(10);
-    layout->setContentsMargins(14, 12, 14, 12);
+    layout->setSpacing(12);
+    layout->setContentsMargins(14, 10, 14, 10);
 
-    QLabel *lblHeader = new QLabel(
-        tr("<b>Plugins & Extensions</b>"),
-        this
-    );
-    lblHeader->setWordWrap(true);
-    layout->addWidget(lblHeader);
+    // =========================================================================
+    // Header Row: Category Capsules Filter Bar + Diagnostic Health Check Button
+    // =========================================================================
+    QHBoxLayout *headerLay = new QHBoxLayout();
+    headerLay->setContentsMargins(0, 0, 0, 0);
+    headerLay->setSpacing(10);
 
-    // Category Tabs Widget (Styled as modern segmented pill chips)
-    m_catTabs = new QTabWidget(this);
-    m_catTabs->setObjectName("ExtensionCategoryTabs");
-    m_catTabs->setStyleSheet(
-        "#ExtensionCategoryTabs::pane {"
-        "    border: none;"
-        "    background-color: transparent;"
-        "    margin-top: 6px;"
-        "}"
-        "#ExtensionCategoryTabs > QTabBar {"
-        "    background-color: transparent;"
-        "}"
-        "#ExtensionCategoryTabs > QTabBar::tab {"
-        "    background-color: rgba(100, 116, 139, 0.12);"
-        "    color: #475569;"
-        "    border: 1px solid rgba(100, 116, 139, 0.22);"
-        "    border-radius: 13px;"
-        "    padding: 5px 14px;"
-        "    margin-right: 6px;"
-        "    font-weight: 600;"
-        "    font-size: 11px;"
-        "}"
-        "#ExtensionCategoryTabs > QTabBar::tab:hover {"
-        "    background-color: rgba(2, 132, 199, 0.12);"
-        "    color: #0284c7;"
-        "    border-color: rgba(2, 132, 199, 0.35);"
-        "}"
-        "#ExtensionCategoryTabs > QTabBar::tab:selected {"
-        "    background-color: #0284c7;"
-        "    color: #ffffff;"
-        "    border: 1px solid #0284c7;"
-        "}"
-    );
+    m_categoryCapsulesFrame = new QFrame(this);
+    m_categoryCapsulesFrame->setObjectName(QStringLiteral("CategoryCapsulesFrame"));
+    QHBoxLayout *capsulesLay = new QHBoxLayout(m_categoryCapsulesFrame);
+    capsulesLay->setContentsMargins(3, 3, 3, 3);
+    capsulesLay->setSpacing(2);
 
-    m_catTabs->addTab(createCategoryPage("All"), tr("All"));
+    auto pdfMods = ExtensionFeatureRegistry::modulesForCategory(QStringLiteral("PDF"));
+    auto archMods = ExtensionFeatureRegistry::modulesForCategory(QStringLiteral("Archive"));
+    auto mediaMods = ExtensionFeatureRegistry::modulesForCategory(QStringLiteral("Media"));
+    auto officeMods = ExtensionFeatureRegistry::modulesForCategory(QStringLiteral("Office"));
+    auto imageMods = ExtensionFeatureRegistry::modulesForCategory(QStringLiteral("Image"));
 
-    // Lazy load specific category pages only when clicked by user
-    QWidget *dummyPdf = new QWidget();
-    dummyPdf->setProperty("catFilter", "PDF");
-    m_catTabs->addTab(dummyPdf, tr("PDF"));
+    struct CatDef {
+        QString id;
+        QString label;
+    };
+    QList<CatDef> categories = {
+        {QStringLiteral("PDF"), tr("Documents (%1)").arg(pdfMods.size())},
+        {QStringLiteral("Archive"), tr("Archives (%1)").arg(archMods.size())},
+        {QStringLiteral("Media"), tr("Audio && Video (%1)").arg(mediaMods.size())},
+        {QStringLiteral("Office"), tr("Office (%1)").arg(officeMods.size())},
+        {QStringLiteral("Image"), tr("Graphics (%1)").arg(imageMods.size())}
+    };
 
-    QWidget *dummyArchive = new QWidget();
-    dummyArchive->setProperty("catFilter", "Archive");
-    m_catTabs->addTab(dummyArchive, tr("Archives"));
-
-    QWidget *dummyMedia = new QWidget();
-    dummyMedia->setProperty("catFilter", "Media");
-    m_catTabs->addTab(dummyMedia, tr("Audio && Video"));
-
-    QWidget *dummyOffice = new QWidget();
-    dummyOffice->setProperty("catFilter", "Office");
-    m_catTabs->addTab(dummyOffice, tr("Office"));
-
-    QWidget *dummyImage = new QWidget();
-    dummyImage->setProperty("catFilter", "Image");
-    m_catTabs->addTab(dummyImage, tr("Images && Photos"));
-
-    connect(m_catTabs, &QTabWidget::currentChanged, this, [this](int index) {
-        if (index > 0) {
-            QWidget *w = m_catTabs->widget(index);
-            if (w && w->property("catFilter").isValid()) {
-                QString filter = w->property("catFilter").toString();
-                QString title = m_catTabs->tabText(index);
-                QWidget *realPage = createCategoryPage(filter);
-                m_catTabs->removeTab(index);
-                m_catTabs->insertTab(index, realPage, title);
-                m_catTabs->setCurrentIndex(index);
-                w->deleteLater();
-            }
-        }
-    });
-
-    layout->addWidget(m_catTabs, 1);
-}
-
-QWidget *SettingsExtensionsTab::createCategoryPage(const QString &catFilter)
-{
-    QWidget *page = new QWidget();
-    QVBoxLayout *pageLay = new QVBoxLayout(page);
-    pageLay->setContentsMargins(4, 8, 16, 16);
-    pageLay->setSpacing(8);
-
-    QList<ExtensionModuleInfo> mods;
-    if (catFilter.isEmpty() || catFilter == "All") {
-        mods = ExtensionFeatureRegistry::allModules();
-    } else {
-        mods = ExtensionFeatureRegistry::modulesForCategory(catFilter);
+    for (const auto &cat : categories) {
+        QPushButton *btn = new QPushButton(cat.label, m_categoryCapsulesFrame);
+        btn->setFixedHeight(26);
+        btn->setCursor(Qt::PointingHandCursor);
+        const QString cid = cat.id;
+        connect(btn, &QPushButton::clicked, this, [this, cid]() {
+            onCategoryCapsuleClicked(cid);
+        });
+        capsulesLay->addWidget(btn);
+        m_catButtons.insert(cat.id, btn);
     }
 
-    QString lastCategory;
-    for (const auto &m : mods) {
-        // In the "All" tab, insert a subtle divider when category transitions
-        if (catFilter == "All" && m.category != lastCategory) {
-            lastCategory = m.category;
-            QFrame *sepFrame = new QFrame(page);
-            sepFrame->setFrameShape(QFrame::NoFrame);
-            QHBoxLayout *sepHBox = new QHBoxLayout(sepFrame);
-            sepHBox->setContentsMargins(4, 8, 4, 4);
-            sepHBox->setSpacing(8);
+    headerLay->addWidget(m_categoryCapsulesFrame);
+    headerLay->addStretch();
 
-            QFrame *lLine = new QFrame(sepFrame);
-            lLine->setFrameShape(QFrame::HLine);
-            lLine->setStyleSheet("color: rgba(100, 116, 139, 0.25);");
+    m_btnGlobalDiag = new QPushButton(tr("🩺 Verify Components..."), this);
+    m_btnGlobalDiag->setCursor(Qt::PointingHandCursor);
+    m_btnGlobalDiag->setFixedHeight(30);
+    m_btnGlobalDiag->setToolTip(tr("Checks all installed engines and verifies that external tools respond correctly."));
+    connect(m_btnGlobalDiag, &QPushButton::clicked, this, &SettingsExtensionsTab::runGlobalDiagnostics);
+    headerLay->addWidget(m_btnGlobalDiag);
 
-            QString catTitle = lastCategory;
-            if (catTitle == "PDF") catTitle = tr("PDF");
-            else if (catTitle == "Archive") catTitle = tr("Archives");
-            else if (catTitle == "Office") catTitle = tr("Office Documents");
-            else if (catTitle == "Media") catTitle = tr("Audio & Video");
-            else if (catTitle == "Image") catTitle = tr("Images & Photos");
+    layout->addLayout(headerLay);
 
-            QLabel *lblCat = new QLabel(QString("— %1 —").arg(catTitle), sepFrame);
-            lblCat->setStyleSheet("font-size: 11px; font-weight: bold; color: #64748b;");
+    // =========================================================================
+    // Active Category 2-Column Grid (QGroupBox Liquid Glass Card)
+    // =========================================================================
+    m_grpActiveCategory = new QGroupBox(this);
+    m_grpActiveCategory->setObjectName(QStringLiteral("CategoryCard"));
 
-            QFrame *rLine = new QFrame(sepFrame);
-            rLine->setFrameShape(QFrame::HLine);
-            rLine->setStyleSheet("color: rgba(100, 116, 139, 0.25);");
+    m_gridLayout = new QGridLayout(m_grpActiveCategory);
+    m_gridLayout->setContentsMargins(10, 10, 10, 8);
+    m_gridLayout->setSpacing(8);
 
-            sepHBox->addWidget(lLine, 1);
-            sepHBox->addWidget(lblCat, 0, Qt::AlignCenter);
-            sepHBox->addWidget(rLine, 1);
+    layout->addWidget(m_grpActiveCategory);
+    layout->addStretch(1);
 
-            pageLay->addWidget(sepFrame);
+    populateCategoryGrid(m_activeCategory);
+    updateThemeStyles();
+}
+
+void SettingsExtensionsTab::onCategoryCapsuleClicked(const QString &catId)
+{
+    if (m_activeCategory == catId) return;
+    populateCategoryGrid(catId);
+}
+
+void SettingsExtensionsTab::selectCategory(const QString &catId)
+{
+    onCategoryCapsuleClicked(catId);
+}
+
+void SettingsExtensionsTab::populateCategoryGrid(const QString &catId)
+{
+    m_activeCategory = catId;
+
+    // Immediately remove and delete old tile widgets to prevent overlap
+    const auto oldTiles = m_grpActiveCategory->findChildren<ExtensionRowWidget*>();
+    for (ExtensionRowWidget *tile : oldTiles) {
+        m_gridLayout->removeWidget(tile);
+        delete tile;
+    }
+    QLayoutItem *child;
+    while ((child = m_gridLayout->takeAt(0)) != nullptr) {
+        if (child->widget()) {
+            delete child->widget();
         }
+        delete child;
+    }
 
-        ExtensionRowWidget *row = new ExtensionRowWidget(m, page);
-        connect(row, &ExtensionRowWidget::statusChanged, this, [this]() {
+    // Set Card title based on category
+    if (catId == QLatin1String("PDF")) {
+        m_grpActiveCategory->setTitle(tr("Documents (PDF && Text)"));
+    } else if (catId == QLatin1String("Archive")) {
+        m_grpActiveCategory->setTitle(tr("Archives && Compression"));
+    } else if (catId == QLatin1String("Media")) {
+        m_grpActiveCategory->setTitle(tr("Audio && Video"));
+    } else if (catId == QLatin1String("Office")) {
+        m_grpActiveCategory->setTitle(tr("Office Documents"));
+    } else if (catId == QLatin1String("Image")) {
+        m_grpActiveCategory->setTitle(tr("Graphics && Extended Formats"));
+    }
+
+    // Retrieve modules for selected category
+    QList<ExtensionModuleInfo> mods = ExtensionFeatureRegistry::modulesForCategory(catId);
+
+    // Populate 2-column grid
+    for (int i = 0; i < mods.size(); ++i) {
+        ExtensionRowWidget *tile = new ExtensionRowWidget(mods[i], m_grpActiveCategory);
+        connect(tile, &ExtensionRowWidget::statusChanged, this, [this]() {
             refreshAllRows();
             emit pendingStateChanged();
         });
-        pageLay->addWidget(row);
+        m_gridLayout->addWidget(tile, i / 2, i % 2);
     }
 
-    pageLay->addSpacing(14);
-    pageLay->addStretch();
+    updateCapsuleSelection();
+    updateThemeStyles();
+}
 
-    QScrollArea *scrollArea = new QScrollArea(this);
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setFrameShape(QFrame::NoFrame);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    scrollArea->setWidget(page);
+void SettingsExtensionsTab::updateCapsuleSelection()
+{
+    const ThemePreset active = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    QString activeBg;
+    QString activeBorder;
+    QString activeText = QStringLiteral("#ffffff");
 
-    return scrollArea;
+    if (active == ThemePreset::ZincGray) {
+        activeBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        activeBorder = QStringLiteral("rgba(255, 255, 255, 0.25)");
+    } else if (ThemeManager::isDarkTheme()) {
+        activeBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0284c7, stop:1 #0369a1)");
+        activeBorder = QStringLiteral("rgba(56, 189, 248, 0.45)");
+    } else {
+        activeBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0284c7, stop:1 #0369a1)");
+        activeBorder = QStringLiteral("#0284c7");
+    }
+
+    for (auto it = m_catButtons.begin(); it != m_catButtons.end(); ++it) {
+        QPushButton *btn = it.value();
+        if (it.key() == m_activeCategory) {
+            btn->setStyleSheet(QString(
+                "QPushButton {"
+                "    background: %1;"
+                "    color: %2;"
+                "    font-weight: bold;"
+                "    font-size: 11px;"
+                "    border: 1px solid %3;"
+                "    border-radius: 11px;"
+                "    padding: 0 12px;"
+                "}"
+            ).arg(activeBg, activeText, activeBorder));
+        } else {
+            btn->setStyleSheet(
+                "QPushButton {"
+                "    background: transparent;"
+                "    color: #a1a1aa;"
+                "    font-size: 11px;"
+                "    font-weight: 500;"
+                "    border: none;"
+                "    border-radius: 11px;"
+                "    padding: 0 10px;"
+                "}"
+                "QPushButton:hover {"
+                "    background: rgba(255, 255, 255, 0.08);"
+                "    color: #ffffff;"
+                "}"
+            );
+        }
+    }
 }
 
 void SettingsExtensionsTab::refreshAllRows()
@@ -184,5 +221,234 @@ void SettingsExtensionsTab::refreshAllRows()
     const auto rows = findChildren<ExtensionRowWidget*>();
     for (ExtensionRowWidget *row : rows) {
         row->refreshState();
+    }
+}
+
+void SettingsExtensionsTab::runGlobalDiagnostics()
+{
+    const auto mods = ExtensionFeatureRegistry::allModules();
+
+    int runtimeTotal = 0;
+    int runtimeOk = 0;
+    QStringList runtimeFailures;
+    QStringList runtimeLog;
+
+    QStringList uninstalledComponents;
+    QStringList missingResources;
+
+    QStringList buildReadyEngines;
+    QStringList buildBlockedEngines;
+    QStringList buildLog;
+
+    // SEZIONE 1 & 2: Runtime scan and uninstalled/resource scan
+    for (const auto &m : mods) {
+        if (!m.isInstalled) {
+            uninstalledComponents.append(m.displayName);
+        } else {
+            runtimeTotal++;
+            QString cmd = m.diagnosticCommand.trimmed();
+            if (cmd.isEmpty()) {
+                runtimeOk++;
+                runtimeLog.append(QString("• %1: OPERATIVO (verifica interna)").arg(m.displayName));
+            } else {
+                QProcess proc;
+                proc.start(QStringLiteral("/bin/sh"), QStringList() << QStringLiteral("-c") << cmd);
+                if (proc.waitForFinished(2000) && proc.exitStatus() == QProcess::NormalExit && proc.exitCode() == 0) {
+                    runtimeOk++;
+                    QString out = QString::fromUtf8(proc.readAllStandardOutput()).trimmed();
+                    runtimeLog.append(QString("• %1: OPERATIVO (%2)").arg(m.displayName, out.isEmpty() ? QStringLiteral("OK") : out));
+                } else {
+                    QString outErr = QString::fromUtf8(proc.readAllStandardOutput() + proc.readAllStandardError()).trimmed();
+                    runtimeFailures.append(QString("%1 (codice %2)").arg(m.displayName).arg(proc.exitCode()));
+                    runtimeLog.append(QString("• %1: ERRORE (codice %2) - %3").arg(m.displayName).arg(proc.exitCode()).arg(outErr));
+                }
+            }
+        }
+
+        // Check sub-dependencies across modules
+        for (const auto &sub : m.subDependencies) {
+            if (!sub.isInstalled) {
+                missingResources.append(QString("%1 (%2)").arg(sub.name, m.displayName));
+            }
+        }
+
+        // SEZIONE 3: Check build readiness for compilable engines
+        if (m.canCompile) {
+            QStringList missingList;
+            QString inspectLog;
+            bool ready = ExtensionFeatureRegistry::checkBuildReadiness(m, missingList, inspectLog);
+            if (ready) {
+                buildReadyEngines.append(m.displayName);
+                buildLog.append(QString("• %1: PRONTO A COMPILARE (CMake, C++ e header dev presenti)").arg(m.displayName));
+            } else {
+                buildBlockedEngines.append(QString("%1 (mancano: %2)").arg(m.displayName, missingList.join(QStringLiteral(", "))));
+                buildLog.append(QString("• %1: COMPILAZIONE BLOCCATA (mancano: %2)").arg(m.displayName, missingList.join(QStringLiteral(", "))));
+            }
+        }
+    }
+
+    const QString timestamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss"));
+    QString fullReport = QString(
+        "BUBEZVIEW — STATO COMPONENTI E SISTEMA\n"
+        "Data: %1\n\n"
+        "[MODULI RUNTIME] (%2/%3 Operativi)\n"
+        "%4\n\n"
+        "[COMPONENTI NON INSTALLATI & ACCESSORI]\n"
+        "Non installati (%5):\n%6\n\n"
+        "Accessori mancanti (%7):\n%8\n\n"
+        "[AMBIENTE DI COMPILAZIONE]\n"
+        "Pronti (%9): %10\n"
+        "Header mancanti (%11): %12\n"
+    ).arg(
+        timestamp,
+        QString::number(runtimeOk),
+        QString::number(runtimeTotal),
+        runtimeLog.join(QStringLiteral("\n")),
+        QString::number(uninstalledComponents.count()),
+        uninstalledComponents.isEmpty() ? QStringLiteral("  (tutti installati)") : QStringLiteral("  • ") + uninstalledComponents.join(QStringLiteral("\n  • ")),
+        QString::number(missingResources.count()),
+        missingResources.isEmpty() ? QStringLiteral("  (tutti presenti)") : QStringLiteral("  • ") + missingResources.join(QStringLiteral("\n  • ")),
+        QString::number(buildReadyEngines.count()),
+        buildReadyEngines.isEmpty() ? QStringLiteral("  (nessuno)") : buildReadyEngines.join(QStringLiteral(", ")),
+        QString::number(buildBlockedEngines.count()),
+        buildBlockedEngines.isEmpty() ? QStringLiteral("  (nessuno bloccato)") : buildBlockedEngines.join(QStringLiteral(", "))
+    );
+
+    DiagnosticReportDialog::showGlobalExtendedReport(
+        this,
+        runtimeOk,
+        runtimeTotal,
+        runtimeFailures,
+        missingResources,
+        buildReadyEngines,
+        buildBlockedEngines,
+        fullReport
+    );
+}
+
+void SettingsExtensionsTab::updateThemeStyles()
+{
+    const ThemePreset active = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+
+    QString cardBg;
+    QString cardBorder;
+    QString pillBg;
+    QString pillBorder;
+    QString pillColor;
+    QString textCol;
+    QString btnDiagBg;
+    QString btnDiagBorder;
+    QString btnDiagText;
+    QString frameBg;
+    QString frameBorder;
+
+    if (active == ThemePreset::ZincGray) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(56, 57, 62, 0.78), stop:0.5 rgba(46, 47, 51, 0.82), stop:1 rgba(38, 39, 43, 0.88))");
+        cardBorder = QStringLiteral("rgba(255, 255, 255, 0.12)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        pillBorder = QStringLiteral("rgba(255, 255, 255, 0.22)");
+        pillColor = QStringLiteral("#ffffff");
+        textCol = QStringLiteral("#ffffff");
+
+        btnDiagBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        btnDiagBorder = QStringLiteral("rgba(255, 255, 255, 0.20)");
+        btnDiagText = QStringLiteral("#ffffff");
+
+        frameBg = QStringLiteral("rgba(36, 37, 41, 0.85)");
+        frameBorder = QStringLiteral("rgba(255, 255, 255, 0.12)");
+    } else if (active == ThemePreset::ModernLight || active == ThemePreset::BreezeLight) {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.70), stop:0.5 rgba(246, 248, 251, 0.65), stop:1 rgba(238, 241, 246, 0.60))");
+        cardBorder = QStringLiteral("rgba(15, 23, 42, 0.09)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e2e6ec)");
+        pillBorder = QStringLiteral("rgba(0, 0, 0, 0.14)");
+        pillColor = QStringLiteral("#334155");
+        textCol = QStringLiteral("#1e293b");
+
+        btnDiagBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0284c7, stop:1 #0369a1)");
+        btnDiagBorder = QStringLiteral("#0284c7");
+        btnDiagText = QStringLiteral("#ffffff");
+
+        frameBg = QStringLiteral("rgba(235, 239, 244, 0.85)");
+        frameBorder = QStringLiteral("rgba(15, 23, 42, 0.10)");
+    } else {
+        cardBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 41, 59, 0.65), stop:0.5 rgba(22, 30, 46, 0.70), stop:1 rgba(15, 22, 34, 0.78))");
+        cardBorder = QStringLiteral("rgba(56, 189, 248, 0.22)");
+        pillBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #253347, stop:1 #1a2434)");
+        pillBorder = QStringLiteral("rgba(56, 189, 248, 0.38)");
+        pillColor = QStringLiteral("#7dd3fc");
+        textCol = QStringLiteral("#f8fafc");
+
+        btnDiagBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0284c7, stop:1 #0369a1)");
+        btnDiagBorder = QStringLiteral("rgba(56, 189, 248, 0.35)");
+        btnDiagText = QStringLiteral("#ffffff");
+
+        frameBg = QStringLiteral("rgba(15, 23, 42, 0.75)");
+        frameBorder = QStringLiteral("rgba(56, 189, 248, 0.20)");
+    }
+
+    const QString boxStyle = QString(
+        "QGroupBox {"
+        "  font-weight: 600;"
+        "  font-size: 12px;"
+        "  color: %1;"
+        "  border: 1px solid %2;"
+        "  border-radius: 14px;"
+        "  background: %3;"
+        "  margin-top: 14px;"
+        "  padding: 16px 14px 12px 14px;"
+        "}"
+        "QGroupBox::title {"
+        "  subcontrol-origin: margin;"
+        "  subcontrol-position: top left;"
+        "  left: 14px;"
+        "  top: 1px;"
+        "  padding: 2px 12px;"
+        "  background: %4;"
+        "  color: %5;"
+        "  border: 1px solid %6;"
+        "  border-radius: 8px;"
+        "  font-size: 11px;"
+        "  font-weight: bold;"
+        "}"
+    ).arg(textCol, cardBorder, cardBg, pillBg, pillColor, pillBorder);
+
+    if (m_grpActiveCategory) {
+        m_grpActiveCategory->setStyleSheet(boxStyle);
+    }
+
+    if (m_categoryCapsulesFrame) {
+        m_categoryCapsulesFrame->setStyleSheet(QString(
+            "QFrame#CategoryCapsulesFrame {"
+            "    background: %1;"
+            "    border: 1px solid %2;"
+            "    border-radius: 14px;"
+            "}"
+        ).arg(frameBg, frameBorder));
+    }
+
+    if (m_btnGlobalDiag) {
+        m_btnGlobalDiag->setStyleSheet(QString(
+            "QPushButton {"
+            "    background: %1;"
+            "    color: %2;"
+            "    border: 1px solid %3;"
+            "    border-radius: 8px;"
+            "    font-size: 11.5px;"
+            "    font-weight: 600;"
+            "    padding: 0 14px;"
+            "}"
+            "QPushButton:hover {"
+            "    background-color: #82838a;"
+            "    border-color: rgba(255, 255, 255, 0.40);"
+            "}"
+        ).arg(btnDiagBg, btnDiagText, btnDiagBorder));
+    }
+
+    updateCapsuleSelection();
+
+    // Refresh child tiles theme styling
+    const auto rows = findChildren<ExtensionRowWidget*>();
+    for (ExtensionRowWidget *row : rows) {
+        row->updateThemeStyles();
     }
 }

@@ -8,9 +8,9 @@
 #include <QWidget>
 
 class QLabel;
+class QGroupBox;
 class QPushButton;
-class QComboBox;
-class QCheckBox;
+class CapsuleToggleSwitch;
 
 /**
  * @class SettingsIntegrationTab
@@ -33,51 +33,49 @@ public:
     ~SettingsIntegrationTab() override = default;
 
     /**
-     * @brief Queries DesktopIntegrator and updates label status text and button toggles.
+     * @brief Queries DesktopIntegrator and updates toggle switch states.
      */
     void refreshStatuses();
 
+    /**
+     * @brief Updates Liquid Glass card styling and controls to match the active theme.
+     */
+    void updateThemeStyles();
+
 private slots:
-    /**
-     * @brief Toggles KDE Dolphin file manager integration shortcuts and scripts.
-     */
-    void toggleDolphin();
-
-    /**
-     * @brief Toggles GNOME / Nemo file manager DBus integration and preview keys.
-     */
-    void toggleGnomeNemo();
-
-    /**
-     * @brief Toggles file manager right-click context menu actions.
-     */
-    void toggleContextMenu();
-
-    /**
-     * @brief Toggles system application menu desktop launcher entry.
-     */
-    void toggleAppMenu();
+    void onSpacePreviewToggled(bool checked);
+    void onFallbackShortcutToggled(bool checked);
+    void onContextMenuToggled(bool checked);
+    void onAppMenuToggled(bool checked);
     void onUseLibreOfficeToggled(bool checked);
+    void onTestSpaceClicked();
+    void onUnsupportedGuideClicked();
 
 private:
     void setupUi();
+    QWidget *createSettingRow(
+        const QString &title,
+        QWidget *control,
+        QWidget *parent,
+        QWidget *extraWidget = nullptr,
+        const QString &subtitle = QString()
+    );
 
-    QCheckBox *m_chkUseLibreOffice = nullptr;
+    QLabel *m_lblHeader = nullptr;
 
-    // Dolphin
-    QLabel *m_lblDolphinStatus = nullptr;
-    QComboBox *m_comboDolphinShortcut = nullptr;
-    QPushButton *m_btnDolphinToggle = nullptr;
+    // Card 1: File Manager & Spacebar Quick Look
+    QGroupBox *m_grpQuickLook = nullptr;
+    CapsuleToggleSwitch *m_switchSpace = nullptr;
+    QPushButton *m_btnTestSpace = nullptr;
+    CapsuleToggleSwitch *m_switchFallback = nullptr;
+    QPushButton *m_btnGuide = nullptr;
 
-    // GNOME / Nemo
-    QLabel *m_lblGnomeStatus = nullptr;
-    QPushButton *m_btnGnomeToggle = nullptr;
+    // Card 2: System Integration (Context Menu & Launcher)
+    QGroupBox *m_grpSystem = nullptr;
+    CapsuleToggleSwitch *m_switchContextMenu = nullptr;
+    CapsuleToggleSwitch *m_switchAppMenu = nullptr;
 
-    // Context Menu
-    QLabel *m_lblContextStatus = nullptr;
-    QPushButton *m_btnContextToggle = nullptr;
-
-    // App Menu
-    QLabel *m_lblAppMenuStatus = nullptr;
-    QPushButton *m_btnAppMenuToggle = nullptr;
+    // Card 3: Office Documents
+    QGroupBox *m_grpOffice = nullptr;
+    CapsuleToggleSwitch *m_switchLibreOffice = nullptr;
 };

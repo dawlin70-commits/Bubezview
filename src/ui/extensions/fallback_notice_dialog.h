@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QString>
 
 class QLabel;
@@ -18,7 +18,7 @@ class QPushButton;
  * falls back to a generic distro/system executable instead of a source-compiled binary.
  * Provides an option to suppress future notices per-component.
  */
-class FallbackNoticeDialog : public QDialog {
+class FallbackNoticeDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

@@ -6,11 +6,12 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QPainter>
+#include <QPainterPath>
 #include <QImageReader>
 #include <QMouseEvent>
 #include <QTransform>
 #include <QGuiApplication>
-#include <QSettings>
+#include <QTimer>
 
 #include <cmath>
 
@@ -28,6 +29,7 @@ public:
         , m_isSelectingCrop(false)
     {
         setFocusPolicy(Qt::StrongFocus);
+        setCursor(Qt::OpenHandCursor);
     }
 
     void setPixmap(const QPixmap &pixmap, const QSize &targetSize = QSize())
@@ -52,7 +54,7 @@ public:
                 setCursor(Qt::CrossCursor);
                 setFocus();
             } else {
-                unsetCursor();
+                setCursor(Qt::OpenHandCursor);
             }
             update();
         }
@@ -65,16 +67,23 @@ protected:
     void paintEvent(QPaintEvent *) override
     {
         QPainter painter(this);
+        QColor stageBg = m_viewer ? m_viewer->canvasBackgroundColor() : palette().window().color();
+        painter.fillRect(rect(), stageBg);
         if (m_pixmap.isNull()) {
-            painter.fillRect(rect(), m_viewer ? m_viewer->canvasBackgroundColor() : palette().window().color());
             return;
         }
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
+        const qreal cornerRadius = 12.0;
+        painter.save();
+        QPainterPath clipPath;
+        clipPath.addRoundedRect(QRectF(rect()), cornerRadius, cornerRadius);
+        painter.setClipPath(clipPath);
+
         // 1. Fill background based on transparency mode if pixmap contains an alpha channel
         if (m_pixmap.hasAlphaChannel()) {
-            ImageViewer::TransparencyMode mode = m_viewer ? m_viewer->transparencyMode() : ImageViewer::TransparencyMode::White;
+            ImageViewer::TransparencyMode mode = m_viewer ? m_viewer->transparencyMode() : ImageViewer::TransparencyMode::Checkerboard;
             switch (mode) {
             case ImageViewer::TransparencyMode::White:
                 painter.fillRect(rect(), Qt::white);
@@ -94,33 +103,25 @@ protected:
                 break;
             }
             case ImageViewer::TransparencyMode::Theme:
-                if (m_viewer) {
-                    painter.fillRect(rect(), m_viewer->canvasBackgroundColor());
-                } else {
-                    painter.fillRect(rect(), palette().window());
-                }
+                painter.fillRect(rect(), stageBg);
                 break;
             case ImageViewer::TransparencyMode::Black:
                 painter.fillRect(rect(), Qt::black);
                 break;
             }
         } else {
-            // Opaque pixmaps fill underlying canvas background in case of subpixel borders
-            painter.fillRect(rect(), m_viewer ? m_viewer->canvasBackgroundColor() : palette().window().color());
+            painter.fillRect(rect(), stageBg);
         }
 
         // 2. Draw actual pixmap
         painter.drawPixmap(rect(), m_pixmap);
+        painter.restore();
 
-        // 3. Subtle 1px framing border for transparent images displayed on White or Checkerboard
-        if (m_pixmap.hasAlphaChannel()) {
-            ImageViewer::TransparencyMode mode = m_viewer ? m_viewer->transparencyMode() : ImageViewer::TransparencyMode::White;
-            if (mode == ImageViewer::TransparencyMode::White || mode == ImageViewer::TransparencyMode::Checkerboard) {
-                painter.setPen(QColor(0, 0, 0, 45));
-                painter.setBrush(Qt::NoBrush);
-                painter.drawRect(rect().adjusted(0, 0, -1, -1));
-            }
-        }
+        // 3. Subtle 1px rounded framing border
+        bool isDark = m_viewer ? m_viewer->isDarkTheme() : false;
+        painter.setPen(QPen(isDark ? QColor(255, 255, 255, 32) : QColor(15, 23, 42, 32), 1.0));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), cornerRadius, cornerRadius);
 
         if (m_cropActive) {
             if (m_cropRect.isValid() && !m_cropRect.isEmpty()) {
@@ -288,7 +289,7 @@ protected:
                 QPixmap zoomPix = QIcon::fromTheme("zoom-in").pixmap(24, 24);
                 setCursor(zoomPix.isNull() ? Qt::CrossCursor : QCursor(zoomPix, 8, 8));
             } else {
-                unsetCursor();
+                setCursor(Qt::OpenHandCursor);
             }
             event->accept();
         } else {
@@ -371,6 +372,9 @@ ImageViewer::ImageViewer(QWidget *parent)
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setAlignment(Qt::AlignCenter);
+    if (m_scrollArea->viewport()) {
+        m_scrollArea->viewport()->setCursor(Qt::OpenHandCursor);
+    }
 
     // Create and set canvas widget into scroll area
     m_canvas = new ImageCanvasWidget(this, m_scrollArea);
@@ -382,21 +386,34 @@ ImageViewer::ImageViewer(QWidget *parent)
 
     mainLayout->addWidget(m_scrollArea, 1);
 
+    m_smoothResizeTimer = new QTimer(this);
+    m_smoothResizeTimer->setSingleShot(true);
+    connect(m_smoothResizeTimer, &QTimer::timeout, this, [this]() {
+        if (m_fitToWindow) {
+            updateScaledPixmap();
+        }
+    });
+
     updateTheme();
 }
 
-ImageViewer::~ImageViewer() = default;
+ImageViewer::~ImageViewer()
+{
+    clear();
+}
 
 QColor ImageViewer::canvasBackgroundColor() const
 {
-    ThemePreset preset = ThemeManager::currentPreset();
+    ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
     switch (preset) {
-    case ThemePreset::DarkSlate:   return QColor("#22262b");
-    case ThemePreset::BreezeDark:  return QColor("#181b1d");
-    case ThemePreset::ModernLight: return QColor("#f5f5f7");
-    case ThemePreset::BreezeLight: return QColor("#eff0f1");
+    case ThemePreset::System:
+    case ThemePreset::DarkSlate:   return QColor("#151a28");
+    case ThemePreset::ZincGray:    return QColor("#36373b");
+    case ThemePreset::BreezeDark:  return QColor("#131824");
+    case ThemePreset::ModernLight: return QColor("#e2e5ea");
+    case ThemePreset::BreezeLight: return QColor("#eaeff5");
     }
-    return QColor("#22262b");
+    return QColor("#151a28");
 }
 
 bool ImageViewer::isDarkTheme() const
@@ -406,22 +423,14 @@ bool ImageViewer::isDarkTheme() const
 
 ImageViewer::TransparencyMode ImageViewer::transparencyMode() const
 {
-    QSettings settings("Bubez", "BubezView");
-    QString mode = settings.value("image/transparency_mode", "white").toString();
-    if (mode == "checkerboard") return TransparencyMode::Checkerboard;
-    if (mode == "theme") return TransparencyMode::Theme;
-    if (mode == "black") return TransparencyMode::Black;
-    return TransparencyMode::White;
+    // Fixed default (Checkerboard). The former "image/transparency_mode" setting
+    // is intentionally ignored so stale saved values cannot override it.
+    return m_transparencyMode;
 }
 
 void ImageViewer::setTransparencyMode(TransparencyMode mode)
 {
-    QSettings settings("Bubez", "BubezView");
-    QString str = "white";
-    if (mode == TransparencyMode::Checkerboard) str = "checkerboard";
-    else if (mode == TransparencyMode::Theme) str = "theme";
-    else if (mode == TransparencyMode::Black) str = "black";
-    settings.setValue("image/transparency_mode", str);
+    m_transparencyMode = mode;
     if (m_canvas) {
         m_canvas->update();
     }
@@ -440,7 +449,6 @@ void ImageViewer::removeTransparency(const QColor &fillColor)
     p.end();
 
     m_originalImage = opaqueImg;
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -449,19 +457,27 @@ void ImageViewer::removeTransparency(const QColor &fillColor)
 
 void ImageViewer::updateTheme()
 {
-    ThemePreset preset = ThemeManager::currentPreset();
-    QString canvasBg = canvasBackgroundColor().name();
+    ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    bool isDark = ThemeManager::isDark(preset);
+    QString canvasGrad;
+    if (preset == ThemePreset::ZincGray) {
+        canvasGrad = QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #5a5b61, stop:0.5 #505156, stop:1 #444549)");
+    } else if (isDark) {
+        canvasGrad = QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1e2538, stop:0.5 #151a28, stop:1 #0e121c)");
+    } else {
+        canvasGrad = QStringLiteral("qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #f8fafc, stop:0.5 #eef2f6, stop:1 #e2e8f0)");
+    }
 
     if (m_scrollArea) {
         m_scrollArea->setStyleSheet(
-            "QScrollArea { background-color: " + canvasBg + "; border: none; }\n" +
+            "QScrollArea { background: " + canvasGrad + "; border: none; }\n" +
             ThemeManager::scrollBarStyleSheet(preset)
         );
         if (m_scrollArea->viewport()) {
             QPalette pal = m_scrollArea->viewport()->palette();
             pal.setColor(QPalette::Window, canvasBackgroundColor());
             m_scrollArea->viewport()->setPalette(pal);
-            m_scrollArea->viewport()->setStyleSheet("background-color: " + canvasBg + "; border: none;");
+            m_scrollArea->viewport()->setStyleSheet("background: " + canvasGrad + "; border: none;");
             m_scrollArea->viewport()->setAutoFillBackground(true);
             m_scrollArea->viewport()->update();
         }
@@ -481,6 +497,10 @@ void ImageViewer::setModified(bool mod)
 
 bool ImageViewer::loadFile(const QString &filePath)
 {
+    if (QImageReader::allocationLimit() > 0 && QImageReader::allocationLimit() < 512) {
+        QImageReader::setAllocationLimit(512);
+    }
+
     QImageReader reader(filePath);
     reader.setAutoTransform(true);
     m_originalImage = reader.read();
@@ -490,7 +510,6 @@ bool ImageViewer::loadFile(const QString &filePath)
     }
 
     clearUndoRedo();
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     m_zoomFactor = 1.0;
     m_fitToWindow = true;
@@ -507,7 +526,6 @@ bool ImageViewer::loadImage(const QImage &image)
 
     clearUndoRedo();
     m_originalImage = image;
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     m_zoomFactor = 1.0;
     m_fitToWindow = true;
@@ -520,7 +538,6 @@ void ImageViewer::clear()
 {
     clearUndoRedo();
     m_originalImage = QImage();
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     if (m_canvas) {
         m_canvas->setPixmap(m_scaledPixmap, QSize(0, 0));
@@ -551,7 +568,7 @@ void ImageViewer::setZoomToolActive(bool active)
             QPixmap zoomPix = QIcon::fromTheme("zoom-in").pixmap(24, 24);
             m_canvas->setCursor(zoomPix.isNull() ? Qt::CrossCursor : QCursor(zoomPix, 8, 8));
         } else {
-            m_canvas->unsetCursor();
+            m_canvas->setCursor(Qt::OpenHandCursor);
         }
     }
 }
@@ -624,6 +641,12 @@ void ImageViewer::setEditMode(bool editMode)
     m_isEditMode = editMode;
     if (!editMode) {
         cancelCropMode();
+        if (m_canvas) {
+            m_canvas->setCursor(Qt::OpenHandCursor);
+        }
+        if (m_scrollArea && m_scrollArea->viewport()) {
+            m_scrollArea->viewport()->setCursor(Qt::OpenHandCursor);
+        }
     }
 }
 
@@ -634,7 +657,6 @@ void ImageViewer::rotateClockwise()
     QTransform t;
     t.rotate(90);
     m_originalImage = m_originalImage.transformed(t);
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -647,7 +669,6 @@ void ImageViewer::rotateCounterClockwise()
     QTransform t;
     t.rotate(-90);
     m_originalImage = m_originalImage.transformed(t);
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -658,7 +679,6 @@ void ImageViewer::flipHorizontal()
     if (m_originalImage.isNull()) return;
     pushUndoState();
     m_originalImage = m_originalImage.mirrored(true, false);
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -669,7 +689,6 @@ void ImageViewer::flipVertical()
     if (m_originalImage.isNull()) return;
     pushUndoState();
     m_originalImage = m_originalImage.mirrored(false, true);
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -680,7 +699,6 @@ void ImageViewer::invertColors()
     if (!m_isEditMode || m_originalImage.isNull()) return;
     pushUndoState();
     m_originalImage.invertPixels();
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -690,7 +708,6 @@ void ImageViewer::updateScaledPixmap()
 {
     if (m_originalImage.isNull()) {
         m_scaledPixmap = QPixmap();
-        m_sourcePixmap = QPixmap();
         if (m_canvas) m_canvas->setPixmap(m_scaledPixmap, QSize(0, 0));
         return;
     }
@@ -722,6 +739,9 @@ void ImageViewer::updateScaledPixmap()
     constexpr int MAX_SAFE_DIM = 16384;
     if (targetSize.width() > MAX_SAFE_DIM || targetSize.height() > MAX_SAFE_DIM) {
         targetSize.scale(MAX_SAFE_DIM, MAX_SAFE_DIM, Qt::KeepAspectRatio);
+        if (!m_fitToWindow && m_originalImage.width() > 0) {
+            m_zoomFactor = static_cast<double>(targetSize.width()) / static_cast<double>(m_originalImage.width());
+        }
     }
 
     if (m_scaledPixmap.isNull() || m_scaledPixmap.size() != targetSize) {
@@ -739,6 +759,43 @@ void ImageViewer::updateScaledPixmap()
     }
 }
 
+void ImageViewer::updateScaledPixmapFast()
+{
+    if (m_originalImage.isNull()) return;
+
+    QSize viewportSize;
+    if (m_scrollArea && m_scrollArea->viewport() &&
+        m_scrollArea->viewport()->width() > 50 && m_scrollArea->viewport()->height() > 50) {
+        viewportSize = m_scrollArea->viewport()->size();
+    } else if (width() > 50 && height() > 50) {
+        viewportSize = size();
+    } else {
+        viewportSize = QSize(800, 600);
+    }
+
+    QSize targetSize = m_originalImage.size().scaled(viewportSize, Qt::KeepAspectRatio);
+    if (m_originalImage.width() > 0) {
+        m_zoomFactor = static_cast<double>(targetSize.width()) / static_cast<double>(m_originalImage.width());
+    }
+    if (targetSize.width() < 1) targetSize.setWidth(1);
+    if (targetSize.height() < 1) targetSize.setHeight(1);
+
+    m_scaledPixmap = QPixmap::fromImage(
+        m_originalImage.scaled(targetSize, Qt::KeepAspectRatio, Qt::FastTransformation)
+    );
+    if (m_canvas) {
+        m_canvas->setPixmap(m_scaledPixmap, m_scaledPixmap.size());
+    }
+}
+
+void ImageViewer::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    if (m_fitToWindow) {
+        updateScaledPixmap();
+    }
+}
+
 void ImageViewer::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
@@ -746,7 +803,14 @@ void ImageViewer::resizeEvent(QResizeEvent *event)
         layout()->activate();
     }
     if (m_fitToWindow) {
-        updateScaledPixmap();
+        if (m_originalImage.width() * m_originalImage.height() > 1920 * 1080) {
+            updateScaledPixmapFast();
+            if (m_smoothResizeTimer) {
+                m_smoothResizeTimer->start(35);
+            }
+        } else {
+            updateScaledPixmap();
+        }
     }
 }
 
@@ -848,7 +912,6 @@ void ImageViewer::undo()
     if (m_undoStack.isEmpty()) return;
     m_redoStack.append(m_originalImage);
     m_originalImage = m_undoStack.takeLast();
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -860,7 +923,6 @@ void ImageViewer::redo()
     if (m_redoStack.isEmpty()) return;
     m_undoStack.append(m_originalImage);
     m_originalImage = m_redoStack.takeLast();
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -875,7 +937,6 @@ void ImageViewer::resizeImage(int newWidth, int newHeight, Qt::TransformationMod
 
     pushUndoState();
     m_originalImage = m_originalImage.scaled(newWidth, newHeight, Qt::IgnoreAspectRatio, mode);
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
 
     // Reset fit-to-window and switch to 100% (1:1) zoom so user immediately perceives the actual size change
@@ -893,7 +954,6 @@ void ImageViewer::applyModifiedImage(const QImage &newImage)
 
     pushUndoState();
     m_originalImage = newImage;
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -912,7 +972,6 @@ void ImageViewer::adjustImage(int brightness, int contrast, int saturation,
     pushUndoState();
     m_originalImage = ImageProcessor::adjust(m_originalImage, brightness, contrast, saturation,
                                             hue, temperature, red, green, blue);
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
@@ -926,7 +985,6 @@ void ImageViewer::applyCrop(const QRect &cropRect)
 
     pushUndoState();
     m_originalImage = m_originalImage.copy(validRect);
-    m_sourcePixmap = QPixmap();
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();

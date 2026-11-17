@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "frameless_dialog.h"
 
 class QSpinBox;
 class QDoubleSpinBox;
@@ -12,7 +12,7 @@ class QLabel;
  * @brief Modal dialog allowing the user to resize an image by exact pixels or percentage,
  * with optional aspect-ratio locking, quick presets, and interpolation quality options.
  */
-class ImageResizeDialog : public QDialog {
+class ImageResizeDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

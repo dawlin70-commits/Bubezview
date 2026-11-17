@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QSlider>
 #include <QLabel>
 #include <QPushButton>
@@ -129,7 +129,7 @@ private:
  * @class AudioTrimDialog
  * @brief Unified audio trimming, sound filtering, noise reduction, and restoration suite.
  */
-class AudioTrimDialog : public QDialog {
+class AudioTrimDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

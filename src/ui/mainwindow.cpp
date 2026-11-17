@@ -62,21 +62,31 @@ protected:
         const ThemePreset preset = ThemeManager::currentPreset();
         const bool isLight = (preset == ThemePreset::ModernLight || preset == ThemePreset::BreezeLight);
 
-        const qreal radius = 12.0;
+        const qreal radius = 18.0;
         const QRectF outerBounds = QRectF(rect());
-        const QRectF innerBounds = outerBounds.adjusted(0.75, 0.75, -0.75, -0.75);
+        const QRectF innerBounds = outerBounds.adjusted(0.85, 0.85, -0.85, -0.85);
 
-        // Fill exterior corner wedges outside the antialiased curve so the 1-bit window mask edge is invisible
+        // Clear exterior corner wedges outside the rounded curve so window corners are 100% transparent
         QPainterPath fullRectPath;
         fullRectPath.addRect(outerBounds);
         QPainterPath roundedPath;
         roundedPath.addRoundedRect(outerBounds, radius, radius);
-        QColor cornerCutColor = isLight ? QColor(0, 0, 0, 50) : QColor(0, 0, 0, 180);
-        p.fillPath(fullRectPath.subtracted(roundedPath), cornerCutColor);
+        p.setCompositionMode(QPainter::CompositionMode_Clear);
+        p.fillPath(fullRectPath.subtracted(roundedPath), Qt::transparent);
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-        // Draw crisp 1.4px antialiased rounded border ring around the window
-        QColor rimColor = isLight ? QColor(0, 0, 0, 42) : QColor(255, 255, 255, 34);
-        p.setPen(QPen(rimColor, 1.4));
+        // Draw glossy top-lit Liquid Glass gradient border ring around the window
+        QLinearGradient rimGrad(0, 0, 0, height());
+        if (isLight) {
+            rimGrad.setColorAt(0.0, QColor(255, 255, 255, 220));
+            rimGrad.setColorAt(0.25, QColor(15, 23, 42, 35));
+            rimGrad.setColorAt(1.0, QColor(15, 23, 42, 55));
+        } else {
+            rimGrad.setColorAt(0.0, QColor(255, 255, 255, 58));
+            rimGrad.setColorAt(0.35, QColor(255, 255, 255, 28));
+            rimGrad.setColorAt(1.0, QColor(255, 255, 255, 16));
+        }
+        p.setPen(QPen(QBrush(rimGrad), 1.6));
         p.setBrush(Qt::NoBrush);
         p.drawRoundedRect(innerBounds, radius, radius);
     }
@@ -97,7 +107,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_updateBanner(nullptr)
     , m_lblUpdateBannerText(nullptr)
 {
-    setAttribute(Qt::WA_TranslucentBackground, false);
+    setAttribute(Qt::WA_TranslucentBackground, true);
     if (menuBar()) {
         menuBar()->hide();
         menuBar()->setEnabled(false);
@@ -165,7 +175,7 @@ void MainWindow::setupUi()
     // =========================================================================
     // Minimal Header Bar (macOS Quick Look style with Canvas-First interface)
     // =========================================================================
-    QSettings settings;
+    QSettings settings("Bubez", "BubezView");
     m_minimalHeaderBar = new MinimalHeaderBar(this);
     m_minimalHeaderBar->applyThemePreset(ThemeManager::currentPreset());
     bool frameless = settings.value("ui/frameless_window", true).toBool();
@@ -190,6 +200,8 @@ void MainWindow::setupUi()
     connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomInRequested, this, &BaseSkin::zoomInCurrent);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomOutRequested, this, &BaseSkin::zoomOutCurrent);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomFitRequested, this, &BaseSkin::fitCurrent);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomFitWidthRequested, this, &BaseSkin::fitWidthCurrent);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomFitPageRequested, this, &BaseSkin::fitPageCurrent);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomResetRequested, this, &BaseSkin::resetZoomCurrent);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::zoomSetPercentRequested, this, [this](int percent) {
         double factor = percent / 100.0;
@@ -201,10 +213,16 @@ void MainWindow::setupUi()
             m_officeViewer->pdfViewer()->setZoomFactor(factor);
         }
     });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::handToolToggleRequested, this, [this]() {
+        bool newState = !isZoomToolActive();
+        toggleZoomTool(newState);
+        m_minimalHeaderBar->setHandToolChecked(newState);
+    });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::inspectorRequested, this, &BaseSkin::showFileInfo);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::trashRequested, this, &BaseSkin::deleteCurrentFile);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::shareRequested, this, &BaseSkin::showShareDialog);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::saveExportRequested, this, &MainWindow::showSaveExportMenu);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::exportRequested, this, &BaseSkin::exportCurrentFileAs);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::saveAsRequested, this, &BaseSkin::saveAsCurrentFile);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::settingsRequested, this, &BaseSkin::openSettings);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::editToggled, this, &MainWindow::setEditMode);
@@ -251,41 +269,6 @@ void MainWindow::setupUi()
         }
     });
 
-    if (m_pdfViewer) {
-        m_pdfViewer->setOnInPlaceTextEditStarted([this](const QString &text, const QFont &font, const QColor &color, PdfTextBgMode bgMode, const QColor &bgColor) {
-            if (!isEditMode()) return;
-            if (m_minimalHeaderBar) {
-                m_minimalHeaderBar->showContextualTextBar(text, font, color, bgMode, bgColor);
-            }
-        });
-        m_pdfViewer->setOnInPlaceTextEditFinished([this]() {
-            if (m_minimalHeaderBar && m_minimalHeaderBar->contextualBar() &&
-                m_minimalHeaderBar->contextualBar()->mode() == ContextBarMode::Text) {
-                m_minimalHeaderBar->hideContextualBar();
-            }
-        });
-        m_pdfViewer->setOnTextSelectedForContextualEdit([this](const QString &text, const QFont &font, const QColor &color, bool whiteout) {
-            if (!isEditMode()) return;
-            if (m_minimalHeaderBar && m_minimalHeaderBar->contextualBar()) {
-                m_minimalHeaderBar->contextualBar()->setTextContent(text);
-                m_minimalHeaderBar->contextualBar()->setTextFont(font);
-                m_minimalHeaderBar->contextualBar()->setTextColor(color);
-                m_minimalHeaderBar->contextualBar()->setWhiteout(whiteout);
-                m_minimalHeaderBar->showContextualTextBar(text, font, color, whiteout ? PdfTextBgMode::Auto : PdfTextBgMode::Transparent);
-            }
-        });
-        m_pdfViewer->setOnStampSelectedForContextualEdit([this](const QString &text, const QColor &color, qreal angle, int style, int fontSize) {
-            if (!isEditMode()) return;
-            if (m_minimalHeaderBar) {
-                m_minimalHeaderBar->showContextualStampBar();
-                auto *cBar = m_minimalHeaderBar->contextualBar();
-                if (cBar) {
-                    cBar->setStampProperties(text, color, angle, style, fontSize);
-                }
-            }
-        });
-    }
-
     if (m_minimalHeaderBar && m_minimalHeaderBar->contextualBar()) {
         connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::highlightPropertiesChanged, this, [this](const QColor &color, double opacity, bool /*isSpotlight*/) {
             if (m_pdfViewer) {
@@ -306,6 +289,28 @@ void MainWindow::setupUi()
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::cropRequested, this, [this]() {
         if (m_imageViewer) m_imageViewer->setCropModeActive(!m_imageViewer->isCropModeActive());
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::imageResizeRequested, this, &BaseSkin::openResizeImageDialog);
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::imageInvertRequested, this, [this]() {
+        if (m_imageViewer) m_imageViewer->invertColors();
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::imageInspectorRequested, this, &BaseSkin::showFileInfo);
+
+    // Office Contextual Actions
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::officeEditLoRequested, this, [this]() {
+        if (m_officeViewer) {
+            QMetaObject::invokeMethod(m_officeViewer, "onOpenInLibreOffice");
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::officeSavePdfRequested, this, [this]() {
+        if (m_officeViewer) {
+            QMetaObject::invokeMethod(m_officeViewer, "onSaveAsPdf");
+        }
+    });
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::officeExtractImagesRequested, this, [this]() {
+        if (m_officeViewer) {
+            QMetaObject::invokeMethod(m_officeViewer, "onExtractImages");
+        }
     });
 
     // PDF Tools - Direct Contextual Actions
@@ -372,29 +377,10 @@ void MainWindow::setupUi()
 
     // Contextual Action Bar property modifications
     if (m_minimalHeaderBar->contextualBar()) {
-        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::textPropertiesChanged, this, [this](const QFont &font, const QColor &color, bool whiteout) {
-            if (m_pdfViewer) {
-                m_pdfViewer->updateTypewriterProperties(font, color, whiteout);
-            }
-        });
-        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::textBgChanged, this, [this](PdfTextBgMode mode, const QColor &color) {
-            if (m_pdfViewer) {
-                m_pdfViewer->updateTextBgProperties(mode, color);
-            }
-        });
-        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::textDoneRequested, this, [this]() {
-            if (m_pdfViewer) {
-                m_pdfViewer->commitInPlaceTextEdit();
-            }
-        });
-        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::highlightPropertiesChanged, this, [this](const QColor &color, double opacity, bool isSpotlight) {
-            if (m_pdfViewer) {
-                m_pdfViewer->startHighlighter(color, opacity, isSpotlight);
-            }
-        });
         connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::shapePropertiesChanged, this, [this](int shapeType, int strokeWidth, const QColor &strokeColor, const QColor &fillColor) {
             if (!m_pdfViewer) return;
             m_pdfViewer->startShape(shapeType, strokeWidth, strokeColor, fillColor);
+            m_pdfViewer->updateShapeProperties(strokeWidth, strokeColor, fillColor);
         });
         connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::redactPropertiesChanged, this, [this](int style, bool permanent) {
             if (!m_pdfViewer) return;
@@ -410,14 +396,20 @@ void MainWindow::setupUi()
             if (!m_pdfViewer) return;
             m_pdfViewer->commitSelectedStampProperties();
         });
+        connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::closeRequested, this, [this]() {
+            if (m_pdfViewer) {
+                m_pdfViewer->exitContinuousToolMode();
+            }
+        });
         connect(m_minimalHeaderBar->contextualBar(), &ContextualActionBar::drawingPropertiesChanged, this, [this](int toolId, int strokeWidth, const QColor &strokeColor, const QColor &fillColor) {
             if (!m_pdfViewer) return;
-            if (toolId == 0) {
-                auto *cBar = m_minimalHeaderBar->contextualBar();
-                m_pdfViewer->startHighlighter(strokeColor, cBar ? cBar->highlighterOpacity() : 0.40, cBar ? cBar->isSpotlight() : false);
-            } else if (toolId == 5) {
+            auto *cBar = m_minimalHeaderBar->contextualBar();
+            if (cBar && cBar->mode() == ContextBarMode::Highlight) {
+                m_pdfViewer->startHighlighter(strokeColor, cBar->highlighterOpacity(), cBar->isSpotlight());
+            } else if (cBar && cBar->mode() == ContextBarMode::Redact) {
                 m_pdfViewer->startRedaction();
-            } else {
+            } else if (cBar && cBar->mode() == ContextBarMode::Shapes) {
+                m_pdfViewer->startShape(cBar->activeShapeType(), strokeWidth, strokeColor, fillColor);
                 m_pdfViewer->updateShapeProperties(strokeWidth, strokeColor, fillColor);
             }
         });
@@ -562,6 +554,7 @@ void MainWindow::setupUi()
     auto *centralLayout = qobject_cast<QVBoxLayout*>(m_centralContainer->layout());
     if (centralLayout) {
         centralLayout->insertWidget(0, m_minimalHeaderBar);
+        m_minimalHeaderBar->setOverlayContainer(m_centralContainer);
     }
 
     // Status bar with Breadcrumbs
@@ -603,6 +596,10 @@ void MainWindow::setupUi()
     bar->addWidget(m_fileInfoLabel, 1);
     bar->addPermanentWidget(m_btnUpdateNotification);
     bar->addPermanentWidget(m_statusLabel);
+    bar->hide();
+    bar->setFixedHeight(0);
+    bar->setMaximumHeight(0);
+    bar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 }
 
 void MainWindow::setEditMode(bool editMode)
@@ -646,6 +643,7 @@ void MainWindow::setEditMode(bool editMode)
         if (m_minimalHeaderBar) {
             m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_mediaViewer && m_mediaViewer->isAudioOnly());
             m_minimalHeaderBar->setEditMode(true);
+            m_minimalHeaderBar->setHandToolChecked(false);
         }
 
         if (m_mediaViewer && m_mediaViewer->isAudioOnly()) {
@@ -654,6 +652,9 @@ void MainWindow::setEditMode(bool editMode)
                 if (m_minimalHeaderBar) m_minimalHeaderBar->setActiveAudioWorkspace(1);
             }
         }
+        if (m_currentCategory != FileCategory::Pdf) {
+            fitCurrent();
+        }
     } else if (!editMode && wasInEdit) {
         // First exit edit mode in BaseSkin so viewers hide editing tools and collapse toolbars
         BaseSkin::setEditMode(false);
@@ -661,6 +662,7 @@ void MainWindow::setEditMode(bool editMode)
         if (m_minimalHeaderBar) {
             m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(false);
             m_minimalHeaderBar->setEditMode(false);
+            m_minimalHeaderBar->setHandToolChecked(true);
         }
 
         if (m_mediaViewer && m_mediaViewer->isAudioOnly()) {
@@ -691,11 +693,13 @@ void MainWindow::setEditMode(bool editMode)
                 setGeometry(m_preEditGeometry);
             }
         }
+        fitCurrent();
     } else {
         BaseSkin::setEditMode(editMode);
         if (m_minimalHeaderBar) {
             m_minimalHeaderBar->setAudioWorkspaceToolsAvailable(m_isEditMode && m_mediaViewer && m_mediaViewer->isAudioOnly());
             m_minimalHeaderBar->setEditMode(editMode);
+            m_minimalHeaderBar->setHandToolChecked(!editMode);
         }
     }
 }
@@ -729,7 +733,29 @@ void MainWindow::setupGlobalShortcuts()
     addWindowAction(QKeySequence::Print, &BaseSkin::printCurrentFile);
     addWindowAction(QKeySequence("Ctrl+Shift+C"), &BaseSkin::copyPathToClipboard);
     addWindowAction(QKeySequence("Ctrl+Return"), &BaseSkin::openWithDefault);
-    addWindowAction(QKeySequence::Delete, &BaseSkin::deleteCurrentFile);
+    auto isTextInputFocused = [this]() -> bool {
+        QWidget *fw = focusWidget();
+        while (fw) {
+            if (qobject_cast<QLineEdit*>(fw) ||
+                qobject_cast<QTextEdit*>(fw) ||
+                qobject_cast<QPlainTextEdit*>(fw) ||
+                qobject_cast<QAbstractSpinBox*>(fw)) {
+                return true;
+            }
+            fw = fw->parentWidget();
+        }
+        return false;
+    };
+
+    addWindowAction(QKeySequence::Delete, [this, isTextInputFocused]() {
+        if (isTextInputFocused()) {
+            return;
+        }
+        if (m_isEditMode && m_currentCategory == FileCategory::Text) {
+            return;
+        }
+        deleteCurrentFile();
+    });
     addWindowAction(QKeySequence("Ctrl+Q"), &QWidget::close);
     addWindowAction(QKeySequence("Ctrl+,"), &BaseSkin::openSettings);
 
@@ -741,12 +767,21 @@ void MainWindow::setupGlobalShortcuts()
     addWindowAction(QKeySequence("Ctrl+V"), &BaseSkin::pasteFromClipboard);
 
     // Image / Canvas Transformations
-    addWindowActionMulti({QKeySequence("R"), QKeySequence("Ctrl+R")}, &BaseSkin::rotateCurrentRight);
-    addWindowActionMulti({QKeySequence("L"), QKeySequence("Ctrl+Shift+R")}, &BaseSkin::rotateCurrentLeft);
-    addWindowAction(QKeySequence("H"), &BaseSkin::flipCurrentHorizontal);
-    addWindowAction(QKeySequence("V"), &BaseSkin::flipCurrentVertical);
-    addWindowAction(QKeySequence("C"), [this]() {
-        if (m_imageViewer) {
+    addWindowActionMulti({QKeySequence("R"), QKeySequence("Ctrl+R")}, [this, isTextInputFocused]() {
+        if (isTextInputFocused()) return;
+        rotateCurrentRight();
+    });
+    addWindowActionMulti({QKeySequence("L"), QKeySequence("Ctrl+Shift+R")}, [this, isTextInputFocused]() {
+        if (isTextInputFocused()) return;
+        rotateCurrentLeft();
+    });
+    addWindowAction(QKeySequence("V"), [this, isTextInputFocused]() {
+        if (isTextInputFocused()) return;
+        flipCurrentVertical();
+    });
+    addWindowAction(QKeySequence("C"), [this, isTextInputFocused]() {
+        if (isTextInputFocused()) return;
+        if (m_isEditMode && m_imageViewer) {
             m_imageViewer->setCropModeActive(!m_imageViewer->isCropModeActive());
         }
     });
@@ -768,11 +803,23 @@ void MainWindow::setupGlobalShortcuts()
     addWindowAction(QKeySequence("F4"), &BaseSkin::toggleFilmstrip);
     addWindowActionMulti({QKeySequence("Alt+Return"), QKeySequence("Ctrl+I")}, &BaseSkin::showFileInfo);
 
-    // Zoom
+    // Zoom & Pan
     addWindowActionMulti({QKeySequence("Ctrl++"), QKeySequence("Ctrl+=")}, &BaseSkin::zoomInCurrent);
     addWindowAction(QKeySequence("Ctrl+-"), &BaseSkin::zoomOutCurrent);
     addWindowAction(QKeySequence("Ctrl+0"), &BaseSkin::resetZoomCurrent);
     addWindowAction(QKeySequence("Ctrl+9"), &BaseSkin::fitCurrent);
+    addWindowAction(QKeySequence("H"), [this, isTextInputFocused]() {
+        if (isTextInputFocused()) return;
+        if (m_isEditMode) {
+            flipCurrentHorizontal();
+        } else {
+            bool newState = !isZoomToolActive();
+            toggleZoomTool(newState);
+            if (m_minimalHeaderBar) {
+                m_minimalHeaderBar->setHandToolChecked(newState);
+            }
+        }
+    });
 
     // Search & Tools
     addWindowAction(QKeySequence("Ctrl+F"), &BaseSkin::searchInDocument);
@@ -854,6 +901,7 @@ void MainWindow::onFileLoaded(const QString &filePath, FileCategory category)
 
 void MainWindow::updateStatusBar()
 {
+    if (!statusBar() || !statusBar()->isVisible()) return;
     updateBreadcrumbs();
     m_fileIndexLabel->setText(fileIndexText());
     m_fileInfoLabel->setText(fileInfoText());
@@ -863,6 +911,27 @@ void MainWindow::updateBreadcrumbs()
 {
     if (!m_breadcrumbLayout) return;
 
+    if (m_currentFilePath.isEmpty()) {
+        m_lastBreadcrumbDir.clear();
+        QLayoutItem *child;
+        while ((child = m_breadcrumbLayout->takeAt(0)) != nullptr) {
+            if (child->widget()) {
+                child->widget()->deleteLater();
+            }
+            delete child;
+        }
+        return;
+    }
+
+    QFileInfo fi(m_currentFilePath);
+    QDir d = fi.isDir() ? QDir(m_currentFilePath) : fi.dir();
+    QString canonical = d.canonicalPath();
+
+    if (canonical == m_lastBreadcrumbDir && !m_lastBreadcrumbDir.isEmpty()) {
+        return;
+    }
+    m_lastBreadcrumbDir = canonical;
+
     // Clear old breadcrumbs
     QLayoutItem *child;
     while ((child = m_breadcrumbLayout->takeAt(0)) != nullptr) {
@@ -871,12 +940,6 @@ void MainWindow::updateBreadcrumbs()
         }
         delete child;
     }
-
-    if (m_currentFilePath.isEmpty()) return;
-
-    QFileInfo fi(m_currentFilePath);
-    QDir d = fi.isDir() ? QDir(m_currentFilePath) : fi.dir();
-    QString canonical = d.canonicalPath();
 
     QString home = QDir::homePath();
     QString displayPath = canonical;
@@ -937,8 +1000,34 @@ void MainWindow::updateBreadcrumbs()
 void MainWindow::applyCurrentTheme()
 {
     BaseSkin::applyCurrentTheme();
+    ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
     if (m_minimalHeaderBar) {
-        m_minimalHeaderBar->applyThemePreset(ThemeManager::currentPreset());
+        m_minimalHeaderBar->setUiScale(ThemeManager::uiScalePercent());
+        m_minimalHeaderBar->applyThemePreset(preset);
+    }
+    if (m_centralContainer) {
+        const int radius = (m_isFrameless && !isMaximized() && !isFullScreen()) ? 18 : 0;
+        const double alpha = qBound(50, ThemeManager::glassOpacity(), 100) / 100.0;
+        const QString aStr = QString::number(alpha, 'f', 2);
+        if (preset == ThemePreset::ZincGray) {
+            m_centralContainer->setStyleSheet(
+                QStringLiteral("#centralContainer { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+                               "stop:0 rgba(62, 63, 68, %2), stop:0.5 rgba(52, 53, 58, %2), stop:1 rgba(42, 43, 47, %2)); "
+                               "border: none; border-radius: %1px; }").arg(QString::number(radius), aStr)
+            );
+        } else if (ThemeManager::isDark(preset)) {
+            m_centralContainer->setStyleSheet(
+                QStringLiteral("#centralContainer { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+                               "stop:0 rgba(30, 37, 56, %2), stop:0.5 rgba(21, 26, 40, %2), stop:1 rgba(14, 18, 28, %2)); "
+                               "border: none; border-radius: %1px; }").arg(QString::number(radius), aStr)
+            );
+        } else {
+            m_centralContainer->setStyleSheet(
+                QStringLiteral("#centralContainer { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+                               "stop:0 rgba(238, 241, 246, %2), stop:0.5 rgba(228, 232, 238, %2), stop:1 rgba(216, 221, 228, %2)); "
+                               "border: none; border-radius: %1px; }").arg(QString::number(radius), aStr)
+            );
+        }
     }
     updateFramelessBorderStyle();
     updateStatusBar();
@@ -1267,6 +1356,9 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     BaseSkin::resizeEvent(event);
     updateFramelessBorderStyle();
+    if (m_minimalHeaderBar) {
+        m_minimalHeaderBar->updateContextualBarPosition();
+    }
 }
 
 Qt::Edges MainWindow::calculateResizeEdges(const QPoint &globalPos) const
@@ -1302,7 +1394,10 @@ void MainWindow::updateResizeCursor(Qt::Edges edges)
 {
     if (!edges) {
         if (m_isBorderCursorSet) {
-            QGuiApplication::restoreOverrideCursor();
+            unsetCursor();
+            while (QGuiApplication::overrideCursor()) {
+                QGuiApplication::restoreOverrideCursor();
+            }
             m_isBorderCursorSet = false;
         }
         return;
@@ -1321,12 +1416,8 @@ void MainWindow::updateResizeCursor(Qt::Edges edges)
         resizeCursor = Qt::SizeVerCursor;
     }
 
-    if (!m_isBorderCursorSet) {
-        QGuiApplication::setOverrideCursor(resizeCursor);
-        m_isBorderCursorSet = true;
-    } else {
-        QGuiApplication::changeOverrideCursor(resizeCursor);
-    }
+    setCursor(resizeCursor);
+    m_isBorderCursorSet = true;
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
@@ -1381,8 +1472,10 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         }
         break;
     }
-    case QEvent::Leave: {
-        if (watched == this && m_isBorderCursorSet && !m_isManualResizing) {
+    case QEvent::Leave:
+    case QEvent::WindowDeactivate:
+    case QEvent::FocusOut: {
+        if (m_isBorderCursorSet && !m_isManualResizing) {
             updateResizeCursor(Qt::Edges());
         }
         break;
@@ -1442,7 +1535,7 @@ void MainWindow::updateFramelessBorderStyle()
             m_borderOverlay = new FramelessBorderOverlay(this);
         }
 
-        // Only regenerate and apply the 12px rounded corner window mask when the window size actually changes
+        // Only regenerate and apply the 18px rounded corner window mask when the window size actually changes
         if (m_lastMaskSize != size()) {
             m_lastMaskSize = size();
             QBitmap maskBmp(size());
@@ -1452,7 +1545,7 @@ void MainWindow::updateFramelessBorderStyle()
                 maskPainter.setRenderHint(QPainter::Antialiasing, true);
                 maskPainter.setPen(Qt::NoPen);
                 maskPainter.setBrush(Qt::color1);
-                maskPainter.drawRoundedRect(rect(), 12, 12);
+                maskPainter.drawRoundedRect(rect(), 18, 18);
             }
             setMask(maskBmp);
         }
@@ -1549,6 +1642,7 @@ void MainWindow::setupPdfViewerConnections()
         }
     });
     m_pdfViewer->setOnTextSelectedForContextualEdit([this](const QString &text, const QFont &font, const QColor &color, bool whiteout) {
+        if (!isEditMode()) return;
         if (m_minimalHeaderBar) {
             m_minimalHeaderBar->showContextualTextBar(text, font, color, whiteout ? PdfTextBgMode::Auto : PdfTextBgMode::Transparent);
             auto *cBar = m_minimalHeaderBar->contextualBar();
@@ -1561,6 +1655,7 @@ void MainWindow::setupPdfViewerConnections()
         }
     });
     m_pdfViewer->setOnStampSelectedForContextualEdit([this](const QString &text, const QColor &color, qreal angle, int style, int fontSize) {
+        if (!isEditMode()) return;
         if (m_minimalHeaderBar) {
             m_minimalHeaderBar->showContextualStampBar();
             auto *cBar = m_minimalHeaderBar->contextualBar();
@@ -1677,20 +1772,8 @@ void MainWindow::showSaveExportMenu(const QPoint &globalPos)
     actSaveAs->setShortcut(QKeySequence::SaveAs);
     menu.addSeparator();
 
-    if (m_currentCategory == FileCategory::Pdf && m_pdfViewer) {
-        menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::File, icColor, 16), tr("Save Current Page as PDF..."), this, &BaseSkin::saveCurrentPageAsPdf);
-        menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::File, icColor, 16), tr("Save Current Page as Image..."), this, &BaseSkin::saveCurrentPageAsImage);
-        menu.addSeparator();
-    }
-
-    menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::ExternalLink, icColor, 16), tr("Export in Other Formats..."), this, &BaseSkin::exportCurrentFileAs);
-
-    if (m_currentCategory == FileCategory::Pdf) {
-        menu.addSeparator();
-        menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::Repair, icColor, 16), tr("Repair PDF..."), this, [this]() {
-            openPdfRepairDialog(m_currentFilePath);
-        });
-    }
+    QAction *actExport = menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::ExternalLink, icColor, 16), tr("Export..."), this, &BaseSkin::exportCurrentFileAs);
+    actExport->setShortcut(QKeySequence("Ctrl+E"));
 
     menu.addSeparator();
     QAction *actPrint = menu.addAction(VectorIcons::createUiIcon(VectorIcons::UiIcon::File, icColor, 16), tr("Print..."), this, &BaseSkin::printCurrentFile);

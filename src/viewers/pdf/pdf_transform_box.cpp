@@ -5,6 +5,8 @@
 
 #include "pdf_transform_box.h"
 #include "pdf_canvas_tools.h"
+#include "font_resolution_helper.h"
+#include "ui/dialogs/font_resolution_dialog.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QMouseEvent>
@@ -24,6 +26,7 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
     , m_boxRect(100, 100, 200, 80)
     , m_activeHandle(None)
     , m_whiteout(false)
+    , m_textBgMode(PdfTextBgMode::Transparent)
     , m_angle(0.0)
     , m_opacity(1.0)
 {
@@ -74,7 +77,17 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
     m_btnEdit = new QPushButton(tr("✏️ Edit"), m_toolbar);
     m_btnEdit->setObjectName(QStringLiteral("BtnEdit"));
     m_btnEdit->setCursor(Qt::PointingHandCursor);
-    connect(m_btnEdit, &QPushButton::clicked, this, &PdfTransformBox::editRequested);
+    connect(m_btnEdit, &QPushButton::clicked, this, [this]() {
+        if (m_itemType == PdfTransformItemType::Text) {
+            if (m_isPlacementMode) {
+                emit editRequested();
+            } else {
+                setPlacementMode(true);
+            }
+        } else {
+            emit editRequested();
+        }
+    });
 
     m_btnRedactBlack = new QPushButton(m_toolbar);
     m_btnRedactBlack->setObjectName(QStringLiteral("BtnRedactBlack"));
@@ -125,25 +138,59 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
     m_btnApplyAndContinue->setVisible(false);
     connect(m_btnApplyAndContinue, &QPushButton::clicked, this, &PdfTransformBox::applyAndContinue);
 
+    m_btnFitWidth = new QPushButton(tr("↔ Fit Width"), m_toolbar);
+    m_btnFitWidth->setObjectName(QStringLiteral("BtnFitWidth"));
+    m_btnFitWidth->setCursor(Qt::PointingHandCursor);
+    m_btnFitWidth->setToolTip(tr("Fit image proportionally across page width"));
+    m_btnFitWidth->setVisible(false);
+    connect(m_btnFitWidth, &QPushButton::clicked, this, &PdfTransformBox::fitToPageWidth);
+
+    m_btnFitPage = new QPushButton(tr("⛶ Fit Page"), m_toolbar);
+    m_btnFitPage->setObjectName(QStringLiteral("BtnFitPage"));
+    m_btnFitPage->setCursor(Qt::PointingHandCursor);
+    m_btnFitPage->setToolTip(tr("Fit image proportionally inside printable page area"));
+    m_btnFitPage->setVisible(false);
+    connect(m_btnFitPage, &QPushButton::clicked, this, &PdfTransformBox::fitToFullPage);
+
     m_btnCutArea = new QPushButton(tr("✂️ Cut"), m_toolbar);
     m_btnCutArea->setObjectName(QStringLiteral("BtnCutArea"));
     m_btnCutArea->setCursor(Qt::PointingHandCursor);
-    m_btnCutArea->setToolTip(tr("Cut selected area and copy to clipboard (Ctrl+X)"));
     m_btnCutArea->setVisible(false);
     connect(m_btnCutArea, &QPushButton::clicked, this, &PdfTransformBox::cutAreaRequested);
 
-    m_btnCopyArea = new QPushButton(tr("📋 Copy"), m_toolbar);
+    m_btnCopyText = new QPushButton(tr("📋 Copy Text"), m_toolbar);
+    m_btnCopyText->setObjectName(QStringLiteral("BtnCopyText"));
+    m_btnCopyText->setCursor(Qt::PointingHandCursor);
+    m_btnCopyText->setToolTip(tr("Extract and copy selectable text from area"));
+    m_btnCopyText->setVisible(false);
+    connect(m_btnCopyText, &QPushButton::clicked, this, &PdfTransformBox::copyAreaTextRequested);
+
+    m_btnCopyArea = new QPushButton(tr("🖼️ Copy Image"), m_toolbar);
     m_btnCopyArea->setObjectName(QStringLiteral("BtnCopyArea"));
     m_btnCopyArea->setCursor(Qt::PointingHandCursor);
-    m_btnCopyArea->setToolTip(tr("Copy selected area to clipboard at 300 DPI (Ctrl+C)"));
+    m_btnCopyArea->setToolTip(tr("Copy selected area to clipboard as image at 300 DPI"));
     m_btnCopyArea->setVisible(false);
     connect(m_btnCopyArea, &QPushButton::clicked, this, &PdfTransformBox::copyAreaRequested);
+
+    m_btnOcrArea = new QPushButton(tr("🔍 OCR"), m_toolbar);
+    m_btnOcrArea->setObjectName(QStringLiteral("BtnOcrArea"));
+    m_btnOcrArea->setCursor(Qt::PointingHandCursor);
+    m_btnOcrArea->setToolTip(tr("Recognize text in this area using OCR"));
+    m_btnOcrArea->setVisible(false);
+    connect(m_btnOcrArea, &QPushButton::clicked, this, &PdfTransformBox::ocrAreaRequested);
 
     m_btnCancel = new QPushButton(tr("✕ Cancel"), m_toolbar);
     m_btnCancel->setObjectName(QStringLiteral("BtnCancel"));
     m_btnCancel->setCursor(Qt::PointingHandCursor);
     connect(m_btnCancel, &QPushButton::clicked, this, &PdfTransformBox::cancelled);
 
+    m_btnFontStatus = new QPushButton(m_toolbar);
+    m_btnFontStatus->setObjectName(QStringLiteral("BtnFontStatus"));
+    m_btnFontStatus->setCursor(Qt::PointingHandCursor);
+    m_btnFontStatus->setVisible(false);
+    connect(m_btnFontStatus, &QPushButton::clicked, this, &PdfTransformBox::onFontStatusClicked);
+
+    tbLayout->addWidget(m_btnFontStatus);
     tbLayout->addWidget(m_btnEdit);
     tbLayout->addWidget(m_btnRedactBlack);
     tbLayout->addWidget(m_btnRedactWhite);
@@ -151,8 +198,12 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
     tbLayout->addWidget(m_btnRedactCustom);
     tbLayout->addWidget(m_btnApply);
     tbLayout->addWidget(m_btnApplyAndContinue);
+    tbLayout->addWidget(m_btnFitWidth);
+    tbLayout->addWidget(m_btnFitPage);
     tbLayout->addWidget(m_btnCutArea);
+    tbLayout->addWidget(m_btnCopyText);
     tbLayout->addWidget(m_btnCopyArea);
+    tbLayout->addWidget(m_btnOcrArea);
     tbLayout->addWidget(m_btnCancel);
 
     // Inline canvas text editor
@@ -162,20 +213,25 @@ PdfTransformBox::PdfTransformBox(QWidget *parent)
     m_inlineTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_inlineTextEdit->setLineWrapMode(QTextEdit::WidgetWidth);
     m_inlineTextEdit->setAcceptRichText(false);
-    m_inlineTextEdit->document()->setDocumentMargin(2);
+    m_inlineTextEdit->document()->setDocumentMargin(0);
     m_inlineTextEdit->installEventFilter(this);
     m_inlineTextEdit->hide();
 
     connect(m_inlineTextEdit, &QTextEdit::textChanged, this, [this]() {
         m_text = m_inlineTextEdit->toPlainText();
         m_isTextModified = true;
-        if (!m_text.contains('\n')) {
-            int textW = QFontMetrics(screenFont()).horizontalAdvance(m_text);
-            if (textW + 36 > m_boxRect.width()) {
-                m_boxRect.setWidth(textW + 36);
-            }
+        const QStringList lines = m_text.split('\n');
+        QFontMetrics fm(screenFont());
+        int maxLineW = 0;
+        for (const QString &line : lines) {
+            maxLineW = std::max(maxLineW, fm.horizontalAdvance(line));
+        }
+        int extraPad = std::max(16, qRound(fm.height() * 0.5));
+        if (maxLineW + extraPad > m_boxRect.width()) {
+            m_boxRect.setWidth(maxLineW + extraPad);
         }
         adjustHeightToFitText();
+        updateFontStatusBadge();
     });
 
     updateRedactionColorButtons();
@@ -198,10 +254,12 @@ void PdfTransformBox::setPlacementMode(bool placementOnly, const QPoint &centerO
     m_isPlacementMode = placementOnly;
     if (placementOnly && m_itemType == PdfTransformItemType::Text) {
         if (m_inlineTextEdit) {
+            m_text = m_inlineTextEdit->toPlainText();
             m_inlineTextEdit->hide();
         }
         if (m_btnEdit) {
             m_btnEdit->setText(tr("✏️ Edit"));
+            m_btnEdit->setToolTip(tr("Switch to edit mode"));
             m_btnEdit->setVisible(true);
         }
 
@@ -216,17 +274,36 @@ void PdfTransformBox::setPlacementMode(bool placementOnly, const QPoint &centerO
             maxLineW = std::max(maxLineW, fm.horizontalAdvance(line));
         }
 
-        // Provide a comfortable margin buffer so font metric variations
-        // between Qt and Poppler font engines never cause premature word wrapping.
-        int naturalW = std::max({100, maxLineW + 28, textBound.width() + 16});
-        int w = std::max(naturalW, suggestedWidth);
-        int h = std::max({20, textBound.height() + 8, static_cast<int>(lines.size() * fm.lineSpacing() + 6)});
+        // Bounding box matching text dimensions with comfortable margin buffer
+        int extraPad = std::max(20, qRound(fm.height() * 0.6));
+        int extraH = std::max(6, fm.descent() + 4);
+        int naturalW = std::max(40, maxLineW + extraPad);
+        int w = (suggestedWidth > 0) ? std::max(naturalW, suggestedWidth) : naturalW;
+        int h = std::max({fm.lineSpacing() + extraH, static_cast<int>(lines.size() * fm.lineSpacing() + extraH), textBound.height() + extraH});
 
         if (!topLeftPos.isNull()) {
-            m_boxRect = QRect(topLeftPos.x(), topLeftPos.y(), w, h);
+            int posX = topLeftPos.x();
+            int posY = topLeftPos.y();
+            if (width() > w && posX + w > width() - 6) {
+                posX = std::max(6, width() - w - 6);
+            }
+            if (height() > h && posY + h > height() - 6) {
+                posY = std::max(6, height() - h - 6);
+            }
+            m_boxRect = QRect(posX, posY, w, h);
+        } else if (!centerOnPoint.isNull()) {
+            m_boxRect = QRect(centerOnPoint.x() - w / 2, centerOnPoint.y() - h / 2, w, h);
         } else {
-            QPoint center = centerOnPoint.isNull() ? m_boxRect.center() : centerOnPoint;
-            m_boxRect = QRect(center.x() - w / 2, center.y() - h / 2, w, h);
+            // Keep current top-left position so text doesn't jump when toggling to move
+            int posX = m_boxRect.left();
+            int posY = m_boxRect.top();
+            if (width() > w && posX + w > width() - 6) {
+                posX = std::max(6, width() - w - 6);
+            }
+            if (height() > h && posY + h > height() - 6) {
+                posY = std::max(6, height() - h - 6);
+            }
+            m_boxRect = QRect(posX, posY, w, h);
         }
 
         if (width() > m_boxRect.width()) {
@@ -245,15 +322,18 @@ void PdfTransformBox::setPlacementMode(bool placementOnly, const QPoint &centerO
         emit geometryChanged(m_boxRect);
     } else if (!placementOnly && m_itemType == PdfTransformItemType::Text) {
         if (m_inlineTextEdit) {
-            m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+            m_inlineTextEdit->setGeometry(m_boxRect);
             m_inlineTextEdit->show();
             m_inlineTextEdit->setFocus();
         }
         if (m_btnEdit) {
-            m_btnEdit->setVisible(false);
+            m_btnEdit->setText(tr("✥ Move"));
+            m_btnEdit->setToolTip(tr("Switch to move & placement mode"));
+            m_btnEdit->setVisible(true);
         }
         update();
     }
+    emit placementModeChanged(placementOnly);
 }
 
 void PdfTransformBox::setHasCollision(bool collision)
@@ -264,7 +344,7 @@ void PdfTransformBox::setHasCollision(bool collision)
         if (collision) {
             m_btnApply->setStyleSheet(QStringLiteral(
                 "QPushButton#BtnApply { background-color: #991B1B; color: #FCA5A5; border: 1px solid #EF4444; }"));
-            m_btnApply->setToolTip(tr("⚠️ Cannot apply: box borders overlap existing text on the page"));
+            m_btnApply->setToolTip(tr("⚠️ Warning: Box overlaps existing text (click to apply anyway)"));
         } else {
             m_btnApply->setStyleSheet(QString());
             m_btnApply->setToolTip(QString());
@@ -293,8 +373,19 @@ void PdfTransformBox::updateInlineTextEditStyle()
     if (!m_inlineTextEdit) return;
     QSignalBlocker blocker(m_inlineTextEdit);
     QSignalBlocker docBlocker(m_inlineTextEdit->document());
-    m_inlineTextEdit->setFont(screenFont());
+    QFont f = screenFont();
+    m_inlineTextEdit->setFont(f);
+    m_inlineTextEdit->document()->setDefaultFont(f);
     m_inlineTextEdit->setAlignment(m_textAlignment);
+
+    QTextCursor cursor = m_inlineTextEdit->textCursor();
+    cursor.select(QTextCursor::Document);
+    QTextCharFormat fmt;
+    fmt.setFont(f);
+    if (m_color.isValid()) {
+        fmt.setForeground(m_color);
+    }
+    cursor.mergeCharFormat(fmt);
 
     QString bg;
     if (m_textBgMode == PdfTextBgMode::Transparent) {
@@ -304,16 +395,24 @@ void PdfTransformBox::updateInlineTextEditStyle()
     }
     QString colorHex = m_color.isValid() ? m_color.name(QColor::HexRgb) : QStringLiteral("#000000");
 
+    QString weightCss = f.bold() ? QStringLiteral("font-weight: bold;") : QStringLiteral("font-weight: normal;");
+    QString styleCss = f.italic() ? QStringLiteral("font-style: italic;") : QStringLiteral("font-style: normal;");
+
     m_inlineTextEdit->setStyleSheet(QString(
         "QTextEdit {"
         "  background-color: %1;"
         "  color: %2;"
-        "  border: 1px dashed rgba(56, 189, 248, 0.7);"
+        "  font-family: '%3';"
+        "  font-size: %4px;"
+        "  %5"
+        "  %6"
+        "  border: none;"
         "  padding: 0px;"
+        "  margin: 0px;"
         "  selection-background-color: #38bdf8;"
         "  selection-color: #ffffff;"
         "}"
-    ).arg(bg, colorHex));
+    ).arg(bg, colorHex, f.family()).arg(f.pixelSize()).arg(weightCss, styleCss));
 }
 
 void PdfTransformBox::adjustHeightToFitText()
@@ -322,29 +421,22 @@ void PdfTransformBox::adjustHeightToFitText()
 
     QFontMetrics fm(screenFont());
     int lineSpacing = fm.lineSpacing();
+    int extraH = std::max(6, fm.descent() + 4);
 
-    int innerW = std::max(60, m_boxRect.width() - 8);
+    int innerW = std::max(40, m_boxRect.width());
     m_inlineTextEdit->document()->setTextWidth(innerW);
     int docH = static_cast<int>(std::ceil(m_inlineTextEdit->document()->size().height()));
 
-    int targetH;
-    if (!m_text.contains('\n') && docH <= lineSpacing * 1.5) {
-        // Pristine single line
-        targetH = std::max({lineSpacing + 6, 22, m_minBoxHeight});
-    } else {
-        // Multi-line content or wrapped column paragraph
-        int minH = static_cast<int>(std::ceil(lineSpacing * 1.2)) + 12;
-        targetH = std::max({minH, docH + 8, m_minBoxHeight});
-    }
+    int targetH = std::max({lineSpacing + extraH, docH + extraH, m_minBoxHeight});
 
     if (m_boxRect.height() != targetH) {
         m_boxRect.setHeight(targetH);
-        m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+        m_inlineTextEdit->setGeometry(m_boxRect);
         updateHandles();
         repositionToolbar();
         update();
     } else {
-        m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+        m_inlineTextEdit->setGeometry(m_boxRect);
     }
 }
 
@@ -368,7 +460,7 @@ bool PdfTransformBox::eventFilter(QObject *watched, QEvent *event)
             if (newRect.width() >= 24 && newRect.height() >= 16) {
                 m_boxRect = newRect;
                 if (m_itemType == PdfTransformItemType::Text && m_inlineTextEdit) {
-                    m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+                    m_inlineTextEdit->setGeometry(m_boxRect);
                 }
                 updateHandles();
                 repositionToolbar();
@@ -405,7 +497,7 @@ bool PdfTransformBox::eventFilter(QObject *watched, QEvent *event)
 
             if (dx != 0 || dy != 0) {
                 m_boxRect.translate(dx, dy);
-                m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+                m_inlineTextEdit->setGeometry(m_boxRect);
                 updateHandles();
                 repositionToolbar();
                 update();
@@ -449,7 +541,17 @@ void PdfTransformBox::updateTextContent(const QString &text)
 void PdfTransformBox::setScaleFactor(double scaleFactor)
 {
     if (scaleFactor <= 0.01 || qFuzzyCompare(m_scaleFactor, scaleFactor)) return;
+    double oldScale = m_scaleFactor;
     m_scaleFactor = scaleFactor;
+
+    if (oldScale > 0.01 && m_boxRect.isValid() && !m_boxRect.isEmpty()) {
+        double ratio = m_scaleFactor / oldScale;
+        m_boxRect = QRect(qRound(m_boxRect.x() * ratio),
+                          qRound(m_boxRect.y() * ratio),
+                          std::max(20, qRound(m_boxRect.width() * ratio)),
+                          std::max(16, qRound(m_boxRect.height() * ratio)));
+    }
+
     updateInlineTextEditStyle();
     if (m_itemType == PdfTransformItemType::Text) {
         if (m_isPlacementMode) {
@@ -481,6 +583,7 @@ void PdfTransformBox::updateTextFont(const QFont &font)
 {
     m_font = font;
     updateInlineTextEditStyle();
+    updateFontStatusBadge();
     if (m_isPlacementMode) {
         setPlacementMode(true, m_boxRect.center(), m_boxRect.width());
         emit geometryChanged(m_boxRect);
@@ -526,25 +629,38 @@ void PdfTransformBox::showText(const QString &text, const QFont &font, const QCo
     setHasCollision(false);
 
     QFontMetrics fm(screenFont());
-    int textW = fm.horizontalAdvance(text);
+    const QStringList lines = text.split('\n');
+    int maxLineW = 0;
+    for (const QString &line : lines) {
+        maxLineW = std::max(maxLineW, fm.horizontalAdvance(line));
+    }
     int lineH = fm.lineSpacing();
+    int neededH = lines.size() > 1 ? static_cast<int>(lines.size() * lineH) : lineH;
 
     if (initialRect.isValid() && initialRect.width() > 0 && initialRect.height() > 0) {
-        // Position directly over the existing text with generous width margin to prevent premature wrap
-        int targetW = std::max(initialRect.width() + 36, textW + 40);
-        int targetH = std::max(initialRect.height() + 4, lineH + 6);
+        // Tight bounding box: snap directly to exact bounding box with subtle +8px cursor breath room
+        int targetW = std::max(initialRect.width(), maxLineW + 8);
+        int targetH = lines.size() > 1 ? std::max(initialRect.height(), static_cast<int>(lines.size() * lineH))
+                                       : std::max(initialRect.height(), lineH);
         m_minBoxHeight = targetH;
-        m_boxRect = QRect(initialRect.left() - 4, initialRect.top() - 2, targetW, targetH);
+        m_boxRect = QRect(initialRect.left(), initialRect.top(), targetW, targetH);
     } else {
         m_minBoxHeight = 0;
-        // Target a natural readable column width: ~60% of available page width, bounded [200, 520]
-        int minW = 200;
-        int maxAllowedW = std::max(minW, width() - 40);
-        int targetW = qBound(minW, qRound(width() * 0.60), std::min(520, maxAllowedW));
+        int minW = 100;
+        int maxAllowedW = std::max(minW, width() - 20);
+        int naturalW = std::max(minW, maxLineW + 12);
+        int targetW = std::min(naturalW, maxAllowedW);
+        int targetH = neededH;
 
-        int posX = initialPos.x() - 20;
-        int posY = initialPos.y() - 15;
-        m_boxRect = QRect(posX, posY, targetW, 50);
+        int posX = initialPos.x();
+        int posY = initialPos.y();
+        if (posX + targetW > width() - 10) {
+            posX = std::max(10, width() - targetW - 10);
+        }
+        if (posY + targetH > height() - 10) {
+            posY = std::max(10, height() - targetH - 10);
+        }
+        m_boxRect = QRect(posX, posY, targetW, targetH);
     }
 
     if (width() > m_boxRect.width()) {
@@ -560,16 +676,22 @@ void PdfTransformBox::showText(const QString &text, const QFont &font, const QCo
         {
             QSignalBlocker blocker(m_inlineTextEdit);
             QSignalBlocker docBlocker(m_inlineTextEdit->document());
+            m_inlineTextEdit->document()->setDefaultFont(screenFont());
+            m_inlineTextEdit->document()->setDocumentMargin(0);
             m_inlineTextEdit->setPlainText(m_text);
         }
         updateInlineTextEditStyle();
-        m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+        m_inlineTextEdit->setGeometry(m_boxRect);
         m_inlineTextEdit->show();
     }
 
     adjustHeightToFitText();
 
-    if (m_btnEdit) m_btnEdit->setVisible(false);
+    if (m_btnEdit) {
+        m_btnEdit->setText(tr("✥ Move"));
+        m_btnEdit->setToolTip(tr("Switch to move & placement mode"));
+        m_btnEdit->setVisible(true);
+    }
     if (m_btnRedactBlack) m_btnRedactBlack->setVisible(false);
     if (m_btnRedactWhite) m_btnRedactWhite->setVisible(false);
     if (m_btnRedactGray) m_btnRedactGray->setVisible(false);
@@ -580,8 +702,21 @@ void PdfTransformBox::showText(const QString &text, const QFont &font, const QCo
         m_btnApplyAndContinue->setToolTip(tr("Apply current item and place another copy ready on canvas"));
         m_btnApplyAndContinue->setVisible(true);
     }
+    if (m_btnCancel) {
+        m_btnCancel->setText(tr("✕ Cancel"));
+        m_btnCancel->setToolTip(tr("Discard text (Esc)"));
+        m_btnCancel->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
+    if (m_btnCopyText) m_btnCopyText->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
+    if (m_btnFitWidth) m_btnFitWidth->setVisible(false);
+    if (m_btnFitPage) m_btnFitPage->setVisible(false);
+    if (m_btnOcrArea) m_btnOcrArea->setVisible(false);
+    if (m_btnFontStatus) {
+        m_btnFontStatus->setVisible(true);
+        updateFontStatusBadge();
+    }
     updateHandles();
     repositionToolbar();
     show();
@@ -623,15 +758,29 @@ void PdfTransformBox::showShape(int shapeType, int strokeWidth, const QColor &st
     QRect r = initialRect;
     if (r.width() < 30) r.setWidth(30);
     if (r.height() < 30) r.setHeight(30);
-    m_boxRect = r;
+    QRect adjustedRect = r;
 
-    if (width() > m_boxRect.width()) {
-        if (m_boxRect.left() < 10) m_boxRect.moveLeft(10);
-        if (m_boxRect.right() > width() - 10) m_boxRect.moveRight(width() - 10);
+    if (width() > adjustedRect.width()) {
+        if (adjustedRect.left() < 10) adjustedRect.moveLeft(10);
+        if (adjustedRect.right() > width() - 10) adjustedRect.moveRight(width() - 10);
     }
-    if (height() > m_boxRect.height()) {
-        if (m_boxRect.top() < 10) m_boxRect.moveTop(10);
-        if (m_boxRect.bottom() > height() - 10) m_boxRect.moveBottom(height() - 10);
+    if (height() > adjustedRect.height()) {
+        if (adjustedRect.top() < 10) adjustedRect.moveTop(10);
+        if (adjustedRect.bottom() > height() - 10) adjustedRect.moveBottom(height() - 10);
+    }
+
+    QPoint shift = adjustedRect.topLeft() - r.topLeft();
+    m_boxRect = adjustedRect;
+
+    if (localStart != QPoint(-1, -1)) {
+        m_shapeLocalStart = localStart - shift;
+    } else {
+        m_shapeLocalStart = QPoint(-1, -1);
+    }
+    if (localEnd != QPoint(-1, -1)) {
+        m_shapeLocalEnd = localEnd - shift;
+    } else {
+        m_shapeLocalEnd = QPoint(-1, -1);
     }
 
     if (m_btnEdit) m_btnEdit->setVisible(false);
@@ -645,8 +794,18 @@ void PdfTransformBox::showShape(int shapeType, int strokeWidth, const QColor &st
         m_btnApplyAndContinue->setToolTip(tr("Commit shape and keep tool active for another"));
         m_btnApplyAndContinue->setVisible(true);
     }
+    if (m_btnCancel) {
+        m_btnCancel->setText(tr("✕ Discard"));
+        m_btnCancel->setToolTip(tr("Discard shape (Esc)"));
+        m_btnCancel->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
+    if (m_btnCopyText) m_btnCopyText->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
+    if (m_btnFitWidth) m_btnFitWidth->setVisible(false);
+    if (m_btnFitPage) m_btnFitPage->setVisible(false);
+    if (m_btnOcrArea) m_btnOcrArea->setVisible(false);
+    if (m_btnFontStatus) m_btnFontStatus->setVisible(false);
 
     updateHandles();
     repositionToolbar();
@@ -668,6 +827,12 @@ void PdfTransformBox::updateShape(int shapeType, int strokeWidth, const QColor &
 void PdfTransformBox::setShapeType(int shapeType)
 {
     m_shapeType = shapeType;
+    if ((m_shapeType == 2 || m_shapeType == 3 || m_shapeType == 8) &&
+        (m_shapeLocalStart == QPoint(-1, -1) || m_shapeLocalEnd == QPoint(-1, -1))) {
+        int cy = m_boxRect.height() / 2;
+        m_shapeLocalStart = QPoint(std::min(16, m_boxRect.width() / 4), cy);
+        m_shapeLocalEnd = QPoint(std::max(m_boxRect.width() - 16, m_boxRect.width() * 3 / 4), cy);
+    }
     update();
 }
 
@@ -701,9 +866,46 @@ void PdfTransformBox::updateCachedPixmap(bool fast)
         return;
     }
 
+    qreal dpr = devicePixelRatioF();
+    if (dpr <= 0.0) dpr = 1.0;
+    QSize targetSize = m_boxRect.size() * dpr;
     Qt::TransformationMode mode = fast ? Qt::FastTransformation : Qt::SmoothTransformation;
-    m_cachedScaledPixmap = QPixmap::fromImage(m_image.scaled(m_boxRect.size(), Qt::IgnoreAspectRatio, mode));
+    QImage scaled = m_image.scaled(targetSize, Qt::IgnoreAspectRatio, mode);
+    scaled.setDevicePixelRatio(dpr);
+    m_cachedScaledPixmap = QPixmap::fromImage(scaled);
     m_lastCachedSize = m_boxRect.size();
+}
+
+void PdfTransformBox::fitToPageWidth()
+{
+    if (m_image.isNull() || width() <= 0 || height() <= 0) return;
+    int targetW = qBound(50, qRound(width() * 0.90), width() - 20);
+    double aspect = static_cast<double>(m_image.width()) / std::max(1, m_image.height());
+    int targetH = qBound(30, static_cast<int>(targetW / aspect), height() - 20);
+    int targetX = (width() - targetW) / 2;
+    int targetY = qBound(30, m_boxRect.y(), height() - targetH - 10);
+    m_boxRect = QRect(targetX, targetY, targetW, targetH);
+    updateCachedPixmap(false);
+    updateHandles();
+    repositionToolbar();
+    emit geometryChanged(m_boxRect);
+    update();
+}
+
+void PdfTransformBox::fitToFullPage()
+{
+    if (m_image.isNull() || width() <= 0 || height() <= 0) return;
+    int maxW = qBound(50, qRound(width() * 0.88), width() - 20);
+    int maxH = qBound(50, qRound(height() * 0.88), height() - 40);
+    QSize sz = m_image.size().scaled(maxW, maxH, Qt::KeepAspectRatio);
+    int targetX = (width() - sz.width()) / 2;
+    int targetY = (height() - sz.height()) / 2;
+    m_boxRect = QRect(targetX, targetY, sz.width(), sz.height());
+    updateCachedPixmap(false);
+    updateHandles();
+    repositionToolbar();
+    emit geometryChanged(m_boxRect);
+    update();
 }
 
 void PdfTransformBox::showImage(const QImage &image, const QPoint &initialPos,
@@ -745,8 +947,18 @@ void PdfTransformBox::showImage(const QImage &image, const QPoint &initialPos,
         m_btnApplyAndContinue->setToolTip(tr("Apply current item and place another copy ready on canvas"));
         m_btnApplyAndContinue->setVisible(true);
     }
+    if (m_btnCancel) {
+        m_btnCancel->setText(tr("✕ Cancel"));
+        m_btnCancel->setToolTip(tr("Discard image (Esc)"));
+        m_btnCancel->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
+    if (m_btnCopyText) m_btnCopyText->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
+    if (m_btnFitWidth) m_btnFitWidth->setVisible(type == PdfTransformItemType::Image);
+    if (m_btnFitPage) m_btnFitPage->setVisible(type == PdfTransformItemType::Image);
+    if (m_btnOcrArea) m_btnOcrArea->setVisible(type == PdfTransformItemType::Image);
+    if (m_btnFontStatus) m_btnFontStatus->setVisible(false);
     updateHandles();
     repositionToolbar();
     show();
@@ -773,7 +985,7 @@ void PdfTransformBox::showWatermark(const QString &text, qreal angle, qreal opac
     int w = 360;
     int h = 140;
     m_boxRect = QRect(initialPos.x() - w / 2, initialPos.y() - h / 2, w, h);
-    if (m_btnEdit) m_btnEdit->setVisible(true);
+    if (m_btnEdit) m_btnEdit->setVisible(false);
     if (m_btnRedactBlack) m_btnRedactBlack->setVisible(false);
     if (m_btnRedactWhite) m_btnRedactWhite->setVisible(false);
     if (m_btnRedactGray) m_btnRedactGray->setVisible(false);
@@ -784,8 +996,18 @@ void PdfTransformBox::showWatermark(const QString &text, qreal angle, qreal opac
         m_btnApplyAndContinue->setToolTip(tr("Apply current item and place another copy ready on canvas"));
         m_btnApplyAndContinue->setVisible(true);
     }
+    if (m_btnCancel) {
+        m_btnCancel->setText(tr("✕ Cancel"));
+        m_btnCancel->setToolTip(tr("Discard stamp (Esc)"));
+        m_btnCancel->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
+    if (m_btnCopyText) m_btnCopyText->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
+    if (m_btnFitWidth) m_btnFitWidth->setVisible(false);
+    if (m_btnFitPage) m_btnFitPage->setVisible(false);
+    if (m_btnOcrArea) m_btnOcrArea->setVisible(false);
+    if (m_btnFontStatus) m_btnFontStatus->setVisible(false);
     updateHandles();
     repositionToolbar();
     show();
@@ -903,8 +1125,18 @@ void PdfTransformBox::showRedaction(const QRect &initialRect)
         m_btnApplyAndContinue->setToolTip(tr("Apply current redaction and keep tool active for another area"));
         m_btnApplyAndContinue->setVisible(true);
     }
+    if (m_btnCancel) {
+        m_btnCancel->setText(tr("✕ Cancel"));
+        m_btnCancel->setToolTip(tr("Discard redaction box (Esc)"));
+        m_btnCancel->setVisible(true);
+    }
     if (m_btnCutArea) m_btnCutArea->setVisible(false);
+    if (m_btnCopyText) m_btnCopyText->setVisible(false);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(false);
+    if (m_btnFitWidth) m_btnFitWidth->setVisible(false);
+    if (m_btnFitPage) m_btnFitPage->setVisible(false);
+    if (m_btnOcrArea) m_btnOcrArea->setVisible(false);
+    if (m_btnFontStatus) m_btnFontStatus->setVisible(false);
     updateRedactionColorButtons();
     updateHandles();
     repositionToolbar();
@@ -927,18 +1159,21 @@ void PdfTransformBox::showAreaSelection(const QRect &initialRect)
     if (m_boxRect.width() < 10) m_boxRect.setWidth(60);
     if (m_boxRect.height() < 10) m_boxRect.setHeight(40);
 
-    if (m_btnEdit) {
-        m_btnEdit->setText(tr("✏️ Replace Text"));
-        m_btnEdit->setVisible(true);
-    }
+    if (m_btnEdit) m_btnEdit->setVisible(false);
     if (m_btnRedactBlack) m_btnRedactBlack->setVisible(false);
     if (m_btnRedactWhite) m_btnRedactWhite->setVisible(false);
     if (m_btnRedactGray) m_btnRedactGray->setVisible(false);
     if (m_btnRedactCustom) m_btnRedactCustom->setVisible(false);
     if (m_btnApply) m_btnApply->setVisible(false);
     if (m_btnApplyAndContinue) m_btnApplyAndContinue->setVisible(false);
-    if (m_btnCutArea) m_btnCutArea->setVisible(true);
+    if (m_btnCutArea) m_btnCutArea->setVisible(false);
+    if (m_btnFitWidth) m_btnFitWidth->setVisible(false);
+    if (m_btnFitPage) m_btnFitPage->setVisible(false);
+    if (m_btnFontStatus) m_btnFontStatus->setVisible(false);
+
+    if (m_btnCopyText) m_btnCopyText->setVisible(true);
     if (m_btnCopyArea) m_btnCopyArea->setVisible(true);
+    if (m_btnOcrArea) m_btnOcrArea->setVisible(true);
     if (m_btnCancel) m_btnCancel->setVisible(true);
 
     updateHandles();
@@ -1098,10 +1333,21 @@ void PdfTransformBox::paintEvent(QPaintEvent * /*event*/)
         if (!m_inlineTextEdit || !m_inlineTextEdit->isVisible()) {
             painter.setFont(screenFont());
             painter.setPen(m_color);
-            painter.drawText(m_boxRect.adjusted(3, 2, -3, -2),
+            QRect drawRect = m_boxRect;
+            drawRect.setWidth(drawRect.width() + 16);
+            drawRect.setHeight(drawRect.height() + 6);
+            painter.drawText(drawRect,
                              m_textAlignment | Qt::TextWordWrap,
                              m_text);
         }
+        // Subtle red baseline guide for millimetric alignment
+        QFontMetrics fm(screenFont());
+        int baseLineY = m_boxRect.top() + fm.ascent();
+        painter.save();
+        QPen basePen(QColor(239, 68, 68, 140), 1.0, Qt::DashLine);
+        painter.setPen(basePen);
+        painter.drawLine(m_boxRect.left(), baseLineY, m_boxRect.right(), baseLineY);
+        painter.restore();
     } else if (m_itemType == PdfTransformItemType::Signature || m_itemType == PdfTransformItemType::Image) {
         if (!m_cachedScaledPixmap.isNull()) {
             painter.drawPixmap(m_boxRect.topLeft(), m_cachedScaledPixmap);
@@ -1129,10 +1375,10 @@ void PdfTransformBox::paintEvent(QPaintEvent * /*event*/)
         } else if (m_shapeType == 1) { // Ellipse / Circle
             painter.drawEllipse(localR);
         } else if (m_shapeType == 2) { // Arrow
-            QPoint p1 = (m_shapeLocalStart != QPoint() && m_shapeLocalStart != QPoint(-1, -1))
+            QPoint p1 = (m_shapeLocalStart != QPoint(-1, -1))
                             ? m_shapeLocalStart
                             : QPoint(halfW, halfW);
-            QPoint p2 = (m_shapeLocalEnd != QPoint() && m_shapeLocalEnd != QPoint(-1, -1))
+            QPoint p2 = (m_shapeLocalEnd != QPoint(-1, -1))
                             ? m_shapeLocalEnd
                             : QPoint(localR.right(), localR.bottom());
             painter.drawLine(p1, p2);
@@ -1149,15 +1395,72 @@ void PdfTransformBox::paintEvent(QPaintEvent * /*event*/)
             painter.setBrush(m_shapeStrokeColor);
             painter.drawPolygon(arrowHead);
         } else if (m_shapeType == 3) { // Straight Line
-            QPoint p1 = (m_shapeLocalStart != QPoint() && m_shapeLocalStart != QPoint(-1, -1))
+            QPoint p1 = (m_shapeLocalStart != QPoint(-1, -1))
                             ? m_shapeLocalStart
                             : QPoint(halfW, halfW);
-            QPoint p2 = (m_shapeLocalEnd != QPoint() && m_shapeLocalEnd != QPoint(-1, -1))
+            QPoint p2 = (m_shapeLocalEnd != QPoint(-1, -1))
                             ? m_shapeLocalEnd
                             : QPoint(localR.right(), localR.bottom());
             painter.drawLine(p1, p2);
         } else if (m_shapeType == 4) { // Rounded Rectangle
-            painter.drawRoundedRect(localR, 8, 8);
+            int r = std::min(14, std::min(localR.width(), localR.height()) / 4);
+            painter.drawRoundedRect(localR, r, r);
+        } else if (m_shapeType == 5) { // Triangle
+            QPoint pTop(localR.center().x(), localR.top());
+            QPoint pBR = localR.bottomRight();
+            QPoint pBL = localR.bottomLeft();
+            QPolygon poly;
+            poly << pTop << pBR << pBL;
+            painter.drawPolygon(poly);
+        } else if (m_shapeType == 6) { // Diamond
+            QPoint pTop(localR.center().x(), localR.top());
+            QPoint pRight(localR.right(), localR.center().y());
+            QPoint pBottom(localR.center().x(), localR.bottom());
+            QPoint pLeft(localR.left(), localR.center().y());
+            QPolygon poly;
+            poly << pTop << pRight << pBottom << pLeft;
+            painter.drawPolygon(poly);
+        } else if (m_shapeType == 7) { // 5-Point Star
+            double cx = localR.center().x();
+            double cy = localR.center().y();
+            double R = std::min(localR.width(), localR.height()) / 2.0;
+            double r = R * 0.40;
+            QPolygon starPoly;
+            for (int i = 0; i < 10; ++i) {
+                double angle = -M_PI / 2.0 + i * (M_PI / 5.0);
+                double rad = (i % 2 == 0) ? R : r;
+                starPoly << QPoint(qRound(cx + rad * std::cos(angle)), qRound(cy + rad * std::sin(angle)));
+            }
+            painter.drawPolygon(starPoly);
+        } else if (m_shapeType == 8) { // Double Arrow
+            QPoint p1 = (m_shapeLocalStart != QPoint(-1, -1))
+                            ? m_shapeLocalStart
+                            : QPoint(halfW, halfW);
+            QPoint p2 = (m_shapeLocalEnd != QPoint(-1, -1))
+                            ? m_shapeLocalEnd
+                            : QPoint(localR.right(), localR.bottom());
+            painter.drawLine(p1, p2);
+
+            double angle = std::atan2(static_cast<double>(p2.y() - p1.y()),
+                                      static_cast<double>(p2.x() - p1.x()));
+            double arrowSize = std::max(10.0, static_cast<double>(m_shapeStrokeWidth) * 3.0);
+            QPointF head1 = QPointF(p2) - QPointF(arrowSize * std::cos(angle - M_PI / 6.0),
+                                                  arrowSize * std::sin(angle - M_PI / 6.0));
+            QPointF head2 = QPointF(p2) - QPointF(arrowSize * std::cos(angle + M_PI / 6.0),
+                                                  arrowSize * std::sin(angle + M_PI / 6.0));
+            QPolygonF arrowHead2;
+            arrowHead2 << QPointF(p2) << head1 << head2;
+
+            QPointF head3 = QPointF(p1) + QPointF(arrowSize * std::cos(angle - M_PI / 6.0),
+                                                  arrowSize * std::sin(angle - M_PI / 6.0));
+            QPointF head4 = QPointF(p1) + QPointF(arrowSize * std::cos(angle + M_PI / 6.0),
+                                                  arrowSize * std::sin(angle + M_PI / 6.0));
+            QPolygonF arrowHead1;
+            arrowHead1 << QPointF(p1) << head3 << head4;
+
+            painter.setBrush(m_shapeStrokeColor);
+            painter.drawPolygon(arrowHead2);
+            painter.drawPolygon(arrowHead1);
         }
         painter.restore();
     } else if (m_itemType == PdfTransformItemType::Redaction) {
@@ -1219,6 +1522,49 @@ void PdfTransformBox::paintEvent(QPaintEvent * /*event*/)
         painter.setPen(Qt::white);
         painter.drawText(pillRect, Qt::AlignCenter, warnText);
     }
+
+    // 5. Millimetric & Point Coordinate Calibration HUD
+    double scale = (m_scaleFactor > 0.001) ? m_scaleFactor : 1.0;
+    double ptX = m_boxRect.left() / scale;
+    double ptY = m_boxRect.top() / scale;
+    double ptW = m_boxRect.width() / scale;
+    double ptH = m_boxRect.height() / scale;
+    double mmX = ptX * 25.4 / 72.0;
+    double mmY = ptY * 25.4 / 72.0;
+    double mmW = ptW * 25.4 / 72.0;
+    double mmH = ptH * 25.4 / 72.0;
+
+    QString hudText = QStringLiteral("⌖ %1, %2 mm  (%3 × %4 mm)")
+                          .arg(mmX, 0, 'f', 1)
+                          .arg(mmY, 0, 'f', 1)
+                          .arg(mmW, 0, 'f', 1)
+                          .arg(mmH, 0, 'f', 1);
+
+    QFont hudFont(QStringLiteral("Monospace"), 8);
+    hudFont.setStyleHint(QFont::Monospace);
+    QFontMetrics hudFm(hudFont);
+    int hudW = hudFm.horizontalAdvance(hudText) + 12;
+    int hudH = hudFm.height() + 4;
+
+    int hudX = qBound(6, m_boxRect.left(), std::max(6, width() - hudW - 6));
+    int hudY = m_boxRect.bottom() + 6;
+    if (m_hasCollision) {
+        hudY += 26; // room for collision warning pill
+    }
+    if (hudY + hudH > height() - 6) {
+        hudY = std::max(6, m_boxRect.top() - hudH - 6);
+    }
+    QRect hudRect(hudX, hudY, hudW, hudH);
+
+    painter.save();
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(15, 23, 42, 215));
+    painter.drawRoundedRect(hudRect, 4, 4);
+
+    painter.setPen(QColor(56, 189, 248));
+    painter.setFont(hudFont);
+    painter.drawText(hudRect, Qt::AlignCenter, hudText);
+    painter.restore();
 }
 
 void PdfTransformBox::mousePressEvent(QMouseEvent *event)
@@ -1228,6 +1574,8 @@ void PdfTransformBox::mousePressEvent(QMouseEvent *event)
         if (m_activeHandle != None) {
             m_dragStartPos = event->pos();
             m_dragStartRect = m_boxRect;
+            m_dragStartShapeLocalStart = m_shapeLocalStart;
+            m_dragStartShapeLocalEnd = m_shapeLocalEnd;
             event->accept();
             return;
         }
@@ -1282,9 +1630,15 @@ void PdfTransformBox::mouseMoveEvent(QMouseEvent *event)
     QRect newRect = m_dragStartRect;
 
     switch (m_activeHandle) {
-        case Body:
-            newRect.moveTopLeft(m_dragStartRect.topLeft() + delta);
+        case Body: {
+            QPoint targetTL = m_dragStartRect.topLeft() + delta;
+            if (width() > newRect.width() && height() > newRect.height()) {
+                targetTL.setX(qBound(0, targetTL.x(), width() - newRect.width()));
+                targetTL.setY(qBound(0, targetTL.y(), height() - newRect.height()));
+            }
+            newRect.moveTopLeft(targetTL);
             break;
+        }
         case TopLeft:
             newRect.setTopLeft(m_dragStartRect.topLeft() + delta);
             break;
@@ -1320,7 +1674,7 @@ void PdfTransformBox::mouseMoveEvent(QMouseEvent *event)
 
         // Synchronize inline text editor geometry whenever box moves OR resizes
         if (m_itemType == PdfTransformItemType::Text && m_inlineTextEdit) {
-            m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+            m_inlineTextEdit->setGeometry(m_boxRect);
         }
 
         if (sizeChanged) {
@@ -1333,11 +1687,13 @@ void PdfTransformBox::mouseMoveEvent(QMouseEvent *event)
                 if (m_dragStartRect.width() > 0 && m_dragStartRect.height() > 0) {
                     double sx = static_cast<double>(newRect.width()) / m_dragStartRect.width();
                     double sy = static_cast<double>(newRect.height()) / m_dragStartRect.height();
-                    if (m_shapeLocalStart != QPoint() && m_shapeLocalStart != QPoint(-1, -1)) {
-                        m_shapeLocalStart = QPoint(qRound(m_shapeLocalStart.x() * sx), qRound(m_shapeLocalStart.y() * sy));
+                    if (m_dragStartShapeLocalStart != QPoint(-1, -1)) {
+                        m_shapeLocalStart = QPoint(qRound(m_dragStartShapeLocalStart.x() * sx),
+                                                   qRound(m_dragStartShapeLocalStart.y() * sy));
                     }
-                    if (m_shapeLocalEnd != QPoint() && m_shapeLocalEnd != QPoint(-1, -1)) {
-                        m_shapeLocalEnd = QPoint(qRound(m_shapeLocalEnd.x() * sx), qRound(m_shapeLocalEnd.y() * sy));
+                    if (m_dragStartShapeLocalEnd != QPoint(-1, -1)) {
+                        m_shapeLocalEnd = QPoint(qRound(m_dragStartShapeLocalEnd.x() * sx),
+                                                 qRound(m_dragStartShapeLocalEnd.y() * sy));
                     }
                 }
             }
@@ -1414,7 +1770,7 @@ void PdfTransformBox::keyPressEvent(QKeyEvent *event)
         if (dx != 0 || dy != 0) {
             m_boxRect.translate(dx, dy);
             if (m_itemType == PdfTransformItemType::Text && m_inlineTextEdit) {
-                m_inlineTextEdit->setGeometry(m_boxRect.adjusted(3, 2, -3, -2));
+                m_inlineTextEdit->setGeometry(m_boxRect);
             }
             updateHandles();
             repositionToolbar();
@@ -1431,4 +1787,67 @@ void PdfTransformBox::keyPressEvent(QKeyEvent *event)
 void PdfTransformBox::wheelEvent(QWheelEvent *event)
 {
     event->ignore();
+}
+
+void PdfTransformBox::updateFontStatusBadge()
+{
+    if (!m_btnFontStatus || m_itemType != PdfTransformItemType::Text) return;
+
+    QString rawFamily = m_font.family();
+    QString cleanFamily = FontResolutionHelper::cleanFontFamilyName(rawFamily);
+    bool installed = FontResolutionHelper::isFontFamilyInstalled(cleanFamily);
+
+    QString currentText = m_inlineTextEdit ? m_inlineTextEdit->toPlainText() : m_text;
+    QString missingGlyphs = FontResolutionHelper::checkMissingGlyphs(currentText, m_font);
+
+    int ptSize = m_font.pointSize();
+    if (ptSize <= 0 && m_font.pointSizeF() > 0) ptSize = qRound(m_font.pointSizeF());
+
+    if (!installed) {
+        m_btnFontStatus->setText(tr("⚠️ Font '%1' mancante").arg(cleanFamily));
+        m_btnFontStatus->setToolTip(tr("Il font '%1' non è installato nel sistema.\nClicca per installarlo dai repository distro, scaricarlo o sostituirlo.").arg(cleanFamily));
+        m_btnFontStatus->setStyleSheet(QStringLiteral(
+            "QPushButton#BtnFontStatus {"
+            "  background-color: #78350f; color: #fef3c7;"
+            "  border: 1px solid #f59e0b; border-radius: 9px;"
+            "  font-size: 11px; font-weight: bold; padding: 2px 8px;"
+            "}"
+            "QPushButton#BtnFontStatus:hover { background-color: #92400e; }"
+        ));
+    } else if (!missingGlyphs.isEmpty()) {
+        m_btnFontStatus->setText(tr("⚠️ Glifi mancanti: %1").arg(missingGlyphs));
+        m_btnFontStatus->setToolTip(tr("Alcuni caratteri digitati non sono presenti nel font '%1'.\nClicca per risolvere.").arg(cleanFamily));
+        m_btnFontStatus->setStyleSheet(QStringLiteral(
+            "QPushButton#BtnFontStatus {"
+            "  background-color: #831843; color: #fce7f3;"
+            "  border: 1px solid #f43f5e; border-radius: 9px;"
+            "  font-size: 11px; font-weight: bold; padding: 2px 8px;"
+            "}"
+            "QPushButton#BtnFontStatus:hover { background-color: #9f1239; }"
+        ));
+    } else {
+        m_btnFontStatus->setText(tr("🔤 %1 %2pt").arg(cleanFamily).arg(ptSize > 0 ? QString::number(ptSize) : QString()));
+        m_btnFontStatus->setToolTip(tr("Font: %1 (Installato).\nClicca per gestire o cambiare font.").arg(cleanFamily));
+        m_btnFontStatus->setStyleSheet(QStringLiteral(
+            "QPushButton#BtnFontStatus {"
+            "  background-color: rgba(255, 255, 255, 0.15); color: #f1f5f9;"
+            "  border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9px;"
+            "  font-size: 11px; font-weight: 500; padding: 2px 8px;"
+            "}"
+            "QPushButton#BtnFontStatus:hover { background-color: rgba(255, 255, 255, 0.28); }"
+        ));
+    }
+    m_btnFontStatus->setVisible(true);
+    repositionToolbar();
+}
+
+void PdfTransformBox::onFontStatusClicked()
+{
+    QString currentText = m_inlineTextEdit ? m_inlineTextEdit->toPlainText() : m_text;
+    QString missingGlyphs = FontResolutionHelper::checkMissingGlyphs(currentText, m_font);
+
+    FontResolutionDialog dlg(m_font.family(), missingGlyphs, m_font, this);
+    if (dlg.exec() == QDialog::Accepted && dlg.fontWasResolved()) {
+        updateTextFont(dlg.resolvedFont());
+    }
 }

@@ -9,6 +9,8 @@ add_executable(test_share
     test_share.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/dialogs/share_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/dialogs/share_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
 )
 
 target_include_directories(test_share PRIVATE
@@ -139,10 +141,27 @@ add_executable(test_pdf_studio
     ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_history_widget.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/build_config.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/cpu_info.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/package_manager_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/font_resolution_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/update_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/plugin_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/font_resolution_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/fallback_notice_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/extension_feature_model.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_console_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/compiler_wizard_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_options_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/custom_source_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/diagnostic_report_dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/minimal_header_bar.cpp
     ${CMAKE_SOURCE_DIR}/src/ui/contextual_action_bar.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/unified_export_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_image_extract_dialog.cpp
     ${CMAKE_SOURCE_DIR}/resources/icons.qrc
 )
 
@@ -150,8 +169,12 @@ target_include_directories(test_pdf_studio PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/core/interfaces
     ${CMAKE_SOURCE_DIR}/src/ui
     ${CMAKE_SOURCE_DIR}/src/ui/pdf
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf
     ${POPPLER_QT6_INCLUDE_DIRS}
 )
@@ -160,25 +183,168 @@ target_link_libraries(test_pdf_studio PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Network
     Qt6::Test
     ${POPPLER_QT6_LIBRARIES}
 )
 
 add_test(NAME TestPdfStudio COMMAND test_pdf_studio)
 
+add_executable(test_copy_paste
+    test_copy_paste.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/base_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_history_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_watermark_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_typewriter_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_crypto_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/extension_feature_model.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/update_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/plugin_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/build_config.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/cpu_info.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/package_manager_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/font_resolution_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/font_resolution_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/fallback_notice_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_console_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/compiler_wizard_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_options_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/custom_source_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/diagnostic_report_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/minimal_header_bar.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/contextual_action_bar.cpp
+    ${CMAKE_SOURCE_DIR}/resources/icons.qrc
+)
+
+target_include_directories(test_copy_paste PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/core/interfaces
+    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf
+    ${POPPLER_QT6_INCLUDE_DIRS}
+)
+
+target_link_libraries(test_copy_paste PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Network
+    Qt6::Test
+    Qt6::Xml
+    Qt6::PrintSupport
+    ${POPPLER_QT6_LIBRARIES}
+)
+
+# Automated Millimetric Calibration and Tight Bounding Box test
+add_executable(test_calibration
+    ${CMAKE_SOURCE_DIR}/test/test_calibration.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/base_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_history_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_watermark_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_typewriter_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_crypto_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/extension_feature_model.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/update_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/plugin_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/build_config.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/cpu_info.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/package_manager_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/font_resolution_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/font_resolution_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/fallback_notice_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_console_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/compiler_wizard_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_options_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/custom_source_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/diagnostic_report_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/minimal_header_bar.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/contextual_action_bar.cpp
+    ${CMAKE_SOURCE_DIR}/resources/icons.qrc
+)
+
+target_include_directories(test_calibration PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/core/interfaces
+    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf
+    ${POPPLER_QT6_INCLUDE_DIRS}
+)
+
+target_link_libraries(test_calibration PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Network
+    Qt6::Test
+    Qt6::Xml
+    Qt6::PrintSupport
+    ${POPPLER_QT6_LIBRARIES}
+)
+
+add_test(NAME TestCalibration COMMAND test_calibration)
+
 # Automated Native Core PDF Base Viewer test
 add_executable(test_pdf_base
     test_pdf_base.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_base_viewer.cpp
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_base_canvas.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/plugin_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/build_config.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/cpu_info.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/package_manager_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/extension_feature_model.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_console_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/compiler_wizard_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_options_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/custom_source_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/diagnostic_report_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/fallback_notice_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/resources/icons.qrc
 )
 
 target_include_directories(test_pdf_base PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/core/interfaces
     ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions
     ${CMAKE_SOURCE_DIR}/src/viewers/pdf
     ${POPPLER_QT6_INCLUDE_DIRS}
 )
@@ -187,6 +353,7 @@ target_link_libraries(test_pdf_base PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Network
     Qt6::PrintSupport
     Qt6::Test
     ${POPPLER_QT6_LIBRARIES}
@@ -245,3 +412,95 @@ target_link_libraries(test_interactive PRIVATE
 )
 
 set_target_properties(test_interactive PROPERTIES ENABLE_EXPORTS ON)
+
+add_executable(test_unified_shapes_stamps
+    test_unified_shapes_stamps.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_base_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_base_canvas.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_page_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_transform_box.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_canvas_tools.cpp
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf/pdf_document_ops.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/base_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_studio_panel.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_history_widget.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_watermark_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_typewriter_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_crypto_signature_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_page_organizer_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_merge_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_repair_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf/pdf_image_extract_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/extension_feature_model.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/font_resolution_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/fallback_notice_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_console_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/compiler_wizard_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/build_options_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/custom_source_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions/diagnostic_report_dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/minimal_header_bar.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/contextual_action_bar.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/build_config.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/cpu_info.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/package_manager_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/system/font_resolution_helper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/update_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/plugin_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/image_processor.cpp
+    ${CMAKE_SOURCE_DIR}/resources/icons.qrc
+)
+
+target_include_directories(test_unified_shapes_stamps PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/core/interfaces
+    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/ui/pdf
+    ${CMAKE_SOURCE_DIR}/src/ui/dialogs
+    ${CMAKE_SOURCE_DIR}/src/ui/extensions
+    ${CMAKE_SOURCE_DIR}/src/viewers/pdf
+    ${POPPLER_QT6_INCLUDE_DIRS}
+)
+
+target_link_libraries(test_unified_shapes_stamps PRIVATE
+    Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Xml Qt6::DBus Qt6::OpenGLWidgets
+    Qt6::PrintSupport Qt6::Network Qt6::Svg Qt6::Test
+    ${POPPLER_QT6_LIBRARIES}
+    ${LIBARCHIVE_LIBRARIES}
+    ${LIBREVENGE_LIBRARIES}
+    ${LIBQRENCODE_LIBRARIES}
+)
+
+# Automated Settings Appearance tab test and snapshot generator
+add_executable(test_settings_appearance
+    test_settings_appearance.cpp
+    ${CMAKE_SOURCE_DIR}/src/ui/settings/settings_appearance_tab.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/theme_manager.cpp
+    ${CMAKE_SOURCE_DIR}/resources/icons.qrc
+)
+
+target_include_directories(test_settings_appearance PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/services
+    ${CMAKE_SOURCE_DIR}/src/core/system
+    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/ui/settings
+)
+
+target_link_libraries(test_settings_appearance PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Test
+)
+
+add_test(NAME TestSettingsAppearance COMMAND test_settings_appearance)
+

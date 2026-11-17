@@ -20,6 +20,13 @@ MCowBQYDK2VwAyEAfr3yn0QMgvYvEjW+fkfKAF8ZP4EWsn9DOrhtjHPEe1I=
 # ------------------------------------------------------------------------------
 # 1. RILEVAMENTO INTERFACCIA (GUI o TERMINALE)
 # ------------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+for arg in "$@"; do
+    if [ "$arg" = "--build-component" ] && [ -f "${SCRIPT_DIR}/install.sh" ]; then
+        exec "${SCRIPT_DIR}/install.sh" "$@"
+    fi
+done
+
 UI_MODE="cli"
 FORCE_CLI=0
 VERBOSE=0

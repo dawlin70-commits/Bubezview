@@ -99,8 +99,18 @@ void FilmstripWidget::stopWorker()
     }
 }
 
+void FilmstripWidget::clear()
+{
+    setFiles({}, -1);
+}
+
 void FilmstripWidget::setFiles(const QStringList &files, int currentIndex)
 {
+    if (m_fileList == files) {
+        setCurrentIndex(currentIndex);
+        return;
+    }
+
     stopWorker();
     m_fileList = files;
     m_currentIndex = currentIndex;

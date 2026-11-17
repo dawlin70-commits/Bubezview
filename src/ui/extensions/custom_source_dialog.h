@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QString>
 #include "core/system/build_config.h"
 
@@ -19,7 +19,7 @@ class QLabel;
  * @class CustomSourceDialog
  * @brief Interactive configuration dialog allowing users to define alternative source repositories.
  */
-class CustomSourceDialog : public QDialog {
+class CustomSourceDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

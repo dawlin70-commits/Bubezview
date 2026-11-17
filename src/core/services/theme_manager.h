@@ -11,9 +11,11 @@ class QFileDialog;
  * @brief Available visual theme presets for BubezView.
  */
 enum class ThemePreset {
+    System,      ///< Follow desktop environment preference (auto dark/light).
     DarkSlate,   ///< Elegant custom dark slate theme with high contrast borders (#22262b).
+    ZincGray,    ///< Neutral zinc gray theme (#505156 base with #727379 pills/controls).
     BreezeDark,  ///< KDE Breeze-inspired dark styling (#181b1d).
-    ModernLight, ///< macOS/Cupertino-inspired frosted silver light styling (#f5f5f7 / #ffffff).
+    ModernLight, ///< Clean frosted silver light styling (#f5f5f7 / #ffffff).
     BreezeLight  ///< KDE Breeze-inspired clean light styling (#eff0f1 / #fcfcfc).
 };
 
@@ -25,6 +27,18 @@ enum class TransitionEffect {
     ParallaxSlide,  ///< Parallax Slide & Fade (Modern QuickLook style).
     CrossFade,      ///< Classic Soft Cross-Fade.
     None            ///< Pure Instant Jump with 0ms delay.
+};
+
+/**
+ * @brief Visual icon style and color palette for UI controls.
+ */
+enum class IconStyle {
+    Linear = 0,      ///< Clean linear outline stroke (Default monochrome).
+    ColorAccents = 1,///< Vibrant semantic color accents per tool.
+    Yellow = 2,      ///< Warm amber yellow palette.
+    Red = 3,         ///< Coral red palette.
+    Green = 4,       ///< Emerald green palette.
+    Blue = 5         ///< Sky blue palette.
 };
 
 /**
@@ -56,12 +70,40 @@ public:
     static ThemePreset stringToPreset(const QString &str);
 
     /**
+     * @brief Checks if the desktop environment / system palette prefers a dark theme.
+     * @return True if system palette indicates dark mode.
+     */
+    static bool isSystemDark();
+
+    /**
+     * @brief Resolves ThemePreset::System to either DarkSlate or ModernLight.
+     * @param preset The input ThemePreset.
+     * @return Concrete ThemePreset (never System).
+     */
+    static inline ThemePreset effectivePreset(ThemePreset preset) {
+        if (preset == ThemePreset::System) {
+            return isSystemDark() ? ThemePreset::DarkSlate : ThemePreset::ModernLight;
+        }
+        return preset;
+    }
+
+    /**
      * @brief Checks whether the given theme preset has a dark visual appearance.
      * @param preset The target ThemePreset.
-     * @return True if preset is DarkSlate or BreezeDark.
+     * @return True if preset resolves to DarkSlate or BreezeDark.
      */
     static inline bool isDark(ThemePreset preset) {
-        return preset == ThemePreset::DarkSlate || preset == ThemePreset::BreezeDark;
+        ThemePreset eff = effectivePreset(preset);
+        return eff == ThemePreset::DarkSlate || eff == ThemePreset::ZincGray || eff == ThemePreset::BreezeDark;
+    }
+
+    /**
+     * @brief Checks whether the given theme preset has a light visual appearance.
+     * @param preset The target ThemePreset.
+     * @return True if preset resolves to ModernLight or BreezeLight.
+     */
+    static inline bool isLight(ThemePreset preset) {
+        return !isDark(preset);
     }
 
     /**
@@ -95,6 +137,42 @@ public:
 
     static QString transitionToString(TransitionEffect effect);
     static TransitionEffect stringToTransition(const QString &str);
+
+    /**
+     * @brief Gets the window glass translucency opacity percentage (70..100).
+     * @return Opacity percentage (default 90).
+     */
+    static int glassOpacity();
+
+    /**
+     * @brief Sets the window glass translucency opacity percentage (70..100).
+     * @param opacityPercent Target opacity.
+     */
+    static void setGlassOpacity(int opacityPercent);
+
+    /**
+     * @brief Gets the UI and header controls scale percentage (100, 115, 125, 150).
+     * @return Scale percentage (default 100).
+     */
+    static int uiScalePercent();
+
+    /**
+     * @brief Sets the UI and header controls scale percentage.
+     * @param scalePercent Target scale percentage.
+     */
+    static void setUiScalePercent(int scalePercent);
+
+    /**
+     * @brief Gets the configured icon style.
+     * @return Active IconStyle (Linear, ColorAccents, or BoldFilled).
+     */
+    static IconStyle iconStyle();
+
+    /**
+     * @brief Saves the selected icon style.
+     * @param style Target IconStyle.
+     */
+    static void setIconStyle(IconStyle style);
 
     /**
      * @brief Checks if background LibreOffice conversion is enabled for rich office previews.

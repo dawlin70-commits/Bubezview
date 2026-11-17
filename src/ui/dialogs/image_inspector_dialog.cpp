@@ -17,7 +17,7 @@
 #include <numeric>
 
 ImageInspectorDialog::ImageInspectorDialog(const QString &filePath, const QImage &image, QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
     , m_filePath(filePath)
     , m_image(image)
 {
@@ -33,8 +33,8 @@ ImageInspectorDialog::ImageInspectorDialog(const QString &filePath, const QImage
 
 void ImageInspectorDialog::setupUi()
 {
-    auto *rootLayout = new QVBoxLayout(this);
-    rootLayout->setContentsMargins(16, 16, 16, 16);
+    auto *rootLayout = contentLayout();
+    rootLayout->setContentsMargins(4, 4, 4, 4);
     rootLayout->setSpacing(12);
 
     // 1. Top Header Banner

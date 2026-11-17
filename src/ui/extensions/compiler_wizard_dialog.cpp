@@ -23,7 +23,7 @@
 #include <QGuiApplication>
 
 CompilerWizardDialog::CompilerWizardDialog(QWidget *parent)
-    : QDialog(parent)
+    : FramelessDialog(parent)
 {
     setWindowTitle(tr("🧙 Compiler Wizard — Advanced CPU & Instruction Tuning"));
     resize(840, 700);
@@ -161,51 +161,7 @@ void CompilerWizardDialog::initDatabase()
         FlagSafetyLevel::Recommended,
         tr("🟢 <b>Recommended for Images.</b> Processes multiple pixels simultaneously in a single clock cycle, dramatically speeding up zooming and rendering."),
         QStringLiteral("all"),
-        false,
-        QString()
-    });
-
-    m_flags.append({
-        QStringLiteral("-funroll-loops"),
-        tr("Fast Photo Filters & Blur"),
-        tr("3. Image Viewer & Graphics Canvas (BubezView Only)"),
-        FlagSafetyLevel::Conditional,
-        tr("🟡 <b>Fast Image Filters.</b> Unrolls repetitive pixel loops, accelerating image convolution filters, blur, sharpening, and color adjustments."),
-        QStringLiteral("all"),
-        false,
-        QString()
-    });
-
-    m_flags.append({
-        QStringLiteral("-fvect-cost-model=dynamic"),
-        tr("Adaptive Resolution Scaling (Icons to 8K)"),
-        tr("3. Image Viewer & Graphics Canvas (BubezView Only)"),
-        FlagSafetyLevel::Conditional,
-        tr("🟡 <b>Adaptive Processing.</b> Evaluates vectorization dynamically based on real image dimensions, ensuring peak performance on both small icons and huge 8K photos."),
-        QStringLiteral("all"),
-        false,
-        QString()
-    });
-
-    m_flags.append({
-        QStringLiteral("-fno-math-errno"),
-        tr("Direct Hardware Math (Zoom & Rotation)"),
-        tr("3. Image Viewer & Graphics Canvas (BubezView Only)"),
-        FlagSafetyLevel::Conditional,
-        tr("🟡 <b>Hardware Math Acceleration.</b> Skips setting legacy errno variables to compute smooth zoom, proportions, and rotations directly on the CPU."),
-        QStringLiteral("all"),
-        false,
-        QString()
-    });
-
-    m_flags.append({
-        QStringLiteral("-falign-loops=32"),
-        tr("Smooth Pixel Traversal in CPU Cache"),
-        tr("3. Image Viewer & Graphics Canvas (BubezView Only)"),
-        FlagSafetyLevel::Conditional,
-        tr("🟡 <b>Cache Optimization.</b> Aligns loop entry points to 32-byte CPU cache boundaries, eliminating stutter during horizontal pixel traversal."),
-        QStringLiteral("all"),
-        false,
+        true,
         QString()
     });
 
@@ -219,48 +175,15 @@ void CompilerWizardDialog::initDatabase()
         FlagSafetyLevel::Recommended,
         tr("🧩 <b>Requires Plugin Build.</b> Emits hardware CRC32 CPU instructions to dramatically speed up archive extraction and integrity verification in LibArchive."),
         QStringLiteral("all"),
-        false,
-        QString()
-    });
-
-    m_flags.append({
-        QStringLiteral("-ffp-contract=fast"),
-        tr("Smooth PDF Page & Vector Curve Rendering"),
-        tr("4. Engine Plugins & Heavy Formats (Requires Plugin Build)"),
-        FlagSafetyLevel::Recommended,
-        tr("🧩 <b>Requires Plugin Build.</b> Fuses floating-point multiplication and addition via hardware FMA, accelerating complex PDF pages and diagrams in Poppler."),
-        QStringLiteral("all"),
-        false,
-        QString()
-    });
-
-    m_flags.append({
-        QStringLiteral("-ftree-slp-vectorize"),
-        tr("Fast PDF Text & Annotation Rasterization"),
-        tr("4. Engine Plugins & Heavy Formats (Requires Plugin Build)"),
-        FlagSafetyLevel::Recommended,
-        tr("🧩 <b>Requires Plugin Build.</b> Accelerates glyph rasterization, highlighter blending, and markup rendering in high-resolution PDF pages."),
-        QStringLiteral("all"),
-        false,
-        QString()
-    });
-
-    m_flags.append({
-        QStringLiteral("-fno-strict-aliasing"),
-        tr("Direct Byte Stream for Decompression Buffers"),
-        tr("4. Engine Plugins & Heavy Formats (Requires Plugin Build)"),
-        FlagSafetyLevel::Recommended,
-        tr("🧩 <b>Requires Plugin Build.</b> Enables extraction and media demuxing engines to read packed byte streams at maximum bus bandwidth without conversion overhead."),
-        QStringLiteral("all"),
-        false,
+        true,
         QString()
     });
 }
 
 void CompilerWizardDialog::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
+    QVBoxLayout *mainLayout = contentLayout();
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSpacing(12);
 
     // 1. Host Hardware Info Card
@@ -538,18 +461,10 @@ void CompilerWizardDialog::applyPreset(int index)
             for (int i = 0; i < m_flags.size(); ++i) {
                 bool active = false;
                 if (cpuProfile == QLatin1String("native")) {
-                    if (m_flags[i].flag == QLatin1String("-march=native") ||
-                        m_flags[i].flag == QLatin1String("-pipe") ||
-                        m_flags[i].flag == QLatin1String("-flto=auto") ||
-                        m_flags[i].flag == QLatin1String("-fdevirtualize-at-ltrans") ||
-                        m_flags[i].flag == QLatin1String("-fno-semantic-interposition") ||
-                        m_flags[i].flag == QLatin1String("-fomit-frame-pointer")) {
-                        active = true;
-                    }
+                    active = true; // All 8 flags are recommended and active for native CPU
                 } else {
-                    if (m_flags[i].flag == QLatin1String("-march=x86-64-v3") ||
-                        m_flags[i].flag == QLatin1String("-pipe") ||
-                        m_flags[i].flag == QLatin1String("-fno-semantic-interposition")) {
+                    if (m_flags[i].flag != QLatin1String("-march=native") &&
+                        m_flags[i].flag != QLatin1String("-mcrc32")) {
                         active = true;
                     }
                 }
@@ -573,7 +488,7 @@ void CompilerWizardDialog::applyPreset(int index)
             m_checkboxes[i]->setChecked(active);
         }
     } else if (index == 2) {
-        // Optimized for Images & Graphics
+        // Optimized for Images & Graphics (Cumulative: keeps core UI and adds graphics/SIMD tuning)
         for (int i = 0; i < m_flags.size(); ++i) {
             if (!m_checkboxes[i]->isEnabled()) {
                 m_checkboxes[i]->setChecked(false);
@@ -582,24 +497,17 @@ void CompilerWizardDialog::applyPreset(int index)
             const QString &f = m_flags[i].flag;
             bool active = (f == QLatin1String("-march=native") ||
                            f == QLatin1String("-pipe") ||
-                           f == QLatin1String("-ftree-vectorize") ||
-                           f == QLatin1String("-funroll-loops") ||
-                           f == QLatin1String("-fvect-cost-model=dynamic") ||
-                           f == QLatin1String("-fno-math-errno") ||
-                           f == QLatin1String("-falign-loops=32"));
+                           f == QLatin1String("-flto=auto") ||
+                           f == QLatin1String("-fdevirtualize-at-ltrans") ||
+                           f == QLatin1String("-fno-semantic-interposition") ||
+                           f == QLatin1String("-fomit-frame-pointer") ||
+                           f == QLatin1String("-ftree-vectorize"));
             m_checkboxes[i]->setChecked(active);
         }
     } else if (index == 3) {
-        // Maximum Performance (UI + Images + Plugins)
+        // Maximum Performance (UI + Images + Plugins): all 8 flags active
         for (int i = 0; i < m_flags.size(); ++i) {
-            if (!m_checkboxes[i]->isEnabled()) {
-                m_checkboxes[i]->setChecked(false);
-                continue;
-            }
-            const QString &f = m_flags[i].flag;
-            bool active = (f != QLatin1String("-march=x86-64-v3") &&
-                           f != QLatin1String("-march=x86-64-v4"));
-            m_checkboxes[i]->setChecked(active);
+            m_checkboxes[i]->setChecked(m_checkboxes[i]->isEnabled());
         }
     } else if (index == 4) {
         // Custom Configuration: preserves current manual selection
@@ -661,7 +569,9 @@ void CompilerWizardDialog::showFlagInfo(int flagIndex)
         "<p style='font-size: 13px; line-height: 1.5;'>%7</p>"
     ).arg(f.title, f.flag, tr("Category"), f.category, tr("Status"), safetyBadge, f.description);
 
-    QMessageBox::information(this, tr("Compiler Flag Details: %1").arg(f.flag), content);
+    QMessageBox msg(QMessageBox::Information, tr("Compiler Flag Details: %1").arg(f.flag), content, QMessageBox::Ok, this);
+    msg.setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+    msg.exec();
 }
 
 void CompilerWizardDialog::copyToClipboard()

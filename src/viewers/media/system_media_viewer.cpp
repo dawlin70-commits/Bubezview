@@ -117,6 +117,8 @@ SystemMediaViewer::~SystemMediaViewer()
     }
     if (m_player) {
         m_player->stop();
+        m_player->setVideoOutput(nullptr);
+        m_player->setSource(QUrl());
     }
 }
 
@@ -899,6 +901,12 @@ bool SystemMediaViewer::loadFile(const QString &filePath)
 void SystemMediaViewer::clear()
 {
     stop();
+    if (m_player) {
+        m_player->setSource(QUrl());
+    }
+    if (m_videoWidget) {
+        m_videoWidget->hide();
+    }
     m_currentFilePath.clear();
     m_durationMs = 0;
     m_currentPositionMs = 0;

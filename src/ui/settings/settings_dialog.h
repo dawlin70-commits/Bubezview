@@ -6,12 +6,16 @@
 #pragma once
 
 #include <QDialog>
+#include <QPoint>
+#include <QRect>
 
 class QTabWidget;
 class QFrame;
 class QLabel;
 class QPushButton;
 class BuildConsoleDialog;
+class QGraphicsDropShadowEffect;
+class QMouseEvent;
 
 class SettingsAppearanceTab;
 class SettingsIntegrationTab;
@@ -37,7 +41,8 @@ public:
         DesktopIntegration = 1, ///< Dolphin, GNOME/Nemo, and desktop shortcut integrations
         Performance = 2,        ///< Compiler level (-O2/-O3), prefetching, and standby
         Extensions = 3,         ///< Interactive functional module catalog
-        Extra = 4               ///< Language and general preferences
+        SystemTools = 4,        ///< System maintenance, diagnostics, cache, and integrations
+        Extra = 4               ///< Backwards-compatible alias for SystemTools
     };
 
     /**
@@ -57,6 +62,11 @@ public:
      * @param tab Target tab to activate.
      */
     void setCurrentTab(TabIndex tab);
+
+    /**
+     * @brief Returns the extensions tab instance.
+     */
+    SettingsExtensionsTab *extensionsTab() const { return m_extensionsTab; }
 
 signals:
     /**
@@ -85,6 +95,11 @@ public slots:
      * @brief Reverts pending build and module changes back to active configuration.
      */
     void onRevertPendingClicked();
+
+    /**
+     * @brief Updates theme and card styling across all tabs and dialog controls.
+     */
+    void updateAllThemeStyles();
 
 private slots:
     /**
@@ -115,5 +130,33 @@ private:
     QLabel *m_lblBannerMsg = nullptr;
     QPushButton *m_btnBannerRecompile = nullptr;
     QPushButton *m_btnBannerRevert = nullptr;
+    QPushButton *m_btnClose = nullptr;
     BuildConsoleDialog *m_buildConsoleDialog = nullptr;
+
+    // Rounded Floating Container & Custom Header Bar
+    QFrame *m_container = nullptr;
+    QWidget *m_headerBar = nullptr;
+    QLabel *m_lblIcon = nullptr;
+    QLabel *m_lblTitle = nullptr;
+    QPushButton *m_btnTitleClose = nullptr;
+    QPoint m_dragStartPosition;
+    QPoint m_windowStartPosition;
+    bool m_isDragging = false;
+
+    // Resizing State & Helpers
+    Qt::Edges calculateResizeEdges(const QPoint &globalPos) const;
+    void updateResizeCursor(Qt::Edges edges);
+    void performManualResize(const QPoint &globalPos);
+
+    bool m_isCursorOverridden = false;
+    bool m_isResizing = false;
+    Qt::Edges m_resizeEdges;
+    QPoint m_resizeStartPos;
+    QRect m_resizeStartGeom;
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
 };

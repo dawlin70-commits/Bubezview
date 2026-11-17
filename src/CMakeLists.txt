@@ -13,6 +13,7 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/gpu_acceleration_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/ocr_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/system/package_manager_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/system/font_resolution_helper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/plugin_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/preload_cache_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/services/theme_manager.cpp
@@ -23,10 +24,13 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/build_options_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/compiler_wizard_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/custom_source_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/diagnostic_report_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/engine_prompt_card.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/extension_feature_model.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/extension_row_widget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/fallback_notice_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/font_resolution_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/frameless_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/filmstrip_widget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/extensions/first_run_wizard.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/goto_folder_dialog.cpp
@@ -42,6 +46,8 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ocr/ocr_snipper_overlay.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/open_with_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/pdf/pdf_history_widget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/pdf/pdf_image_extract_dialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/pdf/pdf_repair_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/search_bar_widget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/settings/settings_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/settings/settings_appearance_tab.cpp
@@ -51,6 +57,7 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/settings/settings_performance_tab.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/share_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/share_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/unified_export_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/update_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/folder/folder_viewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/image/image_viewer.cpp
@@ -63,6 +70,8 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media/vinyl_sleeve_widget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media/smooth_waveform_scrubber.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media/system_media_viewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_canvas_tools.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_document_ops.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_base_canvas.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf/pdf_base_viewer.cpp
     CACHE INTERNAL "BubezView core application source files"

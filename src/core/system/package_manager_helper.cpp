@@ -148,6 +148,12 @@ QString PackageManagerHelper::packageNameForComponent(const QString &componentId
         if (fam == DistroFamily::Gentoo) return "app-text/qpdf";
         return "qpdf";
     }
+    if (id == "mupdf" || id == "libmupdf" || id == "mupdf-tools") {
+        if (fam == DistroFamily::Debian) return "mupdf-tools";
+        if (fam == DistroFamily::Fedora || fam == DistroFamily::OpenSuse) return "mupdf";
+        if (fam == DistroFamily::Gentoo) return "app-text/mupdf";
+        return "mupdf-tools"; // Arch
+    }
     if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") {
         if (fam == DistroFamily::Debian || fam == DistroFamily::OpenSuse) return "tesseract-ocr";
         if (fam == DistroFamily::Gentoo) return "app-text/tesseract";
@@ -327,14 +333,24 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
     }
 
     if (compilable) {
+        auto hwProf = BuildConfig::instance().activeHardwareProfile();
+        auto mode = BuildConfig::instance().componentSourceMode(componentId);
+        if (mode == BuildConfig::ComponentSourceMode::LocalSource ||
+            hwProf == BuildConfig::HardwareProfile::AllSource ||
+            hwProf == BuildConfig::HardwareProfile::AllStable ||
+            hwProf == BuildConfig::HardwareProfile::MissingOnly) {
+            // User chose compilation: directly trigger source compilation into ~/.local
+            return triggerEngineCompilation(componentId, parentWidget);
+        }
+
         QMessageBox msg(parentWidget);
         msg.setWindowTitle(QObject::tr("Component Activation"));
         msg.setText(QObject::tr("<h3>Activate Engine: %1</h3>"
-                               "<p>This engine requires the system package: <code>%2</code></p>"
+                               "<p>This engine can be compiled from source or installed as a distribution package: <code>%2</code></p>"
                                "<p>Detected distribution: <b>%3</b></p>"
                                "<p>How would you like to proceed?</p>").arg(displayName, pkg, distroDisplayName()));
-        QAbstractButton *btnSys = msg.addButton(QObject::tr("Install from System (Recommended)"), QMessageBox::ActionRole);
         QAbstractButton *btnCompile = msg.addButton(QObject::tr("Compile from Source"), QMessageBox::ActionRole);
+        QAbstractButton *btnSys = msg.addButton(QObject::tr("Install System Package (%1)").arg(pkg), QMessageBox::ActionRole);
         QAbstractButton *btnCancel = msg.addButton(QObject::tr("Cancel"), QMessageBox::RejectRole);
         Q_UNUSED(btnCancel);
         msg.exec();
@@ -843,6 +859,7 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
     proc.start(program, args);
     if (!proc.waitForFinished(3000)) {
         proc.kill();
+        proc.waitForFinished(200);
         s_candidateVersionCache.insert(compKey, QString());
         return QString();
     }
@@ -852,6 +869,7 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
         proc.start("pacman", QStringList() << "-Si" << pkg);
         if (!proc.waitForFinished(2000)) {
             proc.kill();
+            proc.waitForFinished(200);
             s_candidateVersionCache.insert(compKey, QString());
             return QString();
         }

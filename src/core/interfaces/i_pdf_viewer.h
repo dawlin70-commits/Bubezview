@@ -88,6 +88,11 @@ public:
     virtual void fitToWidth() = 0;
 
     /**
+     * @brief Fits document page zoom so the entire page fits inside the window viewport (width & height).
+     */
+    virtual void fitToPage() { fitToWidth(); }
+
+    /**
      * @brief Zooms in document view.
      */
     virtual void zoomIn() {}
@@ -328,6 +333,11 @@ public:
      * @brief Toggles the PDF Studio side panel.
      */
     virtual void toggleStudioPanel() {}
+
+    /**
+     * @brief Displays the comprehensive PDF document properties and metadata dialog.
+     */
+    virtual void showDocumentInfo() {}
     virtual void openStudioPanel(int tabIndex = 0) { Q_UNUSED(tabIndex); }
     virtual void closeStudioPanel() {}
     virtual bool isStudioPanelVisible() const { return false; }

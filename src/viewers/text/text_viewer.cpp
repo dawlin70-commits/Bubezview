@@ -9,6 +9,7 @@
 #include "theme_manager.h"
 #include <QFile>
 #include <QTextStream>
+#include <QStringDecoder>
 #include <QFontDatabase>
 #include <QKeyEvent>
 #include <QFileInfo>
@@ -52,7 +53,7 @@ TextViewer::~TextViewer()
 
 void TextViewer::updateTheme()
 {
-    ThemePreset preset = ThemeManager::currentPreset();
+    ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
     bool isDark = ThemeManager::isDark(preset);
 
     if (m_highlighter) {
@@ -71,16 +72,27 @@ void TextViewer::updateTheme()
             }
         )") + "\n" + ThemeManager::scrollBarStyleSheet(preset));
     } else {
-        setStyleSheet(QStringLiteral(R"(
-            QPlainTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: none;
-                padding: 4px;
-                selection-background-color: #264f78;
-                selection-color: #ffffff;
-            }
-        )") + "\n" + ThemeManager::scrollBarStyleSheet(preset));
+        QString bgHex = QStringLiteral("#1e1e1e");
+        QString fgHex = QStringLiteral("#d4d4d4");
+        QString selBg = QStringLiteral("#264f78");
+        if (preset == ThemePreset::ZincGray) {
+            bgHex = QStringLiteral("#3f4044");
+            fgHex = QStringLiteral("#f1f5f9");
+            selBg = QStringLiteral("#0284c7");
+        } else if (preset == ThemePreset::DarkSlate) {
+            bgHex = QStringLiteral("#111827");
+            fgHex = QStringLiteral("#e2e8f0");
+        }
+        setStyleSheet(QStringLiteral(
+            "QPlainTextEdit {"
+            "   background-color: %1;"
+            "   color: %2;"
+            "   border: none;"
+            "   padding: 4px;"
+            "   selection-background-color: %3;"
+            "   selection-color: #ffffff;"
+            "}\n"
+        ).arg(bgHex, fgHex, selBg) + ThemeManager::scrollBarStyleSheet(preset));
     }
 
     highlightCurrentLine();
@@ -89,42 +101,74 @@ void TextViewer::updateTheme()
     }
 }
 
+namespace {
+
+QString decodeTextBytes(const QByteArray &rawBytes)
+{
+    if (rawBytes.isEmpty()) return QString();
+
+    if (auto encoding = QStringConverter::encodingForData(rawBytes)) {
+        QStringDecoder decoder(*encoding);
+        QString decoded = decoder(rawBytes);
+        if (!decoder.hasError()) {
+            return decoded;
+        }
+    }
+
+    QStringDecoder utf8Decoder(QStringConverter::Utf8);
+    QString utf8Text = utf8Decoder(rawBytes);
+    if (!utf8Decoder.hasError()) {
+        return utf8Text;
+    }
+
+    return QString::fromLatin1(rawBytes);
+}
+
+} // namespace
+
 bool TextViewer::loadFile(const QString &filePath)
 {
     m_currentFilePath = filePath;
 
     QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly)) {
         return false;
     }
 
-    constexpr qint64 maxPreviewBytes = 15 * 1024 * 1024; // 15 MB limit
-    if (file.size() > maxPreviewBytes) {
+    constexpr qint64 maxPreviewBytes = 15LL * 1024 * 1024;   // 15 MB limit
+    constexpr qint64 maxHighlightBytes = 2LL * 1024 * 1024;  // Disable syntax highlighting above 2 MB
+    const qint64 fileSize = file.size();
+
+    if (fileSize > maxPreviewBytes) {
         QByteArray chunk = file.read(maxPreviewBytes);
-        QString text = QString::fromUtf8(chunk);
+        chunk.replace("\r\n", "\n");
+        QString text = decodeTextBytes(chunk);
         text += QString("\n\n--- [%1] ---").arg(tr("Preview truncated: file size exceeds 15 MB"));
+        if (m_highlighter) {
+            m_highlighter->setHighlightingEnabled(false);
+        }
         setPlainText(text);
         setReadOnly(true);
         document()->setModified(false);
         emit editModeChanged(false);
         emit modificationChanged(false);
         updateLineNumberAreaWidth(0);
+        highlightCurrentLine();
         return true;
     }
 
-    // Read with UTF-8
-    QTextStream in(&file);
-    in.setEncoding(QStringConverter::Utf8);
-    setPlainText(in.readAll());
+    QByteArray raw = file.readAll();
     file.close();
+    raw.replace("\r\n", "\n");
 
+    if (m_highlighter) {
+        bool wantHighlight = (fileSize <= maxHighlightBytes) && (isCodeFile() || m_highlighter->isHighlightingEnabled());
+        m_highlighter->setHighlightingEnabled(wantHighlight);
+    }
+
+    setPlainText(decodeTextBytes(raw));
     setReadOnly(true);
     document()->setModified(false);
-
-    // Auto-enable syntax highlighting for source code and config files
-    if (m_highlighter) {
-        m_highlighter->setHighlightingEnabled(isCodeFile() || m_highlighter->isHighlightingEnabled());
-    }
 
     updateLineNumberAreaWidth(0);
     highlightCurrentLine();

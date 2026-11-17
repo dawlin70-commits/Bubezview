@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QString>
 #include <QList>
 
@@ -38,7 +38,7 @@ struct PdfDigitalSignatureInfo {
  * @brief Provides UI for inspecting existing PAdES/CAdES digital signatures,
  *        signing PDFs with a PKCS#12 (.p12/.pfx) certificate, and generating self-signed certificates.
  */
-class PdfCryptoSignatureDialog : public QDialog {
+class PdfCryptoSignatureDialog : public FramelessDialog {
     Q_OBJECT
 
 public:

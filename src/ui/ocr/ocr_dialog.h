@@ -1,13 +1,17 @@
 #ifndef OCR_DIALOG_H
 #define OCR_DIALOG_H
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QPlainTextEdit>
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
 #include <QProgressBar>
+#include <QCloseEvent>
 #include <functional>
+#include <thread>
+#include <atomic>
+#include <memory>
 
 /**
  * @brief Modern, dedicated dialog for reviewing, copying, saving, and re-extracting OCR text.
@@ -15,7 +19,7 @@
  * Supports language selection, 1-click downloading of new languages via an embedded
  * settings gear (⚙️), PDF page vs. full-document extraction, and live word/character statistics.
  */
-class OcrDialog : public QDialog
+class OcrDialog : public FramelessDialog
 {
     Q_OBJECT
 
@@ -40,7 +44,7 @@ public:
                        std::function<QImage(int)> pageRenderer = nullptr,
                        QWidget *parent = nullptr);
 
-    ~OcrDialog() override = default;
+    ~OcrDialog() override;
 
 private slots:
     void updateStats();
@@ -63,8 +67,12 @@ public:
      */
     static QString sanitizeOcrArtifacts(const QString &rawText);
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private:
     void setupUi();
+    void setControlsBusy(bool busy);
     QString currentSelectedLanguageCode() const;
 
     QString m_sourceName;
@@ -79,6 +87,10 @@ private:
     bool m_isShowingFullDoc;
     QString m_rawTextBeforeClean;
     bool m_isCleaned;
+
+    std::unique_ptr<std::thread> m_workerThread;
+    std::shared_ptr<std::atomic<bool>> m_cancelFlag;
+    bool m_isExtracting = false;
 
     QLabel *m_lblInfo;
     QLabel *m_lblStats;

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QDialog>
+#include "dialogs/frameless_dialog.h"
 #include <QList>
 #include <QString>
 
@@ -44,7 +44,7 @@ struct CompilerFlagDef {
  * @class CompilerWizardDialog
  * @brief Dialog window allowing users to customize fine-grained compiler and microarchitecture flags.
  */
-class CompilerWizardDialog : public QDialog {
+class CompilerWizardDialog : public FramelessDialog {
     Q_OBJECT
 
 public:
@@ -82,12 +82,14 @@ signals:
      */
     void openExtensionsTabRequested();
 
-private slots:
+public slots:
     /**
      * @brief Applies a predefined flag configuration profile.
      * @param index Preset index.
      */
     void applyPreset(int index);
+
+private slots:
 
     /**
      * @brief Updates preview box and handles mutual exclusion whenever a flag checkbox changes.

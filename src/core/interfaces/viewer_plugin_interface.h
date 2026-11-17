@@ -60,5 +60,5 @@ public:
     virtual IViewerWidget *createViewer(QWidget *parent = nullptr) = 0;
 };
 
-#define ViewerPluginInterface_iid "org.bubezview.ViewerPluginInterface/1.0"
+#define ViewerPluginInterface_iid "org.bubezview.ViewerPluginInterface/2.0"
 Q_DECLARE_INTERFACE(ViewerPluginInterface, ViewerPluginInterface_iid)

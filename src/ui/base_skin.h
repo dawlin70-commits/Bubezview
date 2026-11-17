@@ -30,6 +30,7 @@ class EnginePromptCard;
  */
 class BaseSkin : public QMainWindow {
     Q_OBJECT
+    Q_PROPERTY(QString currentFilePath READ currentFilePath)
 
 public:
     enum class OpenResult {
@@ -136,6 +137,7 @@ public slots:
     void showFindReplace();
     void gotoLineInDocument();
     void extractOcrCurrentFile();
+    void extractOcrSnippet(const QImage &snippetImage);
     void openSettings();
     void openAppearanceSettings();
     virtual void applyCurrentTheme();
@@ -163,6 +165,8 @@ public slots:
     void zoomOutCurrent();
     void resetZoomCurrent();
     void fitCurrent();
+    void fitWidthCurrent();
+    void fitPageCurrent();
     void toggleZoomTool(bool active);
     bool isZoomToolActive() const;
 
@@ -214,6 +218,7 @@ protected:
 
     bool promptAndSaveIfModified();
     void repositionSearchBar();
+    void handleEscapeAction();
 
     IPdfViewer *ensurePdfViewerCreated();
     bool promotePdfViewerToStudio();
@@ -279,6 +284,9 @@ protected:
     FileCategory m_currentCategory;
 
     void openArchiveFile(const QString &extractedFilePath, const QString &internalEntryPath);
+    void openFileFromGalleryWithZoom(const QString &filePath);
+    void returnToFolderWithZoom(const QString &dir, const QString &targetFilePath);
+    void safeReplaceStackedWidget(int index, QWidget *newWidget);
 
     // Fast-Skip Transition System
     class TransitionOverlayWidget *m_transitionOverlay;
