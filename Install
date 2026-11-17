@@ -630,20 +630,16 @@ except Exception:
 
     local cpu_cores
     cpu_cores=$(nproc 2>/dev/null || echo "2")
-    local build_target_arg=()
-    if [ -n "$TARGET_EXE" ]; then
-        build_target_arg=(--target "$TARGET_EXE")
-    fi
 
     local build_ret=0
     if [ "$UI_MODE" = "zenity" ]; then
         (
             echo "# Compilazione in corso con $cpu_cores thread..."
-            cmake --build "$build_dir" --parallel "$cpu_cores" "${build_target_arg[@]}" >> "$build_log" 2>&1
+            cmake --build "$build_dir" --parallel "$cpu_cores" >> "$build_log" 2>&1
         ) | zenity --progress --title="Compilazione - $APP_NAME" --text="Compilazione del codice sorgente C++ in corso..." --pulsate --auto-close 2>/dev/null || true
     else
         echo -e "${BLUE}[*] Compilazione in corso ($cpu_cores core)...${NC}"
-        cmake --build "$build_dir" --parallel "$cpu_cores" "${build_target_arg[@]}" 2>&1 | tee -a "$build_log" || build_ret=$?
+        cmake --build "$build_dir" --parallel "$cpu_cores" 2>&1 | tee -a "$build_log" || build_ret=$?
     fi
 
     local exe_path=""
@@ -672,6 +668,18 @@ except Exception:
     cp -f "$exe_path" "$app_install_dir/$final_exe_name"
     chmod +x "$app_install_dir/$final_exe_name"
     ln -sf "$app_install_dir/$final_exe_name" "$user_bin/$APP_ID"
+
+    # Installazione formale tramite CMake e sincronizzazione dei plugin modulari (.so)
+    cmake --install "$build_dir" --prefix "$HOME/.local" >> "$build_log" 2>&1 || true
+
+    local plugins_dir="$HOME/.local/lib/$APP_ID/plugins"
+    local plugins_share_dir="$HOME/.local/share/$APP_ID/plugins"
+    mkdir -p "$plugins_dir" "$plugins_share_dir" "$app_install_dir/plugins"
+    if [ -d "$build_dir/plugins" ]; then
+        find "$build_dir/plugins" -type f -name "*.so" -exec cp -f {} "$plugins_dir/" \; 2>/dev/null || true
+        find "$build_dir/plugins" -type f -name "*.so" -exec cp -f {} "$plugins_share_dir/" \; 2>/dev/null || true
+        find "$build_dir/plugins" -type f -name "*.so" -exec cp -f {} "$app_install_dir/plugins/" \; 2>/dev/null || true
+    fi
 
     # Se esiste un binario di sviluppo in build_deb, aggiorna anche quello per coerenza tra gli ambienti
     local dev_build_deb="/home/davide/Progetti/BubezView/build_deb/$final_exe_name"

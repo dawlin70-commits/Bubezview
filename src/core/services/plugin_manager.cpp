@@ -7,6 +7,9 @@
 #include "interfaces/viewer_plugin_interface.h"
 #include "package_manager_helper.h"
 #include "build_config.h"
+#ifdef HAVE_LIBARCHIVE
+#include "viewers/archive/archive_viewer.h"
+#endif
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -198,6 +201,22 @@ void PluginManager::discoverPlugins()
         }
     }
 
+#ifdef HAVE_LIBARCHIVE
+    if (!m_plugins.contains("archive")) {
+        PluginDescriptor desc;
+        desc.id = "archive";
+        desc.filePath = "builtin";
+        desc.displayName = "LibArchive Engine (Built-in)";
+        desc.description = "Direct internal compressed archive support (ZIP, TAR, 7Z, ISO, etc.)";
+        desc.category = FileCategory::Archive;
+        desc.extensions = s_archiveExtensions;
+        desc.isLoaded = true;
+        desc.interfaceInstance = nullptr;
+        desc.loader = nullptr;
+        m_plugins[desc.id] = desc;
+    }
+#endif
+
     emit pluginsChanged();
 }
 
@@ -266,7 +285,7 @@ void PluginManager::registerPlugin(ViewerPluginInterface *plugin)
 bool PluginManager::isEngineAvailable(FileCategory category) const
 {
     for (const auto &desc : m_plugins) {
-        if (desc.category == category && desc.isLoaded && desc.interfaceInstance) {
+        if (desc.category == category && desc.isLoaded && (desc.interfaceInstance || desc.filePath == "builtin")) {
             return true;
         }
     }
@@ -320,8 +339,15 @@ bool PluginManager::unloadPlugin(FileCategory category)
 IViewerWidget *PluginManager::createViewer(FileCategory category, QWidget *parent)
 {
     for (const auto &desc : m_plugins) {
-        if (desc.category == category && desc.isLoaded && desc.interfaceInstance) {
-            return desc.interfaceInstance->createViewer(parent);
+        if (desc.category == category && desc.isLoaded) {
+            if (desc.interfaceInstance) {
+                return desc.interfaceInstance->createViewer(parent);
+            }
+#ifdef HAVE_LIBARCHIVE
+            if (desc.filePath == "builtin" && category == FileCategory::Archive) {
+                return new ArchiveViewer(parent);
+            }
+#endif
         }
     }
     return nullptr;

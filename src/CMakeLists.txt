@@ -61,6 +61,7 @@ set(APP_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/dialogs/update_dialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/folder/folder_viewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/image/image_viewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/archive/archive_viewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/office/office_viewer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/line_number_area.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text/syntax_highlighter.cpp
@@ -100,6 +101,7 @@ set(APP_COMMON_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/text
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/office
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/folder
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewers/archive
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/media
     ${CMAKE_CURRENT_SOURCE_DIR}/viewers/pdf
     ${POPPLER_QT6_INCLUDE_DIRS}
