@@ -133,9 +133,7 @@ MpvVideoWidget::MpvVideoWidget(QWidget *parent)
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-    // Note: MpvGLWidget is lazily instantiated via ensureGlWidgetCreated() when
-    // playing an actual video file, avoiding OpenGL context and native window surface
-    // recreation when launching or playing audio-only files.
+    ensureGlWidgetCreated();
 }
 
 MpvVideoWidget::~MpvVideoWidget()

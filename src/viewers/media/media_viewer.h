@@ -312,6 +312,7 @@ private slots:
     void showAudioTracksMenu();
     void showSubtitlesMenu();
     void processMpvEvents();
+    void onVideoContextReady();
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;

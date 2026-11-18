@@ -312,6 +312,7 @@ void MediaViewer::setupUi()
     // 1. GPU OpenGL Video Widget (for video files)
     m_videoWidget = new MpvVideoWidget(this);
     m_videoWidget->setStyleSheet("background-color: #000000;");
+    connect(m_videoWidget, &MpvVideoWidget::contextReady, this, &MediaViewer::onVideoContextReady);
 
     // 2. Audio Stacked Workspace (Pages 0..4)
     m_audioStackedWidget = new DynamicStackedWidget(this);
@@ -1021,23 +1022,10 @@ bool MediaViewer::loadFile(const QString &filePath)
 
     if (!m_isAudioOnly && m_videoWidget && !m_videoWidget->isContextReady()) {
         m_pendingVideoFile = targetPath;
-        connect(m_videoWidget, &MpvVideoWidget::contextReady, this, [this]() {
-            if (!m_pendingVideoFile.isEmpty() && m_mpv) {
-                QString path = m_pendingVideoFile;
-                m_pendingVideoFile.clear();
-                qDebug() << "[BubezView-Video] Context ready, now executing deferred loadfile for:" << path;
-                mpv_set_property_string(m_mpv, "vid", "auto");
-                QByteArray pathBytes = path.toUtf8();
-                const char *cmd[] = {"loadfile", pathBytes.constData(), "replace", nullptr};
-                mpv_command(m_mpv, cmd);
-                int pause = 0;
-                mpv_set_property(m_mpv, "pause", MPV_FORMAT_FLAG, &pause);
-                updatePlaybackStateUi(true);
-            }
-        }, Qt::UniqueConnection);
         return true;
     }
 
+    m_pendingVideoFile.clear();
     QByteArray pathBytes = targetPath.toUtf8();
     const char *cmd[] = {"loadfile", pathBytes.constData(), "replace", nullptr};
     mpv_command(m_mpv, cmd);
@@ -1047,6 +1035,22 @@ bool MediaViewer::loadFile(const QString &filePath)
     updatePlaybackStateUi(pause == 0);
 
     return true;
+}
+
+void MediaViewer::onVideoContextReady()
+{
+    if (!m_pendingVideoFile.isEmpty() && m_mpv) {
+        QString path = m_pendingVideoFile;
+        m_pendingVideoFile.clear();
+        qDebug() << "[BubezView-Video] Context ready, executing deferred loadfile for:" << path;
+        mpv_set_property_string(m_mpv, "vid", "auto");
+        QByteArray pathBytes = path.toUtf8();
+        const char *cmd[] = {"loadfile", pathBytes.constData(), "replace", nullptr};
+        mpv_command(m_mpv, cmd);
+        int pause = 0;
+        mpv_set_property(m_mpv, "pause", MPV_FORMAT_FLAG, &pause);
+        updatePlaybackStateUi(true);
+    }
 }
 
 void MediaViewer::updateAudioBadgeAndCover()
