@@ -38,6 +38,17 @@ public:
      */
     void cleanup();
 
+    /**
+     * @brief Checks if the underlying mpv OpenGL render context has been created and is operational.
+     */
+    bool isContextReady() const;
+
+signals:
+    /**
+     * @brief Emitted when the OpenGL surface and libmpv render context are successfully created.
+     */
+    void contextReady();
+
 private:
     MpvGLWidget *m_glWidget = nullptr;
     mpv_handle *m_mpv = nullptr;

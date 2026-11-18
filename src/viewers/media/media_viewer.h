@@ -416,6 +416,7 @@ private:
 
     QPointer<QDialog> m_equalizerDialog;
 
+    QString m_pendingVideoFile;
     QString m_currentFilePath;
     QStringList m_siblingFiles;
     QStringList m_audioSiblingFiles;

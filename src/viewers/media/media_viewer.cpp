@@ -179,7 +179,7 @@ MediaViewer::MediaViewer(QWidget *parent)
         mpv_set_option_string(m_mpv, "msg-level", "ao=v,alsa=v,audio=v");
         QSettings mediaSettings("Bubez", "BubezView");
         bool gpuEnabled = mediaSettings.value("performance/gpu_acceleration", true).toBool();
-        mpv_set_option_string(m_mpv, "hwdec", gpuEnabled ? "auto-safe" : "no");
+        mpv_set_option_string(m_mpv, "hwdec", gpuEnabled ? "auto-copy" : "no");
         mpv_set_option_string(m_mpv, "vo", "libmpv");
         if (m_isBitPerfect) {
             mpv_set_option_string(m_mpv, "audio-resample", "no");
@@ -868,6 +868,7 @@ void MediaViewer::setupUi()
 bool MediaViewer::loadFile(const QString &filePath)
 {
     QString targetPath = filePath;
+    m_pendingVideoFile.clear();
     // Remember whether an audio workspace session is in progress: when the user
     // skips tracks in Edit mode the active workspace page must be preserved.
     const bool keepWorkspace = m_isAudioOnly && m_isEditMode;
@@ -1017,6 +1018,26 @@ bool MediaViewer::loadFile(const QString &filePath)
     if (m_mpv) {
         mpv_set_property_string(m_mpv, "vid", m_isAudioOnly ? "no" : "auto");
     }
+
+    if (!m_isAudioOnly && m_videoWidget && !m_videoWidget->isContextReady()) {
+        m_pendingVideoFile = targetPath;
+        connect(m_videoWidget, &MpvVideoWidget::contextReady, this, [this]() {
+            if (!m_pendingVideoFile.isEmpty() && m_mpv) {
+                QString path = m_pendingVideoFile;
+                m_pendingVideoFile.clear();
+                qDebug() << "[BubezView-Video] Context ready, now executing deferred loadfile for:" << path;
+                mpv_set_property_string(m_mpv, "vid", "auto");
+                QByteArray pathBytes = path.toUtf8();
+                const char *cmd[] = {"loadfile", pathBytes.constData(), "replace", nullptr};
+                mpv_command(m_mpv, cmd);
+                int pause = 0;
+                mpv_set_property(m_mpv, "pause", MPV_FORMAT_FLAG, &pause);
+                updatePlaybackStateUi(true);
+            }
+        }, Qt::UniqueConnection);
+        return true;
+    }
+
     QByteArray pathBytes = targetPath.toUtf8();
     const char *cmd[] = {"loadfile", pathBytes.constData(), "replace", nullptr};
     mpv_command(m_mpv, cmd);

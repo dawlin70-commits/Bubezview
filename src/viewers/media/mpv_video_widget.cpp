@@ -35,6 +35,11 @@ public:
         m_mpv = mpv;
     }
 
+    bool isContextReady() const
+    {
+        return m_mpvGL != nullptr;
+    }
+
     void cleanup()
     {
         if (m_mpvGL) {
@@ -65,6 +70,13 @@ protected:
 
         if (mpv_render_context_create(&m_mpvGL, m_mpv, params) >= 0 && m_mpvGL) {
             mpv_render_context_set_update_callback(m_mpvGL, MpvGLWidget::onMpvUpdate, this);
+            if (m_mpv) {
+                mpv_set_property_string(m_mpv, "vid", "auto");
+            }
+            auto *parentVid = qobject_cast<MpvVideoWidget *>(parent());
+            if (parentVid) {
+                emit parentVid->contextReady();
+            }
         }
     }
 
@@ -156,4 +168,9 @@ void MpvVideoWidget::cleanup()
     if (m_glWidget) {
         m_glWidget->cleanup();
     }
+}
+
+bool MpvVideoWidget::isContextReady() const
+{
+    return m_glWidget && m_glWidget->isContextReady();
 }
