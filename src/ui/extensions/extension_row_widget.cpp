@@ -399,7 +399,8 @@ void ExtensionRowWidget::handleInstallClicked()
         if (wantsSource && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
             QString targetId = m_mod.id;
             if (!PackageManagerHelper::isCompilableEngine(m_mod.id)) {
-                if (m_mod.category == QLatin1String("PDF")) targetId = QStringLiteral("engine-poppler");
+                if (m_mod.id == QLatin1String("poppler-data")) targetId = QStringLiteral("poppler-data");
+                else if (m_mod.category == QLatin1String("PDF")) targetId = QStringLiteral("engine-poppler");
                 else if (m_mod.category == QLatin1String("Archive")) targetId = QStringLiteral("engine-libarchive");
                 else if (m_mod.category == QLatin1String("Office")) targetId = QStringLiteral("engine-office");
                 else if (m_mod.category == QLatin1String("Media")) targetId = QStringLiteral("engine-mpv");

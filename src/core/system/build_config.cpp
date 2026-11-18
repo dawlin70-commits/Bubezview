@@ -234,9 +234,9 @@ void BuildConfig::applyHardwareProfile(HardwareProfile profile)
         settings.setValue("hardware_profile", "system_packages");
 
         const QStringList engines = {
-            "engine-poppler", "poppler", "pdfimages",
+            "engine-poppler", "poppler", "pdfimages", "poppler-data",
             "engine-libarchive", "libarchive", "qpdf",
-            "tesseract", "engine-office", "librevenge", "mpv", "engine-mpv",
+            "tesseract", "tessdata", "tesseract-ocr-ita", "engine-office", "librevenge", "mpv", "engine-mpv",
             "7zip", "image-formats", "zstd", "xz"
         };
         for (const QString &eng : engines) {
@@ -258,9 +258,9 @@ void BuildConfig::applyHardwareProfile(HardwareProfile profile)
         settings.setValue("hardware_profile", "missing_only");
 
         const QStringList engines = {
-            "engine-poppler", "poppler", "pdfimages",
+            "engine-poppler", "poppler", "pdfimages", "poppler-data",
             "engine-libarchive", "libarchive", "qpdf",
-            "tesseract", "engine-office", "librevenge", "mpv", "engine-mpv",
+            "tesseract", "tessdata", "tesseract-ocr-ita", "engine-office", "librevenge", "mpv", "engine-mpv",
             "7zip", "image-formats", "zstd", "xz"
         };
         for (const QString &eng : engines) {
@@ -284,9 +284,9 @@ void BuildConfig::applyHardwareProfile(HardwareProfile profile)
         settings.setValue("hardware_profile", "all_stable");
 
         const QStringList engines = {
-            "engine-poppler", "poppler", "pdfimages",
+            "engine-poppler", "poppler", "pdfimages", "poppler-data",
             "engine-libarchive", "libarchive", "qpdf",
-            "tesseract", "7zip", "image-formats", "zstd", "xz"
+            "tesseract", "tessdata", "tesseract-ocr-ita", "7zip", "image-formats", "zstd", "xz"
         };
         for (const QString &eng : engines) {
             settings.setValue("component_mode_" + eng, "source");
@@ -308,9 +308,9 @@ void BuildConfig::applyHardwareProfile(HardwareProfile profile)
         settings.setValue("hardware_profile", "all_source");
 
         const QStringList engines = {
-            "engine-poppler", "poppler", "pdfimages",
+            "engine-poppler", "poppler", "pdfimages", "poppler-data",
             "engine-libarchive", "libarchive", "qpdf",
-            "tesseract", "engine-office", "librevenge", "mpv", "engine-mpv",
+            "tesseract", "tessdata", "tesseract-ocr-ita", "engine-office", "librevenge", "mpv", "engine-mpv",
             "7zip", "image-formats", "zstd", "xz"
         };
         for (const QString &eng : engines) {
@@ -879,7 +879,15 @@ bool BuildConfig::hasSystemBinary(const QString &componentId)
         return isPkgInstalled("taglib") || isPkgInstalled("libtag1v5");
     }
     if (id == "poppler-data") {
-        return isPopplerDataInstalled();
+        return isPkgInstalled("poppler-data") ||
+               QFile::exists("/usr/share/poppler/cMap") ||
+               QFile::exists("/usr/local/share/poppler/cMap");
+    }
+    if (id == "tessdata" || id == "tesseract-ocr-ita" || id == "ocr-ita") {
+        return isPkgInstalled("tesseract-ocr-ita") ||
+               QFile::exists("/usr/share/tesseract-ocr/5/tessdata/ita.traineddata") ||
+               QFile::exists("/usr/share/tesseract-ocr/4.00/tessdata/ita.traineddata") ||
+               QFile::exists("/usr/share/tessdata/ita.traineddata");
     }
     if (id == "image-formats" || id == "qt6-image-formats-plugins" || id == "qt6-imageformats") {
         return isImageFormatsInstalled();
@@ -1029,7 +1037,7 @@ BuildConfig::ComponentSourceMode BuildConfig::componentSourceMode(const QString 
 
     // If this component cannot be compiled from source (system library/package only),
     // strictly enforce SystemBinary regardless of any stale saved settings.
-    if (!PackageManagerHelper::isCompilableEngine(id)) {
+    if (!PackageManagerHelper::isCompilableEngine(id) && !PackageManagerHelper::isUserSpaceInstallable(id)) {
         return ComponentSourceMode::SystemBinary;
     }
 
@@ -1040,8 +1048,8 @@ BuildConfig::ComponentSourceMode BuildConfig::componentSourceMode(const QString 
     QString key = "component_mode_" + id;
     if (settings.contains(key)) {
         QString pref = settings.value(key).toString();
-        if (pref == "system" && sys) return ComponentSourceMode::SystemBinary;
-        if (pref == "source" && src) return ComponentSourceMode::LocalSource;
+        if (pref == "system") return ComponentSourceMode::SystemBinary;
+        if (pref == "source") return ComponentSourceMode::LocalSource;
     }
 
     // Default presence fallback:

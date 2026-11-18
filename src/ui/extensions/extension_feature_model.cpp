@@ -86,8 +86,8 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         m.systemPackage = PackageManagerHelper::packageNameForComponent("poppler-data");
         m.category = "PDF";
         m.summary = tr("CMAP character encoding tables for rendering Chinese, Japanese, Korean, and non-Western glyphs.");
-        m.canCompile = false;
-        m.isStaticCompiled = false;
+        m.canCompile = true;
+        m.isStaticCompiled = BuildConfig::hasSourceBinary("poppler-data");
         m.diagnosticCommand = "ls -d /usr/share/poppler/cMap";
         m.features = {
             {

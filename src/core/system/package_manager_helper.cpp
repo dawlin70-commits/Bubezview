@@ -256,7 +256,9 @@ bool PackageManagerHelper::isCompilableEngine(const QString &componentId)
             id == "media" || id == "mpv" ||
             id == "zstd" || id == "xz" || id == "7zip" || id == "7z" || id == "7zz" ||
             id == "qpdf" || id == "tesseract" || id == "ocr" || id == "tesseract-ocr" ||
-            id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins");
+            id == "tesseract-ocr-ita" || id == "tessdata" || id == "ocr-ita" ||
+            id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins" ||
+            id == "poppler-data");
 }
 
 bool PackageManagerHelper::isUserSpaceInstallable(const QString &componentId)

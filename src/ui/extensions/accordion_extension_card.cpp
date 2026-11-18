@@ -320,7 +320,8 @@ void AccordionExtensionCard::handleInstallOrUninstall()
         if (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id)) {
             QString targetId = m_mod.id;
             if (!PackageManagerHelper::isCompilableEngine(m_mod.id)) {
-                if (m_mod.id == "pdfimages" || m_mod.category == "PDF") targetId = "engine-poppler";
+                if (m_mod.id == "poppler-data") targetId = "poppler-data";
+                else if (m_mod.id == "pdfimages" || m_mod.category == "PDF") targetId = "engine-poppler";
                 else if (m_mod.id == "zstd" || m_mod.id == "xz" || m_mod.category == "Archive") targetId = "engine-libarchive";
                 else if (m_mod.category == "Office") targetId = "engine-office";
                 else if (m_mod.category == "Media") targetId = "engine-mpv";
@@ -336,7 +337,8 @@ void AccordionExtensionCard::handleInstallOrUninstall()
         if (compileWanted && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
             QString targetId = m_mod.id;
             if (!PackageManagerHelper::isCompilableEngine(m_mod.id)) {
-                if (m_mod.id == "pdfimages" || m_mod.category == "PDF") targetId = "engine-poppler";
+                if (m_mod.id == "poppler-data") targetId = "poppler-data";
+                else if (m_mod.id == "pdfimages" || m_mod.category == "PDF") targetId = "engine-poppler";
                 else if (m_mod.id == "zstd" || m_mod.id == "xz" || m_mod.category == "Archive") targetId = "engine-libarchive";
                 else if (m_mod.category == "Office") targetId = "engine-office";
                 else if (m_mod.category == "Media") targetId = "engine-mpv";
