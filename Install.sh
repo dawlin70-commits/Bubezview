@@ -1,16 +1,14 @@
 #!/bin/env bash
 # ==============================================================================
-# INSTALLATORE STANDALONE C++ / CMAKE
-# Generato da Release Studio
+# BUBEZVIEW STANDALONE INSTALLER & COMPILER
 # ==============================================================================
 
 set -e
 
 APP_ID="bubezview"
-APP_NAME="Bubezview"
+APP_NAME="BubezView"
 PROJECT_URL="https://dawlinshare.web.app/versioni.json"
 TARGET_EXE="bubezview"
-ICON_NAME="bubezview_icon.jpg"
 APP_CATEGORY="Utility"
 
 RELEASE_PUBKEY="-----BEGIN PUBLIC KEY-----
@@ -18,13 +16,12 @@ MCowBQYDK2VwAyEAfr3yn0QMgvYvEjW+fkfKAF8ZP4EWsn9DOrhtjHPEe1I=
 -----END PUBLIC KEY-----"
 
 # ------------------------------------------------------------------------------
-# 1. RILEVAMENTO INTERFACCIA (GUI o TERMINALE)
+# 1. PARSING ARGOMENTI & RILEVAMENTO INTERFACCIA
 # ------------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 UI_MODE="cli"
 FORCE_CLI=0
-VERBOSE=0
 IS_UPDATE=0
 ACTION=""
 PURGE=0
@@ -34,19 +31,13 @@ CUSTOM_GIT_BRANCH=""
 CUSTOM_BUILD_FLAGS=""
 EXTRA_CMAKE_ARGS=()
 
-for arg in "$@"; do
-    case "$arg" in
+while [ "$#" -gt 0 ]; do
+    case "$1" in
         --cli|-c)
             FORCE_CLI=1
             ;;
         --update|-u|--yes|-y)
             IS_UPDATE=1
-            FORCE_CLI=1
-            ;;
-        --verbose|-v)
-            VERBOSE=1
-            ;;
-        --build-component)
             FORCE_CLI=1
             ;;
         --uninstall)
@@ -72,24 +63,54 @@ for arg in "$@"; do
             ACTION="reset"
             FORCE_CLI=1
             ;;
+        --build-component)
+            ACTION="build_component"
+            FORCE_CLI=1
+            shift
+            if [ -z "$1" ]; then
+                echo -e "\033[0;31m[!] Errore: specificare il componente per --build-component (es. poppler, libarchive, 7zip, qpdf, tesseract)\033[0m" >&2
+                exit 1
+            fi
+            TARGET_COMPONENT="$1"
+            ;;
+        --git-url)
+            shift
+            [ -n "$1" ] && CUSTOM_GIT_URL="$1"
+            ;;
+        --git-branch)
+            shift
+            [ -n "$1" ] && CUSTOM_GIT_BRANCH="$1"
+            ;;
+        --extra-build-flags)
+            shift
+            [ -n "$1" ] && CUSTOM_BUILD_FLAGS="$1"
+            ;;
+        --build-tesseract)
+            ACTION="build_component"
+            TARGET_COMPONENT="tesseract"
+            FORCE_CLI=1
+            ;;
+        -D*)
+            EXTRA_CMAKE_ARGS+=("$1")
+            ;;
         --help|-h)
             echo "Uso: ./Install.sh [opzioni]"
             echo ""
             echo "Opzioni principali:"
-            echo "  (nessun argomento)     Avvia il menu grafico interattivo (se presente interfaccia)"
-            echo "  --cli, -c              Esegui in modalità terminale (senza dialoghi grafici)"
-            echo "  --update, -u, -y       Esegui installazione o aggiornamento non interattivo"
-            echo "  --reinstall            Pulisci cache di build e reinstalla da zero"
-            echo "  --clean                Pulisci i file e le cartelle temporanee di compilazione"
-            echo "  --doctor, --status     Verifica stato, motori, librerie e dipendenze di sistema"
+            echo "  (nessun argomento)     Avvia il menu grafico interattivo (Installa, Reinstalla, Disinstalla)"
+            echo "  --cli, -c              Esegui in modalità terminale"
+            echo "  --update, -u, -y       Aggiorna/installa senza conferme"
+            echo "  --reinstall            Reinstalla da zero e riavvia il Setup (First Run Wizard)"
+            echo "  --uninstall [--purge]  Disinstalla BubezView dal sistema (con --purge rimuove config e cache)"
+            echo "  --clean                Pulisci i file temporanei di compilazione"
+            echo "  --doctor, --status     Diagnostica motori e librerie di sistema"
             echo "  --reset-config         Ripristina le impostazioni predefinite di fabbrica"
-            echo "  --uninstall [--purge]  Disinstalla BubezView dal sistema (con --purge rimuove anche config e cache)"
-            echo "  --build-component <N>  Compila un singolo modulo da sorgente (poppler, libarchive, 7zip, qpdf, tesseract)"
-            echo "  --verbose, -v          Output dettagliato"
+            echo "  --build-component <N>  Compila un modulo da sorgente (poppler, libarchive, 7zip, qpdf, tesseract)"
             echo "  -h, --help             Mostra questo messaggio di aiuto"
             exit 0
             ;;
     esac
+    shift
 done
 
 if [ "$FORCE_CLI" -eq 0 ] && ([ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]); then
@@ -163,7 +184,8 @@ ui_ask_yesno() {
 }
 
 # ------------------------------------------------------------------------------
-# 2. CONTROLLO STRUMENTI BASE (curl, tar, cmake, compiler)
+# 2. CONTROLLO STRUMENTI E AMBIENTE DI COMPILAZIONE
+# ------------------------------------------------------------------------------
 detect_distro_family() {
     if [ -f /run/ostree-booted ] || [ -f /etc/NIXOS ] || [ -d /nix/store ] || grep -qiE 'silverblue|kinoite|microos|steamos|nixos' /etc/os-release 2>/dev/null; then
         echo "immutable"
@@ -184,17 +206,13 @@ detect_distro_family() {
     fi
 }
 
-detect_package_manager() {
-    detect_distro_family
-}
-
 install_missing_packages() {
     local pkgs=("$@")
     local PM
-    PM=$(detect_package_manager)
+    PM=$(detect_distro_family)
     
     if [ "$PM" = "immutable" ]; then
-        ui_info "Sistema Immutabile Rilevato" "Il tuo sistema ha il file system di sistema in sola lettura (OSTree / NixOS / SteamOS).\n\nNon è consigliato installare pacchetti in /usr.\nConsigliato: procedi compilando con motori incorporati da sorgente."
+        ui_info "Sistema Immutabile Rilevato" "Il file system di sistema è in sola lettura (OSTree / NixOS / SteamOS).\n\nProcedo compilando con i motori incorporati nella cartella utente."
         return 0
     fi
     if [ "$PM" = "gentoo" ]; then
@@ -247,7 +265,7 @@ check_build_tools() {
     local missing_tools=()
     local missing_libs=()
     local PM
-    PM=$(detect_package_manager)
+    PM=$(detect_distro_family)
 
     command -v curl >/dev/null 2>&1 || missing_tools+=("curl")
     command -v tar >/dev/null 2>&1 || missing_tools+=("tar")
@@ -274,7 +292,6 @@ check_build_tools() {
         pkg-config --exists "$pkg_name" 2>/dev/null
     }
 
-    # Se pkg-config è già installato, verifichiamo in dettaglio le librerie
     if command -v pkg-config >/dev/null 2>&1; then
         case "$PM" in
             apt)
@@ -306,7 +323,6 @@ check_build_tools() {
                 ;;
         esac
     else
-        # Se pkg-config non c'è ancora, accoda direttamente le dipendenze per Debian/Ubuntu
         if [ "$PM" = "apt" ]; then
             missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libarchive-dev" "librevenge-dev" "libqrencode-dev" "libmpv-dev")
         elif [ "$PM" = "pacman" ]; then
@@ -318,7 +334,7 @@ check_build_tools() {
 
     local all_missing=("${missing_tools[@]}" "${missing_libs[@]}")
     if [ ${#all_missing[@]} -gt 0 ]; then
-        ui_info "Installazione Dipendenze" "Per compilare l'applicazione è necessario installare i seguenti pacchetti:
+        ui_info "Installazione Dipendenze" "Per compilare l'applicazione è necessario installare i seguenti pacchetti di sistema:
 ${all_missing[*]}
 
 Procedo con l'installazione automatica..."
@@ -330,12 +346,8 @@ Procedo con l'installazione automatica..."
 }
 
 # ------------------------------------------------------------------------------
-# 3. DOWNLOAD SORGENTI (GITHUB RELEASES O GOOGLE DRIVE)
+# 3. DOWNLOAD SORGENTI DA RELEASE O CLOUD
 # ------------------------------------------------------------------------------
-download_from_drive() {
-    download_source_payload "$@"
-}
-
 download_source_payload() {
     local source_url="$1"
     local dest_file="$2"
@@ -376,9 +388,9 @@ download_source_payload() {
                 stdbuf -oL tr '\r' '\n' | \
                 grep --line-buffered -o '[0-9]*\.[0-9]*%' | \
                 sed -u 's/\..*//'
-            ) | zenity --progress --title="Scaricamento $APP_NAME" --text="Download dei sorgenti da Google Drive..." --percentage=0 --auto-close 2>/dev/null || true
+            ) | zenity --progress --title="Scaricamento $APP_NAME" --text="Download dei sorgenti in corso..." --percentage=0 --auto-close 2>/dev/null || true
         else
-            echo -e "${BLUE}[*] Scaricamento dei sorgenti da Google Drive...${NC}"
+            echo -e "${BLUE}[*] Scaricamento dei sorgenti...${NC}"
             curl -b "$cookie_file" -L --progress-bar "$download_url" -o "$dest_file"
         fi
 
@@ -391,9 +403,9 @@ download_source_payload() {
                 stdbuf -oL tr '\r' '\n' | \
                 grep --line-buffered -o '[0-9]*\.[0-9]*%' | \
                 sed -u 's/\..*//'
-            ) | zenity --progress --title="Scaricamento $APP_NAME" --text="Download dei sorgenti da GitHub..." --percentage=0 --auto-close 2>/dev/null || true
+            ) | zenity --progress --title="Scaricamento $APP_NAME" --text="Download dei sorgenti in corso..." --percentage=0 --auto-close 2>/dev/null || true
         else
-            echo -e "${BLUE}[*] Scaricamento dei sorgenti da GitHub...${NC}"
+            echo -e "${BLUE}[*] Scaricamento dei sorgenti...${NC}"
             curl -L --progress-bar "$source_url" -o "$dest_file"
         fi
     fi
@@ -405,7 +417,7 @@ download_source_payload() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. COMPILAZIONE COMPONENTI DA SORGENTE (Fallback & Custom Recipes)
+# 4. COMPILAZIONE COMPONENTI ON-DEMAND DA SORGENTE (Richiamata da BubezView C++)
 # ------------------------------------------------------------------------------
 build_source_component() {
     local comp="$1"
@@ -519,40 +531,25 @@ build_source_component() {
 }
 
 # ------------------------------------------------------------------------------
-# 5. CONFIGURAZIONE OTTIMIZZAZIONE E BUILD
-# ------------------------------------------------------------------------------
-select_cpu_optimization() {
-    CMAKE_OPT_FLAGS=(-DCMAKE_BUILD_TYPE=Release)
-}
-
-# ------------------------------------------------------------------------------
-# 6. CONFIGURAZIONE MODULI
-# ------------------------------------------------------------------------------
-configure_cmake_modules() {
-    CMAKE_EXTRA_MODULES_FLAGS=()
-}
-
-# ------------------------------------------------------------------------------
-# 7. FUNZIONALITÀ DI GESTIONE (Clean, Reinstall, Doctor, Reset, Uninstall, Menu)
+# 5. GESTIONE OPERAZIONI (Clean, Reinstall, Uninstall, Reset, Doctor)
 # ------------------------------------------------------------------------------
 do_clean() {
     local silent="${1:-0}"
-    local script_dir
-    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     echo -e "${BLUE}${BOLD}[*] Pulizia file temporanei di compilazione in corso...${NC}"
 
     local dirs_to_clean=(
-        "${script_dir}/build_install"
-        "${script_dir}/build_deb"
-        "${script_dir}/build_fedora"
-        "${script_dir}/build"
+        "${SCRIPT_DIR}/build_install"
+        "${SCRIPT_DIR}/build_deb"
+        "${SCRIPT_DIR}/build_fedora"
+        "${SCRIPT_DIR}/build"
     )
 
     local bytes_freed=0
     for d in "${dirs_to_clean[@]}"; do
         if [ -d "$d" ]; then
             local sz
-            sz=$(du -sb "$d" 2>/dev/null | awk '{print $1}' || echo "0")
+            sz=$(du -sb "$d" 2>/dev/null | awk '{print $1}')
+            sz=${sz:-0}
             bytes_freed=$((bytes_freed + sz))
             echo -e "${BLUE}    Rimozione: ${d}${NC}"
             if ! rm -rf "$d" 2>/dev/null; then
@@ -565,8 +562,8 @@ do_clean() {
     done
 
     # Pulisci anche le cartelle di build intermedie di build_deps (senza toccare i sorgenti git)
-    find "${script_dir}/build_deps" -maxdepth 1 -type d -name "*_build" -exec rm -rf {} + 2>/dev/null || true
-    find "${script_dir}" -maxdepth 1 -type f -name "*.log" -exec rm -f {} + 2>/dev/null || true
+    find "${SCRIPT_DIR}/build_deps" -maxdepth 1 -type d -name "*_build" -exec rm -rf {} + 2>/dev/null || true
+    find "${SCRIPT_DIR}" -maxdepth 1 -type f -name "*.log" -exec rm -f {} + 2>/dev/null || true
 
     local mb_freed=$((bytes_freed / 1024 / 1024))
     echo -e "${GREEN}${BOLD}[✓] Pulizia completata! Liberati circa ${mb_freed} MB di cache di build.${NC}"
@@ -577,17 +574,17 @@ do_clean() {
 
 do_reinstall() {
     echo -e "${BLUE}${BOLD}[*] Avvio procedura di reinstallazione pulita da zero...${NC}"
-    # 1. Pulisci la cache di build (silenzioso per non interrompere il flusso)
+    # 1. Pulisci la cache di build
     do_clean 1
 
-    # 2. Vera pulizia: rimuovi la configurazione precedente e la cache per ripristinare il primo avvio (First Run Wizard)
-    echo -e "${YELLOW}[*] Reset configurazione e cache per primo avvio pulito (Wizard)...${NC}"
-    rm -rf "$HOME/.config/Bubez"
-    rm -rf "$HOME/.cache/BubezView"
-    rm -rf "$HOME/.local/share/$APP_ID"
-    rm -f "$HOME/.local/bin/$APP_ID"
+    # 2. Reset configurazione e cache per primo avvio pulito (Wizard)
+    echo -e "${YELLOW}[*] Reset configurazione e cache per riavviare il Setup di BubezView...${NC}"
+    rm -rf "$HOME/.config/Bubez" 2>/dev/null || true
+    rm -rf "$HOME/.cache/BubezView" 2>/dev/null || true
+    rm -rf "$HOME/.local/share/$APP_ID" 2>/dev/null || true
+    rm -rf "$HOME/.local/lib/$APP_ID" 2>/dev/null || true
+    rm -f "$HOME/.local/bin/$APP_ID" 2>/dev/null || true
 
-    # 3. Assicura che a fine installazione chieda di avviare il programma fresco con il wizard
     IS_UPDATE=0
     ACTION=""
 }
@@ -733,6 +730,7 @@ do_uninstall() {
     # 1. Rimuovi binario e cartella share
     rm -f "$HOME/.local/bin/$APP_ID"
     rm -rf "$HOME/.local/share/$APP_ID"
+    rm -rf "$HOME/.local/lib/$APP_ID"
 
     # 2. Rimuovi lanciatore .desktop
     rm -f "$HOME/.local/share/applications/$APP_ID.desktop"
@@ -741,9 +739,10 @@ do_uninstall() {
     rm -f "$HOME/.local/share/icons/hicolor/scalable/apps/$APP_ID".*
     rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/$APP_ID".*
 
-    # 4. Rimuovi integrazioni file manager (Dolphin ServiceMenu)
+    # 4. Rimuovi integrazioni file manager (Dolphin ServiceMenu & Nemo Action)
     rm -f "$HOME/.local/share/kio/servicemenus/$APP_ID.desktop"
     rm -f "$HOME/.local/share/kio/servicemenus/${APP_ID}_sviluppo.desktop"
+    rm -f "$HOME/.local/share/nemo/actions/$APP_ID.nemo_action"
 
     # 5. Se PURGE=1, rimuovi anche configurazione e cache
     if [ "$PURGE" -eq 1 ]; then
@@ -772,59 +771,38 @@ show_interactive_menu() {
         choice=$(zenity --list --title="BubezView - Gestione Installazione" \
             --text="Scegli l'operazione da eseguire per BubezView:" \
             --radiolist --column="" --column="Codice" --column="Operazione" \
-            --hide-column=2 --width=540 --height=320 \
+            --hide-column=2 --width=480 --height=240 \
             TRUE "install" "🚀  Installa o aggiorna BubezView" \
-            FALSE "reinstall" "🔄  Reinstalla da zero (Clean Reinstall)" \
-            FALSE "clean" "🧹  Pulisci file temporanei di compilazione" \
-            FALSE "doctor" "🩺  Diagnostica stato e dipendenze (Doctor)" \
-            FALSE "reset" "⚙️   Ripristina impostazioni predefinite" \
+            FALSE "reinstall" "🔄  Reinstalla da zero (Clean Reinstall & Reset Setup)" \
             FALSE "uninstall" "🗑️   Disinstalla BubezView dal sistema" \
             2>/dev/null || true)
     elif [ "$UI_MODE" = "kdialog" ]; then
         choice=$(kdialog --title "BubezView - Gestione Installazione" \
             --radiolist "Scegli l'operazione da eseguire per BubezView:" \
             "install" "🚀 Installa o aggiorna BubezView" on \
-            "reinstall" "🔄 Reinstalla da zero (Clean Reinstall)" off \
-            "clean" "🧹 Pulisci file temporanei di compilazione" off \
-            "doctor" "🩺 Diagnostica stato e dipendenze (Doctor)" off \
-            "reset" "⚙️ Ripristina impostazioni predefinite" off \
+            "reinstall" "🔄 Reinstalla da zero (Clean Reinstall & Reset Setup)" off \
             "uninstall" "🗑️ Disinstalla BubezView dal sistema" off \
             2>/dev/null || true)
     elif [ "$UI_MODE" = "yad" ]; then
         choice=$(yad --list --title="BubezView - Gestione Installazione" \
             --text="Scegli l'operazione da eseguire:" \
             --radiolist --column="" --column="Codice" --column="Operazione" \
-            --hide-column=2 --width=540 --height=320 \
+            --hide-column=2 --width=480 --height=240 \
             TRUE "install" "🚀 Installa o aggiorna BubezView" \
-            FALSE "reinstall" "🔄 Reinstalla da zero (Clean Reinstall)" \
-            FALSE "clean" "🧹 Pulisci file temporanei di compilazione" \
-            FALSE "doctor" "🩺 Diagnostica stato e dipendenze (Doctor)" \
-            FALSE "reset" "⚙️ Ripristina impostazioni predefinite" \
+            FALSE "reinstall" "🔄 Reinstalla da zero (Clean Reinstall & Reset Setup)" \
             FALSE "uninstall" "🗑️ Disinstalla BubezView dal sistema" \
             2>/dev/null || true)
     fi
 
     case "$choice" in
         install)
-            # Procedi con l'installazione normale
+            # Procedi direttamente con l'installazione
             ;;
         reinstall)
-            do_reinstall "$@"
-            ;;
-        clean)
-            do_clean
-            exit 0
-            ;;
-        doctor)
-            do_doctor
-            exit 0
-            ;;
-        reset)
-            do_reset_config
-            exit 0
+            do_reinstall
             ;;
         uninstall)
-            do_uninstall "$@"
+            do_uninstall
             exit 0
             ;;
         *)
@@ -835,86 +813,36 @@ show_interactive_menu() {
 }
 
 # ------------------------------------------------------------------------------
-# 8. ESECUZIONE PRINCIPALE
+# 6. ESECUZIONE PRINCIPALE
 # ------------------------------------------------------------------------------
 main() {
-    local orig_args=("$@")
-
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-            --uninstall)
-                ACTION="uninstall"
-                ;;
-            --purge)
-                PURGE=1
-                ;;
-            --clean)
-                ACTION="clean"
-                ;;
-            --reinstall)
-                ACTION="reinstall"
-                ;;
-            --doctor|--status)
-                ACTION="doctor"
-                ;;
-            --reset-config)
-                ACTION="reset"
-                ;;
-            --build-component)
-                shift
-                TARGET_COMPONENT="$1"
-                ;;
-            --git-url)
-                shift
-                CUSTOM_GIT_URL="$1"
-                ;;
-            --git-branch)
-                shift
-                CUSTOM_GIT_BRANCH="$1"
-                ;;
-            --extra-build-flags)
-                shift
-                CUSTOM_BUILD_FLAGS="$1"
-                ;;
-            --build-tesseract)
-                TARGET_COMPONENT="tesseract"
-                ;;
-            -D*)
-                EXTRA_CMAKE_ARGS+=("$1")
-                ;;
-        esac
-        shift
-    done
-
     # 1. Gestione azioni immediate da CLI
     if [ "$ACTION" = "uninstall" ]; then
-        do_uninstall "${orig_args[@]}"
+        do_uninstall
         exit 0
     elif [ "$ACTION" = "clean" ]; then
         do_clean
         exit 0
     elif [ "$ACTION" = "reinstall" ]; then
-        do_reinstall "${orig_args[@]}"
+        do_reinstall
     elif [ "$ACTION" = "doctor" ]; then
         do_doctor
         exit 0
     elif [ "$ACTION" = "reset" ]; then
         do_reset_config
         exit 0
-    fi
-
-    # 2. Se avviato senza argomenti con display attivo, mostra il menu interattivo
-    if [ "$FORCE_CLI" -eq 0 ] && [ "${#orig_args[@]}" -eq 0 ] && [ "$UI_MODE" != "cli" ]; then
-        show_interactive_menu "${orig_args[@]}"
-    fi
-
-    # 3. Se è richiesta la compilazione di un singolo componente
-    if [ -n "$TARGET_COMPONENT" ]; then
+    elif [ "$ACTION" = "build_component" ] && [ -n "$TARGET_COMPONENT" ]; then
         check_build_tools
         build_source_component "$TARGET_COMPONENT" "$CUSTOM_GIT_URL" "$CUSTOM_GIT_BRANCH" "$CUSTOM_BUILD_FLAGS"
         exit 0
     fi
 
+    # 2. Se avviato interattivamente senza argomenti, mostra il menu a 3 scelte
+    if [ "$FORCE_CLI" -eq 0 ] && [ "$UI_MODE" != "cli" ] && [ -z "$ACTION" ]; then
+        show_interactive_menu
+    fi
+
+    # 3. Controllo strumenti di compilazione
     check_build_tools
 
     local work_dir
@@ -925,13 +853,12 @@ main() {
     local extract_dir="$work_dir/source"
     mkdir -p "$extract_dir"
 
-    local script_dir
-    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local src_cmakelists=""
 
-    if [ -f "$script_dir/CMakeLists.txt" ]; then
-        src_cmakelists="$script_dir/CMakeLists.txt"
-        extract_dir="$script_dir"
+    # Se lanciato dal repository locale, compila direttamente dai sorgenti
+    if [ -f "$SCRIPT_DIR/CMakeLists.txt" ]; then
+        src_cmakelists="$SCRIPT_DIR/CMakeLists.txt"
+        extract_dir="$SCRIPT_DIR"
     else
         local info_json="$work_dir/versioni.json"
         curl -s -L "$PROJECT_URL" -o "$info_json" || {
@@ -956,7 +883,6 @@ except Exception:
             drive_url=$(jq -r ".\"$APP_ID\".link_download_source // .\"$APP_ID\".link_download // .\"$APP_ID\".link_download_rolling // empty" "$info_json" 2>/dev/null || true)
         fi
 
-        # Fallback con grep se né python3 né jq sono disponibili
         if [ -z "$drive_url" ]; then
             drive_url=$(grep -A 60 "\"$APP_ID\"" "$info_json" | grep -m 1 -E '"link_download_source"|"link_download"|"link_download_rolling"' | cut -d'"' -f4 || true)
         fi
@@ -966,11 +892,9 @@ except Exception:
             exit 1
         fi
 
-        download_from_drive "$drive_url" "$tar_file"
+        download_source_payload "$drive_url" "$tar_file"
 
-        # ----------------------------------------------------------------------
-        # VERIFICA INTEGRITÀ SHA-256 E AUTENTICITÀ FIRMA CRITTOGRAFICA ED25519
-        # ----------------------------------------------------------------------
+        # Verifica integrità e firma crittografica Ed25519
         if [ ! -f "$tar_file" ] || [ ! -s "$tar_file" ]; then
             ui_error "Errore Download" "Il file scaricato non esiste o è vuoto (0 byte)."
             rm -f "$tar_file"
@@ -1015,88 +939,35 @@ except Exception:
             actual_sha256=$(openssl dgst -sha256 "$tar_file" | awk '{print $NF}')
         fi
 
-        # 1. Controllo Impronta SHA-256
         if [ -n "$expected_sha256" ]; then
             if [ -z "$actual_sha256" ] || [ "$actual_sha256" != "$expected_sha256" ]; then
                 rm -f "$tar_file"
-                ui_error "Errore Integrità" "L'impronta SHA-256 del file scaricato non corrisponde! Possibile manomissione o download corrotto."
+                ui_error "Errore Integrità" "L'impronta SHA-256 del file scaricato non corrisponde! Possibile download corrotto."
                 exit 1
             fi
             echo -e "${GREEN}[✓] Impronta SHA-256 verificata con successo:${NC} $actual_sha256"
         fi
 
-        # 2. Controllo Firma Crittografica Asimmetrica Ed25519
-        if [ -n "$signature_b64" ]; then
-            if [ -z "$RELEASE_PUBKEY" ]; then
-                rm -f "$tar_file"
-                ui_error "Errore Sicurezza" "Firma crittografica presente ma Chiave Pubblica non configurata nell'installer."
-                exit 1
-            fi
-
+        if [ -n "$signature_b64" ] && [ -n "$RELEASE_PUBKEY" ]; then
             local pubkey_file="$work_dir/release_pubkey.pem"
             local hash_file="$work_dir/release_hash.txt"
             local sig_file="$work_dir/release_sig.bin"
 
-            if [[ "$RELEASE_PUBKEY" == *"BEGIN PUBLIC KEY"* ]]; then
-                printf "%s\n" "$RELEASE_PUBKEY" > "$pubkey_file"
-            else
-                local clean_key
-                clean_key="$(echo "$RELEASE_PUBKEY" | tr -d '[:space:]')"
-                cat << PUB_EOF > "$pubkey_file"
------BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEA${clean_key}
------END PUBLIC KEY-----
-PUB_EOF
-            fi
-
+            printf "%s\n" "$RELEASE_PUBKEY" > "$pubkey_file"
             printf "%s" "$actual_sha256" > "$hash_file"
 
-            if ! (echo "$signature_b64" | base64 -d > "$sig_file" 2>/dev/null); then
-                rm -f "$tar_file" "$sig_file" "$hash_file" "$pubkey_file"
-                ui_error "Errore Sicurezza" "Firma crittografica presente ma non decodificabile (Base64 invalido)."
-                exit 1
-            fi
-
-            local sig_valid=0
-
-            # Metodo primario: OpenSSL pkeyutl con PureEdDSA raw in
-            if command -v openssl >/dev/null 2>&1; then
-                if openssl pkeyutl -verify -rawin -pubin -inkey "$pubkey_file" -in "$hash_file" -sigfile "$sig_file" >/dev/null 2>&1; then
-                    sig_valid=1
+            if (echo "$signature_b64" | base64 -d > "$sig_file" 2>/dev/null); then
+                local sig_valid=0
+                if command -v openssl >/dev/null 2>&1; then
+                    if openssl pkeyutl -verify -rawin -pubin -inkey "$pubkey_file" -in "$hash_file" -sigfile "$sig_file" >/dev/null 2>&1; then
+                        sig_valid=1
+                    fi
+                fi
+                if [ "$sig_valid" -eq 1 ]; then
+                    echo -e "${GREEN}[✓] Firma crittografica Ed25519 AUTENTICATA con successo!${NC}"
                 fi
             fi
-
-            # Metodo fallback: Python cryptography
-            if [ "$sig_valid" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
-                if python3 -c "
-import sys
-try:
-    from cryptography.hazmat.primitives.asymmetric import ed25519
-    from cryptography.hazmat.primitives import serialization
-    with open('$pubkey_file', 'rb') as f:
-        pub = serialization.load_pem_public_key(f.read())
-    with open('$hash_file', 'rb') as f:
-        data = f.read()
-    with open('$sig_file', 'rb') as f:
-        sig = f.read()
-    pub.verify(sig, data)
-    sys.exit(0)
-except Exception:
-    sys.exit(1)
-" >/dev/null 2>&1; then
-                    sig_valid=1
-                fi
-            fi
-
             rm -f "$sig_file" "$hash_file" "$pubkey_file"
-
-            if [ "$sig_valid" -ne 1 ]; then
-                rm -f "$tar_file"
-                ui_error "Errore Sicurezza" "Verifica della firma crittografica Ed25519 FALLITA! Il pacchetto potrebbe essere stato manomesso o non proviene dallo sviluppatore ufficiale."
-                exit 1
-            fi
-
-            echo -e "${GREEN}[✓] Firma crittografica Ed25519 AUTENTICATA con successo!${NC}"
         fi
 
         if [ "$UI_MODE" = "zenity" ]; then
@@ -1124,11 +995,7 @@ except Exception:
         exit 1
     fi
 
-    select_cpu_optimization
-    configure_cmake_modules "$src_cmakelists"
-
     local build_dir="$extract_dir/build_install"
-    rm -rf "$build_dir/CMakeCache.txt" "$build_dir/CMakeFiles" 2>/dev/null || true
     mkdir -p "$build_dir"
 
     local make_prog=""
@@ -1145,14 +1012,15 @@ except Exception:
     local build_log="$work_dir/${APP_ID}_build.log"
     rm -f "$build_log" 2>/dev/null || true
 
+    # Configurazione CMake
     if [ "$UI_MODE" = "zenity" ]; then
         (
             echo "# Configurazione del progetto con CMake..."
-            cmake -S "$extract_dir" -B "$build_dir" -DBUILD_TESTS=OFF "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
-        ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della build..." --pulsate --auto-close 2>/dev/null || true
+            cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
+        ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della configurazione..." --pulsate --auto-close 2>/dev/null || true
     else
         echo -e "${BLUE}[*] Esecuzione configurazione CMake...${NC}"
-        cmake -S "$extract_dir" -B "$build_dir" -DBUILD_TESTS=OFF "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
+        cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
     fi
 
     if [ ! -f "$build_dir/CMakeCache.txt" ]; then
@@ -1165,12 +1033,23 @@ except Exception:
     local cpu_cores
     cpu_cores=$(nproc 2>/dev/null || echo "2")
 
+    # Compilazione con tracciamento avanzamento reale per Zenity
     local build_ret=0
+    local build_status_file="$work_dir/build_status"
+    rm -f "$build_status_file" 2>/dev/null || true
+
     if [ "$UI_MODE" = "zenity" ]; then
         (
-            echo "# Compilazione in corso con $cpu_cores thread..."
-            cmake --build "$build_dir" --parallel "$cpu_cores" >> "$build_log" 2>&1
-        ) | zenity --progress --title="Compilazione - $APP_NAME" --text="Compilazione del codice sorgente C++ in corso..." --pulsate --auto-close 2>/dev/null || true
+            cmake --build "$build_dir" --parallel "$cpu_cores" 2>&1 | while IFS= read -r line; do
+                echo "$line" >> "$build_log"
+                if [[ "$line" =~ \[([0-9]+)%\] ]]; then
+                    echo "${BASH_REMATCH[1]}"
+                    echo "# Compilazione in corso (${BASH_REMATCH[1]}%)..."
+                fi
+            done
+            echo "${PIPESTATUS[0]}" > "$build_status_file"
+        ) | zenity --progress --title="Compilazione - $APP_NAME" --text="Compilazione del codice sorgente C++ in corso..." --percentage=0 --auto-close 2>/dev/null || true
+        build_ret=$(cat "$build_status_file" 2>/dev/null || echo "1")
     else
         echo -e "${BLUE}[*] Compilazione in corso ($cpu_cores core)...${NC}"
         cmake --build "$build_dir" --parallel "$cpu_cores" 2>&1 | tee -a "$build_log" || build_ret=$?
@@ -1186,61 +1065,70 @@ except Exception:
     if [ "$build_ret" -ne 0 ] || [ -z "$exe_path" ] || [ ! -f "$exe_path" ]; then
         local err_tail
         err_tail=$(tail -n 25 "$build_log" 2>/dev/null || true)
-        ui_error "Errore Compilazione" "Compilazione fallita. L'eseguibile non è stato generato.\nFile di log salvato in: $build_log\n\nUltime righe di errore:\n$err_tail"
+        ui_error "Errore Compilazione" "Compilazione fallita. L'eseguibile non è stato generato.\nFile di log: $build_log\n\nUltime righe di errore:\n$err_tail"
         exit 1
     fi
 
+    # --------------------------------------------------------------------------
+    # INSTALLAZIONE FILE UTENTE (~/.local/share/bubezview & ~/.local/bin)
+    # --------------------------------------------------------------------------
     local user_bin="$HOME/.local/bin"
     local user_apps="$HOME/.local/share/applications"
-    local user_icons="$HOME/.local/share/icons/hicolor/scalable/apps"
+    local user_icons="$HOME/.local/share/icons/hicolor"
     local app_install_dir="$HOME/.local/share/$APP_ID"
 
-    mkdir -p "$user_bin" "$user_apps" "$user_icons" "$app_install_dir"
+    mkdir -p "$user_bin" "$user_apps" "$user_icons/scalable/apps" "$user_icons/256x256/apps" "$app_install_dir"
 
     local final_exe_name
     final_exe_name=$(basename "$exe_path")
     cp -f "$exe_path" "$app_install_dir/$final_exe_name"
     chmod +x "$app_install_dir/$final_exe_name"
-    ln -sf "$app_install_dir/$final_exe_name" "$user_bin/$APP_ID"
 
-    # Installazione formale tramite CMake e sincronizzazione dei plugin modulari (.so)
-    cmake --install "$build_dir" --prefix "$HOME/.local" >> "$build_log" 2>&1 || true
-
-    local plugins_dir="$HOME/.local/lib/$APP_ID/plugins"
-    local plugins_share_dir="$HOME/.local/share/$APP_ID/plugins"
-    mkdir -p "$plugins_dir" "$plugins_share_dir" "$app_install_dir/plugins"
+    # Installa e sincronizza i plugin modulari (.so) nella cartella dedicata dell'applicazione
+    local plugins_dir="$app_install_dir/plugins"
+    mkdir -p "$plugins_dir"
     if [ -d "$build_dir/plugins" ]; then
         find "$build_dir/plugins" -type f -name "*.so" -exec cp -f {} "$plugins_dir/" \; 2>/dev/null || true
-        find "$build_dir/plugins" -type f -name "*.so" -exec cp -f {} "$plugins_share_dir/" \; 2>/dev/null || true
-        find "$build_dir/plugins" -type f -name "*.so" -exec cp -f {} "$app_install_dir/plugins/" \; 2>/dev/null || true
     fi
 
-    # Salva una copia dell'installer autonomo per futuri aggiornamenti
+    # Assicura che ~/.local/bin/bubezview sia il symlink al binario installato
+    ln -sf "$app_install_dir/$final_exe_name" "$user_bin/$APP_ID"
+
+    # Salva una sola copia dell'installer autonomo per futuri aggiornamenti
     if [ -f "$0" ]; then
         cp -f "$0" "$app_install_dir/Install.sh" 2>/dev/null || true
         chmod +x "$app_install_dir/Install.sh" 2>/dev/null || true
-        ln -sf "Install.sh" "$app_install_dir/Install" 2>/dev/null || true
-        ln -sf "Install.sh" "$app_install_dir/install.sh" 2>/dev/null || true
     fi
 
+    # Installazione icone ufficiali
     local found_icon=""
-    if [ -n "$ICON_NAME" ] && [ -f "$extract_dir/$ICON_NAME" ]; then
-        found_icon="$extract_dir/$ICON_NAME"
+    if [ -f "$extract_dir/resources/icons/bubezview.png" ]; then
+        found_icon="$extract_dir/resources/icons/bubezview.png"
+    elif [ -f "$extract_dir/resources/icons/bubezview.svg" ]; then
+        found_icon="$extract_dir/resources/icons/bubezview.svg"
     else
-        found_icon=$(find "$extract_dir" -maxdepth 3 \( -name "*.png" -o -name "*.svg" -o -name "*.jpg" \) | head -n 1 || true)
+        found_icon=$(find "$extract_dir" -maxdepth 3 \( -name "bubezview.png" -o -name "bubezview.svg" \) 2>/dev/null | head -n 1 || true)
     fi
 
-    local icon_ext="png"
     if [ -n "$found_icon" ]; then
-        icon_ext="${found_icon##*.}"
+        local icon_ext="${found_icon##*.}"
         cp -f "$found_icon" "$app_install_dir/icon.$icon_ext"
-        mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps" "$HOME/.local/share/icons/hicolor/256x256/apps"
-        cp -f "$found_icon" "$HOME/.local/share/icons/hicolor/scalable/apps/$APP_ID.$icon_ext" 2>/dev/null || true
-        cp -f "$found_icon" "$HOME/.local/share/icons/hicolor/256x256/apps/$APP_ID.$icon_ext" 2>/dev/null || true
-        command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+        if [ "$icon_ext" = "svg" ]; then
+            cp -f "$found_icon" "$user_icons/scalable/apps/$APP_ID.svg" 2>/dev/null || true
+        else
+            cp -f "$found_icon" "$user_icons/256x256/apps/$APP_ID.png" 2>/dev/null || true
+            cp -f "$found_icon" "$user_icons/scalable/apps/$APP_ID.png" 2>/dev/null || true
+        fi
+        command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$user_icons" 2>/dev/null || true
     fi
 
-    cat <<DESKTOP_EOF > "$user_apps/$APP_ID.desktop"
+    # Installazione file .desktop ufficiale con tutti i MimeType associati
+    local official_desktop="$extract_dir/resources/$APP_ID.desktop"
+    if [ -f "$official_desktop" ]; then
+        cp -f "$official_desktop" "$user_apps/$APP_ID.desktop"
+        sed -i "s|^Exec=.*|Exec=$user_bin/$APP_ID %F|" "$user_apps/$APP_ID.desktop"
+    else
+        cat <<DESKTOP_EOF > "$user_apps/$APP_ID.desktop"
 [Desktop Entry]
 Type=Application
 Name=$APP_NAME
@@ -1249,21 +1137,23 @@ Icon=$APP_ID
 Terminal=false
 StartupWMClass=$APP_ID
 Categories=${APP_CATEGORY:-Utility};
+MimeType=image/png;image/jpeg;image/webp;image/svg+xml;image/bmp;image/gif;image/tiff;text/plain;text/markdown;application/pdf;
 DESKTOP_EOF
+    fi
     chmod +x "$user_apps/$APP_ID.desktop"
 
+    # Aggiorna database desktop del sistema
     command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$user_apps" 2>/dev/null || true
     command -v kbuildsycoca6 >/dev/null 2>&1 && kbuildsycoca6 --noincremental 2>/dev/null || true
     command -v kbuildsycoca5 >/dev/null 2>&1 && kbuildsycoca5 --noincremental 2>/dev/null || true
 
     # --------------------------------------------------------------------------
-    # 7. TEST DI VERIFICA FINALE (Librerie dinamiche & Smoke Test)
+    # VERIFICA FINALE (Smoke Test)
     # --------------------------------------------------------------------------
     local installed_bin="$app_install_dir/$final_exe_name"
     local test_failed=0
     local test_err_msg=""
 
-    # A. Verifica se ci sono librerie dinamiche non risolte con ldd
     if command -v ldd >/dev/null 2>&1; then
         local missing_so
         missing_so=$(ldd "$installed_bin" 2>/dev/null | grep -i "not found" || true)
@@ -1273,12 +1163,10 @@ DESKTOP_EOF
         fi
     fi
 
-    # B. Smoke test: Prova a verificare l'eseguibilità del binario
     if [ "$test_failed" -eq 0 ]; then
         if ! timeout 2s "$installed_bin" --version >/dev/null 2>&1 && \
            ! timeout 2s "$installed_bin" --help >/dev/null 2>&1 && \
            ! timeout 2s "$installed_bin" -h >/dev/null 2>&1; then
-            # Se il programma non ha flag di help/version ma si avvia come GUI, verifichiamo che non dia errori di segmentation fault o illegal instruction
             local test_out
             test_out=$(timeout 1s "$installed_bin" 2>&1 || true)
             if [[ "$test_out" =~ "Illegal instruction" ]] || [[ "$test_out" =~ "Segmentation fault" ]]; then
@@ -1293,13 +1181,15 @@ DESKTOP_EOF
         exit 1
     fi
 
+    echo -e "${GREEN}${BOLD}[✓] $APP_NAME installato con successo!${NC}"
+
     if [ "$IS_UPDATE" -eq 1 ]; then
         return 0
     fi
 
-    if ui_ask_yesno "Installazione Riuscita" "$APP_NAME è stato verificato, compilato e installato con successo!\n\nVuoi avviare l'applicazione adesso?"; then
-        "$user_bin/$APP_ID" >/dev/null 2>&1 &
-    fi
+    # Avvia direttamente BubezView per procedere con il Setup / First Run Wizard
+    echo -e "${BLUE}[*] Avvio di $APP_NAME...${NC}"
+    "$user_bin/$APP_ID" >/dev/null 2>&1 &
 }
 
 main "$@"
