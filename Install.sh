@@ -554,7 +554,12 @@ do_clean() {
             sz=$(du -sb "$d" 2>/dev/null | awk '{print $1}' || echo "0")
             bytes_freed=$((bytes_freed + sz))
             echo -e "${BLUE}    Rimozione: ${d}${NC}"
-            rm -rf "$d"
+            if ! rm -rf "$d" 2>/dev/null; then
+                if command -v docker >/dev/null 2>&1 && docker ps -q --filter "name=debian" 2>/dev/null | grep -q .; then
+                    docker exec debian rm -rf "$d" 2>/dev/null || true
+                fi
+                rm -rf "$d" 2>/dev/null || true
+            fi
         fi
     done
 
