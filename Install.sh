@@ -536,6 +536,7 @@ configure_cmake_modules() {
 # 7. FUNZIONALITÀ DI GESTIONE (Clean, Reinstall, Doctor, Reset, Uninstall, Menu)
 # ------------------------------------------------------------------------------
 do_clean() {
+    local silent="${1:-0}"
     local script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     echo -e "${BLUE}${BOLD}[*] Pulizia file temporanei di compilazione in corso...${NC}"
@@ -569,16 +570,25 @@ do_clean() {
 
     local mb_freed=$((bytes_freed / 1024 / 1024))
     echo -e "${GREEN}${BOLD}[✓] Pulizia completata! Liberati circa ${mb_freed} MB di cache di build.${NC}"
-    if [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
+    if [ "$silent" -eq 0 ] && [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
         ui_info "Pulizia Completata" "Tutte le cartelle di build temporanee sono state rimosse.\nSpazio liberato: ~${mb_freed} MB."
     fi
 }
 
 do_reinstall() {
     echo -e "${BLUE}${BOLD}[*] Avvio procedura di reinstallazione pulita da zero...${NC}"
-    do_clean
-    echo -e "${BLUE}${BOLD}[*] Ricompilazione e installazione pulita...${NC}"
-    IS_UPDATE=1
+    # 1. Pulisci la cache di build (silenzioso per non interrompere il flusso)
+    do_clean 1
+
+    # 2. Vera pulizia: rimuovi la configurazione precedente e la cache per ripristinare il primo avvio (First Run Wizard)
+    echo -e "${YELLOW}[*] Reset configurazione e cache per primo avvio pulito (Wizard)...${NC}"
+    rm -rf "$HOME/.config/Bubez"
+    rm -rf "$HOME/.cache/BubezView"
+    rm -rf "$HOME/.local/share/$APP_ID"
+    rm -f "$HOME/.local/bin/$APP_ID"
+
+    # 3. Assicura che a fine installazione chieda di avviare il programma fresco con il wizard
+    IS_UPDATE=0
     ACTION=""
 }
 
