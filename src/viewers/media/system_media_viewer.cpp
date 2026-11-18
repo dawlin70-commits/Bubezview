@@ -29,7 +29,15 @@ bool isVideoExtension(const QString &ext)
         QStringLiteral("mp4"), QStringLiteral("mkv"), QStringLiteral("avi"),
         QStringLiteral("mov"), QStringLiteral("webm"), QStringLiteral("flv"),
         QStringLiteral("wmv"), QStringLiteral("m4v"), QStringLiteral("mpg"),
-        QStringLiteral("mpeg"), QStringLiteral("ts"), QStringLiteral("3gp")
+        QStringLiteral("mpeg"), QStringLiteral("m2v"), QStringLiteral("ts"),
+        QStringLiteral("m2ts"), QStringLiteral("mts"), QStringLiteral("m2t"),
+        QStringLiteral("vob"), QStringLiteral("ogv"), QStringLiteral("rm"),
+        QStringLiteral("rmvb"), QStringLiteral("asf"), QStringLiteral("divx"),
+        QStringLiteral("f4v"), QStringLiteral("wtv"), QStringLiteral("dvr-ms"),
+        QStringLiteral("mxf"), QStringLiteral("dv"), QStringLiteral("3gp"),
+        QStringLiteral("3g2"), QStringLiteral("h264"), QStringLiteral("h265"),
+        QStringLiteral("hevc"), QStringLiteral("av1"), QStringLiteral("y4m"),
+        QStringLiteral("bik")
     };
     return videoExts.contains(ext.toLower());
 }

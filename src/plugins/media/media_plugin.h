@@ -29,16 +29,37 @@ public:
     FileCategory category() const override { return FileCategory::Media; }
     QStringList supportedExtensions() const override {
         return {
+            // Video Formats
             QStringLiteral("mp4"), QStringLiteral("mkv"), QStringLiteral("avi"),
             QStringLiteral("mov"), QStringLiteral("webm"), QStringLiteral("flv"),
             QStringLiteral("wmv"), QStringLiteral("m4v"), QStringLiteral("3gp"),
+            QStringLiteral("3g2"), QStringLiteral("mpg"), QStringLiteral("mpeg"),
+            QStringLiteral("m2v"), QStringLiteral("ts"), QStringLiteral("m2ts"),
+            QStringLiteral("mts"), QStringLiteral("m2t"), QStringLiteral("vob"),
+            QStringLiteral("ogv"), QStringLiteral("rm"), QStringLiteral("rmvb"),
+            QStringLiteral("asf"), QStringLiteral("divx"), QStringLiteral("f4v"),
+            QStringLiteral("wtv"), QStringLiteral("dvr-ms"), QStringLiteral("mxf"),
+            QStringLiteral("dv"), QStringLiteral("h264"), QStringLiteral("h265"),
+            QStringLiteral("264"), QStringLiteral("265"), QStringLiteral("hevc"),
+            QStringLiteral("avc"), QStringLiteral("av1"), QStringLiteral("y4m"),
+            QStringLiteral("nut"), QStringLiteral("bik"),
+            // Audio Formats
             QStringLiteral("mp3"), QStringLiteral("wav"), QStringLiteral("flac"),
-            QStringLiteral("ogg"), QStringLiteral("m4a"), QStringLiteral("aac"),
-            QStringLiteral("wma"), QStringLiteral("opus"),
-            QStringLiteral("dsf"), QStringLiteral("dff"), QStringLiteral("dsd"),
-            QStringLiteral("ape"), QStringLiteral("mac"), QStringLiteral("wv"),
-            QStringLiteral("mod"), QStringLiteral("xm"), QStringLiteral("it"), QStringLiteral("s3m"),
-            QStringLiteral("ac3"), QStringLiteral("eac3"), QStringLiteral("dts"), QStringLiteral("mpc")
+            QStringLiteral("ogg"), QStringLiteral("oga"), QStringLiteral("m4a"),
+            QStringLiteral("aac"), QStringLiteral("wma"), QStringLiteral("opus"),
+            QStringLiteral("alac"), QStringLiteral("aiff"), QStringLiteral("aif"),
+            QStringLiteral("aifc"), QStringLiteral("dsf"), QStringLiteral("dff"),
+            QStringLiteral("dsd"), QStringLiteral("ape"), QStringLiteral("mac"),
+            QStringLiteral("wv"), QStringLiteral("tta"), QStringLiteral("tak"),
+            QStringLiteral("mpc"), QStringLiteral("mp+"), QStringLiteral("mpp"),
+            QStringLiteral("caf"), QStringLiteral("amr"), QStringLiteral("awb"),
+            QStringLiteral("voc"), QStringLiteral("qcp"), QStringLiteral("ra"),
+            QStringLiteral("ram"), QStringLiteral("mod"), QStringLiteral("xm"),
+            QStringLiteral("it"), QStringLiteral("s3m"), QStringLiteral("med"),
+            QStringLiteral("okt"), QStringLiteral("669"), QStringLiteral("mtm"),
+            QStringLiteral("mid"), QStringLiteral("midi"), QStringLiteral("ac3"),
+            QStringLiteral("eac3"), QStringLiteral("dts"), QStringLiteral("dtshd"),
+            QStringLiteral("thd"), QStringLiteral("mka")
         };
     }
 

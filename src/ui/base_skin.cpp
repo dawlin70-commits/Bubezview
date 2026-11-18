@@ -982,8 +982,10 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
             }
             promoteMediaViewerToStudio();
         } else {
-            // Standard audio/video formats play immediately in native system player.
-            // Users can easily upgrade to full MPV studio anytime via the "⚡ Pro Mode" button.
+            // If the high-performance MPV engine is available, use it directly for hardware-accelerated playback
+            if (hasMpv) {
+                promoteMediaViewerToStudio();
+            }
         }
 
         ensureMediaViewerCreated();
@@ -2638,12 +2640,22 @@ bool BaseSkin::eventFilter(QObject *watched, QEvent *event)
             bool isInput = false;
             while (w) {
                 if (qobject_cast<QLineEdit*>(w) ||
-                    qobject_cast<QTextEdit*>(w) ||
-                    qobject_cast<QPlainTextEdit*>(w) ||
                     qobject_cast<QAbstractSpinBox*>(w) ||
                     (m_searchBar && (w == m_searchBar || m_searchBar->isAncestorOf(w)))) {
                     isInput = true;
                     break;
+                }
+                if (auto *te = qobject_cast<QTextEdit*>(w)) {
+                    if (!te->isReadOnly()) {
+                        isInput = true;
+                        break;
+                    }
+                }
+                if (auto *pte = qobject_cast<QPlainTextEdit*>(w)) {
+                    if (!pte->isReadOnly()) {
+                        isInput = true;
+                        break;
+                    }
                 }
                 w = w->parentWidget();
             }

@@ -22,6 +22,8 @@
 #include <QTemporaryDir>
 #include <QProcess>
 #include <QImage>
+#include <QMimeDatabase>
+#include <QMimeType>
 
 const QStringList PluginManager::s_imageExtensions = {
     // Standard & Web Formats
@@ -50,10 +52,17 @@ const QStringList PluginManager::s_archiveExtensions = {
 };
 
 const QStringList PluginManager::s_mediaExtensions = {
-    "mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "m4v", "3gp",
-    "mp3", "wav", "flac", "ogg", "m4a", "aac", "wma", "opus",
-    "dsf", "dff", "dsd", "ape", "mac", "wv",
-    "mod", "xm", "it", "s3m", "ac3", "eac3", "dts", "mpc"
+    // Video Formats
+    "mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", "m4v", "3gp", "3g2",
+    "mpg", "mpeg", "m2v", "ts", "m2ts", "mts", "m2t", "vob", "ogv", "rm",
+    "rmvb", "asf", "divx", "f4v", "wtv", "dvr-ms", "mxf", "dv", "h264", "h265",
+    "264", "265", "hevc", "avc", "av1", "y4m", "nut", "bik",
+    // Audio Formats
+    "mp3", "wav", "flac", "ogg", "oga", "m4a", "aac", "wma", "opus", "alac",
+    "aiff", "aif", "aifc", "dsf", "dff", "dsd", "ape", "mac", "wv", "tta", "tak",
+    "mpc", "mp+", "mpp", "caf", "amr", "awb", "voc", "qcp", "ra", "ram",
+    "mod", "xm", "it", "s3m", "med", "okt", "669", "mtm", "mid", "midi",
+    "ac3", "eac3", "dts", "dtshd", "thd", "mka"
 };
 
 const QStringList PluginManager::s_officeExtensions = {
@@ -111,6 +120,27 @@ FileCategory PluginManager::categorizeFile(const QString &filePath)
     }
     if (s_officeExtensions.contains(ext)) {
         return FileCategory::Office;
+    }
+
+    // MIME type based fallback detection for video/audio, images, and archives
+    QMimeDatabase mimeDb;
+    QMimeType mime = mimeDb.mimeTypeForFile(filePath, QMimeDatabase::MatchDefault);
+    const QString mimeName = mime.name();
+    if (mimeName.startsWith(QStringLiteral("video/")) || mimeName.startsWith(QStringLiteral("audio/"))) {
+        return FileCategory::Media;
+    }
+    if (mimeName.startsWith(QStringLiteral("image/"))) {
+        return FileCategory::Image;
+    }
+    if (mimeName == QStringLiteral("application/pdf")) {
+        return FileCategory::Pdf;
+    }
+    if (mime.inherits(QStringLiteral("application/zip")) ||
+        mime.inherits(QStringLiteral("application/x-tar")) ||
+        mime.inherits(QStringLiteral("application/x-compressed-tar")) ||
+        mime.inherits(QStringLiteral("application/x-7z-compressed")) ||
+        mime.inherits(QStringLiteral("application/x-archive"))) {
+        return FileCategory::Archive;
     }
     
     // Check if the file is binary or plain text

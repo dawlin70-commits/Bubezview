@@ -1251,10 +1251,10 @@ void FirstRunWizard::accept()
 
     // 6. Modules selection
     bool prepareNow = m_radioPrepareNow && m_radioPrepareNow->isChecked();
-    bool enableDocs = prepareNow && m_chkModDocs && m_chkModDocs->isChecked();
-    bool enableMedia = prepareNow && m_chkModMedia && m_chkModMedia->isChecked();
-    bool enableArchives = prepareNow && m_chkModArchives && m_chkModArchives->isChecked();
-    bool enableImages = prepareNow && m_chkModImages && m_chkModImages->isChecked();
+    bool enableDocs = !prepareNow || (m_chkModDocs && m_chkModDocs->isChecked());
+    bool enableMedia = !prepareNow || (m_chkModMedia && m_chkModMedia->isChecked());
+    bool enableArchives = !prepareNow || (m_chkModArchives && m_chkModArchives->isChecked());
+    bool enableImages = !prepareNow || (m_chkModImages && m_chkModImages->isChecked());
 
     // Core viewer engines are always ready
     settings.setValue("modules/pdf_enabled", true);

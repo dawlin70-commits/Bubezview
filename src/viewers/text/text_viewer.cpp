@@ -674,6 +674,12 @@ void TextViewer::keyPressEvent(QKeyEvent *event)
     int key = event->key();
     Qt::KeyboardModifiers mods = event->modifiers();
 
+    // In read-only preview mode, pressing Spacebar must close the preview window
+    if (isReadOnly() && key == Qt::Key_Space) {
+        event->ignore();
+        return;
+    }
+
     // 1. Productivity shortcuts (only available when editable)
     if (!isReadOnly()) {
         if ((mods & Qt::ControlModifier) && key == Qt::Key_D) {
