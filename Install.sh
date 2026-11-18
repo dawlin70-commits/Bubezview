@@ -644,7 +644,7 @@ do_reinstall() {
     do_clean 1
 
     # 2. Reset configurazione e cache per primo avvio pulito (Wizard)
-    echo -e "${YELLOW}[*] Reset configurazione e cache per riavviare il Setup di BubezView...${NC}"
+    echo -e "${YELLOW}[*] Reset configurazione, cache e compilazioni locali per riavviare il Setup di BubezView...${NC}"
     rm -rf "$HOME/.config/Bubez" 2>/dev/null || true
     rm -rf "$HOME/.config/bubezview" 2>/dev/null || true
     rm -rf "$HOME/.config/bubezview-dev" 2>/dev/null || true
@@ -656,6 +656,14 @@ do_reinstall() {
     rm -rf "$HOME/.local/share/$APP_ID" 2>/dev/null || true
     rm -rf "$HOME/.local/lib/$APP_ID" 2>/dev/null || true
     rm -f "$HOME/.local/bin/$APP_ID" 2>/dev/null || true
+    rm -f "$HOME/.local/bin/qpdf" "$HOME/.local/bin/pdfimages" "$HOME/.local/bin/pdfunite" \
+          "$HOME/.local/bin/tesseract" "$HOME/.local/bin/7zz" "$HOME/.local/bin/7z" \
+          "$HOME/.local/bin/zstd" "$HOME/.local/bin/xz" "$HOME/.local/bin/mpv" 2>/dev/null || true
+    rm -rf "$HOME/.local/share/poppler" "$HOME/.local/share/tessdata" 2>/dev/null || true
+    rm -f "$HOME/.local/lib/libpoppler"* "$HOME/.local/lib/libarchive"* \
+          "$HOME/.local/lib/libqpdf"* "$HOME/.local/lib/libtesseract"* \
+          "$HOME/.local/lib/libzstd"* "$HOME/.local/lib/liblzma"* 2>/dev/null || true
+    rm -rf "${SCRIPT_DIR}/build_deps"/*_build 2>/dev/null || true
     rm -rf /tmp/${APP_ID}_installer_* /tmp/${APP_ID}*.log 2>/dev/null || true
 
     IS_UPDATE=0

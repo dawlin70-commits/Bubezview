@@ -2,6 +2,8 @@
 #include "dbus_previewer.h"
 #include "theme_manager.h"
 #include "first_run_wizard.h"
+#include "build_console_dialog.h"
+#include "build_config.h"
 #include "plugin_manager.h"
 #include "settings_dialog.h"
 #include "settings_extensions_tab.h"
@@ -683,6 +685,46 @@ int main(int argc, char *argv[])
         FirstRunWizard wizard(&window);
         if (wizard.exec() == QDialog::Accepted) {
             ThemeManager::applyTheme(&app, &window);
+
+            const auto hwProf = BuildConfig::instance().activeHardwareProfile();
+            QStringList pendingBuild;
+            const QString home = QDir::homePath();
+
+            if (hwProf == BuildConfig::HardwareProfile::MissingOnly) {
+                const QStringList candidates = {
+                    "poppler-data", "tessdata", "zstd", "xz", "7zip", "qpdf", "tesseract", "mpv"
+                };
+                for (const QString &comp : candidates) {
+                    if (!BuildConfig::hasSystemBinary(comp) && !BuildConfig::hasSourceBinary(comp)) {
+                        pendingBuild.append(comp);
+                    }
+                }
+            } else if (hwProf == BuildConfig::HardwareProfile::AllStable ||
+                       hwProf == BuildConfig::HardwareProfile::AllSource) {
+                const QStringList candidates = {
+                    "poppler-data", "tessdata", "zstd", "xz", "7zip", "qpdf", "tesseract", "poppler", "libarchive"
+                };
+                for (const QString &comp : candidates) {
+                    if (comp == QLatin1String("poppler")) {
+                        if (!QFile::exists(home + "/.local/bin/pdfimages")) {
+                            pendingBuild.append(comp);
+                        }
+                    } else if (comp == QLatin1String("libarchive")) {
+                        if (!QFile::exists(home + "/.local/lib/libarchive.so") &&
+                            !QFile::exists(home + "/.local/lib64/libarchive.so")) {
+                            pendingBuild.append(comp);
+                        }
+                    } else if (!BuildConfig::hasSourceBinary(comp)) {
+                        pendingBuild.append(comp);
+                    }
+                }
+            }
+
+            if (!pendingBuild.isEmpty()) {
+                BuildConsoleDialog console(&window);
+                console.startBuildComponents(pendingBuild);
+                console.exec();
+            }
         }
     }
 
