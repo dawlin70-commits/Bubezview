@@ -183,6 +183,10 @@ bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
 
     QStringList args;
     args << "--cli" << "--update";
+    auto hwProf = BuildConfig::instance().activeHardwareProfile();
+    if (hwProf != BuildConfig::HardwareProfile::SystemPackages) {
+        args << "--no-sudo";
+    }
     if (!targetName.isEmpty()) {
         args << "--target" << targetName;
     }
@@ -233,6 +237,10 @@ bool BuildConsoleDialog::startBuildForComponent(const QString &componentId)
 
     QStringList args;
     args << "--cli" << "--update";
+    auto hwProf = BuildConfig::instance().activeHardwareProfile();
+    if (hwProf != BuildConfig::HardwareProfile::SystemPackages) {
+        args << "--no-sudo";
+    }
     QString normComp = componentId.trimmed().toLower();
     if (!normComp.isEmpty()) {
         args << "--build-component" << normComp;

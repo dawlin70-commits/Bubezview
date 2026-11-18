@@ -23,6 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 UI_MODE="cli"
 FORCE_CLI=0
 IS_UPDATE=0
+NO_SUDO=0
 ACTION=""
 PURGE=0
 TARGET_COMPONENT=""
@@ -39,6 +40,9 @@ while [ "$#" -gt 0 ]; do
         --update|-u|--yes|-y)
             IS_UPDATE=1
             FORCE_CLI=1
+            ;;
+        --no-sudo)
+            NO_SUDO=1
             ;;
         --uninstall)
             ACTION="uninstall"
@@ -107,7 +111,8 @@ while [ "$#" -gt 0 ]; do
             echo "  --reinstall            Reinstalla da zero e riavvia il Setup (First Run Wizard)"
             echo "  --uninstall [--purge]  Disinstalla BubezView dal sistema (con --purge rimuove config e cache)"
             echo "  --clean                Pulisci i file temporanei di compilazione"
-            echo "  --build-component <N>  Compila un modulo da sorgente (poppler, libarchive, 7zip, qpdf, tesseract)"
+            echo "  --no-sudo              Modalità utente pura senza mai chiedere permessi di root/sudo"
+            echo "  --build-component <N>  Installa/compila un modulo in Home (poppler, poppler-data, libarchive, 7zip, qpdf, tesseract, tessdata, zstd, xz, mpv)"
             echo "  -h, --help             Mostra questo messaggio di aiuto"
             exit 0
             ;;
@@ -210,6 +215,10 @@ detect_distro_family() {
 
 install_missing_packages() {
     local pkgs=("$@")
+    if [ "${NO_SUDO:-0}" -eq 1 ]; then
+        echo -e "${RED}${BOLD}[!] Modalità Zero-Sudo attiva:${NC} installazione di sistema bloccata per: ${pkgs[*]}" >&2
+        return 1
+    fi
     local PM
     PM=$(detect_distro_family)
     
@@ -446,6 +455,65 @@ build_source_component() {
             repo_url="https://github.com/ip7z/7zip.git"
             repo_tag="24.08"
             ;;
+        zstd)
+            repo_url="https://github.com/facebook/zstd.git"
+            repo_tag="v1.5.6"
+            cmake_flags+=("-DZSTD_BUILD_TESTS=OFF" "-DZSTD_BUILD_PROGRAMS=ON" "-DCMAKE_C_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
+        xz|liblzma)
+            repo_url="https://github.com/tukaani-project/xz.git"
+            repo_tag="v5.6.3"
+            cmake_flags+=("-DBUILD_TESTING=OFF" "-DCMAKE_C_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
+        poppler-data)
+            echo -e "${BLUE}${BOLD}[*] Scaricamento tabelle font asiatici CJK (poppler-data) in ${HOME}/.local/share/poppler (Zero Sudo, Zero Compilazione)...${NC}"
+            local data_src="${SCRIPT_DIR}/build_deps/poppler-data"
+            mkdir -p "${SCRIPT_DIR}/build_deps" "${HOME}/.local/share/poppler"
+            if [ ! -d "$data_src/.git" ]; then
+                git clone --depth 1 -b "poppler-data-0.4.12" "https://gitlab.freedesktop.org/poppler/poppler-data.git" "$data_src" 2>/dev/null || \
+                git clone --depth 1 "https://gitlab.freedesktop.org/poppler/poppler-data.git" "$data_src"
+            else
+                (cd "$data_src" && git pull --ff-only 2>/dev/null || true)
+            fi
+            for sub in cMap cidToUnicode nameToUnicode unicodeMap; do
+                if [ -d "$data_src/$sub" ]; then
+                    rm -rf "${HOME}/.local/share/poppler/$sub"
+                    cp -r "$data_src/$sub" "${HOME}/.local/share/poppler/$sub"
+                fi
+            done
+            echo -e "${GREEN}${BOLD}[✓] poppler-data installato con successo in ${HOME}/.local/share/poppler!${NC}"
+            exit 0
+            ;;
+        tessdata|tesseract-ocr-ita|ocr-ita)
+            echo -e "${BLUE}${BOLD}[*] Scaricamento modelli neurali OCR (tessdata_fast) in ${HOME}/.local/share (Zero Sudo, Zero Compilazione)...${NC}"
+            local tess_dir="${HOME}/.local/share/bubezview/tessdata"
+            local tess_xdg="${HOME}/.local/share/tessdata"
+            mkdir -p "$tess_dir" "$tess_xdg"
+            for lang in ita eng osd; do
+                echo -e "${BLUE}    Download ${lang}.traineddata...${NC}"
+                curl -fL "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/${lang}.traineddata" -o "${tess_dir}/${lang}.traineddata"
+                ln -sf "${tess_dir}/${lang}.traineddata" "${tess_xdg}/${lang}.traineddata" 2>/dev/null || cp -f "${tess_dir}/${lang}.traineddata" "${tess_xdg}/${lang}.traineddata"
+            done
+            echo -e "${GREEN}${BOLD}[✓] Modelli OCR installati in ${tess_dir}!${NC}"
+            exit 0
+            ;;
+        mpv|engine-mpv|media)
+            echo -e "${BLUE}${BOLD}[*] Scaricamento binario portabile MPV AppImage in ${HOME}/.local/bin/mpv (Zero Sudo)...${NC}"
+            local arch
+            arch=$(uname -m)
+            local mpv_url=""
+            mpv_url=$(curl -s "https://api.github.com/repos/pkgforge-dev/mpv-AppImage/releases/latest" | grep "browser_download_url" | grep "anylinux-${arch}\.AppImage\"" | head -n 1 | cut -d'"' -f4 || true)
+            if [ -z "$mpv_url" ]; then
+                echo -e "${RED}${BOLD}[!] Impossibile trovare il pacchetto MPV AppImage per architettura ${arch}.${NC}" >&2
+                exit 1
+            fi
+            mkdir -p "${HOME}/.local/bin"
+            echo -e "${BLUE}    Sorgente: ${mpv_url}${NC}"
+            curl -fL --progress-bar "$mpv_url" -o "${HOME}/.local/bin/mpv"
+            chmod +x "${HOME}/.local/bin/mpv"
+            echo -e "${GREEN}${BOLD}[✓] Eseguibile portabile 'mpv' installato in ${HOME}/.local/bin/mpv!${NC}"
+            exit 0
+            ;;
         image-formats|qtimageformats|qt6-imageformats|qt6-image-formats-plugins)
             comp="qtimageformats"
             repo_url="https://github.com/qt/qtimageformats.git"
@@ -459,8 +527,8 @@ build_source_component() {
             cmake_flags+=("-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
             ;;
         *)
-            echo -e "${RED}${BOLD}[!] Errore: Il componente '${comp}' non ha una ricetta di compilazione sorgente.${NC}"
-            echo -e "${RED}    Componenti supportati: poppler, engine-poppler, libarchive, engine-libarchive, 7zip, qpdf, tesseract, image-formats.${NC}"
+            echo -e "${RED}${BOLD}[!] Errore: Il componente '${comp}' non ha una ricetta di installazione user-space.${NC}"
+            echo -e "${RED}    Componenti supportati: poppler, poppler-data, libarchive, 7zip, qpdf, tesseract, tesseract-ocr-ita, zstd, xz, mpv, image-formats.${NC}"
             exit 1
             ;;
     esac
@@ -510,12 +578,17 @@ build_source_component() {
         exit 0
     fi
 
+    local COMP_CMAKE_SRC="$COMP_SRC"
+    if [ "$comp" = "zstd" ]; then
+        COMP_CMAKE_SRC="${COMP_SRC}/build/cmake"
+    fi
+
     mkdir -p "$COMP_BUILD"
-    if ! cmake -B "$COMP_BUILD" -S "$COMP_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"; then
+    if ! cmake -B "$COMP_BUILD" -S "$COMP_CMAKE_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"; then
         echo -e "${YELLOW}[!] Configurazione CMake fallita; pulizia cache e nuovo tentativo...${NC}"
         rm -rf "${COMP_BUILD}"
         mkdir -p "${COMP_BUILD}"
-        cmake -B "$COMP_BUILD" -S "$COMP_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"
+        cmake -B "$COMP_BUILD" -S "$COMP_CMAKE_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"
     fi
     cmake --build "$COMP_BUILD" --parallel "$cpu_cores_sub"
     cmake --install "$COMP_BUILD"
@@ -730,7 +803,13 @@ main() {
     elif [ "$ACTION" = "reinstall" ]; then
         do_reinstall
     elif [ "$ACTION" = "build_component" ] && [ -n "$TARGET_COMPONENT" ]; then
-        check_build_tools
+        case "$TARGET_COMPONENT" in
+            poppler-data|tessdata|tesseract-ocr-ita|ocr-ita|mpv|engine-mpv|media)
+                ;;
+            *)
+                check_build_tools
+                ;;
+        esac
         build_source_component "$TARGET_COMPONENT" "$CUSTOM_GIT_URL" "$CUSTOM_GIT_BRANCH" "$CUSTOM_BUILD_FLAGS"
         exit 0
     fi

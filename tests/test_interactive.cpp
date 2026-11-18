@@ -2209,6 +2209,30 @@ void TestInteractive::testModuleCompilationAndFallbackPlan()
     // Verify package manager commands formatting
     QString installCmd = PackageManagerHelper::getInstallCommand("office");
     QVERIFY(!installCmd.isEmpty());
+
+    // Verify user-space installable classification
+    QVERIFY(PackageManagerHelper::isUserSpaceInstallable("poppler-data"));
+    QVERIFY(PackageManagerHelper::isUserSpaceInstallable("tesseract-ocr-ita"));
+    QVERIFY(PackageManagerHelper::isUserSpaceInstallable("tessdata"));
+    QVERIFY(PackageManagerHelper::isUserSpaceInstallable("mpv"));
+    QVERIFY(PackageManagerHelper::isUserSpaceInstallable("engine-mpv"));
+    QVERIFY(PackageManagerHelper::isUserSpaceInstallable("zstd"));
+    QVERIFY(PackageManagerHelper::isUserSpaceInstallable("xz"));
+    QVERIFY(!PackageManagerHelper::isUserSpaceInstallable("libreoffice"));
+
+    // Verify Zero-Sudo guard strictly blocks privileged install/uninstall on MissingOnly & AllStable
+    BuildConfig &cfg = BuildConfig::instance();
+    auto origProfile = cfg.activeHardwareProfile();
+    cfg.applyHardwareProfile(BuildConfig::HardwareProfile::MissingOnly);
+    QString errOut;
+    QVERIFY(!PackageManagerHelper::runPrivilegedInstall({"dummy-pkg"}, nullptr, &errOut));
+    QVERIFY(!errOut.isEmpty());
+    QVERIFY(!PackageManagerHelper::runPrivilegedUninstall({"dummy-pkg"}, nullptr));
+    cfg.applyHardwareProfile(BuildConfig::HardwareProfile::AllStable);
+    QVERIFY(!PackageManagerHelper::runPrivilegedInstall({"dummy-pkg"}, nullptr, &errOut));
+    QVERIFY(!PackageManagerHelper::runPrivilegedUninstall({"dummy-pkg"}, nullptr));
+    cfg.applyHardwareProfile(origProfile);
+    cfg.save();
 }
 
 void TestInteractive::testTextEditingModeAndPersistence()

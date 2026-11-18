@@ -259,6 +259,19 @@ bool PackageManagerHelper::isCompilableEngine(const QString &componentId)
             id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins");
 }
 
+bool PackageManagerHelper::isUserSpaceInstallable(const QString &componentId)
+{
+    QString id = componentId.trimmed().toLower();
+    return (id == "poppler" || id == "poppler-qt6" || id == "engine-poppler" || id == "pdf" ||
+            id == "pdfimages" || id == "poppler-utils" || id == "poppler-data" ||
+            id == "libarchive" || id == "engine-libarchive" || id == "archive" ||
+            id == "media" || id == "mpv" || id == "libmpv" || id == "engine-mpv" ||
+            id == "zstd" || id == "xz" || id == "liblzma" || id == "7zip" || id == "7z" || id == "7zz" ||
+            id == "qpdf" || id == "tesseract" || id == "ocr" || id == "tesseract-ocr" ||
+            id == "tesseract-ocr-ita" || id == "tessdata" || id == "ocr-ita" ||
+            id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins");
+}
+
 bool PackageManagerHelper::triggerEngineCompilation(const QString &componentId, QWidget *parentWidget)
 {
     QString id = componentId.toLower().trimmed();
@@ -282,6 +295,19 @@ bool PackageManagerHelper::triggerEngineCompilation(const QString &componentId, 
     return console->startBuildForComponent(id);
 }
 
+namespace {
+
+bool isZeroSudoActive()
+{
+    const auto hwProf = BuildConfig::instance().activeHardwareProfile();
+    return (hwProf == BuildConfig::HardwareProfile::MissingOnly ||
+            hwProf == BuildConfig::HardwareProfile::AllStable ||
+            hwProf == BuildConfig::HardwareProfile::AllSource ||
+            PackageManagerHelper::detectFamily() == DistroFamily::Immutable);
+}
+
+} // namespace
+
 bool PackageManagerHelper::installComponentInteractive(const QString &componentId, QWidget *parentWidget)
 {
     DistroFamily fam = detectFamily();
@@ -290,32 +316,22 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
     ExtensionModuleInfo mod = ExtensionFeatureRegistry::moduleById(componentId);
     QString displayName = !mod.displayName.isEmpty() ? mod.displayName : componentId;
 
-    if (fam == DistroFamily::Immutable) {
-        if (compilable) {
-            QMessageBox msg(parentWidget);
-            msg.setWindowTitle(QObject::tr("Immutable System Detected"));
-            msg.setText(QObject::tr("<h3>Immutable System Detected</h3>"
-                                   "<p>Your operating system has a read-only root filesystem.</p>"
-                                   "<p>Would you like to compile the <b>%1</b> engine from source in your user directory?</p>").arg(displayName));
-            QAbstractButton *btnCompile = msg.addButton(QObject::tr("Compile from Source (Recommended)"), QMessageBox::ActionRole);
-            QAbstractButton *btnCancel = msg.addButton(QObject::tr("Cancel"), QMessageBox::RejectRole);
-            Q_UNUSED(btnCancel);
-            msg.exec();
-            if (msg.clickedButton() == btnCompile) {
-                return triggerEngineCompilation(componentId, parentWidget);
+    if (isZeroSudoActive()) {
+        if (isUserSpaceInstallable(componentId)) {
+            QString targetId = componentId.trimmed().toLower();
+            if (targetId == QLatin1String("pdfimages") || targetId == QLatin1String("poppler-utils")) {
+                targetId = QStringLiteral("engine-poppler");
             }
-            return false;
+            return triggerEngineCompilation(targetId, parentWidget);
         }
 
         QMessageBox::information(
             parentWidget,
-            QObject::tr("Immutable System Detected"),
-            QObject::tr("<p>Your operating system has a read-only root filesystem.</p>"
-                       "<p>Installing runtime packages into <code>/usr</code> is not recommended.</p>"
-                       "<p><b>Recommended solution:</b> In BubezView Settings, select "
-                       "<b>'Compiled (Source)'</b> to build the module locally in your user folder.</p>"
-                       "<p>Alternatively, apply an overlay via terminal:<br>"
-                       "<code>rpm-ostree install %1</code></p>").arg(pkg)
+            QObject::tr("Zero-Sudo Mode Active"),
+            QObject::tr("<p>Your active execution profile operates strictly without administrator privileges (no sudo).</p>"
+                        "<p>The component <b>%1</b> (<code>%2</code>) requires system-level installation.</p>"
+                        "<p>If needed, install it manually via terminal:<br><code>%3</code></p>")
+                        .arg(displayName, pkg, getInstallCommand(componentId))
         );
         return false;
     }
@@ -414,6 +430,12 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
 bool PackageManagerHelper::runPrivilegedInstall(const QStringList &packageNames, QWidget *parentWidget, QString *outError)
 {
     if (packageNames.isEmpty()) return true;
+    if (isZeroSudoActive()) {
+        if (outError) {
+            *outError = QObject::tr("Blocked by active Zero-Sudo execution profile.");
+        }
+        return false;
+    }
 
     DistroFamily fam = detectFamily();
     QString pkgs = packageNames.join(" ");
@@ -652,6 +674,9 @@ bool PackageManagerHelper::checkUninstallSafety(const QString &componentId, QStr
 bool PackageManagerHelper::runPrivilegedUninstall(const QStringList &packageNames, QWidget *parentWidget)
 {
     if (packageNames.isEmpty()) return true;
+    if (isZeroSudoActive()) {
+        return false;
+    }
 
     DistroFamily fam = detectFamily();
     QString pkgs = packageNames.join(" ");
@@ -758,6 +783,29 @@ bool PackageManagerHelper::runPrivilegedUninstall(const QStringList &packageName
 
 bool PackageManagerHelper::uninstallComponentInteractive(const QString &componentId, QWidget *parentWidget)
 {
+    if (isZeroSudoActive()) {
+        if (BuildConfig::hasSourceBinary(componentId)) {
+            if (QMessageBox::question(
+                    parentWidget,
+                    QObject::tr("Remove Local Component"),
+                    QObject::tr("<p>Do you want to remove the local user-space installation of <b>%1</b> from your home directory?</p>")
+                                .arg(componentId),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) == QMessageBox::Yes) {
+                return BuildConfig::removeLocalSourceBuild(componentId);
+            }
+            return false;
+        }
+        QMessageBox::information(
+            parentWidget,
+            QObject::tr("Zero-Sudo Mode Active"),
+            QObject::tr("<p>Your active execution profile operates strictly without administrator privileges (no sudo).</p>"
+                        "<p>System packages in <code>/usr</code> are not modified. To remove manually:<br><code>%1</code></p>")
+                        .arg(getUninstallCommand(componentId))
+        );
+        return false;
+    }
+
     QString pkg = packageNameForComponent(componentId);
     QStringList otherDeps;
 

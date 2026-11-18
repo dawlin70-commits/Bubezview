@@ -8,6 +8,7 @@
 #include "core/system/package_manager_helper.h"
 #include <QStandardPaths>
 #include <QFile>
+#include <QDir>
 #include <QProcess>
 
 QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
@@ -159,7 +160,10 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         m.diagnosticCommand = "tesseract --version";
 
         // Sub-dependencies (Italian language data pack)
-        bool hasIta = QFile::exists("/usr/share/tesseract-ocr/5/tessdata/ita.traineddata") ||
+        const QString home = QDir::homePath();
+        bool hasIta = QFile::exists(home + "/.local/share/bubezview/tessdata/ita.traineddata") ||
+                      QFile::exists(home + "/.local/share/tessdata/ita.traineddata") ||
+                      QFile::exists("/usr/share/tesseract-ocr/5/tessdata/ita.traineddata") ||
                       QFile::exists("/usr/share/tesseract-ocr/4.00/tessdata/ita.traineddata") ||
                       QFile::exists("/usr/share/tessdata/ita.traineddata");
         m.subDependencies.append(SubDependency{
@@ -609,11 +613,11 @@ ExtensionModuleInfo ExtensionFeatureRegistry::moduleById(const QString &id)
 void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
 {
     if (module.id == "engine-poppler") {
-        module.isInstalled = BuildConfig::isPkgInstalled("poppler-qt6") || BuildConfig::isPkgInstalled("libpoppler-qt6-3");
+        module.isInstalled = BuildConfig::isComponentAvailable("engine-poppler");
     } else if (module.id == "engine-libarchive") {
-        module.isInstalled = BuildConfig::isPkgInstalled("libarchive") || BuildConfig::isPkgInstalled("libarchive13");
+        module.isInstalled = BuildConfig::isComponentAvailable("engine-libarchive");
     } else if (module.id == "engine-mpv") {
-        module.isInstalled = BuildConfig::isPkgInstalled("mpv") || BuildConfig::isPkgInstalled("libmpv2") || BuildConfig::isPkgInstalled("libmpv1");
+        module.isInstalled = BuildConfig::isComponentAvailable("engine-mpv");
     } else if (module.id == "engine-office") {
         module.isInstalled = BuildConfig::isPkgInstalled("librevenge-0.0") || BuildConfig::instance().enableInternalOffice();
     } else if (module.id == "pdfimages") {
@@ -627,9 +631,9 @@ void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
     } else if (module.id == "openssl") {
         module.isInstalled = BuildConfig::isPkgInstalled("openssl");
     } else if (module.id == "zstd") {
-        module.isInstalled = BuildConfig::isPkgInstalled("libzstd");
+        module.isInstalled = BuildConfig::isComponentAvailable("zstd");
     } else if (module.id == "xz") {
-        module.isInstalled = BuildConfig::isPkgInstalled("liblzma");
+        module.isInstalled = BuildConfig::isComponentAvailable("xz");
     } else if (module.id == "office") {
         module.isInstalled = !QStandardPaths::findExecutable("libreoffice").isEmpty() ||
                              BuildConfig::instance().enableInternalOffice();

@@ -63,6 +63,13 @@ public:
     static bool isCompilableEngine(const QString &componentId);
 
     /**
+     * @brief Checks if a component can be installed/compiled in user-space (~/.local) without sudo.
+     * @param componentId Generic component ID
+     * @return True if user-space installation or compilation is supported
+     */
+    static bool isUserSpaceInstallable(const QString &componentId);
+
+    /**
      * @brief Configures BuildConfig and launches the compilation console for an engine module.
      * @param componentId Generic component ID
      * @param parentWidget Parent widget for dialogs

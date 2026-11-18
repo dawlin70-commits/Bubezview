@@ -764,6 +764,7 @@ bool BuildConfig::isPopplerDataInstalled()
            QDir("/usr/share/poppler/cMap").exists() ||
            QDir("/usr/local/share/poppler/cMap").exists() ||
            QDir(home + "/.local/share/poppler/cMap").exists() ||
+           QDir(home + "/.local/share/bubezview/poppler/cMap").exists() ||
            (!hostHome.isEmpty() && QDir(hostHome + "/.local/share/poppler/cMap").exists());
 }
 
@@ -944,6 +945,17 @@ bool BuildConfig::hasSourceBinary(const QString &componentId)
         return false;
     };
 
+    if (id == "poppler-data") {
+        const QString home = QDir::homePath();
+        return QDir(home + "/.local/share/poppler/cMap").exists() ||
+               QDir(home + "/.local/share/bubezview/poppler/cMap").exists();
+    }
+    if (id == "tessdata" || id == "tesseract-ocr-ita" || id == "ocr-ita") {
+        const QString home = QDir::homePath();
+        return QFile::exists(home + "/.local/share/bubezview/tessdata/ita.traineddata") ||
+               QFile::exists(home + "/.local/share/tessdata/ita.traineddata");
+    }
+
     if (id == "engine-poppler" || id == "poppler" || id == "poppler-qt6" || id == "pdf") {
         if (checkPluginExists("bubez_pdf.so")) return true;
     } else if (id == "engine-libarchive" || id == "libarchive" || id == "archive") {
@@ -969,6 +981,8 @@ bool BuildConfig::hasSourceBinary(const QString &componentId)
         exes << "zstd";
     } else if (id == "xz" || id == "liblzma") {
         exes << "xz";
+    } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media") {
+        exes << "mpv";
     } else if (id == "engine-libarchive" || id == "libarchive" || id == "archive") {
         exes << "bsdtar" << "bsdunzip";
     } else {
@@ -1182,8 +1196,18 @@ bool BuildConfig::removeLocalSourceBuild(const QString &componentId)
         PluginManager::instance().unloadPlugin("archive");
     } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media") {
         removePluginFiles("bubez_media.so");
+        removeExecutables({"mpv"});
         PluginManager::instance().unloadPlugin(FileCategory::Media);
         PluginManager::instance().unloadPlugin("media");
+    } else if (id == "poppler-data") {
+        QDir popDir(home + "/.local/share/poppler");
+        if (popDir.exists()) popDir.removeRecursively();
+    } else if (id == "tessdata" || id == "tesseract-ocr-ita" || id == "ocr-ita") {
+        for (const char *f : {"ita.traineddata", "eng.traineddata", "osd.traineddata"}) {
+            QString fname = QLatin1String(f);
+            QFile::remove(home + "/.local/share/bubezview/tessdata/" + fname);
+            QFile::remove(home + "/.local/share/tessdata/" + fname);
+        }
     } else if (id == "office" || id == "engine-office" || id == "librevenge") {
         instance().setStaticOffice(false);
         instance().setEnableInternalOffice(false);
