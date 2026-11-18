@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 # ==============================================================================
 # INSTALLATORE STANDALONE C++ / CMAKE
 # Generato da Release Studio
@@ -73,7 +73,7 @@ for arg in "$@"; do
             FORCE_CLI=1
             ;;
         --help|-h)
-            echo "Uso: ./Install [opzioni]"
+            echo "Uso: ./Install.sh [opzioni]"
             echo ""
             echo "Opzioni principali:"
             echo "  (nessun argomento)     Avvia il menu grafico interattivo (se presente interfaccia)"
@@ -1202,9 +1202,10 @@ except Exception:
 
     # Salva una copia dell'installer autonomo per futuri aggiornamenti
     if [ -f "$0" ]; then
-        cp -f "$0" "$app_install_dir/Install" 2>/dev/null || true
-        chmod +x "$app_install_dir/Install" 2>/dev/null || true
-        ln -sf "Install" "$app_install_dir/install.sh" 2>/dev/null || true
+        cp -f "$0" "$app_install_dir/Install.sh" 2>/dev/null || true
+        chmod +x "$app_install_dir/Install.sh" 2>/dev/null || true
+        ln -sf "Install.sh" "$app_install_dir/Install" 2>/dev/null || true
+        ln -sf "Install.sh" "$app_install_dir/install.sh" 2>/dev/null || true
     fi
 
     local found_icon=""
