@@ -276,12 +276,11 @@ FirstRunWizard::FirstRunWizard(QWidget *parent)
     mainLayout->setContentsMargins(12, 10, 12, 10);
     mainLayout->setSpacing(8);
 
-    // 4 Sequential Pages
+    // 3 Sequential Pages
     m_pageStack = new QStackedWidget(this);
     m_pageStack->addWidget(createWelcomePage());      // Page_Welcome = 0
     m_pageStack->addWidget(createSpacebarPage());     // Page_Spacebar = 1
-    m_pageStack->addWidget(createModulesPage());      // Page_Modules = 2
-    m_pageStack->addWidget(createPerformancePage());  // Page_Performance = 3
+    m_pageStack->addWidget(createPerformancePage());  // Page_Performance = 2
     mainLayout->addWidget(m_pageStack, 1);
 
     // Bottom Navigation Bar
@@ -767,107 +766,6 @@ void FirstRunWizard::runSpacebarAutoTest()
     }
 }
 
-QWidget *FirstRunWizard::createModulesPage()
-{
-    auto *page = new QWidget(this);
-    auto *layout = new QVBoxLayout(page);
-    layout->setSpacing(12);
-    layout->setContentsMargins(4, 2, 4, 4);
-
-    // Header
-    auto *headerBox = new QWidget(page);
-    auto *headerLay = new QVBoxLayout(headerBox);
-    headerLay->setContentsMargins(0, 0, 0, 0);
-    headerLay->setSpacing(2);
-    auto *lblTitle = new QLabel(tr("Moduli e Comparti Studio"), headerBox);
-    lblTitle->setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8; background: transparent;");
-    auto *lblSub = new QLabel(tr("Scegli come gestire i componenti avanzati per PDF, Audio, Video e Archivi."), headerBox);
-    lblSub->setStyleSheet("font-size: 11px; opacity: 0.85; background: transparent;");
-    headerLay->addWidget(lblTitle);
-    headerLay->addWidget(lblSub);
-    layout->addWidget(headerBox);
-
-    // Primary Options
-    auto *grpModes = new QGroupBox(tr("Modalità di Attivazione"), page);
-    auto *layModes = new QVBoxLayout(grpModes);
-    layModes->setContentsMargins(14, 12, 14, 12);
-    layModes->setSpacing(10);
-
-    m_radioOnDemand = new QRadioButton(tr("Modalità On-Demand (Consigliata)"), grpModes);
-    m_radioOnDemand->setCursor(Qt::PointingHandCursor);
-    m_radioOnDemand->setChecked(true);
-    m_radioOnDemand->setStyleSheet("font-weight: 700; font-size: 12px;");
-    auto *lblOnDemandDesc = new QLabel(
-        tr("Avvio ultra-leggero. I visualizzatori base sono subito pronti; i moduli pesanti si attivano con 1 clic solo alla prima apertura."),
-        grpModes
-    );
-    lblOnDemandDesc->setStyleSheet("color: rgba(226, 232, 240, 0.75); font-size: 11px; margin-left: 22px;");
-
-    m_radioPrepareNow = new QRadioButton(tr("Prepara moduli adesso"), grpModes);
-    m_radioPrepareNow->setCursor(Qt::PointingHandCursor);
-    m_radioPrepareNow->setStyleSheet("font-weight: 700; font-size: 12px;");
-    auto *lblNowDesc = new QLabel(
-        tr("Configura e abilita subito tutti i comparti studio per l'utilizzo immediato offline."),
-        grpModes
-    );
-    lblNowDesc->setStyleSheet("color: rgba(226, 232, 240, 0.75); font-size: 11px; margin-left: 22px;");
-
-    layModes->addWidget(m_radioOnDemand);
-    layModes->addWidget(lblOnDemandDesc);
-    layModes->addSpacing(4);
-    layModes->addWidget(m_radioPrepareNow);
-    layModes->addWidget(lblNowDesc);
-
-    layout->addWidget(grpModes);
-
-    // Module Checkbox Panel (hidden in On-Demand mode, visible and fully editable when Prepare Now is selected)
-    m_panelModulesNow = new QWidget(page);
-    auto *layPanel = new QVBoxLayout(m_panelModulesNow);
-    layPanel->setContentsMargins(0, 0, 0, 0);
-    layPanel->setSpacing(8);
-
-    auto *grpItems = new QGroupBox(tr("Comparti da Abilitare Subito"), m_panelModulesNow);
-    auto *gridItems = new QGridLayout(grpItems);
-    gridItems->setContentsMargins(14, 10, 14, 10);
-    gridItems->setHorizontalSpacing(20);
-    gridItems->setVerticalSpacing(8);
-
-    m_chkModDocs = new QCheckBox(tr("Documenti (PDF avanzati, OCR, Firme)"), grpItems);
-    m_chkModDocs->setChecked(true);
-    m_chkModDocs->setCursor(Qt::PointingHandCursor);
-
-    m_chkModMedia = new QCheckBox(tr("Audio && Video (MPV, Equalizzatore)"), grpItems);
-    m_chkModMedia->setChecked(true);
-    m_chkModMedia->setCursor(Qt::PointingHandCursor);
-
-    m_chkModArchives = new QCheckBox(tr("Archivi (7-Zip, Zstandard)"), grpItems);
-    m_chkModArchives->setChecked(true);
-    m_chkModArchives->setCursor(Qt::PointingHandCursor);
-
-    m_chkModImages = new QCheckBox(tr("Grafica (WebP, TIFF, SVG)"), grpItems);
-    m_chkModImages->setChecked(true);
-    m_chkModImages->setCursor(Qt::PointingHandCursor);
-
-    gridItems->addWidget(m_chkModDocs, 0, 0);
-    gridItems->addWidget(m_chkModMedia, 0, 1);
-    gridItems->addWidget(m_chkModArchives, 1, 0);
-    gridItems->addWidget(m_chkModImages, 1, 1);
-
-    layPanel->addWidget(grpItems);
-    layout->addWidget(m_panelModulesNow);
-
-    // By default On-Demand is selected, so keep extra module panel cleanly hidden
-    m_panelModulesNow->setVisible(false);
-    connect(m_radioOnDemand, &QRadioButton::toggled, this, [this](bool onDemand) {
-        if (m_panelModulesNow) {
-            m_panelModulesNow->setVisible(!onDemand);
-        }
-    });
-
-    layout->addStretch(1);
-    return page;
-}
-
 QWidget *FirstRunWizard::createPerformancePage()
 {
     auto *page = new QWidget(this);
@@ -925,30 +823,30 @@ QWidget *FirstRunWizard::createPerformancePage()
         return btn;
     };
 
-    m_btnTierSystem = makeTierBtn(tr("Pacchetti di Sistema"), tr("Precompilati standard"));
-    m_btnTierCpu = makeTierBtn(tr("Ottimizzato per CPU"), tr("Nativo -O3 (Consigliato)"));
-    m_btnTierFull = makeTierBtn(tr("Compilazione Completa"), tr("Workstation / Immutabili"));
+    m_btnTierSystem = makeTierBtn(tr("Pacchetti di Sistema"), tr("Richiede sudo"));
+    m_btnTierMissing = makeTierBtn(tr("Compila Mancanti"), tr("Zero password (Home)"));
+    m_btnTierMax = makeTierBtn(tr("Massime Prestazioni"), tr("Solo per PC potenti"));
 
     m_tierGroup->addButton(m_btnTierSystem, 0);
-    m_tierGroup->addButton(m_btnTierCpu, 1);
-    m_tierGroup->addButton(m_btnTierFull, 2);
+    m_tierGroup->addButton(m_btnTierMissing, 1);
+    m_tierGroup->addButton(m_btnTierMax, 2);
 
     tierRow->addWidget(m_btnTierSystem, 1);
-    tierRow->addWidget(m_btnTierCpu, 1);
-    tierRow->addWidget(m_btnTierFull, 1);
+    tierRow->addWidget(m_btnTierMissing, 1);
+    tierRow->addWidget(m_btnTierMax, 1);
     layTier->addLayout(tierRow);
 
     m_lblTierDesc = new QLabel(grpTier);
     m_lblTierDesc->setTextFormat(Qt::RichText);
     m_lblTierDesc->setWordWrap(true);
-    m_lblTierDesc->setStyleSheet("font-size: 11px; opacity: 0.85; margin-top: 4px; border: none; background: transparent;");
+    m_lblTierDesc->setStyleSheet("font-size: 13px; font-weight: 500; margin-top: 8px; border: none; background: transparent;");
     layTier->addWidget(m_lblTierDesc);
 
     connect(m_btnTierSystem, &QPushButton::clicked, this, [this]() { selectCompilationTier(0); });
-    connect(m_btnTierCpu, &QPushButton::clicked, this, [this]() { selectCompilationTier(1); });
-    connect(m_btnTierFull, &QPushButton::clicked, this, [this]() { selectCompilationTier(2); });
+    connect(m_btnTierMissing, &QPushButton::clicked, this, [this]() { selectCompilationTier(1); });
+    connect(m_btnTierMax, &QPushButton::clicked, this, [this]() { selectCompilationTier(2); });
 
-    selectCompilationTier(1); // Default to Recommended CPU native
+    selectCompilationTier(1); // Default to Recommended Missing Only (Home, zero password)
 
     layout->addWidget(grpTier);
 
@@ -1034,16 +932,16 @@ void FirstRunWizard::selectCompilationTier(int tier)
 {
     m_selectedTier = tier;
     styleTierButton(m_btnTierSystem, tier == 0);
-    styleTierButton(m_btnTierCpu, tier == 1);
-    styleTierButton(m_btnTierFull, tier == 2);
+    styleTierButton(m_btnTierMissing, tier == 1);
+    styleTierButton(m_btnTierMax, tier == 2);
 
     if (m_lblTierDesc) {
         if (tier == 0) {
-            m_lblTierDesc->setText(tr("💡 <b>Pacchetti di sistema:</b> Usa le librerie della distribuzione Linux. Nessun tempo di attesa, massima stabilità."));
+            m_lblTierDesc->setText(tr("🔒 <b>Pacchetti di Sistema:</b> Richiede permessi di amministratore (sudo) per installare i pacchetti della distribuzione."));
         } else if (tier == 1) {
-            m_lblTierDesc->setText(tr("⚡ <b>Consigliato:</b> Compila con ottimizzazioni hardware native (-O3, -march=native) per la massima fluidità e velocità di rendering."));
+            m_lblTierDesc->setText(tr("✨ <b>Compila Mancanti (Consigliato):</b> Non tocca il sistema operativo e non chiede alcuna password (tutto nella tua Home)."));
         } else {
-            m_lblTierDesc->setText(tr("📦 <b>Compilazione completa:</b> Compila tutti i motori direttamente nello spazio utente (~/.local). Ideale per Fedora Silverblue e SteamOS."));
+            m_lblTierDesc->setText(tr("⚡ <b>Massime Prestazioni:</b> Compilazione nativa con istruzioni CPU avanzate (Consigliato solo per PC potenti)."));
         }
     }
 }
@@ -1141,8 +1039,8 @@ void FirstRunWizard::updateThemeStyles()
 
     // Refresh compilation tier card buttons
     styleTierButton(m_btnTierSystem, m_selectedTier == 0);
-    styleTierButton(m_btnTierCpu, m_selectedTier == 1);
-    styleTierButton(m_btnTierFull, m_selectedTier == 2);
+    styleTierButton(m_btnTierMissing, m_selectedTier == 1);
+    styleTierButton(m_btnTierMax, m_selectedTier == 2);
 
     // Style bottom navigation buttons
     QString navBtnStyle;
@@ -1249,14 +1147,7 @@ void FirstRunWizard::accept()
     settings.setValue("office_use_libreoffice", hasLo);
     ThemeManager::setUseLibreOffice(hasLo);
 
-    // 6. Modules selection
-    bool prepareNow = m_radioPrepareNow && m_radioPrepareNow->isChecked();
-    bool enableDocs = !prepareNow || (m_chkModDocs && m_chkModDocs->isChecked());
-    bool enableMedia = !prepareNow || (m_chkModMedia && m_chkModMedia->isChecked());
-    bool enableArchives = !prepareNow || (m_chkModArchives && m_chkModArchives->isChecked());
-    bool enableImages = !prepareNow || (m_chkModImages && m_chkModImages->isChecked());
-
-    // Core viewer engines are always ready
+    // 6. Modules selection: all engines ready on-demand
     settings.setValue("modules/pdf_enabled", true);
     settings.setValue("modules/image_enabled", true);
     settings.setValue("modules/video_enabled", true);
@@ -1264,16 +1155,15 @@ void FirstRunWizard::accept()
     settings.setValue("modules/archive_enabled", true);
     settings.setValue("modules/media_enabled", true);
 
-    settings.setValue("modules/ocr_enabled", enableDocs);
-    settings.setValue("modules/qpdf_enabled", enableDocs);
-    settings.setValue("modules/openssl_enabled", enableDocs);
-    settings.setValue("modules/mpv_enabled", enableMedia);
-    settings.setValue("modules/equalizer_enabled", enableMedia);
-    settings.setValue("modules/taglib_enabled", enableMedia);
-    settings.setValue("modules/sevenzip_enabled", enableArchives);
-    settings.setValue("modules/image_formats_enabled", enableImages);
-
-    settings.setValue("modules/preset", prepareNow ? "custom" : "minimal");
+    settings.setValue("modules/ocr_enabled", true);
+    settings.setValue("modules/qpdf_enabled", true);
+    settings.setValue("modules/openssl_enabled", true);
+    settings.setValue("modules/mpv_enabled", true);
+    settings.setValue("modules/equalizer_enabled", true);
+    settings.setValue("modules/taglib_enabled", true);
+    settings.setValue("modules/sevenzip_enabled", true);
+    settings.setValue("modules/image_formats_enabled", true);
+    settings.setValue("modules/preset", "minimal");
 
     // 7. Compilation Strategy (3 levels)
     int tier = m_selectedTier;
@@ -1281,8 +1171,8 @@ void FirstRunWizard::accept()
     BuildConfig &cfg = BuildConfig::instance();
     if (tier == 0) {
         cfg.applyHardwareProfile(BuildConfig::HardwareProfile::SystemPackages);
-    } else if (tier == 2) {
-        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::AllSource);
+    } else if (tier == 1) {
+        cfg.applyHardwareProfile(BuildConfig::HardwareProfile::MissingOnly);
     } else {
         cfg.applyHardwareProfile(BuildConfig::HardwareProfile::AllStable);
     }

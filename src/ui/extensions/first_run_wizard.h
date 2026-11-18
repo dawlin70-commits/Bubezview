@@ -43,8 +43,7 @@ public:
     enum PageId {
         Page_Welcome = 0,     ///< Welcome & Appearance (Language & 3 Themes with live preview)
         Page_Spacebar = 1,    ///< Desktop Integration & Spacebar Key Test
-        Page_Modules = 2,     ///< Functional Modules (Simple direct buttons)
-        Page_Performance = 3  ///< 4-Tier Compilation Slider & Fast Restart Standby
+        Page_Performance = 2  ///< Execution Strategy (3 Profiles) & Fast Restart Standby
     };
 
     explicit FirstRunWizard(QWidget *parent = nullptr);
@@ -55,13 +54,12 @@ public:
     void back();
     void goToPage(int id);
     int currentId() const;
-    QList<int> pageIds() const { return {Page_Welcome, Page_Spacebar, Page_Modules, Page_Performance}; }
+    QList<int> pageIds() const { return {Page_Welcome, Page_Spacebar, Page_Performance}; }
     void updateThemeStyles() override;
 
 private:
     QWidget *createWelcomePage();
     QWidget *createSpacebarPage();
-    QWidget *createModulesPage();
     QWidget *createPerformancePage();
 
     // Stacked navigation
@@ -85,20 +83,11 @@ private:
     QPushButton *m_btnGuide = nullptr;
     QCheckBox *m_chkDesktopIntegration = nullptr;
 
-    // Page 2: Modules
-    QRadioButton *m_radioOnDemand = nullptr;
-    QRadioButton *m_radioPrepareNow = nullptr;
-    QWidget *m_panelModulesNow = nullptr;
-    QCheckBox *m_chkModDocs = nullptr;
-    QCheckBox *m_chkModMedia = nullptr;
-    QCheckBox *m_chkModArchives = nullptr;
-    QCheckBox *m_chkModImages = nullptr;
-
-    // Page 3: Performance & Compilation
-    int m_selectedTier = 1; // 0 = System, 1 = CPU Native (Recommended), 2 = Full
+    // Page 2: Performance & Compilation Strategy
+    int m_selectedTier = 1; // 0 = System, 1 = Missing Only (Recommended), 2 = Max Performance
     QPushButton *m_btnTierSystem = nullptr;
-    QPushButton *m_btnTierCpu = nullptr;
-    QPushButton *m_btnTierFull = nullptr;
+    QPushButton *m_btnTierMissing = nullptr;
+    QPushButton *m_btnTierMax = nullptr;
     QButtonGroup *m_tierGroup = nullptr;
     QLabel *m_lblTierDesc = nullptr;
     QComboBox *m_comboStandby = nullptr;

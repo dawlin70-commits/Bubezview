@@ -6,12 +6,14 @@
 #include "update_manager.h"
 #include "build_config.h"
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkRequest>
+#include <QSettings>
 #include <QTemporaryFile>
 #include <QUrl>
 
@@ -181,6 +183,15 @@ QString UpdateManager::findInstallerScript() const
 
 void UpdateManager::checkForUpdates(bool silent)
 {
+    if (silent) {
+        QSettings settings("Bubez", "BubezView");
+        const QDateTime lastCheck = settings.value("updates/last_check").toDateTime();
+        if (lastCheck.isValid() && lastCheck.secsTo(QDateTime::currentDateTime()) < 86400) {
+            // Rate-limited to once every 24 hours in silent mode
+            return;
+        }
+    }
+
     QNetworkRequest request(QUrl("https://dawlinshare.web.app/versioni.json"));
     request.setHeader(QNetworkRequest::UserAgentHeader, "BubezView/" + currentVersion());
     request.setTransferTimeout(5000);
@@ -196,6 +207,10 @@ void UpdateManager::checkForUpdates(bool silent)
             }
             return;
         }
+
+        // Record successful update check timestamp
+        QSettings settings("Bubez", "BubezView");
+        settings.setValue("updates/last_check", QDateTime::currentDateTime());
 
         QByteArray data = reply->readAll();
         QJsonDocument doc = QJsonDocument::fromJson(data);

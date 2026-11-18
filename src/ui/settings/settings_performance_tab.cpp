@@ -110,19 +110,17 @@ void SettingsPerformanceTab::syncProfileUi()
     if (m_lblOptHint) {
         switch (m_activeProfile) {
         case Profile::SystemPackages:
-            m_lblOptHint->setText(tr("Uses precompiled system packages. Zero compilation required."));
+            m_lblOptHint->setText(tr("🔒 Usa i pacchetti della distribuzione. Richiede permessi di amministratore (sudo) per i pacchetti mancanti."));
             break;
         case Profile::MissingOnly:
-            m_lblOptHint->setText(tr("Compiles only missing engines into ~/.local, without touching the system."));
+            m_lblOptHint->setText(tr("✨ Prepara e compila solo i motori mancanti in ~/.local, senza toccare il sistema e senza chiedere password."));
             break;
         case Profile::AllStable:
-            m_lblOptHint->setText(tr("Compiles stable engines into ~/.local with CPU optimizations, without touching the system."));
+            m_lblOptHint->setText(tr("⚡ Compilazione nativa con istruzioni CPU avanzate (-O3) in ~/.local. Consigliato solo per PC potenti."));
             break;
         case Profile::AllSource:
-            m_lblOptHint->setText(tr("Compiles all components from source into ~/.local, keeping system clean."));
-            break;
         case Profile::Custom:
-            m_lblOptHint->setText(tr("Custom compiler flags applied to local components in ~/.local."));
+            m_lblOptHint->setText(tr("⚙️ Flag di ottimizzazione e sorgenti personalizzati configurati tramite il Compiler Wizard."));
             break;
         }
     }
@@ -250,12 +248,11 @@ void SettingsPerformanceTab::setupUi()
     m_comboProfile = new QComboBox(rowCompControl);
     m_comboProfile->setView(new QListView(m_comboProfile));
     m_comboProfile->setCursor(Qt::PointingHandCursor);
-    m_comboProfile->addItem(tr("System Packages (No Compilation)"), static_cast<int>(Profile::SystemPackages));
-    m_comboProfile->addItem(tr("Missing Components Only"), static_cast<int>(Profile::MissingOnly));
-    m_comboProfile->addItem(tr("All Stable Components"), static_cast<int>(Profile::AllStable));
-    m_comboProfile->addItem(tr("All From Source (Including Unrecommended)"), static_cast<int>(Profile::AllSource));
-    if (m_activeProfile == Profile::Custom) {
-        m_comboProfile->addItem(tr("Custom (Compiler Wizard)"), static_cast<int>(Profile::Custom));
+    m_comboProfile->addItem(tr("Pacchetti di Sistema (Richiede sudo)"), static_cast<int>(Profile::SystemPackages));
+    m_comboProfile->addItem(tr("Compila Mancanti (Home, zero password)"), static_cast<int>(Profile::MissingOnly));
+    m_comboProfile->addItem(tr("Massime Prestazioni (Solo per PC potenti)"), static_cast<int>(Profile::AllStable));
+    if (m_activeProfile == Profile::Custom || m_activeProfile == Profile::AllSource) {
+        m_comboProfile->addItem(tr("Personalizzato (Compiler Wizard)"), static_cast<int>(Profile::Custom));
     }
     connect(m_comboProfile, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &SettingsPerformanceTab::onProfileComboChanged);
