@@ -692,7 +692,7 @@ int main(int argc, char *argv[])
 
             if (hwProf == BuildConfig::HardwareProfile::MissingOnly) {
                 const QStringList candidates = {
-                    "poppler-data", "tessdata", "zstd", "xz", "7zip", "qpdf", "tesseract", "mpv"
+                    "poppler-data", "zstd", "xz", "7zip", "mpv"
                 };
                 for (const QString &comp : candidates) {
                     if (!BuildConfig::hasSystemBinary(comp) && !BuildConfig::hasSourceBinary(comp)) {
@@ -702,7 +702,7 @@ int main(int argc, char *argv[])
             } else if (hwProf == BuildConfig::HardwareProfile::AllStable ||
                        hwProf == BuildConfig::HardwareProfile::AllSource) {
                 const QStringList candidates = {
-                    "poppler-data", "tessdata", "zstd", "xz", "7zip", "qpdf", "tesseract", "poppler", "libarchive"
+                    "poppler-data", "zstd", "xz", "7zip", "poppler", "libarchive"
                 };
                 for (const QString &comp : candidates) {
                     if (comp == QLatin1String("poppler")) {
