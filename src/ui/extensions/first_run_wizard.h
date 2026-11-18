@@ -8,11 +8,9 @@
 #include "dialogs/frameless_dialog.h"
 
 #include <QLabel>
-#include <QRadioButton>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QPushButton>
-#include <QSlider>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QButtonGroup>
@@ -24,16 +22,15 @@ class TopBarPreviewWidget;
  * @class FirstRunWizard
  * @brief Guided onboarding wizard presented on first launch or on-demand.
  *
- * 4 Streamlined Pages:
+ * 3 Streamlined Pages:
  * - **Page 0 (`Page_Welcome`)**: Welcome & Appearance (Pre-selected system language,
  *   interactive BubezView top bar preview with live theme switching: Zinc Gray, Dark Slate, Modern Light).
  * - **Page 1 (`Page_Spacebar`)**: Desktop Integration & Spacebar test (Automatic test execution
  *   on entry; explanation guide if unsupported; desktop integration checked by default;
  *   LibreOffice detected automatically on demand).
- * - **Page 2 (`Page_Modules`)**: Simple module suite choices (Lightweight On-Demand recommended
- *   vs simple compartment buttons for PDF, Audio, OCR, Archives).
- * - **Page 3 (`Page_Performance`)**: 4-tier compilation slider and fast restart standby selection
- *   (default 30 minutes). All other performance defaults applied silently.
+ * - **Page 2 (`Page_Performance`)**: 3 execution strategy profiles (System Packages,
+ *   Missing Only, Maximum Performance) and fast restart standby selection (default 30 minutes).
+ *   All modules are ready on-demand and other performance defaults applied silently.
  */
 class FirstRunWizard : public FramelessDialog
 {

@@ -7,34 +7,24 @@
 #include "desktop_integrator.h"
 #include "build_config.h"
 #include "theme_manager.h"
-#include "vector_icons.h"
 #include "cpu_info.h"
-#include "package_manager_helper.h"
 
 #include <QSettings>
 #include <QStandardPaths>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QFrame>
 #include <QPushButton>
 #include <QLabel>
 #include <QComboBox>
-#include <QRadioButton>
 #include <QCheckBox>
-#include <QSlider>
 #include <QStackedWidget>
 #include <QApplication>
 #include <QClipboard>
 #include <QDialog>
-#include <QKeyEvent>
 #include <QTimer>
 #include <QScreen>
 #include <QGuiApplication>
-#include <QGridLayout>
 #include <QLineEdit>
 #include <QPainter>
 #include <QPainterPath>
@@ -347,24 +337,6 @@ void FirstRunWizard::goToPage(int id)
     }
 
     if (id == Page_Spacebar) {
-        DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
-        if (de == DesktopIntegrator::DesktopEnv::KDE) {
-            DesktopIntegrator::enableDolphin("Space");
-        } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
-            DesktopIntegrator::enableGnomeNemo();
-        }
-        DesktopIntegrator::enableContextMenu();
-        DesktopIntegrator::installAppMenu();
-
-        QSettings settings("Bubez", "BubezView");
-        const QString shortcut = (de == DesktopIntegrator::DesktopEnv::KDE ||
-                                  de == DesktopIntegrator::DesktopEnv::GNOME ||
-                                  de == DesktopIntegrator::DesktopEnv::Cinnamon) ? QStringLiteral("Space") : QStringLiteral("Ctrl+Space");
-        settings.setValue("shortcut", shortcut);
-        settings.setValue("integration/dolphin", true);
-        settings.setValue("integration/desktop", true);
-        settings.sync();
-
         runSpacebarAutoTest();
     }
 }
@@ -686,7 +658,6 @@ QWidget *FirstRunWizard::createSpacebarPage()
     layout->addWidget(grpInteg);
     layout->addStretch(1);
 
-    runSpacebarAutoTest();
     return page;
 }
 
@@ -839,7 +810,7 @@ QWidget *FirstRunWizard::createPerformancePage()
     m_lblTierDesc = new QLabel(grpTier);
     m_lblTierDesc->setTextFormat(Qt::RichText);
     m_lblTierDesc->setWordWrap(true);
-    m_lblTierDesc->setStyleSheet("font-size: 13px; font-weight: 500; margin-top: 8px; border: none; background: transparent;");
+    m_lblTierDesc->setStyleSheet("font-size: 13px; font-weight: 600; margin-top: 8px; border: none; background: transparent;");
     layTier->addWidget(m_lblTierDesc);
 
     connect(m_btnTierSystem, &QPushButton::clicked, this, [this]() { selectCompilationTier(0); });
@@ -937,11 +908,11 @@ void FirstRunWizard::selectCompilationTier(int tier)
 
     if (m_lblTierDesc) {
         if (tier == 0) {
-            m_lblTierDesc->setText(tr("🔒 <b>Pacchetti di Sistema:</b> Richiede permessi di amministratore (sudo) per installare i pacchetti della distribuzione."));
+            m_lblTierDesc->setText(tr("🔒 Richiede permessi di amministratore (sudo) per installare i pacchetti di sistema."));
         } else if (tier == 1) {
-            m_lblTierDesc->setText(tr("✨ <b>Compila Mancanti (Consigliato):</b> Non tocca il sistema operativo e non chiede alcuna password (tutto nella tua Home)."));
+            m_lblTierDesc->setText(tr("✨ Non tocca il sistema e non chiede password (tutto nella tua Home)."));
         } else {
-            m_lblTierDesc->setText(tr("⚡ <b>Massime Prestazioni:</b> Compilazione nativa con istruzioni CPU avanzate (Consigliato solo per PC potenti)."));
+            m_lblTierDesc->setText(tr("⚡ Compilazione nativa con istruzioni CPU avanzate — solo per PC potenti."));
         }
     }
 }
@@ -1133,11 +1104,23 @@ void FirstRunWizard::accept()
     if (integrateDesktop) {
         DesktopIntegrator::installAppMenu();
         DesktopIntegrator::enableContextMenu();
-        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+        if (de == DesktopIntegrator::DesktopEnv::KDE && chosenShortcut != QLatin1String("Space")) {
             DesktopIntegrator::enableDolphin(chosenShortcut);
         } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
             DesktopIntegrator::enableGnomeNemo();
         }
+        settings.setValue("integration/dolphin", true);
+        settings.setValue("integration/desktop", true);
+    } else {
+        DesktopIntegrator::uninstallAppMenu();
+        DesktopIntegrator::disableContextMenu();
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            DesktopIntegrator::disableDolphin();
+        } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+            DesktopIntegrator::disableGnomeNemo();
+        }
+        settings.setValue("integration/dolphin", false);
+        settings.setValue("integration/desktop", false);
     }
 
     // 5. Office (LibreOffice): auto-detected quietly; if installed enable, else on-demand

@@ -69,7 +69,6 @@ SettingsPerformanceTab::Profile SettingsPerformanceTab::detectActiveProfile() co
     case BuildConfig::HardwareProfile::AllStable:
         return Profile::AllStable;
     case BuildConfig::HardwareProfile::AllSource:
-        return Profile::AllSource;
     case BuildConfig::HardwareProfile::Custom:
         return Profile::Custom;
     }
@@ -110,17 +109,17 @@ void SettingsPerformanceTab::syncProfileUi()
     if (m_lblOptHint) {
         switch (m_activeProfile) {
         case Profile::SystemPackages:
-            m_lblOptHint->setText(tr("🔒 Usa i pacchetti della distribuzione. Richiede permessi di amministratore (sudo) per i pacchetti mancanti."));
+            m_lblOptHint->setText(tr("🔒 Requires administrator permissions (sudo) to install distribution packages."));
             break;
         case Profile::MissingOnly:
-            m_lblOptHint->setText(tr("✨ Prepara e compila solo i motori mancanti in ~/.local, senza toccare il sistema e senza chiedere password."));
+            m_lblOptHint->setText(tr("✨ Does not touch the system and does not ask for a password (all in your Home)."));
             break;
         case Profile::AllStable:
-            m_lblOptHint->setText(tr("⚡ Compilazione nativa con istruzioni CPU avanzate (-O3) in ~/.local. Consigliato solo per PC potenti."));
+            m_lblOptHint->setText(tr("⚡ Native compilation with advanced CPU instructions (-O3) — for powerful PCs only."));
             break;
         case Profile::AllSource:
         case Profile::Custom:
-            m_lblOptHint->setText(tr("⚙️ Flag di ottimizzazione e sorgenti personalizzati configurati tramite il Compiler Wizard."));
+            m_lblOptHint->setText(tr("⚙️ Custom optimization flags and sources configured via the Compiler Wizard."));
             break;
         }
     }
@@ -248,11 +247,11 @@ void SettingsPerformanceTab::setupUi()
     m_comboProfile = new QComboBox(rowCompControl);
     m_comboProfile->setView(new QListView(m_comboProfile));
     m_comboProfile->setCursor(Qt::PointingHandCursor);
-    m_comboProfile->addItem(tr("Pacchetti di Sistema (Richiede sudo)"), static_cast<int>(Profile::SystemPackages));
-    m_comboProfile->addItem(tr("Compila Mancanti (Home, zero password)"), static_cast<int>(Profile::MissingOnly));
-    m_comboProfile->addItem(tr("Massime Prestazioni (Solo per PC potenti)"), static_cast<int>(Profile::AllStable));
-    if (m_activeProfile == Profile::Custom || m_activeProfile == Profile::AllSource) {
-        m_comboProfile->addItem(tr("Personalizzato (Compiler Wizard)"), static_cast<int>(Profile::Custom));
+    m_comboProfile->addItem(tr("System Packages (Requires sudo)"), static_cast<int>(Profile::SystemPackages));
+    m_comboProfile->addItem(tr("Compile Missing (Home, zero password)"), static_cast<int>(Profile::MissingOnly));
+    m_comboProfile->addItem(tr("Maximum Performance (Powerful PCs only)"), static_cast<int>(Profile::AllStable));
+    if (m_activeProfile == Profile::Custom) {
+        m_comboProfile->addItem(tr("Custom (Compiler Wizard)"), static_cast<int>(Profile::Custom));
     }
     connect(m_comboProfile, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &SettingsPerformanceTab::onProfileComboChanged);
@@ -273,17 +272,10 @@ void SettingsPerformanceTab::setupUi()
 
     m_lblOptHint = new QLabel(this);
     m_lblOptHint->setObjectName(QStringLiteral("RowSubtitle"));
-
-    m_lblIsolationNotice = new QLabel(
-        tr("🔒 All optimized components reside in your user folder (~/.local), without touching system files or requiring root permissions."),
-        m_grpCompiler
-    );
-    m_lblIsolationNotice->setObjectName(QStringLiteral("RowSubtitle"));
-    m_lblIsolationNotice->setWordWrap(true);
+    m_lblOptHint->setWordWrap(true);
 
     layComp->addWidget(rowComp);
     layComp->addWidget(m_lblOptHint);
-    layComp->addWidget(m_lblIsolationNotice);
     layout->addWidget(m_grpCompiler);
 
     // =========================================================================

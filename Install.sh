@@ -626,6 +626,21 @@ do_uninstall() {
     rm -f "$HOME/.local/share/nemo/actions/${APP_ID}_sviluppo.nemo_action"
     rm -f "$HOME/.local/share/nautilus/scripts/Preview with BubezView"
     rm -f "$HOME/.local/share/nautilus/scripts/Anteprima con BubezView"*
+    for rc in "$HOME/.local/share/kxmlgui5/dolphin/dolphinui.rc" \
+              "$HOME/.local/share/kxmlgui6/dolphin/dolphinui.rc"; do
+        if [ -f "$rc" ]; then
+            sed -i '/servicemenu_bubezview/d; /toggle_selection_mode/d' "$rc" 2>/dev/null || true
+        fi
+    done
+    for f in "$HOME/.local/share/dbus-1/services/org.gnome.NautilusPreviewer.service" \
+             "$HOME/.local/share/dbus-1/services/org.nemo.Preview.service" \
+             "$HOME/.local/share/dbus-1/services/org.nemo.Previewer.service" \
+             "$HOME/.local/bin/sushi" \
+             "$HOME/.local/bin/nemo-preview"; do
+        if [ -f "$f" ] && grep -qi "bubezview" "$f" 2>/dev/null; then
+            rm -f "$f"
+        fi
+    done
 
     # 5. Se PURGE=1, rimuovi anche configurazione, dati Qt e cache
     if [ "$PURGE" -eq 1 ]; then

@@ -118,7 +118,6 @@ private:
     QComboBox *m_comboProfile = nullptr;
     QPushButton *m_btnWizard = nullptr;
     QLabel *m_lblOptHint = nullptr;
-    QLabel *m_lblIsolationNotice = nullptr;
 
     // Card 2: Cache & GPU Acceleration
     QGroupBox *m_grpAcceleration = nullptr;

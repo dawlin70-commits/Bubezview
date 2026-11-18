@@ -541,7 +541,7 @@ int main(int argc, char *argv[])
             pixCopied.save(QString("%1/diagnostic_dialog_copied_feedback.png").arg(outDir));
         }
 
-        // Capture FirstRunWizard 4 Pages (ZincGray Theme)
+        // Capture FirstRunWizard 3 Pages (ZincGray Theme)
         {
             qputenv("XDG_CURRENT_DESKTOP", "KDE");
             ThemeManager::setPreset(ThemePreset::ZincGray);
@@ -551,8 +551,7 @@ int main(int argc, char *argv[])
             QStringList pageNames = {
                 QStringLiteral("wizard_page_0_welcome.png"),
                 QStringLiteral("wizard_page_1_spacebar.png"),
-                QStringLiteral("wizard_page_2_modules.png"),
-                QStringLiteral("wizard_page_3_performance.png")
+                QStringLiteral("wizard_page_2_performance.png")
             };
             for (int p = 0; p < pageNames.size(); ++p) {
                 for (int w = 0; w < 10; ++w) {

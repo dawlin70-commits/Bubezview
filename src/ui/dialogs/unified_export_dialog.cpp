@@ -137,7 +137,7 @@ void UnifiedExportDialog::setupUi()
     // 4. Action Buttons
     auto *btnRow = new QHBoxLayout();
 
-    if (m_category == FileCategory::Pdf && BuildConfig::isPdfimagesAvailable()) {
+    if (m_category == FileCategory::Pdf && (BuildConfig::isPdfimagesAvailable() || BuildConfig::showUninstalledFeatures())) {
         m_btnExtractImages = new QPushButton(QIcon::fromTheme("image-x-generic"), tr("Extract Embedded Images..."), this);
         m_btnExtractImages->setCursor(Qt::PointingHandCursor);
         m_btnExtractImages->setToolTip(tr("Open embedded images preview and selection dialog"));

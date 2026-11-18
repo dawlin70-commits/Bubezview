@@ -21,6 +21,7 @@
 #include "ui/vector_icons.h"
 
 #include "core/services/theme_manager.h"
+#include "core/system/build_config.h"
 
 #include "ui/pdf/pdf_studio_panel.h"
 #include "ui/pdf/pdf_history_widget.h"
@@ -665,7 +666,7 @@ void TestPdfStudio::testExportAndImageExtractDialogs()
     QCOMPARE(res, static_cast<int>(UnifiedExportDialog::ExtractImages));
 
     // 2. PdfImageExtractDialog test
-    if (QFile::exists(samplePdf)) {
+    if (QFile::exists(samplePdf) && BuildConfig::isPdfimagesAvailable()) {
         PdfImageExtractDialog extractDlg(samplePdf);
         extractDlg.resize(800, 600);
         extractDlg.show();

@@ -791,8 +791,8 @@ void TestInteractive::testFirstRunWizard()
     wizard.show();
     QVERIFY(QTest::qWaitForWindowExposed(&wizard));
 
-    // Verify 4 onboarding wizard pages (Welcome -> Spacebar -> Modules -> Performance)
-    QCOMPARE(wizard.pageIds().count(), 4);
+    // Verify 3 onboarding wizard pages (Welcome -> Spacebar -> Performance)
+    QCOMPARE(wizard.pageIds().count(), 3);
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Welcome));
     QTest::qWait(50);
 
@@ -801,12 +801,7 @@ void TestInteractive::testFirstRunWizard()
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Spacebar));
     QTest::qWait(50);
 
-    // Advance to Page 2 (Functional Modules)
-    wizard.next();
-    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Modules));
-    QTest::qWait(50);
-
-    // Advance to Page 3 (Hardware Performance & CPU Compilation)
+    // Advance to Page 2 (Hardware Performance & Execution Strategy)
     wizard.next();
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Performance));
     QTest::qWait(50);

@@ -186,9 +186,12 @@ void UpdateManager::checkForUpdates(bool silent)
     if (silent) {
         QSettings settings("Bubez", "BubezView");
         const QDateTime lastCheck = settings.value("updates/last_check").toDateTime();
-        if (lastCheck.isValid() && lastCheck.secsTo(QDateTime::currentDateTime()) < 86400) {
-            // Rate-limited to once every 24 hours in silent mode
-            return;
+        if (lastCheck.isValid()) {
+            const qint64 elapsed = lastCheck.secsTo(QDateTime::currentDateTime());
+            if (elapsed >= 0 && elapsed < 86400) {
+                // Rate-limited to once every 24 hours in silent mode
+                return;
+            }
         }
     }
 

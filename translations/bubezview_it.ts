@@ -20547,86 +20547,71 @@ Autorizza l'operazione nella finestra di sistema se richiesta.</translation>
         <translation type="vanished">Reimposta tutti gli avvisi di ottimizzazione</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="87" />
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="257" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="86" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="254" />
         <source>Custom (Compiler Wizard)</source>
-        <translation type="unfinished" />
+        <translation>Personalizzato (Compiler Wizard)</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="104" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="103" />
         <source>Compilation is disabled under System Packages profile.</source>
         <translation type="unfinished" />
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="106" />
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="264" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="105" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="261" />
         <source>Open the interactive Compiler Wizard to select fine-grained instructions and optimization flags.</source>
         <translation>Apri il Wizard interattivo per selezionare istruzioni hardware e flag di ottimizzazione.</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="113" />
-        <source>Uses precompiled system packages. Zero compilation required.</source>
-        <translation>Usa pacchetti di sistema precompilati. Nessuna compilazione richiesta.</translation>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="112" />
+        <source>🔒 Requires administrator permissions (sudo) to install distribution packages.</source>
+        <translation>🔒 Richiede permessi di amministratore (sudo) per installare i pacchetti di sistema.</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="116" />
-        <source>Compiles only missing engines into ~/.local, without touching the system.</source>
-        <translation>Compila solo i componenti mancanti in ~/.local, senza toccare il sistema.</translation>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="115" />
+        <source>✨ Does not touch the system and does not ask for a password (all in your Home).</source>
+        <translation>✨ Non tocca il sistema e non chiede password (tutto nella tua Home).</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="119" />
-        <source>Compiles stable engines into ~/.local with CPU optimizations, without touching the system.</source>
-        <translation>Compila i componenti stabili in ~/.local con ottimizzazioni CPU, senza sporcare il sistema.</translation>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="118" />
+        <source>⚡ Native compilation with advanced CPU instructions (-O3) — for powerful PCs only.</source>
+        <translation>⚡ Compilazione nativa con istruzioni CPU avanzate (-O3) — solo per PC potenti.</translation>
     </message>
     <message>
         <location filename="../src/ui/settings/settings_performance_tab.cpp" line="122" />
-        <source>Compiles all components from source into ~/.local, keeping system clean.</source>
-        <translation>Compila tutti i componenti in ~/.local, preservando il sistema intatto.</translation>
+        <source>⚙️ Custom optimization flags and sources configured via the Compiler Wizard.</source>
+        <translation>⚙️ Flag di ottimizzazione e sorgenti personalizzati configurati tramite il Compiler Wizard.</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="125" />
-        <source>Custom compiler flags applied to local components in ~/.local.</source>
-        <translation>Flag personalizzati compilati in ~/.local, senza modificare il sistema.</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="239" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="237" />
         <source>Component Optimization</source>
         <translation>Ottimizzazione componenti</translation>
     </message>
     <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="250" />
+        <source>System Packages (Requires sudo)</source>
+        <translation>Pacchetti di Sistema (Richiede sudo)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="251" />
+        <source>Compile Missing (Home, zero password)</source>
+        <translation>Compila Mancanti (Home, zero password)</translation>
+    </message>
+    <message>
         <location filename="../src/ui/settings/settings_performance_tab.cpp" line="252" />
-        <source>System Packages (No Compilation)</source>
-        <translation>Pacchetti di sistema (Nessuna compilazione)</translation>
+        <source>Maximum Performance (Powerful PCs only)</source>
+        <translation>Massime Prestazioni (Solo per PC potenti)</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="253" />
-        <source>Missing Components Only</source>
-        <translation>Solo componenti mancanti</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="254" />
-        <source>All Stable Components</source>
-        <translation>Tutti i componenti stabili</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="255" />
-        <source>All From Source (Including Unrecommended)</source>
-        <translation>Tutto da sorgente</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="262" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="259" />
         <source>Wizard...</source>
         <translation>Wizard...</translation>
     </message>
     <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="271" />
+        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="268" />
         <source>Select which components to optimize</source>
         <translation>Seleziona quali componenti verranno ottimizzati</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/settings/settings_performance_tab.cpp" line="280" />
-        <source>🔒 All optimized components reside in your user folder (~/.local), without touching system files or requiring root permissions.</source>
-        <translation>🔒 Tutti i componenti ottimizzati risiedono nella cartella utente (~/.local), senza toccare il sistema né richiedere permessi root.</translation>
     </message>
     <message>
         <location filename="../src/ui/settings/settings_performance_tab.cpp" line="294" />
