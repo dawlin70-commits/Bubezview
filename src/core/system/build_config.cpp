@@ -164,15 +164,15 @@ CustomSourceConfig BuildConfig::defaultSourceConfig(const QString &componentId)
     if (id == "poppler" || id == "engine-poppler" || id == "poppler-qt6") {
         cfg.gitUrl = "https://gitlab.freedesktop.org/poppler/poppler.git";
         cfg.branchTag = "poppler-26.08.0";
-        cfg.buildFlags = "-DENABLE_QT6=ON -DENABLE_QT5=OFF -DENABLE_GLIB=OFF -DENABLE_CPP=OFF -DENABLE_BOOST=OFF -DENABLE_UTILS=ON -DENABLE_NSS3=OFF -DENABLE_GPGME=OFF -DENABLE_LIBCURL=OFF -DBUILD_QT6_TESTS=OFF -DBUILD_CPP_TESTS=OFF -DBUILD_MANUAL_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe\"";
+        cfg.buildFlags = "-DENABLE_QT6=ON -DENABLE_QT5=OFF -DENABLE_GLIB=OFF -DENABLE_CPP=OFF -DENABLE_BOOST=OFF -DENABLE_UTILS=ON -DENABLE_NSS3=OFF -DENABLE_GPGME=OFF -DENABLE_LIBCURL=OFF -DBUILD_QT6_TESTS=OFF -DBUILD_CPP_TESTS=OFF -DBUILD_MANUAL_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe -include cstdint\"";
     } else if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") {
         cfg.gitUrl = "https://github.com/tesseract-ocr/tesseract.git";
         cfg.branchTag = "5.4.1";
-        cfg.buildFlags = "-DBUILD_TRAINEDDATA=OFF -DBUILD_TRAINING_TOOLS=OFF -DBUILD_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe\"";
+        cfg.buildFlags = "-DBUILD_TRAINEDDATA=OFF -DBUILD_TRAINING_TOOLS=OFF -DBUILD_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe -include cstdint\"";
     } else if (id == "qpdf") {
         cfg.gitUrl = "https://github.com/qpdf/qpdf.git";
         cfg.branchTag = "v11.9.1";
-        cfg.buildFlags = "-DBUILD_STATIC_LIBS=OFF -DBUILD_DOC=OFF -DREQUIRE_CRYPTO_OPENSSL=ON -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe\"";
+        cfg.buildFlags = "-DBUILD_STATIC_LIBS=OFF -DBUILD_DOC=OFF -DREQUIRE_CRYPTO_OPENSSL=ON -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe -include cstdint\"";
     } else if (id == "7zip" || id == "7z" || id == "7zz") {
         cfg.gitUrl = "https://github.com/ip7z/7zip.git";
         cfg.branchTag = "24.08";
