@@ -145,7 +145,7 @@ void UpdateDialog::startUpdate()
 {
     QString scriptPath;
     const QString localInstallDir = QDir::homePath() + "/.local/share/bubezview";
-    const QString targetScript = localInstallDir + "/install.sh";
+    const QString targetScript = localInstallDir + "/Install";
     QDir().mkpath(localInstallDir);
 
     // Prefer fetching the latest standalone installer matching this release directly from update server
@@ -162,6 +162,8 @@ void UpdateDialog::startUpdate()
     curlProc.start("curl", curlArgs);
     if (curlProc.waitForFinished(6000) && curlProc.exitCode() == 0 && QFile::exists(targetScript) && QFile(targetScript).size() > 500) {
         QFile::setPermissions(targetScript, QFile::permissions(targetScript) | QFileDevice::ExeOwner | QFileDevice::ExeUser);
+        QFile::remove(localInstallDir + "/install.sh");
+        QFile::link(targetScript, localInstallDir + "/install.sh");
         scriptPath = targetScript;
     }
 

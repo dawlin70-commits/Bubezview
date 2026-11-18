@@ -142,7 +142,7 @@ ctest --test-dir build --output-on-failure
 BubezView includes an intelligent installation script that detects your Linux distribution, configures necessary system packages, compiles plugins, and registers desktop file associations:
 
 ```bash
-./install.sh
+./Install
 ```
 
 ### Manual KDE Dolphin Spacebar Setup (QuickLook)

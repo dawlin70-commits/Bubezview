@@ -21,16 +21,16 @@ MCowBQYDK2VwAyEAfr3yn0QMgvYvEjW+fkfKAF8ZP4EWsn9DOrhtjHPEe1I=
 # 1. RILEVAMENTO INTERFACCIA (GUI o TERMINALE)
 # ------------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-for arg in "$@"; do
-    if [ "$arg" = "--build-component" ] && [ -f "${SCRIPT_DIR}/install.sh" ]; then
-        exec "${SCRIPT_DIR}/install.sh" "$@"
-    fi
-done
 
 UI_MODE="cli"
 FORCE_CLI=0
 VERBOSE=0
 IS_UPDATE=0
+TARGET_COMPONENT=""
+CUSTOM_GIT_URL=""
+CUSTOM_GIT_BRANCH=""
+CUSTOM_BUILD_FLAGS=""
+EXTRA_CMAKE_ARGS=()
 
 for arg in "$@"; do
     case "$arg" in
@@ -47,6 +47,9 @@ for arg in "$@"; do
             ;;
         --verbose|-v)
             VERBOSE=1
+            ;;
+        --build-component)
+            FORCE_CLI=1
             ;;
     esac
 done
@@ -364,24 +367,171 @@ download_source_payload() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. CONFIGURAZIONE OTTIMIZZAZIONE E BUILD
+# 4. COMPILAZIONE COMPONENTI DA SORGENTE (Fallback & Custom Recipes)
+# ------------------------------------------------------------------------------
+build_source_component() {
+    local comp="$1"
+    local custom_url="$2"
+    local custom_tag="$3"
+    local custom_flags="$4"
+    local repo_url=""
+    local repo_tag="main"
+    local cmake_flags=()
+
+    case "$comp" in
+        tesseract|ocr|tesseract-ocr)
+            repo_url="https://github.com/tesseract-ocr/tesseract.git"
+            repo_tag="5.4.1"
+            cmake_flags+=("-DBUILD_TRAINEDDATA=OFF" "-DBUILD_TRAINING_TOOLS=OFF" "-DBUILD_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
+        qpdf)
+            repo_url="https://github.com/qpdf/qpdf.git"
+            repo_tag="v11.9.1"
+            cmake_flags+=("-DBUILD_STATIC_LIBS=OFF" "-DBUILD_DOC=OFF" "-DREQUIRE_CRYPTO_OPENSSL=ON" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
+        libarchive|archive|engine-libarchive)
+            repo_url="https://github.com/libarchive/libarchive.git"
+            repo_tag="v3.7.4"
+            cmake_flags+=("-DENABLE_TEST=OFF" "-DENABLE_TAR=OFF" "-DENABLE_CPIO=OFF" "-DENABLE_CAT=OFF" "-DENABLE_UNZIP=OFF" "-DCMAKE_C_FLAGS_RELEASE=-O3 -march=native -mcrc32 -fno-strict-aliasing -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe")
+            ;;
+        poppler|engine-poppler)
+            repo_url="https://gitlab.freedesktop.org/poppler/poppler.git"
+            repo_tag="poppler-26.08.0"
+            cmake_flags+=("-DENABLE_QT6=ON" "-DENABLE_QT5=OFF" "-DENABLE_GLIB=OFF" "-DENABLE_CPP=OFF" "-DENABLE_BOOST=OFF" "-DENABLE_UTILS=ON" "-DENABLE_NSS3=OFF" "-DENABLE_GPGME=OFF" "-DENABLE_LIBCURL=OFF" "-DBUILD_QT6_TESTS=OFF" "-DBUILD_CPP_TESTS=OFF" "-DBUILD_MANUAL_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe")
+            ;;
+        7zip|7z|7zz)
+            repo_url="https://github.com/ip7z/7zip.git"
+            repo_tag="24.08"
+            ;;
+        image-formats|qtimageformats|qt6-imageformats|qt6-image-formats-plugins)
+            comp="qtimageformats"
+            repo_url="https://github.com/qt/qtimageformats.git"
+            local qt_sys_ver
+            qt_sys_ver=$(pkg-config --modversion Qt6Core 2>/dev/null || qmake6 -query QT_VERSION 2>/dev/null || echo "")
+            if [ -n "$qt_sys_ver" ]; then
+                repo_tag="v${qt_sys_ver}"
+            else
+                repo_tag="v6.8.0"
+            fi
+            cmake_flags+=("-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            ;;
+        *)
+            echo -e "${RED}${BOLD}[!] Errore: Il componente '${comp}' non ha una ricetta di compilazione sorgente.${NC}"
+            echo -e "${RED}    Componenti supportati: poppler, engine-poppler, libarchive, engine-libarchive, 7zip, qpdf, tesseract, image-formats.${NC}"
+            exit 1
+            ;;
+    esac
+
+    # Applica override personalizzati se specificati
+    if [ -n "$custom_url" ]; then
+        repo_url="$custom_url"
+    fi
+    if [ -n "$custom_tag" ]; then
+        repo_tag="$custom_tag"
+    fi
+    if [ -n "$custom_flags" ]; then
+        eval "extra_flags_array=($custom_flags)"
+        cmake_flags+=("${extra_flags_array[@]}")
+    fi
+
+    echo -e "${BLUE}${BOLD}[*] Compilazione ${comp} (${repo_tag}) da sorgente per l'ambiente utente (${HOME}/.local)...${NC}"
+    echo -e "${BLUE}    Sorgente: ${repo_url}${NC}"
+    if [ -n "$custom_flags" ]; then
+        echo -e "${BLUE}    Flag extra: ${custom_flags}${NC}"
+    fi
+
+    local COMP_SRC="${SCRIPT_DIR}/build_deps/${comp}"
+    local COMP_BUILD="${SCRIPT_DIR}/build_deps/${comp}_build"
+    mkdir -p "${SCRIPT_DIR}/build_deps"
+    if [ ! -d "$COMP_SRC/.git" ]; then
+        if ! git clone --depth 1 -b "$repo_tag" "$repo_url" "$COMP_SRC" 2>/dev/null; then
+            echo -e "${YELLOW}[!] Tag '${repo_tag}' non trovato, fallback su ramo principale...${NC}"
+            git clone --depth 1 -b "6.8" "$repo_url" "$COMP_SRC" 2>/dev/null || git clone --depth 1 "$repo_url" "$COMP_SRC"
+        fi
+    else
+        (cd "$COMP_SRC" && git fetch --depth 1 origin "$repo_tag" 2>/dev/null || true && git checkout "$repo_tag" 2>/dev/null || true)
+    fi
+    local cpu_cores_sub
+    cpu_cores_sub=$(nproc 2>/dev/null || echo "4")
+
+    if [ "$comp" = "7zip" ] || [ "$comp" = "7z" ] || [ "$comp" = "7zz" ]; then
+        local flags_7z="-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto -fomit-frame-pointer -pipe"
+        if [ -n "$custom_flags" ]; then
+            flags_7z="$custom_flags"
+        fi
+        echo -e "${BLUE}${BOLD}[*] Compilazione 7-Zip (7zz) con makefile.gcc (${cpu_cores_sub} thread)...${NC}"
+        (cd "${COMP_SRC}/CPP/7zip/Bundles/Alone2" && make -j"${cpu_cores_sub}" -f makefile.gcc LOCAL_FLAGS="${flags_7z}")
+        mkdir -p "${HOME}/.local/bin"
+        install -m 755 "${COMP_SRC}/CPP/7zip/Bundles/Alone2/_o/7zz" "${HOME}/.local/bin/7zz"
+        echo -e "${GREEN}${BOLD}[✓] Componente '7zz' installato con successo in ${HOME}/.local/bin/7zz!${NC}"
+        exit 0
+    fi
+
+    mkdir -p "$COMP_BUILD"
+    if ! cmake -B "$COMP_BUILD" -S "$COMP_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"; then
+        echo -e "${YELLOW}[!] Configurazione CMake fallita; pulizia cache e nuovo tentativo...${NC}"
+        rm -rf "${COMP_BUILD}"
+        mkdir -p "${COMP_BUILD}"
+        cmake -B "$COMP_BUILD" -S "$COMP_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"
+    fi
+    cmake --build "$COMP_BUILD" --parallel "$cpu_cores_sub"
+    cmake --install "$COMP_BUILD"
+    echo -e "${GREEN}${BOLD}[✓] Componente '${comp}' installato con successo in ${HOME}/.local!${NC}"
+    exit 0
+}
+
+# ------------------------------------------------------------------------------
+# 5. CONFIGURAZIONE OTTIMIZZAZIONE E BUILD
 # ------------------------------------------------------------------------------
 select_cpu_optimization() {
     CMAKE_OPT_FLAGS=(-DCMAKE_BUILD_TYPE=Release)
 }
 
 # ------------------------------------------------------------------------------
-# 5. CONFIGURAZIONE MODULI
+# 6. CONFIGURAZIONE MODULI
 # ------------------------------------------------------------------------------
 configure_cmake_modules() {
     CMAKE_EXTRA_MODULES_FLAGS=()
 }
 
 # ------------------------------------------------------------------------------
-# 6. ESECUZIONE PRINCIPALE
+# 7. ESECUZIONE PRINCIPALE
 # ------------------------------------------------------------------------------
 main() {
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --build-component)
+                shift
+                TARGET_COMPONENT="$1"
+                ;;
+            --git-url)
+                shift
+                CUSTOM_GIT_URL="$1"
+                ;;
+            --git-branch)
+                shift
+                CUSTOM_GIT_BRANCH="$1"
+                ;;
+            --extra-build-flags)
+                shift
+                CUSTOM_BUILD_FLAGS="$1"
+                ;;
+            --build-tesseract)
+                TARGET_COMPONENT="tesseract"
+                ;;
+            -D*)
+                EXTRA_CMAKE_ARGS+=("$1")
+                ;;
+        esac
+        shift
+    done
+
     check_build_tools
+
+    if [ -n "$TARGET_COMPONENT" ]; then
+        build_source_component "$TARGET_COMPONENT" "$CUSTOM_GIT_URL" "$CUSTOM_GIT_BRANCH" "$CUSTOM_BUILD_FLAGS"
+        exit 0
+    fi
 
     local work_dir
     work_dir=$(mktemp -d -t "${APP_ID}_installer_XXXXXX")
@@ -614,11 +764,11 @@ except Exception:
     if [ "$UI_MODE" = "zenity" ]; then
         (
             echo "# Configurazione del progetto con CMake..."
-            cmake -S "$extract_dir" -B "$build_dir" -DBUILD_TESTS=OFF "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" >> "$build_log" 2>&1
+            cmake -S "$extract_dir" -B "$build_dir" -DBUILD_TESTS=OFF "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
         ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della build..." --pulsate --auto-close 2>/dev/null || true
     else
         echo -e "${BLUE}[*] Esecuzione configurazione CMake...${NC}"
-        cmake -S "$extract_dir" -B "$build_dir" -DBUILD_TESTS=OFF "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" 2>&1 | tee -a "$build_log"
+        cmake -S "$extract_dir" -B "$build_dir" -DBUILD_TESTS=OFF "${make_flag[@]}" "${CMAKE_OPT_FLAGS[@]}" "${CMAKE_EXTRA_MODULES_FLAGS[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
     fi
 
     if [ ! -f "$build_dir/CMakeCache.txt" ]; then
@@ -683,8 +833,9 @@ except Exception:
 
     # Salva una copia dell'installer autonomo per futuri aggiornamenti
     if [ -f "$0" ]; then
-        cp -f "$0" "$app_install_dir/install.sh" 2>/dev/null || true
-        chmod +x "$app_install_dir/install.sh" 2>/dev/null || true
+        cp -f "$0" "$app_install_dir/Install" 2>/dev/null || true
+        chmod +x "$app_install_dir/Install" 2>/dev/null || true
+        ln -sf "Install" "$app_install_dir/install.sh" 2>/dev/null || true
     fi
 
     local found_icon=""

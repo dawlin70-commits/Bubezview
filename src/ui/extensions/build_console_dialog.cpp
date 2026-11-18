@@ -152,7 +152,7 @@ bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
         m_lblStatus->setText(tr("❌ Installer script not found."));
         m_progressBar->setRange(0, 100);
         m_progressBar->setValue(0);
-        m_txtLog->append(tr("[Error] Could not locate 'Installa' recompilation script in system or source repository."));
+        m_txtLog->append(tr("[Error] Could not locate 'Install' script in system or source repository."));
         m_btnCancel->hide();
         m_btnClose->show();
         return false;
@@ -202,7 +202,7 @@ bool BuildConsoleDialog::startBuildForComponent(const QString &componentId)
         m_lblStatus->setText(tr("❌ Installer script not found."));
         m_progressBar->setRange(0, 100);
         m_progressBar->setValue(0);
-        m_txtLog->append(tr("[Error] Could not locate 'Installa' recompilation script in system or source repository."));
+        m_txtLog->append(tr("[Error] Could not locate 'Install' script in system or source repository."));
         m_btnCancel->hide();
         m_btnClose->show();
         return false;
