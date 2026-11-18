@@ -434,12 +434,12 @@ build_source_component() {
         tesseract|ocr|tesseract-ocr)
             repo_url="https://github.com/tesseract-ocr/tesseract.git"
             repo_tag="5.4.1"
-            cmake_flags+=("-DBUILD_TRAINEDDATA=OFF" "-DBUILD_TRAINING_TOOLS=OFF" "-DBUILD_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            cmake_flags+=("-DBUILD_TRAINEDDATA=OFF" "-DBUILD_TRAINING_TOOLS=OFF" "-DBUILD_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe -include cstdint")
             ;;
         qpdf)
             repo_url="https://github.com/qpdf/qpdf.git"
             repo_tag="v11.9.1"
-            cmake_flags+=("-DBUILD_STATIC_LIBS=OFF" "-DBUILD_DOC=OFF" "-DREQUIRE_CRYPTO_OPENSSL=ON" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe")
+            cmake_flags+=("-DBUILD_STATIC_LIBS=OFF" "-DBUILD_DOC=OFF" "-DREQUIRE_CRYPTO_OPENSSL=ON" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe -include cstdint")
             ;;
         libarchive|archive|engine-libarchive)
             repo_url="https://github.com/libarchive/libarchive.git"
@@ -449,7 +449,7 @@ build_source_component() {
         poppler|engine-poppler)
             repo_url="https://gitlab.freedesktop.org/poppler/poppler.git"
             repo_tag="poppler-26.08.0"
-            cmake_flags+=("-DENABLE_QT6=ON" "-DENABLE_QT5=OFF" "-DENABLE_GLIB=OFF" "-DENABLE_CPP=OFF" "-DENABLE_BOOST=OFF" "-DENABLE_UTILS=ON" "-DENABLE_NSS3=OFF" "-DENABLE_GPGME=OFF" "-DENABLE_LIBCURL=OFF" "-DBUILD_QT6_TESTS=OFF" "-DBUILD_CPP_TESTS=OFF" "-DBUILD_MANUAL_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe")
+            cmake_flags+=("-DENABLE_QT6=ON" "-DENABLE_QT5=OFF" "-DENABLE_GLIB=OFF" "-DENABLE_CPP=OFF" "-DENABLE_BOOST=OFF" "-DENABLE_UTILS=ON" "-DENABLE_NSS3=OFF" "-DENABLE_GPGME=OFF" "-DENABLE_LIBCURL=OFF" "-DBUILD_QT6_TESTS=OFF" "-DBUILD_CPP_TESTS=OFF" "-DBUILD_MANUAL_TESTS=OFF" "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe -include cstdint")
             ;;
         7zip|7z|7zz)
             repo_url="https://github.com/ip7z/7zip.git"
