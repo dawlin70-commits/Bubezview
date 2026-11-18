@@ -573,10 +573,17 @@ do_reinstall() {
     # 2. Reset configurazione e cache per primo avvio pulito (Wizard)
     echo -e "${YELLOW}[*] Reset configurazione e cache per riavviare il Setup di BubezView...${NC}"
     rm -rf "$HOME/.config/Bubez" 2>/dev/null || true
+    rm -rf "$HOME/.config/bubezview" 2>/dev/null || true
+    rm -rf "$HOME/.config/bubezview-dev" 2>/dev/null || true
+    rm -rf "$HOME/.cache/Bubez" 2>/dev/null || true
     rm -rf "$HOME/.cache/BubezView" 2>/dev/null || true
+    rm -rf "$HOME/.cache/bubezview" 2>/dev/null || true
+    rm -rf "$HOME/.local/share/Bubez" 2>/dev/null || true
+    rm -f "$HOME/.local/state/BubezViewstaterc" 2>/dev/null || true
     rm -rf "$HOME/.local/share/$APP_ID" 2>/dev/null || true
     rm -rf "$HOME/.local/lib/$APP_ID" 2>/dev/null || true
     rm -f "$HOME/.local/bin/$APP_ID" 2>/dev/null || true
+    rm -rf /tmp/${APP_ID}_installer_* /tmp/${APP_ID}*.log 2>/dev/null || true
 
     IS_UPDATE=0
     ACTION=""
@@ -589,7 +596,7 @@ do_uninstall() {
             exit 0
         fi
         if [ "$PURGE" -eq 0 ]; then
-            if ui_ask_yesno "Elimina configurazione" "Vuoi rimuovere anche i file di configurazione e la cache (~/.config/Bubez e ~/.cache/BubezView)?"; then
+            if ui_ask_yesno "Elimina configurazione" "Vuoi rimuovere anche i file di configurazione, la cache e i dati locali (~/.config/Bubez, ~/.cache/Bubez, ecc.)?"; then
                 PURGE=1
             fi
         fi
@@ -602,24 +609,36 @@ do_uninstall() {
     rm -rf "$HOME/.local/share/$APP_ID"
     rm -rf "$HOME/.local/lib/$APP_ID"
 
-    # 2. Rimuovi lanciatore .desktop
+    # 2. Rimuovi lanciatori .desktop (standard e sviluppo)
     rm -f "$HOME/.local/share/applications/$APP_ID.desktop"
+    rm -f "$HOME/.local/share/applications/${APP_ID}_sviluppo.desktop"
 
     # 3. Rimuovi icone
     rm -f "$HOME/.local/share/icons/hicolor/scalable/apps/$APP_ID".*
     rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/$APP_ID".*
 
-    # 4. Rimuovi integrazioni file manager (Dolphin ServiceMenu & Nemo Action)
+    # 4. Rimuovi integrazioni file manager (Dolphin ServiceMenu, legacy KDE5, Nemo e Nautilus)
     rm -f "$HOME/.local/share/kio/servicemenus/$APP_ID.desktop"
     rm -f "$HOME/.local/share/kio/servicemenus/${APP_ID}_sviluppo.desktop"
+    rm -f "$HOME/.local/share/kservices5/ServiceMenus/$APP_ID.desktop"
+    rm -f "$HOME/.local/share/kservices5/ServiceMenus/${APP_ID}_sviluppo.desktop"
     rm -f "$HOME/.local/share/nemo/actions/$APP_ID.nemo_action"
+    rm -f "$HOME/.local/share/nemo/actions/${APP_ID}_sviluppo.nemo_action"
+    rm -f "$HOME/.local/share/nautilus/scripts/Preview with BubezView"
+    rm -f "$HOME/.local/share/nautilus/scripts/Anteprima con BubezView"*
 
-    # 5. Se PURGE=1, rimuovi anche configurazione e cache
+    # 5. Se PURGE=1, rimuovi anche configurazione, dati Qt e cache
     if [ "$PURGE" -eq 1 ]; then
-        echo -e "${YELLOW}[*] Rimozione file di configurazione e cache...${NC}"
+        echo -e "${YELLOW}[*] Rimozione file di configurazione, dati Qt e cache...${NC}"
         rm -rf "$HOME/.config/Bubez"
+        rm -rf "$HOME/.config/bubezview"
         rm -rf "$HOME/.config/bubezview-dev"
+        rm -rf "$HOME/.cache/Bubez"
         rm -rf "$HOME/.cache/BubezView"
+        rm -rf "$HOME/.cache/bubezview"
+        rm -rf "$HOME/.local/share/Bubez"
+        rm -f "$HOME/.local/state/BubezViewstaterc"
+        rm -rf /tmp/${APP_ID}_installer_* /tmp/${APP_ID}*.log 2>/dev/null || true
     fi
 
     # 6. Aggiorna database di sistema
