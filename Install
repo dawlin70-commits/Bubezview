@@ -26,6 +26,8 @@ UI_MODE="cli"
 FORCE_CLI=0
 VERBOSE=0
 IS_UPDATE=0
+ACTION=""
+PURGE=0
 TARGET_COMPONENT=""
 CUSTOM_GIT_URL=""
 CUSTOM_GIT_BRANCH=""
@@ -37,11 +39,7 @@ for arg in "$@"; do
         --cli|-c)
             FORCE_CLI=1
             ;;
-        --update|-u)
-            IS_UPDATE=1
-            FORCE_CLI=1
-            ;;
-        --yes|-y)
+        --update|-u|--yes|-y)
             IS_UPDATE=1
             FORCE_CLI=1
             ;;
@@ -51,14 +49,43 @@ for arg in "$@"; do
         --build-component)
             FORCE_CLI=1
             ;;
+        --uninstall)
+            ACTION="uninstall"
+            FORCE_CLI=1
+            ;;
+        --purge)
+            PURGE=1
+            ;;
+        --clean)
+            ACTION="clean"
+            FORCE_CLI=1
+            ;;
+        --reinstall)
+            ACTION="reinstall"
+            FORCE_CLI=1
+            ;;
+        --doctor|--status)
+            ACTION="doctor"
+            FORCE_CLI=1
+            ;;
+        --reset-config)
+            ACTION="reset"
+            FORCE_CLI=1
+            ;;
         --help|-h)
             echo "Uso: ./Install [opzioni]"
             echo ""
-            echo "Opzioni:"
+            echo "Opzioni principali:"
+            echo "  (nessun argomento)     Avvia il menu grafico interattivo (se presente interfaccia)"
             echo "  --cli, -c              Esegui in modalità terminale (senza dialoghi grafici)"
-            echo "  --update, -u, -y       Esegui aggiornamento/installazione automatica"
+            echo "  --update, -u, -y       Esegui installazione o aggiornamento non interattivo"
+            echo "  --reinstall            Pulisci cache di build e reinstalla da zero"
+            echo "  --clean                Pulisci i file e le cartelle temporanee di compilazione"
+            echo "  --doctor, --status     Verifica stato, motori, librerie e dipendenze di sistema"
+            echo "  --reset-config         Ripristina le impostazioni predefinite di fabbrica"
+            echo "  --uninstall [--purge]  Disinstalla BubezView dal sistema (con --purge rimuove anche config e cache)"
+            echo "  --build-component <N>  Compila un singolo modulo da sorgente (poppler, libarchive, 7zip, qpdf, tesseract)"
             echo "  --verbose, -v          Output dettagliato"
-            echo "  --build-component <N>  Compila un singolo componente da sorgente (poppler, libarchive, 7zip, qpdf, tesseract)"
             echo "  -h, --help             Mostra questo messaggio di aiuto"
             exit 0
             ;;
@@ -506,11 +533,318 @@ configure_cmake_modules() {
 }
 
 # ------------------------------------------------------------------------------
-# 7. ESECUZIONE PRINCIPALE
+# 7. FUNZIONALITÀ DI GESTIONE (Clean, Reinstall, Doctor, Reset, Uninstall, Menu)
+# ------------------------------------------------------------------------------
+do_clean() {
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    echo -e "${BLUE}${BOLD}[*] Pulizia file temporanei di compilazione in corso...${NC}"
+
+    local dirs_to_clean=(
+        "${script_dir}/build_install"
+        "${script_dir}/build_deb"
+        "${script_dir}/build_fedora"
+        "${script_dir}/build"
+    )
+
+    local bytes_freed=0
+    for d in "${dirs_to_clean[@]}"; do
+        if [ -d "$d" ]; then
+            local sz
+            sz=$(du -sb "$d" 2>/dev/null | awk '{print $1}' || echo "0")
+            bytes_freed=$((bytes_freed + sz))
+            echo -e "${BLUE}    Rimozione: ${d}${NC}"
+            rm -rf "$d"
+        fi
+    done
+
+    # Pulisci anche le cartelle di build intermedie di build_deps (senza toccare i sorgenti git)
+    find "${script_dir}/build_deps" -maxdepth 1 -type d -name "*_build" -exec rm -rf {} + 2>/dev/null || true
+    find "${script_dir}" -maxdepth 1 -type f -name "*.log" -exec rm -f {} + 2>/dev/null || true
+
+    local mb_freed=$((bytes_freed / 1024 / 1024))
+    echo -e "${GREEN}${BOLD}[✓] Pulizia completata! Liberati circa ${mb_freed} MB di cache di build.${NC}"
+    if [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
+        ui_info "Pulizia Completata" "Tutte le cartelle di build temporanee sono state rimosse.\nSpazio liberato: ~${mb_freed} MB."
+    fi
+}
+
+do_reinstall() {
+    echo -e "${BLUE}${BOLD}[*] Avvio procedura di reinstallazione pulita da zero...${NC}"
+    do_clean
+    echo -e "${BLUE}${BOLD}[*] Ricompilazione e installazione pulita...${NC}"
+    IS_UPDATE=1
+    ACTION=""
+}
+
+do_reset_config() {
+    local cfg_dir="$HOME/.config/Bubez"
+    local cfg_file="$cfg_dir/BubezView.conf"
+
+    if [ "$FORCE_CLI" -eq 0 ] && [ "$UI_MODE" != "cli" ]; then
+        if ! ui_ask_yesno "Reset Configurazione" "Vuoi ripristinare le impostazioni predefinite di BubezView?\n\nVerrà creato un backup automatico prima del ripristino."; then
+            echo -e "${YELLOW}[*] Operazione annullata dall'utente.${NC}"
+            exit 0
+        fi
+    fi
+
+    echo -e "${BLUE}${BOLD}[*] Reset configurazione in corso...${NC}"
+    if [ -f "$cfg_file" ]; then
+        local ts
+        ts=$(date +%Y%m%d_%H%M%S)
+        cp -f "$cfg_file" "${cfg_file}.bak_${ts}"
+        rm -f "$cfg_file"
+        echo -e "${GREEN}${BOLD}[✓] File di configurazione ripristinato! Backup salvato in: ${cfg_file}.bak_${ts}${NC}"
+    else
+        echo -e "${YELLOW}[*] Nessun file di configurazione preesistente trovato in $cfg_file.${NC}"
+    fi
+
+    rm -rf "$HOME/.cache/BubezView"
+
+    if [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
+        ui_info "Reset Configurazione" "Impostazioni ripristinate ai valori di fabbrica con successo!\n(Creato backup di sicurezza in ~/.config/Bubez/)"
+    fi
+    exit 0
+}
+
+do_doctor() {
+    echo -e "${BLUE}${BOLD}==============================================================================${NC}"
+    echo -e "${BLUE}${BOLD}               🩺 BUBEZVIEW SYSTEM & ENVIRONMENT DOCTOR                        ${NC}"
+    echo -e "${BLUE}${BOLD}==============================================================================${NC}"
+
+    local report=""
+    add_rep() {
+        echo -e "$1"
+        report+="${2:-$1}\n"
+    }
+
+    # 1. Stato installazione
+    local bin_path="$HOME/.local/bin/$APP_ID"
+    local real_bin="$HOME/.local/share/$APP_ID/$TARGET_EXE"
+    if [ -f "$real_bin" ]; then
+        local ver
+        ver=$("$real_bin" --version 2>/dev/null || echo "presente")
+        local bdate
+        bdate=$(date -r "$real_bin" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "")
+        add_rep "${GREEN}[✓] BubezView installato nel sistema:${NC} $bin_path ($ver - $bdate)" "✓ BubezView installato: $ver ($bdate)"
+    else
+        add_rep "${YELLOW}[!] BubezView NON è installato nel sistema host (~/.local/bin/bubezview non trovato).${NC}" "! BubezView NON installato nel sistema"
+    fi
+
+    # 2. Integrazione desktop e icone
+    local dtop="$HOME/.local/share/applications/$APP_ID.desktop"
+    if [ -f "$dtop" ]; then
+        add_rep "${GREEN}[✓] Lanciatore Desktop:${NC} Presente ($dtop)" "✓ Lanciatore Desktop: Presente"
+    else
+        add_rep "${YELLOW}[!] Lanciatore Desktop:${NC} Assente" "! Lanciatore Desktop: Assente"
+    fi
+
+    local dolphin_kio="$HOME/.local/share/kio/servicemenus/$APP_ID.desktop"
+    if [ -f "$dolphin_kio" ]; then
+        add_rep "${GREEN}[✓] Integrazione Dolphin (Tasto Spazio / Menu):${NC} Attiva ($dolphin_kio)" "✓ Integrazione Dolphin: Attiva"
+    else
+        add_rep "${YELLOW}[!] Integrazione Dolphin:${NC} Non configurata" "! Integrazione Dolphin: Non configurata"
+    fi
+
+    # 3. Motori e dipendenze esterne
+    echo ""
+    add_rep "${BOLD}[*] Controllo Motori e Formati Multimediali:${NC}" "\nMotori e Formati Multimediali:"
+
+    check_dep() {
+        local name="$1"
+        local cmd="$2"
+        local desc="$3"
+        if command -v "$cmd" >/dev/null 2>&1; then
+            local p
+            p=$(command -v "$cmd")
+            add_rep "  ${GREEN}[✓] ${name}:${NC} Presente ($p) — $desc" "  ✓ ${name}: Presente ($desc)"
+        else
+            add_rep "  ${YELLOW}[-] ${name}:${NC} Non trovato nel PATH di sistema — $desc" "  - ${name}: Non trovato ($desc)"
+        fi
+    }
+
+    check_dep "Poppler (pdftoppm)" "pdftoppm" "Rendering PDF e documenti"
+    if command -v "7zz" >/dev/null 2>&1; then
+        check_dep "7-Zip (7zz)" "7zz" "Supporto esteso archivi (RAR, 7Z, ISO)"
+    else
+        check_dep "7-Zip (7z)" "7z" "Supporto archivi"
+    fi
+    check_dep "QPDF" "qpdf" "Riparazione, linearizzazione e crittografia PDF"
+    check_dep "Tesseract OCR" "tesseract" "Riconoscimento ottico del testo in immagini e PDF"
+    check_dep "FFmpeg" "ffmpeg" "Generazione miniature e analisi multimediale"
+    check_dep "LibreOffice" "libreoffice" "Anteprima documenti Office (.docx, .xlsx, .odt)"
+
+    # 4. Display Server e GPU
+    echo ""
+    add_rep "${BOLD}[*] Ambiente Grafico e Accelerazione:${NC}" "\nAmbiente Grafico e GPU:"
+    if [ -n "$WAYLAND_DISPLAY" ]; then
+        add_rep "  ${GREEN}[✓] Server Display:${NC} Wayland ($WAYLAND_DISPLAY)" "  ✓ Display: Wayland ($WAYLAND_DISPLAY)"
+    elif [ -n "$DISPLAY" ]; then
+        add_rep "  ${GREEN}[✓] Server Display:${NC} X11 ($DISPLAY)" "  ✓ Display: X11 ($DISPLAY)"
+    else
+        add_rep "  ${YELLOW}[!] Server Display:${NC} Nessun server grafico attivo rilevato" "  ! Nessun server grafico attivo"
+    fi
+
+    if command -v glxinfo >/dev/null 2>&1; then
+        local renderer
+        renderer=$(glxinfo -B 2>/dev/null | grep -i "Device:" | sed 's/.*Device: //' || true)
+        if [ -n "$renderer" ]; then
+            add_rep "  ${GREEN}[✓] GPU / Driver:${NC} $renderer" "  ✓ GPU: $renderer"
+        fi
+    fi
+
+    echo -e "${BLUE}${BOLD}==============================================================================${NC}"
+    if [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
+        ui_info "Diagnostica di Sistema - BubezView Doctor" "$report"
+    fi
+    exit 0
+}
+
+do_uninstall() {
+    if [ "$FORCE_CLI" -eq 0 ] && [ "$UI_MODE" != "cli" ]; then
+        if ! ui_ask_yesno "Disinstallazione BubezView" "Sei sicuro di voler disinstallare BubezView dal tuo sistema?"; then
+            echo -e "${YELLOW}[*] Disinstallazione annullata dall'utente.${NC}"
+            exit 0
+        fi
+        if [ "$PURGE" -eq 0 ]; then
+            if ui_ask_yesno "Elimina configurazione" "Vuoi rimuovere anche i file di configurazione e la cache (~/.config/Bubez e ~/.cache/BubezView)?"; then
+                PURGE=1
+            fi
+        fi
+    fi
+
+    echo -e "${BLUE}${BOLD}[*] Disinstallazione di $APP_NAME in corso...${NC}"
+
+    # 1. Rimuovi binario e cartella share
+    rm -f "$HOME/.local/bin/$APP_ID"
+    rm -rf "$HOME/.local/share/$APP_ID"
+
+    # 2. Rimuovi lanciatore .desktop
+    rm -f "$HOME/.local/share/applications/$APP_ID.desktop"
+
+    # 3. Rimuovi icone
+    rm -f "$HOME/.local/share/icons/hicolor/scalable/apps/$APP_ID".*
+    rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/$APP_ID".*
+
+    # 4. Rimuovi integrazioni file manager (Dolphin ServiceMenu)
+    rm -f "$HOME/.local/share/kio/servicemenus/$APP_ID.desktop"
+    rm -f "$HOME/.local/share/kio/servicemenus/${APP_ID}_sviluppo.desktop"
+
+    # 5. Se PURGE=1, rimuovi anche configurazione e cache
+    if [ "$PURGE" -eq 1 ]; then
+        echo -e "${YELLOW}[*] Rimozione file di configurazione e cache...${NC}"
+        rm -rf "$HOME/.config/Bubez"
+        rm -rf "$HOME/.config/bubezview-dev"
+        rm -rf "$HOME/.cache/BubezView"
+    fi
+
+    # 6. Aggiorna database di sistema
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+    command -v kbuildsycoca6 >/dev/null 2>&1 && kbuildsycoca6 --noincremental 2>/dev/null || true
+    command -v kbuildsycoca5 >/dev/null 2>&1 && kbuildsycoca5 --noincremental 2>/dev/null || true
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+
+    echo -e "${GREEN}${BOLD}[✓] $APP_NAME è stato disinstallato con successo dal sistema.${NC}"
+    if [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
+        ui_info "Disinstallazione Completata" "$APP_NAME è stato disinstallato con successo dal tuo sistema."
+    fi
+    exit 0
+}
+
+show_interactive_menu() {
+    local choice=""
+    if [ "$UI_MODE" = "zenity" ]; then
+        choice=$(zenity --list --title="BubezView - Gestione Installazione" \
+            --text="Scegli l'operazione da eseguire per BubezView:" \
+            --radiolist --column="" --column="Codice" --column="Operazione" \
+            --hide-column=2 --width=540 --height=320 \
+            TRUE "install" "🚀  Installa o aggiorna BubezView" \
+            FALSE "reinstall" "🔄  Reinstalla da zero (Clean Reinstall)" \
+            FALSE "clean" "🧹  Pulisci file temporanei di compilazione" \
+            FALSE "doctor" "🩺  Diagnostica stato e dipendenze (Doctor)" \
+            FALSE "reset" "⚙️   Ripristina impostazioni predefinite" \
+            FALSE "uninstall" "🗑️   Disinstalla BubezView dal sistema" \
+            2>/dev/null || true)
+    elif [ "$UI_MODE" = "kdialog" ]; then
+        choice=$(kdialog --title "BubezView - Gestione Installazione" \
+            --radiolist "Scegli l'operazione da eseguire per BubezView:" \
+            "install" "🚀 Installa o aggiorna BubezView" on \
+            "reinstall" "🔄 Reinstalla da zero (Clean Reinstall)" off \
+            "clean" "🧹 Pulisci file temporanei di compilazione" off \
+            "doctor" "🩺 Diagnostica stato e dipendenze (Doctor)" off \
+            "reset" "⚙️ Ripristina impostazioni predefinite" off \
+            "uninstall" "🗑️ Disinstalla BubezView dal sistema" off \
+            2>/dev/null || true)
+    elif [ "$UI_MODE" = "yad" ]; then
+        choice=$(yad --list --title="BubezView - Gestione Installazione" \
+            --text="Scegli l'operazione da eseguire:" \
+            --radiolist --column="" --column="Codice" --column="Operazione" \
+            --hide-column=2 --width=540 --height=320 \
+            TRUE "install" "🚀 Installa o aggiorna BubezView" \
+            FALSE "reinstall" "🔄 Reinstalla da zero (Clean Reinstall)" \
+            FALSE "clean" "🧹 Pulisci file temporanei di compilazione" \
+            FALSE "doctor" "🩺 Diagnostica stato e dipendenze (Doctor)" \
+            FALSE "reset" "⚙️ Ripristina impostazioni predefinite" \
+            FALSE "uninstall" "🗑️ Disinstalla BubezView dal sistema" \
+            2>/dev/null || true)
+    fi
+
+    case "$choice" in
+        install)
+            # Procedi con l'installazione normale
+            ;;
+        reinstall)
+            do_reinstall "$@"
+            ;;
+        clean)
+            do_clean
+            exit 0
+            ;;
+        doctor)
+            do_doctor
+            exit 0
+            ;;
+        reset)
+            do_reset_config
+            exit 0
+            ;;
+        uninstall)
+            do_uninstall "$@"
+            exit 0
+            ;;
+        *)
+            echo -e "${YELLOW}[*] Operazione annullata.${NC}"
+            exit 0
+            ;;
+    esac
+}
+
+# ------------------------------------------------------------------------------
+# 8. ESECUZIONE PRINCIPALE
 # ------------------------------------------------------------------------------
 main() {
+    local orig_args=("$@")
+
     while [ "$#" -gt 0 ]; do
         case "$1" in
+            --uninstall)
+                ACTION="uninstall"
+                ;;
+            --purge)
+                PURGE=1
+                ;;
+            --clean)
+                ACTION="clean"
+                ;;
+            --reinstall)
+                ACTION="reinstall"
+                ;;
+            --doctor|--status)
+                ACTION="doctor"
+                ;;
+            --reset-config)
+                ACTION="reset"
+                ;;
             --build-component)
                 shift
                 TARGET_COMPONENT="$1"
@@ -537,12 +871,36 @@ main() {
         shift
     done
 
-    check_build_tools
+    # 1. Gestione azioni immediate da CLI
+    if [ "$ACTION" = "uninstall" ]; then
+        do_uninstall "${orig_args[@]}"
+        exit 0
+    elif [ "$ACTION" = "clean" ]; then
+        do_clean
+        exit 0
+    elif [ "$ACTION" = "reinstall" ]; then
+        do_reinstall "${orig_args[@]}"
+    elif [ "$ACTION" = "doctor" ]; then
+        do_doctor
+        exit 0
+    elif [ "$ACTION" = "reset" ]; then
+        do_reset_config
+        exit 0
+    fi
 
+    # 2. Se avviato senza argomenti con display attivo, mostra il menu interattivo
+    if [ "$FORCE_CLI" -eq 0 ] && [ "${#orig_args[@]}" -eq 0 ] && [ "$UI_MODE" != "cli" ]; then
+        show_interactive_menu "${orig_args[@]}"
+    fi
+
+    # 3. Se è richiesta la compilazione di un singolo componente
     if [ -n "$TARGET_COMPONENT" ]; then
+        check_build_tools
         build_source_component "$TARGET_COMPONENT" "$CUSTOM_GIT_URL" "$CUSTOM_GIT_BRANCH" "$CUSTOM_BUILD_FLAGS"
         exit 0
     fi
+
+    check_build_tools
 
     local work_dir
     work_dir=$(mktemp -d -t "${APP_ID}_installer_XXXXXX")
