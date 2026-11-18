@@ -612,28 +612,31 @@ ExtensionModuleInfo ExtensionFeatureRegistry::moduleById(const QString &id)
 
 void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
 {
-    if (module.id == "engine-poppler") {
-        module.isInstalled = BuildConfig::isComponentAvailable("engine-poppler");
+    const auto activeMode = BuildConfig::instance().componentSourceMode(module.id);
+    if (activeMode == BuildConfig::ComponentSourceMode::LocalSource) {
+        module.isInstalled = BuildConfig::hasSourceBinary(module.id);
+    } else if (module.id == "engine-poppler") {
+        module.isInstalled = BuildConfig::hasSystemBinary("engine-poppler");
     } else if (module.id == "engine-libarchive") {
-        module.isInstalled = BuildConfig::isComponentAvailable("engine-libarchive");
+        module.isInstalled = BuildConfig::hasSystemBinary("engine-libarchive");
     } else if (module.id == "engine-mpv") {
         module.isInstalled = BuildConfig::isComponentAvailable("engine-mpv");
     } else if (module.id == "engine-office") {
         module.isInstalled = BuildConfig::isPkgInstalled("librevenge-0.0") || BuildConfig::instance().enableInternalOffice();
     } else if (module.id == "pdfimages") {
-        module.isInstalled = BuildConfig::isPdfimagesAvailable();
+        module.isInstalled = BuildConfig::hasSystemBinary("pdfimages");
     } else if (module.id == "poppler-data") {
-        module.isInstalled = BuildConfig::isPopplerDataInstalled();
+        module.isInstalled = BuildConfig::hasSystemBinary("poppler-data");
     } else if (module.id == "qpdf") {
-        module.isInstalled = BuildConfig::isQpdfAvailable();
+        module.isInstalled = BuildConfig::hasSystemBinary("qpdf");
     } else if (module.id == "tesseract") {
-        module.isInstalled = BuildConfig::isTesseractAvailable();
+        module.isInstalled = BuildConfig::hasSystemBinary("tesseract");
     } else if (module.id == "openssl") {
         module.isInstalled = BuildConfig::isPkgInstalled("openssl");
     } else if (module.id == "zstd") {
-        module.isInstalled = BuildConfig::isComponentAvailable("zstd");
+        module.isInstalled = BuildConfig::hasSystemBinary("zstd");
     } else if (module.id == "xz") {
-        module.isInstalled = BuildConfig::isComponentAvailable("xz");
+        module.isInstalled = BuildConfig::hasSystemBinary("xz");
     } else if (module.id == "office") {
         module.isInstalled = !QStandardPaths::findExecutable("libreoffice").isEmpty() ||
                              BuildConfig::instance().enableInternalOffice();
@@ -642,7 +645,7 @@ void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
     } else if (module.id == "taglib") {
         module.isInstalled = BuildConfig::isPkgInstalled("taglib") || BuildConfig::isPkgInstalled("libtag1v5");
     } else if (module.id == "image-formats") {
-        module.isInstalled = BuildConfig::isImageFormatsInstalled();
+        module.isInstalled = BuildConfig::hasSystemBinary("image-formats");
     } else {
         module.isInstalled = PackageManagerHelper::isComponentInstalled(module.id);
     }

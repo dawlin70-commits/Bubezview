@@ -314,7 +314,10 @@ void AccordionExtensionCard::handleInstallOrUninstall()
     auto hwProfile = BuildConfig::instance().activeHardwareProfile();
     bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
     bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
-    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
+    auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
+    bool isInstalled = (activeMode == BuildConfig::ComponentSourceMode::LocalSource)
+                           ? hasSrc
+                           : (hasSys || m_mod.isInstalled);
 
     if (isInstalled) {
         if (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id)) {
@@ -425,7 +428,10 @@ void AccordionExtensionCard::updateActionButton()
     auto hwProfile = BuildConfig::instance().activeHardwareProfile();
     bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
     bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
-    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
+    auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
+    bool isInstalled = (activeMode == BuildConfig::ComponentSourceMode::LocalSource)
+                           ? hasSrc
+                           : (hasSys || m_mod.isInstalled);
 
     bool compileWanted = m_mod.isStaticCompiled ||
                          hwProfile == BuildConfig::HardwareProfile::AllSource ||

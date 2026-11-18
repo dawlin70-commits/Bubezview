@@ -205,7 +205,9 @@ void ExtensionRowWidget::updateButtonStates()
     bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
     bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
     auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
-    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
+    bool isInstalled = (activeMode == BuildConfig::ComponentSourceMode::LocalSource)
+                           ? hasSrc
+                           : (hasSys || m_mod.isInstalled);
 
     // -------------------------------------------------------------
     // Button 1: Install / Uninstall / Health State (🟢 / ⚪ / ⚠️)
@@ -350,29 +352,12 @@ void ExtensionRowWidget::handleInstallClicked()
     bool hasSrc = BuildConfig::hasSourceBinary(m_mod.id);
     bool hasSys = BuildConfig::hasSystemBinary(m_mod.id);
     auto activeMode = BuildConfig::instance().componentSourceMode(m_mod.id);
-    bool isInstalled = m_mod.isInstalled || hasSrc || hasSys;
+    bool isInstalled = (activeMode == BuildConfig::ComponentSourceMode::LocalSource)
+                           ? hasSrc
+                           : (hasSys || m_mod.isInstalled);
 
     if (isInstalled) {
-        if (hasSrc && hasSys) {
-            QMessageBox msg(this);
-            msg.setWindowTitle(tr("Uninstall Options: %1").arg(m_mod.displayName));
-            msg.setText(tr("<h3>Uninstall Component: %1</h3>"
-                           "<p>This component is present both as a locally compiled build and as an OS system package.</p>"
-                           "<p>What would you like to remove?</p>").arg(m_mod.displayName));
-            QPushButton *btnRemoveSrc = msg.addButton(tr("🗑️ Remove Compiled Build Only"), QMessageBox::ActionRole);
-            QPushButton *btnUninstallAll = msg.addButton(tr("❌ Uninstall Completely (Source && System)"), QMessageBox::DestructiveRole);
-            msg.addButton(tr("Cancel"), QMessageBox::RejectRole);
-            msg.exec();
-
-            if (msg.clickedButton() == btnRemoveSrc) {
-                BuildConfig::removeLocalSourceBuild(m_mod.id);
-                success = true;
-            } else if (msg.clickedButton() == btnUninstallAll) {
-                BuildConfig::removeLocalSourceBuild(m_mod.id);
-                PackageManagerHelper::uninstallComponentInteractive(m_mod.id, this);
-                success = true;
-            }
-        } else if (hasSrc) {
+        if (activeMode == BuildConfig::ComponentSourceMode::LocalSource) {
             if (QMessageBox::question(this, tr("Remove Compiled Build"),
                     tr("Do you want to remove locally compiled binaries for '%1'?").arg(m_mod.displayName),
                     QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
@@ -523,10 +508,12 @@ void ExtensionRowWidget::openOptionsMenu()
     });
 
     // 5. Contextual Uninstall/Removal
-    if (curMode == BuildConfig::ComponentSourceMode::LocalSource && hasSrc) {
-        menu.addSeparator();
-        QAction *actRemove = menu.addAction(tr("🗑️ Remove Local Source Build"));
-        connect(actRemove, &QAction::triggered, this, &ExtensionRowWidget::handleInstallClicked);
+    if (curMode == BuildConfig::ComponentSourceMode::LocalSource) {
+        if (hasSrc) {
+            menu.addSeparator();
+            QAction *actRemove = menu.addAction(tr("🗑️ Remove Local Source Build"));
+            connect(actRemove, &QAction::triggered, this, &ExtensionRowWidget::handleInstallClicked);
+        }
     } else if (hasSys) {
         menu.addSeparator();
         QAction *actUninstall = menu.addAction(tr("🗑️ Uninstall System Package..."));
