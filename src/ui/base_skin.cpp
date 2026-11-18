@@ -2274,10 +2274,35 @@ QString BaseSkin::currentShareFilePath() const
 void BaseSkin::showShareDialog()
 {
     QString path = currentShareFilePath();
-    if (!path.isEmpty()) {
-        ShareDialog dlg(path, this);
-        dlg.exec();
-    }
+    if (path.isEmpty()) return;
+
+    QMenu menu(this);
+    menu.addAction(QIcon::fromTheme("edit-copy-path"), tr("Copy File Path"), this, [path]() {
+        QApplication::clipboard()->setText(path);
+    });
+    menu.addSeparator();
+
+    const bool isFolder = QFileInfo(path).isDir();
+    const FileCategory cat = m_currentCategory;
+
+    ShareManager shareMgr(this, [path]() { return path; });
+    shareMgr.setImageProvider([this, cat, isFolder]() -> QImage {
+        if (isFolder) return QImage();
+        if (cat == FileCategory::Image && m_imageViewer) {
+            return m_imageViewer->originalImage();
+        }
+        if (cat == FileCategory::Pdf && m_pdfViewer) {
+            return m_pdfViewer->renderPageForOcr(m_pdfViewer->currentPage(), 200);
+        }
+        if (cat == FileCategory::Office && m_officeViewer && m_officeViewer->pdfViewer()) {
+            IPdfViewer *ovPdf = m_officeViewer->pdfViewer();
+            return ovPdf->renderPageForOcr(ovPdf->currentPage(), 200);
+        }
+        return QImage();
+    }, !isFolder && (cat == FileCategory::Pdf || cat == FileCategory::Office));
+    shareMgr.populateMenu(&menu);
+
+    menu.exec(QCursor::pos());
 }
 
 void BaseSkin::openSettings()
