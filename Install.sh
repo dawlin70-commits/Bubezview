@@ -584,11 +584,11 @@ build_source_component() {
     fi
 
     mkdir -p "$COMP_BUILD"
-    if ! cmake -B "$COMP_BUILD" -S "$COMP_CMAKE_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"; then
+    if ! cmake -B "$COMP_BUILD" -S "$COMP_CMAKE_SRC" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"; then
         echo -e "${YELLOW}[!] Configurazione CMake fallita; pulizia cache e nuovo tentativo...${NC}"
         rm -rf "${COMP_BUILD}"
         mkdir -p "${COMP_BUILD}"
-        cmake -B "$COMP_BUILD" -S "$COMP_CMAKE_SRC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"
+        cmake -B "$COMP_BUILD" -S "$COMP_CMAKE_SRC" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${HOME}/.local" -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib:$ORIGIN/../lib64' -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE "${cmake_flags[@]}"
     fi
     cmake --build "$COMP_BUILD" --parallel "$cpu_cores_sub"
     cmake --install "$COMP_BUILD"
