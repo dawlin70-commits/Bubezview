@@ -55,35 +55,39 @@ while [ "$#" -gt 0 ]; do
             ACTION="reinstall"
             FORCE_CLI=1
             ;;
-        --doctor|--status)
-            ACTION="doctor"
-            FORCE_CLI=1
-            ;;
-        --reset-config)
-            ACTION="reset"
-            FORCE_CLI=1
-            ;;
         --build-component)
-            ACTION="build_component"
-            FORCE_CLI=1
-            shift
-            if [ -z "$1" ]; then
-                echo -e "\033[0;31m[!] Errore: specificare il componente per --build-component (es. poppler, libarchive, 7zip, qpdf, tesseract)\033[0m" >&2
+            if [ "$#" -lt 2 ] || [ -z "$2" ]; then
+                echo -e "\033[0;31m[!] Errore: argomento mancante per $1\033[0m" >&2
                 exit 1
             fi
-            TARGET_COMPONENT="$1"
+            ACTION="build_component"
+            FORCE_CLI=1
+            TARGET_COMPONENT="$2"
+            shift
             ;;
         --git-url)
+            if [ "$#" -lt 2 ] || [ -z "$2" ]; then
+                echo -e "\033[0;31m[!] Errore: argomento mancante per $1\033[0m" >&2
+                exit 1
+            fi
+            CUSTOM_GIT_URL="$2"
             shift
-            [ -n "$1" ] && CUSTOM_GIT_URL="$1"
             ;;
         --git-branch)
+            if [ "$#" -lt 2 ] || [ -z "$2" ]; then
+                echo -e "\033[0;31m[!] Errore: argomento mancante per $1\033[0m" >&2
+                exit 1
+            fi
+            CUSTOM_GIT_BRANCH="$2"
             shift
-            [ -n "$1" ] && CUSTOM_GIT_BRANCH="$1"
             ;;
         --extra-build-flags)
+            if [ "$#" -lt 2 ] || [ -z "$2" ]; then
+                echo -e "\033[0;31m[!] Errore: argomento mancante per $1\033[0m" >&2
+                exit 1
+            fi
+            CUSTOM_BUILD_FLAGS="$2"
             shift
-            [ -n "$1" ] && CUSTOM_BUILD_FLAGS="$1"
             ;;
         --build-tesseract)
             ACTION="build_component"
@@ -103,8 +107,6 @@ while [ "$#" -gt 0 ]; do
             echo "  --reinstall            Reinstalla da zero e riavvia il Setup (First Run Wizard)"
             echo "  --uninstall [--purge]  Disinstalla BubezView dal sistema (con --purge rimuove config e cache)"
             echo "  --clean                Pulisci i file temporanei di compilazione"
-            echo "  --doctor, --status     Diagnostica motori e librerie di sistema"
-            echo "  --reset-config         Ripristina le impostazioni predefinite di fabbrica"
             echo "  --build-component <N>  Compila un modulo da sorgente (poppler, libarchive, 7zip, qpdf, tesseract)"
             echo "  -h, --help             Mostra questo messaggio di aiuto"
             exit 0
@@ -298,37 +300,28 @@ check_build_tools() {
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-base-dev" "qt6-base-dev-tools")
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia-dev")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("libpoppler-qt6-dev")
-                check_pkg_dev "libarchive" || missing_libs+=("libarchive-dev")
-                check_pkg_dev "librevenge-0.0" || missing_libs+=("librevenge-dev")
                 check_pkg_dev "libqrencode" || missing_libs+=("libqrencode-dev")
-                check_pkg_dev "mpv" || missing_libs+=("libmpv-dev")
                 ;;
             pacman)
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-base")
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6")
-                check_pkg_dev "libarchive" || missing_libs+=("libarchive")
-                check_pkg_dev "librevenge-0.0" || missing_libs+=("librevenge")
                 check_pkg_dev "libqrencode" || missing_libs+=("qrencode")
-                check_pkg_dev "mpv" || missing_libs+=("mpv")
                 ;;
             dnf)
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-qtbase-devel")
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-qtmultimedia-devel")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6-devel")
-                check_pkg_dev "libarchive" || missing_libs+=("libarchive-devel")
-                check_pkg_dev "librevenge-0.0" || missing_libs+=("librevenge-devel")
                 check_pkg_dev "libqrencode" || missing_libs+=("qrencode-devel")
-                check_pkg_dev "mpv" || missing_libs+=("mpv-libs-devel")
                 ;;
         esac
     else
         if [ "$PM" = "apt" ]; then
-            missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libarchive-dev" "librevenge-dev" "libqrencode-dev" "libmpv-dev")
+            missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libqrencode-dev")
         elif [ "$PM" = "pacman" ]; then
-            missing_libs+=("qt6-base" "qt6-multimedia" "poppler-qt6" "libarchive" "librevenge" "qrencode" "mpv")
+            missing_libs+=("qt6-base" "qt6-multimedia" "poppler-qt6" "qrencode")
         elif [ "$PM" = "dnf" ]; then
-            missing_libs+=("qt6-qtbase-devel" "qt6-qtmultimedia-devel" "poppler-qt6-devel" "libarchive-devel" "librevenge-devel" "qrencode-devel" "mpv-libs-devel")
+            missing_libs+=("qt6-qtbase-devel" "qt6-qtmultimedia-devel" "poppler-qt6-devel" "qrencode-devel")
         fi
     fi
 
@@ -531,7 +524,7 @@ build_source_component() {
 }
 
 # ------------------------------------------------------------------------------
-# 5. GESTIONE OPERAZIONI (Clean, Reinstall, Uninstall, Reset, Doctor)
+# 5. GESTIONE OPERAZIONI (Clean, Reinstall, Uninstall)
 # ------------------------------------------------------------------------------
 do_clean() {
     local silent="${1:-0}"
@@ -587,129 +580,6 @@ do_reinstall() {
 
     IS_UPDATE=0
     ACTION=""
-}
-
-do_reset_config() {
-    local cfg_dir="$HOME/.config/Bubez"
-    local cfg_file="$cfg_dir/BubezView.conf"
-
-    if [ "$FORCE_CLI" -eq 0 ] && [ "$UI_MODE" != "cli" ]; then
-        if ! ui_ask_yesno "Reset Configurazione" "Vuoi ripristinare le impostazioni predefinite di BubezView?\n\nVerrà creato un backup automatico prima del ripristino."; then
-            echo -e "${YELLOW}[*] Operazione annullata dall'utente.${NC}"
-            exit 0
-        fi
-    fi
-
-    echo -e "${BLUE}${BOLD}[*] Reset configurazione in corso...${NC}"
-    if [ -f "$cfg_file" ]; then
-        local ts
-        ts=$(date +%Y%m%d_%H%M%S)
-        cp -f "$cfg_file" "${cfg_file}.bak_${ts}"
-        rm -f "$cfg_file"
-        echo -e "${GREEN}${BOLD}[✓] File di configurazione ripristinato! Backup salvato in: ${cfg_file}.bak_${ts}${NC}"
-    else
-        echo -e "${YELLOW}[*] Nessun file di configurazione preesistente trovato in $cfg_file.${NC}"
-    fi
-
-    rm -rf "$HOME/.cache/BubezView"
-
-    if [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
-        ui_info "Reset Configurazione" "Impostazioni ripristinate ai valori di fabbrica con successo!\n(Creato backup di sicurezza in ~/.config/Bubez/)"
-    fi
-    exit 0
-}
-
-do_doctor() {
-    echo -e "${BLUE}${BOLD}==============================================================================${NC}"
-    echo -e "${BLUE}${BOLD}               🩺 BUBEZVIEW SYSTEM & ENVIRONMENT DOCTOR                        ${NC}"
-    echo -e "${BLUE}${BOLD}==============================================================================${NC}"
-
-    local report=""
-    add_rep() {
-        echo -e "$1"
-        report+="${2:-$1}\n"
-    }
-
-    # 1. Stato installazione
-    local bin_path="$HOME/.local/bin/$APP_ID"
-    local real_bin="$HOME/.local/share/$APP_ID/$TARGET_EXE"
-    if [ -f "$real_bin" ]; then
-        local ver
-        ver=$("$real_bin" --version 2>/dev/null || echo "presente")
-        local bdate
-        bdate=$(date -r "$real_bin" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "")
-        add_rep "${GREEN}[✓] BubezView installato nel sistema:${NC} $bin_path ($ver - $bdate)" "✓ BubezView installato: $ver ($bdate)"
-    else
-        add_rep "${YELLOW}[!] BubezView NON è installato nel sistema host (~/.local/bin/bubezview non trovato).${NC}" "! BubezView NON installato nel sistema"
-    fi
-
-    # 2. Integrazione desktop e icone
-    local dtop="$HOME/.local/share/applications/$APP_ID.desktop"
-    if [ -f "$dtop" ]; then
-        add_rep "${GREEN}[✓] Lanciatore Desktop:${NC} Presente ($dtop)" "✓ Lanciatore Desktop: Presente"
-    else
-        add_rep "${YELLOW}[!] Lanciatore Desktop:${NC} Assente" "! Lanciatore Desktop: Assente"
-    fi
-
-    local dolphin_kio="$HOME/.local/share/kio/servicemenus/$APP_ID.desktop"
-    if [ -f "$dolphin_kio" ]; then
-        add_rep "${GREEN}[✓] Integrazione Dolphin (Tasto Spazio / Menu):${NC} Attiva ($dolphin_kio)" "✓ Integrazione Dolphin: Attiva"
-    else
-        add_rep "${YELLOW}[!] Integrazione Dolphin:${NC} Non configurata" "! Integrazione Dolphin: Non configurata"
-    fi
-
-    # 3. Motori e dipendenze esterne
-    echo ""
-    add_rep "${BOLD}[*] Controllo Motori e Formati Multimediali:${NC}" "\nMotori e Formati Multimediali:"
-
-    check_dep() {
-        local name="$1"
-        local cmd="$2"
-        local desc="$3"
-        if command -v "$cmd" >/dev/null 2>&1; then
-            local p
-            p=$(command -v "$cmd")
-            add_rep "  ${GREEN}[✓] ${name}:${NC} Presente ($p) — $desc" "  ✓ ${name}: Presente ($desc)"
-        else
-            add_rep "  ${YELLOW}[-] ${name}:${NC} Non trovato nel PATH di sistema — $desc" "  - ${name}: Non trovato ($desc)"
-        fi
-    }
-
-    check_dep "Poppler (pdftoppm)" "pdftoppm" "Rendering PDF e documenti"
-    if command -v "7zz" >/dev/null 2>&1; then
-        check_dep "7-Zip (7zz)" "7zz" "Supporto esteso archivi (RAR, 7Z, ISO)"
-    else
-        check_dep "7-Zip (7z)" "7z" "Supporto archivi"
-    fi
-    check_dep "QPDF" "qpdf" "Riparazione, linearizzazione e crittografia PDF"
-    check_dep "Tesseract OCR" "tesseract" "Riconoscimento ottico del testo in immagini e PDF"
-    check_dep "FFmpeg" "ffmpeg" "Generazione miniature e analisi multimediale"
-    check_dep "LibreOffice" "libreoffice" "Anteprima documenti Office (.docx, .xlsx, .odt)"
-
-    # 4. Display Server e GPU
-    echo ""
-    add_rep "${BOLD}[*] Ambiente Grafico e Accelerazione:${NC}" "\nAmbiente Grafico e GPU:"
-    if [ -n "$WAYLAND_DISPLAY" ]; then
-        add_rep "  ${GREEN}[✓] Server Display:${NC} Wayland ($WAYLAND_DISPLAY)" "  ✓ Display: Wayland ($WAYLAND_DISPLAY)"
-    elif [ -n "$DISPLAY" ]; then
-        add_rep "  ${GREEN}[✓] Server Display:${NC} X11 ($DISPLAY)" "  ✓ Display: X11 ($DISPLAY)"
-    else
-        add_rep "  ${YELLOW}[!] Server Display:${NC} Nessun server grafico attivo rilevato" "  ! Nessun server grafico attivo"
-    fi
-
-    if command -v glxinfo >/dev/null 2>&1; then
-        local renderer
-        renderer=$(glxinfo -B 2>/dev/null | grep -i "Device:" | sed 's/.*Device: //' || true)
-        if [ -n "$renderer" ]; then
-            add_rep "  ${GREEN}[✓] GPU / Driver:${NC} $renderer" "  ✓ GPU: $renderer"
-        fi
-    fi
-
-    echo -e "${BLUE}${BOLD}==============================================================================${NC}"
-    if [ "$UI_MODE" != "cli" ] && [ "$FORCE_CLI" -eq 0 ]; then
-        ui_info "Diagnostica di Sistema - BubezView Doctor" "$report"
-    fi
-    exit 0
 }
 
 do_uninstall() {
@@ -825,12 +695,6 @@ main() {
         exit 0
     elif [ "$ACTION" = "reinstall" ]; then
         do_reinstall
-    elif [ "$ACTION" = "doctor" ]; then
-        do_doctor
-        exit 0
-    elif [ "$ACTION" = "reset" ]; then
-        do_reset_config
-        exit 0
     elif [ "$ACTION" = "build_component" ] && [ -n "$TARGET_COMPONENT" ]; then
         check_build_tools
         build_source_component "$TARGET_COMPONENT" "$CUSTOM_GIT_URL" "$CUSTOM_GIT_BRANCH" "$CUSTOM_BUILD_FLAGS"
@@ -851,8 +715,6 @@ main() {
 
     local tar_file="$work_dir/source.tar.gz"
     local extract_dir="$work_dir/source"
-    mkdir -p "$extract_dir"
-
     local src_cmakelists=""
 
     # Se lanciato dal repository locale, compila direttamente dai sorgenti
@@ -860,6 +722,7 @@ main() {
         src_cmakelists="$SCRIPT_DIR/CMakeLists.txt"
         extract_dir="$SCRIPT_DIR"
     else
+        mkdir -p "$extract_dir"
         local info_json="$work_dir/versioni.json"
         curl -s -L "$PROJECT_URL" -o "$info_json" || {
             ui_error "Errore di Rete" "Impossibile scaricare l'indice delle versioni da $PROJECT_URL"
@@ -948,7 +811,13 @@ except Exception:
             echo -e "${GREEN}[✓] Impronta SHA-256 verificata con successo:${NC} $actual_sha256"
         fi
 
-        if [ -n "$signature_b64" ] && [ -n "$RELEASE_PUBKEY" ]; then
+        if [ -n "$signature_b64" ]; then
+            if [ -z "$RELEASE_PUBKEY" ]; then
+                rm -f "$tar_file"
+                ui_error "Errore Sicurezza" "Firma crittografica presente ma Chiave Pubblica non configurata nell'installer."
+                exit 1
+            fi
+
             local pubkey_file="$work_dir/release_pubkey.pem"
             local hash_file="$work_dir/release_hash.txt"
             local sig_file="$work_dir/release_sig.bin"
@@ -956,18 +825,49 @@ except Exception:
             printf "%s\n" "$RELEASE_PUBKEY" > "$pubkey_file"
             printf "%s" "$actual_sha256" > "$hash_file"
 
-            if (echo "$signature_b64" | base64 -d > "$sig_file" 2>/dev/null); then
-                local sig_valid=0
-                if command -v openssl >/dev/null 2>&1; then
-                    if openssl pkeyutl -verify -rawin -pubin -inkey "$pubkey_file" -in "$hash_file" -sigfile "$sig_file" >/dev/null 2>&1; then
-                        sig_valid=1
-                    fi
-                fi
-                if [ "$sig_valid" -eq 1 ]; then
-                    echo -e "${GREEN}[✓] Firma crittografica Ed25519 AUTENTICATA con successo!${NC}"
+            if ! (echo "$signature_b64" | base64 -d > "$sig_file" 2>/dev/null); then
+                rm -f "$tar_file" "$sig_file" "$hash_file" "$pubkey_file"
+                ui_error "Errore Sicurezza" "Firma crittografica presente ma non decodificabile (Base64 invalido)."
+                exit 1
+            fi
+
+            local sig_valid=0
+
+            if command -v openssl >/dev/null 2>&1; then
+                if openssl pkeyutl -verify -rawin -pubin -inkey "$pubkey_file" -in "$hash_file" -sigfile "$sig_file" >/dev/null 2>&1; then
+                    sig_valid=1
                 fi
             fi
+
+            if [ "$sig_valid" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
+                if python3 -c "
+import sys
+try:
+    from cryptography.hazmat.primitives import serialization
+    with open('$pubkey_file', 'rb') as f:
+        pub = serialization.load_pem_public_key(f.read())
+    with open('$hash_file', 'rb') as f:
+        data = f.read()
+    with open('$sig_file', 'rb') as f:
+        sig = f.read()
+    pub.verify(sig, data)
+    sys.exit(0)
+except Exception:
+    sys.exit(1)
+" >/dev/null 2>&1; then
+                    sig_valid=1
+                fi
+            fi
+
             rm -f "$sig_file" "$hash_file" "$pubkey_file"
+
+            if [ "$sig_valid" -ne 1 ]; then
+                rm -f "$tar_file"
+                ui_error "Errore Sicurezza" "Verifica della firma crittografica Ed25519 FALLITA! Il pacchetto potrebbe essere stato manomesso."
+                exit 1
+            fi
+
+            echo -e "${GREEN}[✓] Firma crittografica Ed25519 AUTENTICATA con successo!${NC}"
         fi
 
         if [ "$UI_MODE" = "zenity" ]; then
@@ -1013,17 +913,24 @@ except Exception:
     rm -f "$build_log" 2>/dev/null || true
 
     # Configurazione CMake
+    local cfg_ret=0
+    local cfg_status_file="$work_dir/cfg_status"
+    rm -f "$cfg_status_file" 2>/dev/null || true
+
     if [ "$UI_MODE" = "zenity" ]; then
         (
             echo "# Configurazione del progetto con CMake..."
             cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
+            echo "$?" > "$cfg_status_file"
         ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della configurazione..." --pulsate --auto-close 2>/dev/null || true
+        cfg_ret=$(cat "$cfg_status_file" 2>/dev/null || echo "1")
     else
         echo -e "${BLUE}[*] Esecuzione configurazione CMake...${NC}"
         cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
+        cfg_ret=${PIPESTATUS[0]}
     fi
 
-    if [ ! -f "$build_dir/CMakeCache.txt" ]; then
+    if [ "$cfg_ret" -ne 0 ] || [ ! -f "$build_dir/CMakeCache.txt" ]; then
         local err_tail
         err_tail=$(tail -n 25 "$build_log" 2>/dev/null || true)
         ui_error "Errore Configurazione CMake" "La configurazione di CMake è fallita.\nLog: $build_log\n\n$err_tail"
@@ -1042,7 +949,7 @@ except Exception:
         (
             cmake --build "$build_dir" --parallel "$cpu_cores" 2>&1 | while IFS= read -r line; do
                 echo "$line" >> "$build_log"
-                if [[ "$line" =~ \[([0-9]+)%\] ]]; then
+                if [[ "$line" =~ \[[[:space:]]*([0-9]+)%\] ]]; then
                     echo "${BASH_REMATCH[1]}"
                     echo "# Compilazione in corso (${BASH_REMATCH[1]}%)..."
                 fi
@@ -1052,7 +959,8 @@ except Exception:
         build_ret=$(cat "$build_status_file" 2>/dev/null || echo "1")
     else
         echo -e "${BLUE}[*] Compilazione in corso ($cpu_cores core)...${NC}"
-        cmake --build "$build_dir" --parallel "$cpu_cores" 2>&1 | tee -a "$build_log" || build_ret=$?
+        cmake --build "$build_dir" --parallel "$cpu_cores" 2>&1 | tee -a "$build_log"
+        build_ret=${PIPESTATUS[0]}
     fi
 
     local exe_path=""
