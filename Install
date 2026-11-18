@@ -51,6 +51,17 @@ for arg in "$@"; do
         --build-component)
             FORCE_CLI=1
             ;;
+        --help|-h)
+            echo "Uso: ./Install [opzioni]"
+            echo ""
+            echo "Opzioni:"
+            echo "  --cli, -c              Esegui in modalità terminale (senza dialoghi grafici)"
+            echo "  --update, -u, -y       Esegui aggiornamento/installazione automatica"
+            echo "  --verbose, -v          Output dettagliato"
+            echo "  --build-component <N>  Compila un singolo componente da sorgente (poppler, libarchive, 7zip, qpdf, tesseract)"
+            echo "  -h, --help             Mostra questo messaggio di aiuto"
+            exit 0
+            ;;
     esac
 done
 
