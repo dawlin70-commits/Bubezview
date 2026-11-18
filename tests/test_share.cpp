@@ -60,8 +60,54 @@ void TestShare::testMenuPopulation()
 
     QVERIFY(actionTexts.contains(QObject::tr("Send to device (KDE Connect)...")));
     QVERIFY(actionTexts.contains(QObject::tr("Send with LocalSend...")));
-    QVERIFY(actionTexts.contains(QObject::tr("Send via Email...")));
+    QVERIFY(actionTexts.contains(QObject::tr("Send via Email")));
     QVERIFY(actionTexts.contains(QObject::tr("Generate QR Code for smartphone...")));
+
+    // Verify Email submenu items (System, Gmail, Outlook, Yahoo)
+    QAction *emailAct = nullptr;
+    for (QAction *act : menu.actions()) {
+        if (act->text() == QObject::tr("Send via Email")) {
+            emailAct = act;
+            break;
+        }
+    }
+    QVERIFY(emailAct != nullptr);
+    QVERIFY(emailAct->menu() != nullptr);
+    QStringList emailSubTexts;
+    for (QAction *sub : emailAct->menu()->actions()) {
+        emailSubTexts.append(sub->text());
+    }
+    QVERIFY(std::any_of(emailSubTexts.begin(), emailSubTexts.end(), [](const QString &t) { return t.contains("Gmail"); }));
+    QVERIFY(std::any_of(emailSubTexts.begin(), emailSubTexts.end(), [](const QString &t) { return t.contains("Outlook"); }));
+    QVERIFY(std::any_of(emailSubTexts.begin(), emailSubTexts.end(), [](const QString &t) { return t.contains("Yahoo"); }));
+
+    // Verify paged document image submenu appears when isPagedDocument=true
+    QMenu pdfMenu("SharePDF");
+    ShareManager pdfManager(nullptr, []() { return QString("/tmp/dummy.pdf"); });
+    pdfManager.setImageProvider([]() { return QImage(10, 10, QImage::Format_RGB32); }, true);
+    pdfManager.populateMenu(&pdfMenu);
+    QAction *pdfEmailAct = nullptr;
+    for (QAction *act : pdfMenu.actions()) {
+        if (act->text() == QObject::tr("Send via Email")) {
+            pdfEmailAct = act;
+            break;
+        }
+    }
+    QVERIFY(pdfEmailAct != nullptr && pdfEmailAct->menu() != nullptr);
+    bool hasPageAsImg = false;
+    for (QAction *sub : pdfEmailAct->menu()->actions()) {
+        if (sub->text().contains("Current Page as Image") && sub->menu() != nullptr) {
+            hasPageAsImg = true;
+            break;
+        }
+    }
+    QVERIFY(hasPageAsImg);
+
+    // Verify last email provider persistence
+    ShareManager::EmailProvider prev = ShareManager::lastEmailProvider();
+    ShareManager::setLastEmailProvider(ShareManager::EmailProvider::Gmail);
+    QCOMPARE(ShareManager::lastEmailProvider(), ShareManager::EmailProvider::Gmail);
+    ShareManager::setLastEmailProvider(prev);
 
     menu.show();
     QTest::qWait(100);

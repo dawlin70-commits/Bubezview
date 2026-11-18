@@ -16,12 +16,38 @@
 #include <QDesktopServices>
 #include <QIcon>
 #include <QAction>
+#include <QMimeData>
+#include <QLabel>
+#include <QTimer>
+#include <QPointer>
 
 ShareManager::ShareManager(QWidget *parentWidget, std::function<QString()> getFilePathCallback)
     : QObject(parentWidget)
     , m_parent(parentWidget)
     , m_getFilePath(std::move(getFilePathCallback))
 {
+}
+
+void ShareManager::setImageProvider(std::function<QImage()> getImageCallback, bool isPagedDocument)
+{
+    m_getImage = std::move(getImageCallback);
+    m_isPagedDocument = isPagedDocument;
+}
+
+ShareManager::EmailProvider ShareManager::lastEmailProvider()
+{
+    QSettings settings("Bubez", "BubezView");
+    int val = settings.value("last_email_provider", static_cast<int>(EmailProvider::SystemDefault)).toInt();
+    if (val < 0 || val > static_cast<int>(EmailProvider::Yahoo)) {
+        return EmailProvider::SystemDefault;
+    }
+    return static_cast<EmailProvider>(val);
+}
+
+void ShareManager::setLastEmailProvider(EmailProvider provider)
+{
+    QSettings settings("Bubez", "BubezView");
+    settings.setValue("last_email_provider", static_cast<int>(provider));
 }
 
 bool ShareManager::isAvailable(const QStringList &commandsOrFlatpaks)
@@ -176,7 +202,7 @@ void ShareManager::populateMenu(QMenu *menu)
     menu->clear();
     QStyle *st = QApplication::style();
 
-    auto addProtocolActions = [this, st](QMenu *targetMenu, std::function<QString()> pathProvider) {
+    auto addProtocolActions = [this, st](QMenu *targetMenu, std::function<QString()> pathProvider, bool allowImageProvider) {
         // 1. KDE Connect (if installed)
         if (isAvailable({"kdeconnect-cli", "org.kde.kdeconnect"})) {
             QIcon icon = QIcon::fromTheme("kdeconnect", st->standardIcon(QStyle::SP_DriveNetIcon));
@@ -213,13 +239,52 @@ void ShareManager::populateMenu(QMenu *menu)
             });
         }
 
-        // 5. Email (always available)
+        // 5. Email (always available: Desktop client + Webmail providers)
         {
             QIcon icon = QIcon::fromTheme("mail-message-new", st->standardIcon(QStyle::SP_FileDialogDetailedView));
-            QAction *act = targetMenu->addAction(icon, tr("Send via Email..."));
-            connect(act, &QAction::triggered, this, [this, pathProvider]() {
-                shareEmail(pathProvider ? pathProvider() : QString(), m_parent);
-            });
+            QMenu *emailMenu = targetMenu->addMenu(icon, tr("Send via Email"));
+            const EmailProvider lastProv = lastEmailProvider();
+            const std::function<QImage()> imgCb = (allowImageProvider && m_getImage) ? m_getImage : nullptr;
+            const bool isPaged = allowImageProvider && m_isPagedDocument && static_cast<bool>(imgCb);
+            QPointer<QWidget> parentPtr(m_parent);
+
+            auto addProviderEntries = [emailMenu, pathProvider, imgCb, parentPtr, lastProv](QMenu *menuTarget, bool asImageOnly) {
+                struct ProvItem {
+                    EmailProvider prov;
+                    QString label;
+                };
+                const QList<ProvItem> items = {
+                    { EmailProvider::SystemDefault, tr("💻 System Email Client (Desktop)") },
+                    { EmailProvider::Gmail,         tr("🔴 Gmail (Browser)") },
+                    { EmailProvider::Outlook,       tr("🔵 Outlook / Live (Browser)") },
+                    { EmailProvider::Yahoo,         tr("🟣 Yahoo Mail (Browser)") }
+                };
+
+                for (const auto &item : items) {
+                    QString text = item.label;
+                    if (!asImageOnly && item.prov == lastProv) {
+                        text = QStringLiteral("★ ") + text;
+                    }
+                    QAction *act = menuTarget->addAction(text);
+                    EmailProvider p = item.prov;
+                    QObject::connect(act, &QAction::triggered, [pathProvider, imgCb, parentPtr, p, asImageOnly]() {
+                        QString path = pathProvider ? pathProvider() : QString();
+                        QImage img = imgCb ? imgCb() : QImage();
+                        shareEmail(path, parentPtr.data(), p, img, asImageOnly);
+                    });
+                }
+            };
+
+            addProviderEntries(emailMenu, false);
+
+            if (isPaged) {
+                emailMenu->addSeparator();
+                QMenu *pageImgMenu = emailMenu->addMenu(
+                    QIcon::fromTheme("image-x-generic", st->standardIcon(QStyle::SP_FileIcon)),
+                    tr("🖼️ Current Page as Image")
+                );
+                addProviderEntries(pageImgMenu, true);
+            }
         }
 
         // 6. QR Code for smartphones (always available with built-in HTTP server & libqrencode)
@@ -232,7 +297,7 @@ void ShareManager::populateMenu(QMenu *menu)
         }
     };
 
-    addProtocolActions(menu, m_getFilePath);
+    addProtocolActions(menu, m_getFilePath, true);
 
     // If the current target is a single file (e.g. viewing an image/PDF), also offer sharing its entire parent folder as .zip
     QString currentPath = m_getFilePath ? m_getFilePath() : QString();
@@ -245,7 +310,7 @@ void ShareManager::populateMenu(QMenu *menu)
                 QIcon::fromTheme("package-x-generic", st->standardIcon(QStyle::SP_DirIcon)),
                 tr("📦 Compress & Share Current Folder (%1.zip)").arg(folderName)
             );
-            addProtocolActions(folderShareMenu, [parentFolder]() { return parentFolder; });
+            addProtocolActions(folderShareMenu, [parentFolder]() { return parentFolder; }, false);
         }
     }
 }
@@ -393,60 +458,140 @@ void ShareManager::shareTelegram(const QString &filePath, QWidget *parent)
     }
 }
 
-void ShareManager::shareEmail(const QString &filePath, QWidget *parent)
+static void showShareToast(QWidget *parent, const QString &message)
 {
-    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
+    if (!parent) return;
+    QWidget *topWin = parent->window();
+    if (!topWin) topWin = parent;
+
+    QLabel *toast = new QLabel(message, topWin);
+    toast->setAttribute(Qt::WA_DeleteOnClose);
+    toast->setWindowFlags(Qt::SubWindow);
+    toast->setWordWrap(false);
+    toast->setStyleSheet(QStringLiteral(
+        "QLabel {"
+        "  background-color: rgba(24, 24, 27, 235);"
+        "  color: #f4f4f5;"
+        "  border: 1px solid rgba(255, 255, 255, 0.18);"
+        "  border-radius: 10px;"
+        "  padding: 10px 18px;"
+        "  font-size: 13px;"
+        "  font-weight: 500;"
+        "}"
+    ));
+    toast->adjustSize();
+    int x = (topWin->width() - toast->width()) / 2;
+    int y = topWin->height() - toast->height() - 28;
+    toast->move(qMax(12, x), qMax(12, y));
+    toast->show();
+    toast->raise();
+
+    QPointer<QLabel> toastPtr(toast);
+    QTimer::singleShot(5000, toast, [toastPtr]() {
+        if (toastPtr) toastPtr->close();
+    });
+}
+
+void ShareManager::shareEmail(const QString &filePath,
+                              QWidget *parent,
+                              EmailProvider provider,
+                              const QImage &imageToCopy,
+                              bool asImageOnly)
+{
+    if (!asImageOnly && (filePath.isEmpty() || !QFileInfo::exists(filePath))) {
         if (parent) QMessageBox::warning(parent, tr("Share"), tr("No open file to share."));
         return;
     }
 
-    QString resolvedPath = ensureShareableFile(filePath, parent);
-    if (resolvedPath.isEmpty()) return;
+    QString resolvedPath;
+    if (!filePath.isEmpty() && QFileInfo::exists(filePath)) {
+        resolvedPath = asImageOnly ? filePath : ensureShareableFile(filePath, parent);
+        if (!asImageOnly && resolvedPath.isEmpty()) return;
+    }
+
+    setLastEmailProvider(provider);
 
     QFileInfo fi(resolvedPath);
     QString fileName = fi.fileName();
+    if (asImageOnly && !fi.completeBaseName().isEmpty()) {
+        fileName = fi.completeBaseName() + QStringLiteral(".png");
+    } else if (fileName.isEmpty()) {
+        fileName = QStringLiteral("image.png");
+    }
 
-    // Copy absolute path to clipboard
-    QApplication::clipboard()->setText(resolvedPath);
+    const QString subject = tr("Sending: %1").arg(fileName);
 
-    QSettings settings("Bubez", "BubezView");
-    bool hideHint = settings.value("hide_email_share_hint", false).toBool();
-    if (!hideHint) {
-        QSettings legacy("BubezView", "BubezView");
-        if (legacy.value("hide_email_share_hint", false).toBool()) {
-            hideHint = true;
-            settings.setValue("hide_email_share_hint", true);
+    if (provider == EmailProvider::SystemDefault) {
+        QString attachPath = resolvedPath;
+        if (asImageOnly && !imageToCopy.isNull()) {
+            QString tempPng = QDir::tempPath() + QStringLiteral("/BubezShare_") + fileName;
+            if (imageToCopy.save(tempPng, "PNG")) {
+                attachPath = tempPng;
+            }
         }
-    }
 
-    if (!hideHint) {
-        QMessageBox msgBox(parent);
-        msgBox.setIcon(QMessageBox::Information);
-        msgBox.setWindowTitle(tr("Send via Email"));
-        msgBox.setText(
-            tr("Opening default email client...\n\n"
-               "💡 Tip for Webmail (e.g. Gmail, Outlook in Firefox or Chrome):\n"
-               "The full file path has been copied to your clipboard.\n\n"
-               "When you click 'Attach' in your browser, simply press Ctrl+V (or Paste) in the file picker to select it instantly.")
-        );
-        QCheckBox *chk = new QCheckBox(tr("Do not show this message again"), &msgBox);
-        msgBox.setCheckBox(chk);
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.exec();
-
-        if (chk->isChecked()) {
-            settings.setValue("hide_email_share_hint", true);
+        if (!attachPath.isEmpty()) {
+            QApplication::clipboard()->setText(attachPath);
         }
+
+        bool started = false;
+        QString xdgEmail = QStandardPaths::findExecutable("xdg-email");
+        if (!xdgEmail.isEmpty() && !attachPath.isEmpty()) {
+            started = QProcess::startDetached(
+                xdgEmail,
+                QStringList() << "--attach" << attachPath << "--subject" << subject
+            );
+        }
+        if (!started) {
+            QUrl mailtoUrl(QStringLiteral("mailto:?subject=%1")
+                               .arg(QString::fromUtf8(QUrl::toPercentEncoding(subject))));
+            QDesktopServices::openUrl(mailtoUrl);
+        }
+        return;
     }
 
-    bool started = false;
-    QString xdgEmail = QStandardPaths::findExecutable("xdg-email");
-    if (!xdgEmail.isEmpty()) {
-        started = QProcess::startDetached(xdgEmail, QStringList() << "--attach" << resolvedPath << "--subject" << QString(tr("Sending file: %1")).arg(fileName));
+    // Webmail providers (Gmail, Outlook, Yahoo):
+    // Populate polymorphic QMimeData so Ctrl+V works both as inline image and file path
+    QMimeData *mime = new QMimeData();
+    const bool hasImg = !imageToCopy.isNull();
+    if (hasImg) {
+        mime->setImageData(imageToCopy);
     }
-    if (!started) {
-        QUrl mailtoUrl(QString("mailto:?subject=%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(tr("Sending file: ") + fileName))));
-        QDesktopServices::openUrl(mailtoUrl);
+    if (!resolvedPath.isEmpty() && !asImageOnly) {
+        mime->setText(resolvedPath);
+        mime->setUrls({ QUrl::fromLocalFile(resolvedPath) });
+    } else if (!hasImg && !resolvedPath.isEmpty()) {
+        mime->setText(resolvedPath);
+        mime->setUrls({ QUrl::fromLocalFile(resolvedPath) });
+    }
+    QApplication::clipboard()->setMimeData(mime);
+
+    const QString encodedSub = QString::fromUtf8(QUrl::toPercentEncoding(subject));
+    QString composeUrl;
+    QString providerName;
+    switch (provider) {
+    case EmailProvider::Gmail:
+        composeUrl = QStringLiteral("https://mail.google.com/mail/?view=cm&fs=1&su=%1").arg(encodedSub);
+        providerName = QStringLiteral("Gmail");
+        break;
+    case EmailProvider::Outlook:
+        composeUrl = QStringLiteral("https://outlook.live.com/mail/0/deeplink/compose?subject=%1").arg(encodedSub);
+        providerName = QStringLiteral("Outlook");
+        break;
+    case EmailProvider::Yahoo:
+        composeUrl = QStringLiteral("https://compose.mail.yahoo.com/?subj=%1").arg(encodedSub);
+        providerName = QStringLiteral("Yahoo Mail");
+        break;
+    case EmailProvider::SystemDefault:
+        break;
+    }
+
+    QDesktopServices::openUrl(QUrl(composeUrl));
+
+    if (hasImg) {
+        showShareToast(parent, tr("📋 Image copied! Opening %1 — press Ctrl+V in the email to paste it.").arg(providerName));
+    } else {
+        showShareToast(parent, tr("📋 File path copied! Opening %1 — click Attach and press Ctrl+V.").arg(providerName));
     }
 }
 

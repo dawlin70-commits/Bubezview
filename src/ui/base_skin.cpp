@@ -3676,6 +3676,20 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
     }
 
     ShareManager shareMgr(this, [targetPath]() { return targetPath; });
+    shareMgr.setImageProvider([this, activeCategory, isFolder]() -> QImage {
+        if (isFolder) return QImage();
+        if (activeCategory == FileCategory::Image && m_imageViewer) {
+            return m_imageViewer->originalImage();
+        }
+        if (activeCategory == FileCategory::Pdf && m_pdfViewer) {
+            return m_pdfViewer->renderPageForOcr(m_pdfViewer->currentPage(), 200);
+        }
+        if (activeCategory == FileCategory::Office && m_officeViewer && m_officeViewer->pdfViewer()) {
+            IPdfViewer *ovPdf = m_officeViewer->pdfViewer();
+            return ovPdf->renderPageForOcr(ovPdf->currentPage(), 200);
+        }
+        return QImage();
+    }, !isFolder && (activeCategory == FileCategory::Pdf || activeCategory == FileCategory::Office));
     shareMgr.populateMenu(menuShare);
 
     if (m_currentCategory == FileCategory::Folder) {

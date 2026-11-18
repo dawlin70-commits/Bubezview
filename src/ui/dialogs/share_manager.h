@@ -10,6 +10,7 @@
 #include <QStringList>
 #include <QMenu>
 #include <QWidget>
+#include <QImage>
 #include <functional>
 
 /**
@@ -17,7 +18,7 @@
  * @brief Manages sending files to external sharing protocols and local transfer apps.
  *
  * Provides menu generation and subprocess execution for tools such as
- * KDE Connect, LocalSend, Bluetooth OBEX push, Telegram, Email (xdg-email / mailto),
+ * KDE Connect, LocalSend, Bluetooth OBEX push, Telegram, Email (xdg-email / Webmail),
  * and local HTTP/QR code transfers.
  */
 class ShareManager : public QObject
@@ -26,11 +27,28 @@ class ShareManager : public QObject
 
 public:
     /**
+     * @brief Supported email delivery targets.
+     */
+    enum class EmailProvider {
+        SystemDefault,
+        Gmail,
+        Outlook,
+        Yahoo
+    };
+
+    /**
      * @brief Constructs a ShareManager instance.
      * @param parentWidget Parent widget context for UI actions and dialog parenting.
      * @param getFilePathCallback Callback returning the path of the currently active file.
      */
     explicit ShareManager(QWidget *parentWidget, std::function<QString()> getFilePathCallback);
+
+    /**
+     * @brief Registers an optional callback returning an image representation of the current view.
+     * @param getImageCallback Callback returning a QImage (e.g. loaded image or rendered PDF page).
+     * @param isPagedDocument True when the current view is a multi-page document (PDF/Office).
+     */
+    void setImageProvider(std::function<QImage()> getImageCallback, bool isPagedDocument = false);
 
     /**
      * @brief Destructor.
@@ -93,11 +111,28 @@ public:
     static void shareTelegram(const QString &filePath, QWidget *parent = nullptr);
 
     /**
-     * @brief Sends the file as an email attachment using xdg-email or Thunderbird.
+     * @brief Sends the file as an email attachment using the selected provider (desktop client or webmail).
      * @param filePath Absolute path of the file to share.
      * @param parent Parent widget.
+     * @param provider Target email delivery provider.
+     * @param imageToCopy Optional QImage to place in the clipboard (for instant Ctrl+V paste in webmail).
+     * @param asImageOnly When true and imageToCopy is valid, exports/attaches only the image instead of the original file.
      */
-    static void shareEmail(const QString &filePath, QWidget *parent = nullptr);
+    static void shareEmail(const QString &filePath,
+                           QWidget *parent = nullptr,
+                           EmailProvider provider = EmailProvider::SystemDefault,
+                           const QImage &imageToCopy = QImage(),
+                           bool asImageOnly = false);
+
+    /**
+     * @brief Returns the last used EmailProvider from settings.
+     */
+    static EmailProvider lastEmailProvider();
+
+    /**
+     * @brief Saves the given EmailProvider as the last used provider.
+     */
+    static void setLastEmailProvider(EmailProvider provider);
 
     /**
      * @brief Opens the local HTTP web server and QR code sharing dialog.
@@ -124,6 +159,8 @@ public:
 private:
     QWidget *m_parent;
     std::function<QString()> m_getFilePath;
+    std::function<QImage()> m_getImage;
+    bool m_isPagedDocument = false;
 };
 
 
