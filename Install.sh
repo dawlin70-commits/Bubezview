@@ -318,6 +318,7 @@ check_build_tools() {
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia-dev")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("libpoppler-qt6-dev")
                 check_pkg_dev "libqrencode" || missing_libs+=("libqrencode-dev")
+                check_pkg_dev "libarchive" || missing_libs+=("libarchive-dev")
                 ;;
             pacman)
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-base")
@@ -325,6 +326,7 @@ check_build_tools() {
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6")
                 check_pkg_dev "libqrencode" || missing_libs+=("qrencode")
+                check_pkg_dev "libarchive" || missing_libs+=("libarchive")
                 ;;
             dnf)
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-qtbase-devel")
@@ -332,15 +334,16 @@ check_build_tools() {
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-qtmultimedia-devel")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6-devel")
                 check_pkg_dev "libqrencode" || missing_libs+=("qrencode-devel")
+                check_pkg_dev "libarchive" || missing_libs+=("libarchive-devel")
                 ;;
         esac
     else
         if [ "$PM" = "apt" ]; then
-            missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-svg-dev" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libqrencode-dev")
+            missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-svg-dev" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libqrencode-dev" "libarchive-dev")
         elif [ "$PM" = "pacman" ]; then
-            missing_libs+=("qt6-base" "qt6-svg" "qt6-multimedia" "poppler-qt6" "qrencode")
+            missing_libs+=("qt6-base" "qt6-svg" "qt6-multimedia" "poppler-qt6" "qrencode" "libarchive")
         elif [ "$PM" = "dnf" ]; then
-            missing_libs+=("qt6-qtbase-devel" "qt6-qtsvg-devel" "qt6-qtmultimedia-devel" "poppler-qt6-devel" "qrencode-devel")
+            missing_libs+=("qt6-qtbase-devel" "qt6-qtsvg-devel" "qt6-qtmultimedia-devel" "poppler-qt6-devel" "qrencode-devel" "libarchive-devel")
         fi
     fi
 
