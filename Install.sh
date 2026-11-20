@@ -314,18 +314,21 @@ check_build_tools() {
         case "$PM" in
             apt)
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-base-dev" "qt6-base-dev-tools")
+                check_pkg_dev "Qt6Svg" || missing_libs+=("qt6-svg-dev")
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia-dev")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("libpoppler-qt6-dev")
                 check_pkg_dev "libqrencode" || missing_libs+=("libqrencode-dev")
                 ;;
             pacman)
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-base")
+                check_pkg_dev "Qt6Svg" || missing_libs+=("qt6-svg")
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-multimedia")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6")
                 check_pkg_dev "libqrencode" || missing_libs+=("qrencode")
                 ;;
             dnf)
                 check_pkg_dev "Qt6Core" || missing_libs+=("qt6-qtbase-devel")
+                check_pkg_dev "Qt6Svg" || missing_libs+=("qt6-qtsvg-devel")
                 check_pkg_dev "Qt6Multimedia" || missing_libs+=("qt6-qtmultimedia-devel")
                 check_pkg_dev "poppler-qt6" || missing_libs+=("poppler-qt6-devel")
                 check_pkg_dev "libqrencode" || missing_libs+=("qrencode-devel")
@@ -333,11 +336,11 @@ check_build_tools() {
         esac
     else
         if [ "$PM" = "apt" ]; then
-            missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libqrencode-dev")
+            missing_libs+=("qt6-base-dev" "qt6-base-dev-tools" "qt6-svg-dev" "qt6-multimedia-dev" "libpoppler-qt6-dev" "libqrencode-dev")
         elif [ "$PM" = "pacman" ]; then
-            missing_libs+=("qt6-base" "qt6-multimedia" "poppler-qt6" "qrencode")
+            missing_libs+=("qt6-base" "qt6-svg" "qt6-multimedia" "poppler-qt6" "qrencode")
         elif [ "$PM" = "dnf" ]; then
-            missing_libs+=("qt6-qtbase-devel" "qt6-qtmultimedia-devel" "poppler-qt6-devel" "qrencode-devel")
+            missing_libs+=("qt6-qtbase-devel" "qt6-qtsvg-devel" "qt6-qtmultimedia-devel" "poppler-qt6-devel" "qrencode-devel")
         fi
     fi
 
@@ -1104,27 +1107,47 @@ except Exception:
     # Configurazione CMake
     local cfg_ret=0
     local cfg_status_file="$work_dir/cfg_status"
-    rm -f "$cfg_status_file" 2>/dev/null || true
 
-    if [ "$UI_MODE" = "zenity" ]; then
-        (
-            echo "# Configurazione del progetto con CMake..."
-            cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${plugin_cmake_flags[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
-            echo "$?" > "$cfg_status_file"
-        ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della configurazione..." --pulsate --auto-close 2>/dev/null || true
-        cfg_ret=$(cat "$cfg_status_file" 2>/dev/null || echo "1")
-    else
-        echo -e "${BLUE}[*] Esecuzione configurazione CMake...${NC}"
-        cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${plugin_cmake_flags[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
-        cfg_ret=${PIPESTATUS[0]}
-    fi
+    while true; do
+        rm -f "$cfg_status_file" 2>/dev/null || true
+        if [ "$UI_MODE" = "zenity" ]; then
+            (
+                echo "# Configurazione del progetto con CMake..."
+                cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${plugin_cmake_flags[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
+                echo "$?" > "$cfg_status_file"
+            ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della configurazione..." --pulsate --auto-close 2>/dev/null || true
+            cfg_ret=$(cat "$cfg_status_file" 2>/dev/null || echo "1")
+        else
+            echo -e "${BLUE}[*] Esecuzione configurazione CMake...${NC}"
+            cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${plugin_cmake_flags[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
+            cfg_ret=${PIPESTATUS[0]}
+        fi
 
-    if [ "$cfg_ret" -ne 0 ] || [ ! -f "$build_dir/CMakeCache.txt" ]; then
-        local err_tail
-        err_tail=$(tail -n 25 "$build_log" 2>/dev/null || true)
-        ui_error "Errore Configurazione CMake" "La configurazione di CMake è fallita.\nLog: $build_log\n\n$err_tail"
-        exit 1
-    fi
+        if [ "$cfg_ret" -eq 0 ] && [ -f "$build_dir/CMakeCache.txt" ]; then
+            break
+        fi
+
+        local missing_comps
+        missing_comps=$(grep -oE 'Could NOT find [A-Za-z0-9_+-]+|Failed to find required Qt component "[^"]+"' "$build_log" 2>/dev/null | sed -E 's/Could NOT find //; s/Failed to find required Qt component "([^"]+)"/Qt6\1/' | sort -u | tr '\n' ' ' | sed 's/ *$//')
+        local short_msg
+        if [ -n "$missing_comps" ]; then
+            short_msg="Mancano questi pacchetti/componenti:\n<b>$missing_comps</b>\n\nInstallali e poi premi <b>Riprova</b>.\n\nLog completo: $build_log"
+        else
+            short_msg="La configurazione di CMake è fallita.\nControlla il log e premi <b>Riprova</b>.\n\nLog: $build_log"
+        fi
+
+        if [ "$UI_MODE" = "zenity" ]; then
+            if zenity --question --title="Dipendenze Mancanti - $APP_NAME" --text="$short_msg" --ok-label="Riprova" --cancel-label="Annulla" --width=460 2>/dev/null; then
+                rm -rf "$build_dir/CMakeCache.txt" "$build_dir/CMakeFiles"
+                continue
+            fi
+            exit 1
+        else
+            echo -e "${RED}[!] $short_msg${NC}"
+            read -r -p "Premi INVIO per riprovare oppure Ctrl+C per annullare..."
+            rm -rf "$build_dir/CMakeCache.txt" "$build_dir/CMakeFiles"
+        fi
+    done
 
     local cpu_cores
     cpu_cores=$(nproc 2>/dev/null || echo "2")
