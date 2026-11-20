@@ -1243,6 +1243,10 @@ except Exception:
         cp -f "$0" "$app_install_dir/Install.sh" 2>/dev/null || true
         chmod +x "$app_install_dir/Install.sh" 2>/dev/null || true
     fi
+    if [ -f "$extract_dir/trigger_bubez.sh" ]; then
+        cp -f "$extract_dir/trigger_bubez.sh" "$app_install_dir/trigger_bubez.sh" 2>/dev/null || true
+        chmod +x "$app_install_dir/trigger_bubez.sh" 2>/dev/null || true
+    fi
 
     # Installazione icone ufficiali
     local found_icon=""
