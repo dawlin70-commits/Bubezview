@@ -11,7 +11,10 @@
 
 #include <QSettings>
 #include <QStandardPaths>
+#include <QDir>
+#include <QFile>
 #include <QGroupBox>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -127,7 +130,6 @@ public:
 
     void setTheme(const QString &themeCode)
     {
-        m_theme = themeCode;
         if (themeCode == QLatin1String("dark_slate")) {
             m_barBgTop = QColor("#1e2538");
             m_barBgBottom = QColor("#131825");
@@ -234,7 +236,6 @@ protected:
     }
 
 private:
-    QString m_theme;
     QColor m_barBgTop;
     QColor m_barBgBottom;
     QColor m_barBorder;
@@ -246,6 +247,16 @@ private:
 FirstRunWizard::FirstRunWizard(QWidget *parent)
     : FramelessDialog(parent)
 {
+    // Capture initial theme and desktop integration state so reject() can roll back cleanly
+    m_initialPreset = ThemeManager::currentPreset();
+    const DesktopIntegrator::DesktopEnv initDe = DesktopIntegrator::currentDesktop();
+    if (initDe == DesktopIntegrator::DesktopEnv::KDE) {
+        m_initialDesktopIntegration = DesktopIntegrator::isDolphinEnabled();
+    } else if (initDe == DesktopIntegrator::DesktopEnv::GNOME ||
+               initDe == DesktopIntegrator::DesktopEnv::Cinnamon) {
+        m_initialDesktopIntegration = DesktopIntegrator::isGnomeNemoEnabled();
+    }
+
     setDialogTitle(tr("Configurazione Guidata BubezView"));
     setResizable(false);
 
@@ -266,11 +277,12 @@ FirstRunWizard::FirstRunWizard(QWidget *parent)
     mainLayout->setContentsMargins(12, 10, 12, 10);
     mainLayout->setSpacing(8);
 
-    // 3 Sequential Pages
+    // 4 Sequential Pages
     m_pageStack = new QStackedWidget(this);
     m_pageStack->addWidget(createWelcomePage());      // Page_Welcome = 0
     m_pageStack->addWidget(createSpacebarPage());     // Page_Spacebar = 1
     m_pageStack->addWidget(createPerformancePage());  // Page_Performance = 2
+    m_pageStack->addWidget(createSummaryPage());      // Page_Summary = 3
     mainLayout->addWidget(m_pageStack, 1);
 
     // Bottom Navigation Bar
@@ -305,7 +317,7 @@ FirstRunWizard::FirstRunWizard(QWidget *parent)
 void FirstRunWizard::next()
 {
     const int cur = currentId();
-    if (cur < Page_Performance) {
+    if (cur < Page_Summary) {
         goToPage(cur + 1);
     } else {
         accept();
@@ -328,16 +340,18 @@ void FirstRunWizard::goToPage(int id)
     if (m_btnBack) {
         m_btnBack->setVisible(id != Page_Welcome);
     }
-    if (m_btnNext) {
-        if (id == Page_Performance) {
-            m_btnNext->setText(tr("Termina e Avvia BubezView"));
-        } else {
-            m_btnNext->setText(tr("Avanti >"));
-        }
-    }
 
     if (id == Page_Spacebar) {
         runSpacebarAutoTest();
+    } else if (id == Page_Summary) {
+        refreshSummaryPage();
+    }
+
+    if (m_btnNext) {
+        if (id != Page_Summary) {
+            m_btnNext->setText(tr("Next >"));
+        }
+        updateNextButtonStyle();
     }
 }
 
@@ -402,7 +416,14 @@ QWidget *FirstRunWizard::createWelcomePage()
         lblLangPrompt->setText(tr("Lingua predefinita (Inglese — sistema non supportato):"));
     }
 
-    int langIdx = m_comboLanguage->findData(defaultCode);
+    // Prefer previously saved language if re-running wizard from Settings; otherwise auto-detect
+    QSettings savedSettings("Bubez", "BubezView");
+    const QString savedLang = savedSettings.value("language").toString();
+    const QString selectedLangCode = (!savedLang.isEmpty() && m_comboLanguage->findData(savedLang) >= 0)
+        ? savedLang
+        : defaultCode;
+
+    int langIdx = m_comboLanguage->findData(selectedLangCode);
     if (langIdx >= 0) {
         m_comboLanguage->setCurrentIndex(langIdx);
     }
@@ -650,7 +671,8 @@ QWidget *FirstRunWizard::createSpacebarPage()
         tr("Abilita integrazione desktop (menu contestuale del mouse e associazione file manager)"),
         grpInteg
     );
-    m_chkDesktopIntegration->setChecked(true);
+    QSettings savedInteg("Bubez", "BubezView");
+    m_chkDesktopIntegration->setChecked(savedInteg.value("integration/desktop", true).toBool());
     m_chkDesktopIntegration->setCursor(Qt::PointingHandCursor);
     m_chkDesktopIntegration->setStyleSheet("font-weight: 600; font-size: 11px;");
     layInteg->addWidget(m_chkDesktopIntegration);
@@ -673,8 +695,10 @@ void FirstRunWizard::runSpacebarAutoTest()
     if (isSupported) {
         // Automatically enable and test the file manager integration
         if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            if (!m_initialDesktopIntegration) m_spacebarTestModifiedSystem = true;
             DesktopIntegrator::enableDolphin("Space");
         } else {
+            if (!m_initialDesktopIntegration) m_spacebarTestModifiedSystem = true;
             DesktopIntegrator::enableGnomeNemo();
         }
 
@@ -786,17 +810,28 @@ QWidget *FirstRunWizard::createPerformancePage()
     m_tierGroup = new QButtonGroup(this);
     m_tierGroup->setExclusive(true);
 
-    auto makeTierBtn = [grpTier](const QString &title, const QString &sub) {
-        auto *btn = new QPushButton(QString("%1\n%2").arg(title, sub), grpTier);
+    // Determine hardware-recommended tier from CpuInfo (VM/Laptop/Desktop + core count + ISA)
+    const QString recProfile = CpuInfo::recommendedProfile();
+    if (recProfile == QLatin1String("standard")) {
+        m_recommendedTier = 0;
+    } else if (recProfile == QLatin1String("native")) {
+        m_recommendedTier = 2;
+    } else {
+        m_recommendedTier = 1;
+    }
+
+    auto makeTierBtn = [grpTier](const QString &title, const QString &sub, bool isRecommended) {
+        const QString displayTitle = isRecommended ? (title + QStringLiteral(" ★")) : title;
+        auto *btn = new QPushButton(QString("%1\n%2").arg(displayTitle, sub), grpTier);
         btn->setCheckable(true);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setMinimumHeight(46);
         return btn;
     };
 
-    m_btnTierSystem = makeTierBtn(tr("Pacchetti di Sistema"), tr("Richiede sudo"));
-    m_btnTierMissing = makeTierBtn(tr("Compila Mancanti"), tr("Zero password (Home)"));
-    m_btnTierMax = makeTierBtn(tr("Massime Prestazioni"), tr("Solo per PC potenti"));
+    m_btnTierSystem = makeTierBtn(tr("Pacchetti di Sistema"), tr("Richiede sudo"), m_recommendedTier == 0);
+    m_btnTierMissing = makeTierBtn(tr("Compila Mancanti"), tr("Zero password (Home)"), m_recommendedTier == 1);
+    m_btnTierMax = makeTierBtn(tr("Massime Prestazioni"), tr("Solo per PC potenti"), m_recommendedTier == 2);
 
     m_tierGroup->addButton(m_btnTierSystem, 0);
     m_tierGroup->addButton(m_btnTierMissing, 1);
@@ -817,7 +852,13 @@ QWidget *FirstRunWizard::createPerformancePage()
     connect(m_btnTierMissing, &QPushButton::clicked, this, [this]() { selectCompilationTier(1); });
     connect(m_btnTierMax, &QPushButton::clicked, this, [this]() { selectCompilationTier(2); });
 
-    selectCompilationTier(1); // Default to Recommended Missing Only (Home, zero password)
+    // Load previously saved tier if re-running wizard from Settings; otherwise use hardware recommendation
+    QSettings savedPerf("Bubez", "BubezView");
+    int initialTier = m_recommendedTier;
+    if (savedPerf.contains("build_tier")) {
+        initialTier = qBound(0, savedPerf.value("build_tier", m_recommendedTier).toInt(), 2);
+    }
+    selectCompilationTier(initialTier);
 
     layout->addWidget(grpTier);
 
@@ -842,10 +883,14 @@ QWidget *FirstRunWizard::createPerformancePage()
     m_comboStandby->addItem(tr("1 ora"), 60);
     m_comboStandby->addItem(tr("Sempre attivo"), -1);
 
-    // Set 30 minutes by default
-    int idx30 = m_comboStandby->findData(30);
-    if (idx30 >= 0) {
-        m_comboStandby->setCurrentIndex(idx30);
+    // Pre-select saved standby duration if available, otherwise 30 minutes
+    const int savedStandby = savedPerf.value("background_keep_alive_minutes", 30).toInt();
+    int idxStandby = m_comboStandby->findData(savedStandby);
+    if (idxStandby < 0) {
+        idxStandby = m_comboStandby->findData(30);
+    }
+    if (idxStandby >= 0) {
+        m_comboStandby->setCurrentIndex(idxStandby);
     }
     layStandby->addWidget(m_comboStandby);
     layout->addWidget(grpStandby);
@@ -914,6 +959,295 @@ void FirstRunWizard::selectCompilationTier(int tier)
         } else {
             m_lblTierDesc->setText(tr("⚡ Compilazione nativa con istruzioni CPU avanzate — solo per PC potenti."));
         }
+    }
+}
+
+QStringList FirstRunWizard::pendingBuildComponents() const
+{
+    QStringList pendingBuild;
+    const QString home = QDir::homePath();
+
+    if (m_selectedTier == 1) {
+        // MissingOnly: build core viewing engines that are absent both system-wide and in user-space
+        const QStringList candidates = {
+            QStringLiteral("poppler-data"),
+            QStringLiteral("zstd"),
+            QStringLiteral("xz"),
+            QStringLiteral("7zip"),
+            QStringLiteral("mpv")
+        };
+        for (const QString &comp : candidates) {
+            if (!BuildConfig::hasSystemBinary(comp) && !BuildConfig::hasSourceBinary(comp)) {
+                pendingBuild.append(comp);
+            }
+        }
+    } else if (m_selectedTier == 2) {
+        // AllStable (Max Performance): ensure locally compiled user-space engines are present
+        const QStringList candidates = {
+            QStringLiteral("poppler-data"),
+            QStringLiteral("zstd"),
+            QStringLiteral("xz"),
+            QStringLiteral("7zip"),
+            QStringLiteral("poppler"),
+            QStringLiteral("libarchive")
+        };
+        for (const QString &comp : candidates) {
+            if (comp == QLatin1String("poppler")) {
+                if (!QFile::exists(home + QStringLiteral("/.local/bin/pdfimages"))) {
+                    pendingBuild.append(comp);
+                }
+            } else if (comp == QLatin1String("libarchive")) {
+                if (!QFile::exists(home + QStringLiteral("/.local/lib/libarchive.so")) &&
+                    !QFile::exists(home + QStringLiteral("/.local/lib64/libarchive.so"))) {
+                    pendingBuild.append(comp);
+                }
+            } else if (!BuildConfig::hasSourceBinary(comp)) {
+                pendingBuild.append(comp);
+            }
+        }
+    }
+
+    return pendingBuild;
+}
+
+QWidget *FirstRunWizard::createSummaryPage()
+{
+    auto *page = new QWidget(this);
+    auto *layout = new QVBoxLayout(page);
+    layout->setSpacing(10);
+    layout->setContentsMargins(4, 2, 4, 4);
+
+    // Header
+    auto *headerBox = new QWidget(page);
+    auto *headerLay = new QVBoxLayout(headerBox);
+    headerLay->setContentsMargins(0, 0, 0, 0);
+    headerLay->setSpacing(2);
+    auto *lblTitle = new QLabel(tr("Ready to Launch"), headerBox);
+    lblTitle->setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8; background: transparent;");
+    auto *lblSub = new QLabel(tr("Review your setup before launching BubezView. You can go back to adjust any option."), headerBox);
+    lblSub->setStyleSheet("font-size: 11px; opacity: 0.85; background: transparent;");
+    headerLay->addWidget(lblTitle);
+    headerLay->addWidget(lblSub);
+    layout->addWidget(headerBox);
+
+    // Summary Card (5 spacious key-value rows with subtle dividers and unclipped text height)
+    auto *grpSummary = new QGroupBox(tr("Selected Configuration"), page);
+    auto *laySummary = new QVBoxLayout(grpSummary);
+    laySummary->setContentsMargins(14, 12, 14, 10);
+    laySummary->setSpacing(0);
+
+    auto addRow = [&](const QString &iconAndLabel, QLabel *&valueLabel, bool addDivider) {
+        auto *rowWidget = new QWidget(grpSummary);
+        rowWidget->setMinimumHeight(30);
+        rowWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        rowWidget->setStyleSheet("background: transparent; border: none;");
+        auto *rowLay = new QHBoxLayout(rowWidget);
+        rowLay->setContentsMargins(4, 5, 4, 5);
+        rowLay->setSpacing(14);
+
+        auto *lblKey = new QLabel(iconAndLabel, rowWidget);
+        lblKey->setFixedWidth(135);
+        lblKey->setMinimumHeight(20);
+        lblKey->setStyleSheet("font-size: 12px; font-weight: 700; background: transparent; border: none;");
+
+        valueLabel = new QLabel(rowWidget);
+        valueLabel->setWordWrap(true);
+        valueLabel->setMinimumHeight(20);
+        valueLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        valueLabel->setStyleSheet("font-size: 12px; font-weight: 500; background: transparent; border: none;");
+
+        rowLay->addWidget(lblKey, 0, Qt::AlignVCenter);
+        rowLay->addWidget(valueLabel, 1, Qt::AlignVCenter);
+        laySummary->addWidget(rowWidget);
+
+        if (addDivider) {
+            auto *line = new QFrame(grpSummary);
+            line->setFrameShape(QFrame::HLine);
+            line->setFixedHeight(1);
+            line->setStyleSheet("background-color: rgba(128, 128, 128, 0.22); border: none;");
+            laySummary->addWidget(line);
+        }
+    };
+
+    addRow(tr("🎨  Appearance"), m_lblSumAppearance, true);
+    addRow(tr("⌨️  Desktop"), m_lblSumDesktop, true);
+    addRow(tr("💻  Hardware"), m_lblSumHardware, true);
+    addRow(tr("⚙️  Engines"), m_lblSumStrategy, true);
+    addRow(tr("⚡  Standby"), m_lblSumStandby, false);
+
+    layout->addWidget(grpSummary);
+
+    // Dynamic Action Card (rounded container instead of inline RichText div)
+    m_cardSumAction = new QWidget(page);
+    m_cardSumAction->setObjectName("summaryActionCard");
+    m_cardSumAction->setAttribute(Qt::WA_StyledBackground, true);
+    auto *actionLay = new QVBoxLayout(m_cardSumAction);
+    actionLay->setContentsMargins(14, 10, 14, 10);
+    actionLay->setSpacing(4);
+
+    m_lblSumActionTitle = new QLabel(m_cardSumAction);
+    m_lblSumActionTitle->setWordWrap(true);
+    m_lblSumActionTitle->setStyleSheet("font-size: 13px; font-weight: 700; border: none; background: transparent;");
+
+    m_lblSumActionDesc = new QLabel(m_cardSumAction);
+    m_lblSumActionDesc->setTextFormat(Qt::RichText);
+    m_lblSumActionDesc->setWordWrap(true);
+    m_lblSumActionDesc->setStyleSheet("font-size: 11px; border: none; background: transparent;");
+
+    actionLay->addWidget(m_lblSumActionTitle);
+    actionLay->addWidget(m_lblSumActionDesc);
+
+    layout->addWidget(m_cardSumAction);
+    layout->addStretch(1);
+    return page;
+}
+
+void FirstRunWizard::refreshSummaryPage()
+{
+    // 1. Language & Theme
+    const QString langText = m_comboLanguage ? m_comboLanguage->currentText() : tr("System Default");
+    const ThemePreset activePreset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    QString themeName;
+    if (activePreset == ThemePreset::ModernLight || activePreset == ThemePreset::BreezeLight) {
+        themeName = tr("Modern Light");
+    } else if (activePreset == ThemePreset::DarkSlate) {
+        themeName = tr("Dark Slate");
+    } else {
+        themeName = tr("Zinc Gray");
+    }
+    if (m_lblSumAppearance) {
+        m_lblSumAppearance->setText(QStringLiteral("%1  •  %2").arg(langText, themeName));
+    }
+
+    // 2. Desktop Integration & Spacebar
+    const bool integrate = !m_chkDesktopIntegration || m_chkDesktopIntegration->isChecked();
+    const DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
+    const QString deName = DesktopIntegrator::desktopName();
+    const bool nativeSpace = (de == DesktopIntegrator::DesktopEnv::KDE ||
+                              de == DesktopIntegrator::DesktopEnv::GNOME ||
+                              de == DesktopIntegrator::DesktopEnv::Cinnamon);
+    if (m_lblSumDesktop) {
+        if (integrate) {
+            m_lblSumDesktop->setText(nativeSpace
+                ? tr("Spacebar active (%1)").arg(deName)
+                : tr("Enabled (%1 — global shortcut)").arg(deName));
+        } else {
+            m_lblSumDesktop->setText(tr("Disabled (manual launch only)"));
+        }
+    }
+
+    // 3. Detected Hardware & Form Factor
+    if (m_lblSumHardware) {
+        QString cpuModel = CpuInfo::modelName();
+        if (cpuModel.isEmpty()) cpuModel = tr("x86-64 Processor");
+        const QString isaTier = CpuInfo::microarchitectureTier().toUpper();
+        QString ffLabel;
+        if (CpuInfo::isVirtualMachine()) {
+            ffLabel = tr("VM");
+        } else if (CpuInfo::detectedFormFactor() == CpuInfo::FormFactor::Laptop) {
+            ffLabel = tr("Laptop");
+        } else {
+            ffLabel = tr("Desktop");
+        }
+        m_lblSumHardware->setText(
+            QStringLiteral("%1  (%2T • x86-64-%3 • %4)")
+                .arg(cpuModel,
+                     QString::number(CpuInfo::logicalCores()),
+                     isaTier.isEmpty() ? QStringLiteral("v3") : isaTier,
+                     ffLabel)
+        );
+    }
+
+    // 4. Compilation Strategy
+    if (m_lblSumStrategy) {
+        if (m_selectedTier == 0) {
+            m_lblSumStrategy->setText(tr("System Packages (requires sudo)"));
+        } else if (m_selectedTier == 1) {
+            m_lblSumStrategy->setText(tr("Compile Missing (Home, no password)"));
+        } else {
+            m_lblSumStrategy->setText(tr("Maximum Performance (native CPU build)"));
+        }
+    }
+
+    // 5. Fast Restart Standby
+    if (m_lblSumStandby) {
+        const QString standbyText = m_comboStandby ? m_comboStandby->currentText() : tr("30 minutes");
+        m_lblSumStandby->setText(standbyText);
+    }
+
+    // 6. Dynamic Action Preview (single disk scan shared with m_btnNext label)
+    const QStringList pending = pendingBuildComponents();
+    if (m_btnNext) {
+        m_btnNext->setText(pending.isEmpty()
+            ? tr("Launch BubezView")
+            : tr("Compile & Launch BubezView"));
+    }
+
+    if (m_cardSumAction && m_lblSumActionTitle && m_lblSumActionDesc) {
+        if (pending.isEmpty()) {
+            m_cardSumAction->setStyleSheet(
+                "#summaryActionCard {"
+                "  background-color: rgba(16, 185, 129, 0.12);"
+                "  border: 1px solid rgba(16, 185, 129, 0.40);"
+                "  border-radius: 10px;"
+                "}"
+            );
+            m_lblSumActionTitle->setStyleSheet("font-size: 13px; font-weight: 700; color: #10b981; border: none; background: transparent;");
+            m_lblSumActionTitle->setText(tr("✅ All set — immediate launch"));
+            m_lblSumActionDesc->setText(tr("All core viewing engines are ready. BubezView will open right away."));
+        } else {
+            m_cardSumAction->setStyleSheet(
+                "#summaryActionCard {"
+                "  background-color: rgba(2, 132, 199, 0.12);"
+                "  border: 1px solid rgba(56, 189, 248, 0.40);"
+                "  border-radius: 10px;"
+                "}"
+            );
+            m_lblSumActionTitle->setStyleSheet("font-size: 13px; font-weight: 700; color: #38bdf8; border: none; background: transparent;");
+            m_lblSumActionTitle->setText(tr("🛠️ Local user-space build queued"));
+            m_lblSumActionDesc->setText(
+                tr("Components to compile in your Home folder (no password required): <b>%1</b>")
+                    .arg(pending.join(QStringLiteral(", ")))
+            );
+        }
+    }
+}
+
+void FirstRunWizard::updateNextButtonStyle()
+{
+    if (!m_btnNext) return;
+
+    if (currentId() == Page_Summary) {
+        // Emerald green finish button to clearly distinguish final confirmation from "Next >"
+        m_btnNext->setStyleSheet(
+            "QPushButton {"
+            "  background-color: #10b981;"
+            "  color: #ffffff;"
+            "  border: 1px solid #059669;"
+            "  border-radius: 6px;"
+            "  padding: 6px 16px;"
+            "  font-weight: 700;"
+            "  font-size: 11px;"
+            "}"
+            "QPushButton:hover {"
+            "  background-color: #059669;"
+            "}"
+        );
+    } else {
+        m_btnNext->setStyleSheet(
+            "QPushButton {"
+            "  background-color: #0284c7;"
+            "  color: #ffffff;"
+            "  border: 1px solid #0369a1;"
+            "  border-radius: 6px;"
+            "  padding: 6px 16px;"
+            "  font-weight: 700;"
+            "  font-size: 11px;"
+            "}"
+            "QPushButton:hover {"
+            "  background-color: #0369a1;"
+            "}"
+        );
     }
 }
 
@@ -1044,22 +1378,7 @@ void FirstRunWizard::updateThemeStyles()
     if (m_btnBack) m_btnBack->setStyleSheet(navBtnStyle);
     if (m_btnCancel) m_btnCancel->setStyleSheet(navBtnStyle);
 
-    if (m_btnNext) {
-        m_btnNext->setStyleSheet(
-            "QPushButton {"
-            "  background-color: #0284c7;"
-            "  color: #ffffff;"
-            "  border: 1px solid #0369a1;"
-            "  border-radius: 6px;"
-            "  padding: 6px 16px;"
-            "  font-weight: 700;"
-            "  font-size: 11px;"
-            "}"
-            "QPushButton:hover {"
-            "  background-color: #0369a1;"
-            "}"
-        );
-    }
+    updateNextButtonStyle();
 }
 
 void FirstRunWizard::accept()
@@ -1104,7 +1423,7 @@ void FirstRunWizard::accept()
     if (integrateDesktop) {
         DesktopIntegrator::installAppMenu();
         DesktopIntegrator::enableContextMenu();
-        if (de == DesktopIntegrator::DesktopEnv::KDE && chosenShortcut != QLatin1String("Space")) {
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
             DesktopIntegrator::enableDolphin(chosenShortcut);
         } else if (de == DesktopIntegrator::DesktopEnv::GNOME || de == DesktopIntegrator::DesktopEnv::Cinnamon) {
             DesktopIntegrator::enableGnomeNemo();
@@ -1167,4 +1486,26 @@ void FirstRunWizard::accept()
 
     settings.sync();
     FramelessDialog::accept();
+}
+
+void FirstRunWizard::reject()
+{
+    // Restore initial theme preset if the user previewed other themes before cancelling
+    if (ThemeManager::currentPreset() != m_initialPreset) {
+        ThemeManager::setPreset(m_initialPreset);
+        ThemeManager::applyTheme(qApp, qobject_cast<QMainWindow *>(parentWidget()));
+    }
+
+    // Roll back temporary Spacebar auto-test integration if it was originally disabled
+    if (m_spacebarTestModifiedSystem && !m_initialDesktopIntegration) {
+        const DesktopIntegrator::DesktopEnv de = DesktopIntegrator::currentDesktop();
+        if (de == DesktopIntegrator::DesktopEnv::KDE) {
+            DesktopIntegrator::disableDolphin();
+        } else if (de == DesktopIntegrator::DesktopEnv::GNOME ||
+                   de == DesktopIntegrator::DesktopEnv::Cinnamon) {
+            DesktopIntegrator::disableGnomeNemo();
+        }
+    }
+
+    FramelessDialog::reject();
 }

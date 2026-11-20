@@ -7,6 +7,7 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QComboBox>
+#include <QListView>
 #include <QRadioButton>
 #include <QButtonGroup>
 #include <QLineEdit>
@@ -64,6 +65,7 @@ void UnifiedExportDialog::setupUi()
 
     // 1. Format selector
     m_comboFormat = new QComboBox(this);
+    m_comboFormat->setView(new QListView(m_comboFormat));
     if (m_category == FileCategory::Pdf) {
         m_comboFormat->addItem(tr("PDF Document (*.pdf)"), QStringLiteral("pdf"));
         m_comboFormat->addItem(tr("PNG Image (*.png)"), QStringLiteral("png"));
@@ -82,6 +84,12 @@ void UnifiedExportDialog::setupUi()
         m_comboFormat->addItem(tr("PDF Document (*.pdf)"), QStringLiteral("pdf"));
         m_comboFormat->addItem(tr("Markdown Document (*.md)"), QStringLiteral("md"));
         m_comboFormat->addItem(tr("HTML Document (*.html)"), QStringLiteral("html"));
+    } else if (m_category == FileCategory::Media) {
+        m_comboFormat->addItem(tr("MP3 Audio (*.mp3)"), QStringLiteral("mp3"));
+        m_comboFormat->addItem(tr("FLAC Lossless Audio (*.flac)"), QStringLiteral("flac"));
+        m_comboFormat->addItem(tr("WAV Uncompressed Audio (*.wav)"), QStringLiteral("wav"));
+        m_comboFormat->addItem(tr("OGG Vorbis Audio (*.ogg)"), QStringLiteral("ogg"));
+        m_comboFormat->addItem(tr("Opus Audio (*.opus)"), QStringLiteral("opus"));
     } else {
         m_comboFormat->addItem(tr("PDF Document (*.pdf)"), QStringLiteral("pdf"));
         m_comboFormat->addItem(tr("Plain Text (*.txt)"), QStringLiteral("txt"));
@@ -248,7 +256,16 @@ void UnifiedExportDialog::onBrowseClicked()
     else if (ext == QStringLiteral("png")) filter = tr("PNG Image (*.png)");
     else if (ext == QStringLiteral("jpg")) filter = tr("JPEG Image (*.jpg *.jpeg)");
     else if (ext == QStringLiteral("webp")) filter = tr("WebP Image (*.webp)");
+    else if (ext == QStringLiteral("bmp")) filter = tr("BMP Image (*.bmp)");
+    else if (ext == QStringLiteral("tiff")) filter = tr("TIFF Image (*.tiff *.tif)");
     else if (ext == QStringLiteral("txt")) filter = tr("Plain Text (*.txt)");
+    else if (ext == QStringLiteral("md")) filter = tr("Markdown Document (*.md)");
+    else if (ext == QStringLiteral("html")) filter = tr("HTML Document (*.html *.htm)");
+    else if (ext == QStringLiteral("mp3")) filter = tr("MP3 Audio (*.mp3)");
+    else if (ext == QStringLiteral("flac")) filter = tr("FLAC Audio (*.flac)");
+    else if (ext == QStringLiteral("wav")) filter = tr("WAV Audio (*.wav)");
+    else if (ext == QStringLiteral("ogg")) filter = tr("OGG Audio (*.ogg)");
+    else if (ext == QStringLiteral("opus")) filter = tr("Opus Audio (*.opus)");
     else filter = tr("All Files (*)");
 
     QString chosen = QFileDialog::getSaveFileName(this, tr("Select Destination"), m_editPath->text(), filter);

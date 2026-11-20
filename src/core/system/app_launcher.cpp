@@ -11,7 +11,17 @@
 #include <QLocale>
 #include <QStandardPaths>
 #include <QSet>
+#include <QHash>
+#include <QDateTime>
 #include <algorithm>
+
+namespace {
+struct CachedDesktopEntry {
+    QDateTime lastModified;
+    bool valid = false;
+    AppInfo app;
+};
+} // namespace
 
 QIcon AppInfo::icon() const
 {
@@ -25,14 +35,31 @@ QIcon AppInfo::icon() const
 
 bool AppLauncher::parseDesktopFile(const QString &desktopPath, AppInfo &outApp)
 {
+    static QHash<QString, CachedDesktopEntry> s_desktopCache;
+    const QFileInfo fi(desktopPath);
+    const QDateTime mtime = fi.lastModified();
+    auto it = s_desktopCache.constFind(desktopPath);
+    if (it != s_desktopCache.constEnd() && it->lastModified == mtime) {
+        if (it->valid) {
+            outApp = it->app;
+            return true;
+        }
+        return false;
+    }
+
+    auto cacheInvalid = [&]() {
+        s_desktopCache.insert(desktopPath, CachedDesktopEntry{mtime, false, {}});
+        return false;
+    };
+
     QFile file(desktopPath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return cacheInvalid();
 
     QString content = QString::fromUtf8(file.readAll());
     file.close();
 
     // Check if valid [Desktop Entry]
-    if (!content.contains("[Desktop Entry]")) return false;
+    if (!content.contains("[Desktop Entry]")) return cacheInvalid();
 
     QString lang = QLocale::system().name(); // e.g. "it_IT"
     QString langShort = lang.split('_').first(); // "it"
@@ -92,13 +119,12 @@ bool AppLauncher::parseDesktopFile(const QString &desktopPath, AppInfo &outApp)
     }
 
     if (type != "Application" || noDisplay || hidden || exec.isEmpty()) {
-        return false;
+        return cacheInvalid();
     }
 
     // Do not show self in "Open With"
-    QFileInfo fi(desktopPath);
     if (fi.fileName().contains("bubezview", Qt::CaseInsensitive) || exec.contains("bubezview", Qt::CaseInsensitive)) {
-        return false;
+        return cacheInvalid();
     }
 
     outApp.id = fi.fileName();
@@ -110,7 +136,9 @@ bool AppLauncher::parseDesktopFile(const QString &desktopPath, AppInfo &outApp)
     outApp.execCmd = exec;
     outApp.mimeTypes = mimes;
 
-    return !outApp.name.isEmpty();
+    const bool ok = !outApp.name.isEmpty();
+    s_desktopCache.insert(desktopPath, CachedDesktopEntry{mtime, ok, ok ? outApp : AppInfo{}});
+    return ok;
 }
 
 QList<AppInfo> AppLauncher::getAssociatedApps(const QString &filePath)
@@ -209,6 +237,7 @@ QList<AppInfo> AppLauncher::getAllApps()
     QList<AppInfo> result;
     QStringList appDirs = {
         QDir::homePath() + "/.local/share/applications",
+        "/usr/local/share/applications",
         "/usr/share/applications",
         "/var/lib/flatpak/exports/share/applications",
         QDir::homePath() + "/.local/share/flatpak/exports/share/applications"

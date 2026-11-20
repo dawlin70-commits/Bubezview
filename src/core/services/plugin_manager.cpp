@@ -5,6 +5,9 @@
 
 #include "plugin_manager.h"
 #include "interfaces/viewer_plugin_interface.h"
+#include "interfaces/i_folder_studio_plugin.h"
+#include "interfaces/i_image_studio_plugin.h"
+#include "interfaces/i_video_studio_plugin.h"
 #include "package_manager_helper.h"
 #include "build_config.h"
 #ifdef HAVE_LIBARCHIVE
@@ -24,6 +27,12 @@
 #include <QImage>
 #include <QMimeDatabase>
 #include <QMimeType>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QProgressDialog>
+#include <QApplication>
+#include <QEventLoop>
+#include <QThread>
 
 const QStringList PluginManager::s_imageExtensions = {
     // Standard & Web Formats
@@ -88,6 +97,24 @@ PluginManager::~PluginManager()
             delete it->loader;
             it->loader = nullptr;
         }
+    }
+    if (m_folderStudioLoader) {
+        m_folderStudioLoader->unload();
+        delete m_folderStudioLoader;
+        m_folderStudioLoader = nullptr;
+        m_folderStudioPlugin = nullptr;
+    }
+    if (m_imageStudioLoader) {
+        m_imageStudioLoader->unload();
+        delete m_imageStudioLoader;
+        m_imageStudioLoader = nullptr;
+        m_imageStudioPlugin = nullptr;
+    }
+    if (m_videoStudioLoader) {
+        m_videoStudioLoader->unload();
+        delete m_videoStudioLoader;
+        m_videoStudioLoader = nullptr;
+        m_videoStudioPlugin = nullptr;
     }
 }
 
@@ -187,33 +214,53 @@ void PluginManager::discoverPlugins()
         ++it;
     }
 
+    if (m_folderStudioLoader && !m_folderStudioPath.isEmpty() && !QFile::exists(m_folderStudioPath)) {
+        m_folderStudioLoader->unload();
+        delete m_folderStudioLoader;
+        m_folderStudioLoader = nullptr;
+        m_folderStudioPlugin = nullptr;
+        m_folderStudioPath.clear();
+    }
+    if (m_imageStudioLoader && !m_imageStudioPath.isEmpty() && !QFile::exists(m_imageStudioPath)) {
+        m_imageStudioLoader->unload();
+        delete m_imageStudioLoader;
+        m_imageStudioLoader = nullptr;
+        m_imageStudioPlugin = nullptr;
+        m_imageStudioPath.clear();
+    }
+    if (m_videoStudioLoader && !m_videoStudioPath.isEmpty() && !QFile::exists(m_videoStudioPath)) {
+        m_videoStudioLoader->unload();
+        delete m_videoStudioLoader;
+        m_videoStudioLoader = nullptr;
+        m_videoStudioPlugin = nullptr;
+        m_videoStudioPath.clear();
+    }
+
     QStringList searchDirs = {
         QCoreApplication::applicationDirPath() + "/plugins",
         QCoreApplication::applicationDirPath() + "/../plugins",
+        QDir::homePath() + "/.local/share/bubezview/plugins",
         QDir::homePath() + "/.local/lib/bubezview/plugins",
         QDir::homePath() + "/.local/lib/x86_64-linux-gnu/bubezview/plugins",
         QDir::homePath() + "/.local/lib64/bubezview/plugins",
-        QDir::homePath() + "/.local/share/bubezview/plugins",
         "/usr/local/lib/bubezview/plugins",
         "/usr/lib/bubezview/plugins"
     };
-
-    const QString devRoot = BuildConfig::projectDevRoot();
-    if (!devRoot.isEmpty()) {
-        searchDirs.append(devRoot + "/container/.local/lib/bubezview/plugins");
-        searchDirs.append(devRoot + "/container/.local/share/bubezview/plugins");
-        searchDirs.append(devRoot + "/build_deb/plugins/pdf");
-        searchDirs.append(devRoot + "/build_deb/plugins/archive");
-        searchDirs.append(devRoot + "/build_deb/plugins/media");
-        searchDirs.append(devRoot + "/build_deb/plugins");
-        searchDirs.append(devRoot + "/build_install/lib/bubezview/plugins");
-    }
 
     QSet<QString> loadedFileNames;
     for (const auto &p : m_plugins) {
         if (!p.filePath.isEmpty()) {
             loadedFileNames.insert(QFileInfo(p.filePath).fileName());
         }
+    }
+    if (!m_folderStudioPath.isEmpty()) {
+        loadedFileNames.insert(QFileInfo(m_folderStudioPath).fileName());
+    }
+    if (!m_imageStudioPath.isEmpty()) {
+        loadedFileNames.insert(QFileInfo(m_imageStudioPath).fileName());
+    }
+    if (!m_videoStudioPath.isEmpty()) {
+        loadedFileNames.insert(QFileInfo(m_videoStudioPath).fileName());
     }
 
     for (const QString &dirPath : searchDirs) {
@@ -268,6 +315,42 @@ void PluginManager::loadPluginFromFile(const QString &filePath)
     }
 
     if (!plugin) {
+        // Check if this module implements the modular Folder Studio plugin interface (bubez_folder.so)
+        auto *folderPlugin = qobject_cast<IFolderStudioPlugin*>(instance);
+        if (!folderPlugin) {
+            folderPlugin = dynamic_cast<IFolderStudioPlugin*>(instance);
+        }
+        if (folderPlugin && !m_folderStudioPlugin) {
+            m_folderStudioPlugin = folderPlugin;
+            m_folderStudioLoader = loader;
+            m_folderStudioPath = filePath;
+            qDebug() << "[PluginManager] Loaded modular Folder Studio plugin:" << folderPlugin->displayName();
+            return;
+        }
+        // Check if this module implements the modular Image Studio plugin interface (bubez_image.so)
+        auto *imagePlugin = qobject_cast<IImageStudioPlugin*>(instance);
+        if (!imagePlugin) {
+            imagePlugin = dynamic_cast<IImageStudioPlugin*>(instance);
+        }
+        if (imagePlugin && !m_imageStudioPlugin) {
+            m_imageStudioPlugin = imagePlugin;
+            m_imageStudioLoader = loader;
+            m_imageStudioPath = filePath;
+            qDebug() << "[PluginManager] Loaded modular Image Studio plugin:" << imagePlugin->displayName();
+            return;
+        }
+        // Check if this module implements the modular Video Studio plugin interface (bubez_video.so)
+        auto *videoPlugin = qobject_cast<IVideoStudioPlugin*>(instance);
+        if (!videoPlugin) {
+            videoPlugin = dynamic_cast<IVideoStudioPlugin*>(instance);
+        }
+        if (videoPlugin && !m_videoStudioPlugin) {
+            m_videoStudioPlugin = videoPlugin;
+            m_videoStudioLoader = loader;
+            m_videoStudioPath = filePath;
+            qDebug() << "[PluginManager] Loaded modular Video Studio plugin:" << videoPlugin->displayName();
+            return;
+        }
         loader->unload();
         delete loader;
         return;
@@ -327,13 +410,73 @@ bool PluginManager::unloadPlugin(const QString &pluginId)
     QString id = pluginId.trimmed().toLower();
     if (id == "engine-poppler" || id == "poppler" || id == "poppler-qt6") id = "pdf";
     else if (id == "engine-libarchive" || id == "libarchive") id = "archive";
-    else if (id == "engine-mpv" || id == "mpv" || id == "libmpv") id = "media";
+    else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media" || id == "engine-audio" || id == "audio-studio") id = "audio";
+    else if (id == "engine-folder" || id == "folder-studio") id = "folder";
+    else if (id == "engine-image" || id == "image-studio") id = "image";
+    else if (id == "engine-video" || id == "video-studio") id = "video";
+
+    if (id == "video") {
+        if (!m_videoStudioLoader && !m_videoStudioPlugin) {
+            return false;
+        }
+        emit aboutToUnloadPlugin(QStringLiteral("video"));
+        if (m_videoStudioLoader) {
+            m_videoStudioLoader->unload();
+            delete m_videoStudioLoader;
+            m_videoStudioLoader = nullptr;
+        }
+        m_videoStudioPlugin = nullptr;
+        m_videoStudioPath.clear();
+        emit pluginsChanged();
+        return true;
+    }
+
+    if (id == "folder") {
+        if (!m_folderStudioLoader && !m_folderStudioPlugin) {
+            return false;
+        }
+        emit aboutToUnloadPlugin(QStringLiteral("folder"));
+        if (m_folderStudioLoader) {
+            m_folderStudioLoader->unload();
+            delete m_folderStudioLoader;
+            m_folderStudioLoader = nullptr;
+        }
+        m_folderStudioPlugin = nullptr;
+        m_folderStudioPath.clear();
+        emit pluginsChanged();
+        return true;
+    }
+
+    if (id == "image") {
+        if (!m_imageStudioLoader && !m_imageStudioPlugin) {
+            return false;
+        }
+        emit aboutToUnloadPlugin(QStringLiteral("image"));
+        if (m_imageStudioLoader) {
+            m_imageStudioLoader->unload();
+            delete m_imageStudioLoader;
+            m_imageStudioLoader = nullptr;
+        }
+        m_imageStudioPlugin = nullptr;
+        m_imageStudioPath.clear();
+        emit pluginsChanged();
+        return true;
+    }
+
+    if (id == "audio") {
+        // Unload both "audio" (bubez_audio.so) and any legacy "media" (bubez_media.so)
+        return unloadPlugin(FileCategory::Media);
+    }
+    if (id == "pdf") {
+        return unloadPlugin(FileCategory::Pdf);
+    }
 
     auto it = m_plugins.find(id);
     if (it == m_plugins.end()) {
         return false;
     }
 
+    emit aboutToUnloadPlugin(id);
     if (it->loader) {
         it->loader->unload();
         delete it->loader;
@@ -349,6 +492,7 @@ bool PluginManager::unloadPlugin(FileCategory category)
     bool anyUnloaded = false;
     for (auto it = m_plugins.begin(); it != m_plugins.end(); ) {
         if (it->category == category) {
+            emit aboutToUnloadPlugin(it->id);
             if (it->loader) {
                 it->loader->unload();
                 delete it->loader;
@@ -454,4 +598,322 @@ QImage PluginManager::renderPdfThumbnail(const QString &filePath, int maxDimensi
     }
 
     return QImage();
+}
+
+bool PluginManager::isStudioModuleLoaded(const QString &moduleId) const
+{
+    const QString id = moduleId.trimmed().toLower();
+    if (id == QLatin1String("folder")) {
+        return m_folderStudioPlugin != nullptr;
+    }
+    if (id == QLatin1String("image")) {
+        return m_imageStudioPlugin != nullptr;
+    }
+    if (id == QLatin1String("video")) {
+        return m_videoStudioPlugin != nullptr;
+    }
+    if (id == QLatin1String("pdf")) {
+        return isEngineAvailable(FileCategory::Pdf);
+    }
+    if (id == QLatin1String("audio") || id == QLatin1String("media")) {
+        return isEngineAvailable(FileCategory::Media);
+    }
+    return false;
+}
+
+bool PluginManager::activateStudioModuleInteractive(const QString &moduleId, QWidget *parent)
+{
+    QString id = moduleId.trimmed().toLower();
+    if (id == QLatin1String("media")) {
+        id = QStringLiteral("audio");
+    }
+    if (id != QLatin1String("folder") && id != QLatin1String("pdf") &&
+        id != QLatin1String("audio") && id != QLatin1String("video") &&
+        id != QLatin1String("image")) {
+        return false;
+    }
+
+    if (isStudioModuleLoaded(id)) {
+        return true;
+    }
+
+    // Build clear, user-facing description of the features unlocked by this Edit Studio module
+    QString title;
+    QString header;
+    QString featuresHtml;
+    QString cmakeFlag;
+    QString targetName;
+    QString systemDep;
+
+    if (id == QLatin1String("folder")) {
+        title = tr("Activate Folder Studio");
+        header = tr("Folder Studio Module (<code>bubez_folder.so</code>)");
+        featuresHtml = tr(
+            "<ul>"
+            "<li><b>Visual Duplicate Finder</b> — exact SHA-256, similar images, documents (PDF/text), audio/video, and archives vs folders.</li>"
+            "<li><b>PhotoRec / TestDisk Recovery</b> — magic-byte verification, corrupt/junk filtering, and smart renaming.</li>"
+            "<li><b>Smart Tree Organizer</b> — automatic sorting by category/date or flattening with Dry-Run preview and Undo.</li>"
+            "<li><b>Batch Rename &amp; Cleanup</b> — token-based renaming and empty-folder / broken-link cleaner.</li>"
+            "</ul>");
+        cmakeFlag = QStringLiteral("-DBUILD_PLUGIN_FOLDER=ON");
+        targetName = QStringLiteral("bubez_folder");
+    } else if (id == QLatin1String("pdf")) {
+        title = tr("Activate PDF Studio");
+        header = tr("PDF Studio Module (<code>bubez_pdf.so</code>)");
+        featuresHtml = tr(
+            "<ul>"
+            "<li><b>Annotations &amp; Drawing</b> — highlights, freehand ink, shapes, and typewriter text overlays.</li>"
+            "<li><b>Signatures &amp; Watermarks</b> — handwritten/image signatures, cryptographic signing, and custom watermarks.</li>"
+            "<li><b>Page Management</b> — visual page organizer, reorder, rotate, delete, merge, and split PDFs.</li>"
+            "<li><b>Document Tools</b> — embedded image extraction and PDF repair utilities.</li>"
+            "</ul>");
+        cmakeFlag = QStringLiteral("-DBUILD_PLUGIN_PDF=ON");
+        targetName = QStringLiteral("bubez_pdf");
+    } else if (id == QLatin1String("image")) {
+        title = tr("Activate Image Studio");
+        header = tr("Image Studio Module (<code>bubez_image.so</code>)");
+        featuresHtml = tr(
+            "<ul>"
+            "<li><b>Auto Enhance</b> — one-click Natural, Vivid, Backlight Shadows, and Dehaze enhancement profiles.</li>"
+            "<li><b>Light &amp; Color Grading</b> — precision brightness, contrast, saturation, temperature, and hue controls.</li>"
+            "<li><b>Cinematic Presets</b> — Teal &amp; Orange, Vintage Sepia, Film Noir, Golden Hour, Cyberpunk, Document &amp; more.</li>"
+            "<li><b>Details &amp; Transform</b> — sharpen, blur, vignette, invert, interactive crop, rotate, flip, and alpha flatten.</li>"
+            "</ul>");
+        cmakeFlag = QStringLiteral("-DBUILD_PLUGIN_IMAGE=ON");
+        targetName = QStringLiteral("bubez_image");
+    } else if (id == QLatin1String("video")) {
+        title = tr("Activate Video Studio");
+        header = tr("Video Studio Module (<code>bubez_video.so</code>)");
+        featuresHtml = tr(
+            "<ul>"
+            "<li><b>Lossless Trim &amp; Cut</b> — export video clips with exact start/end timestamps from playback.</li>"
+            "<li><b>Frame Snapshot</b> — capture full-resolution PNG/JPEG frames at any timestamp.</li>"
+            "<li><b>Audio Extraction</b> — extract video soundtracks to MP3, FLAC, WAV, or Opus.</li>"
+            "<li><b>Transform &amp; Optimize</b> — rotate, flip, downscale (1080p/720p/480p), change speed, or mute audio.</li>"
+            "</ul>");
+        cmakeFlag = QStringLiteral("-DBUILD_PLUGIN_VIDEO=ON");
+        targetName = QStringLiteral("bubez_video");
+    } else {
+        title = tr("Activate Audio Studio");
+        header = tr("Audio Studio Module (<code>bubez_audio.so</code>)");
+        featuresHtml = tr(
+            "<ul>"
+            "<li><b>High-Fidelity MPV Audio Engine</b> — precision seeking and 64-bit float audio playback.</li>"
+            "<li><b>Audio Cutter &amp; Restoration</b> — waveform trim/cut, noise filters, pitch &amp; channel controls.</li>"
+            "<li><b>Metadata &amp; Tag Editor</b> — edit ID3/Vorbis tags and embed album cover artwork.</li>"
+            "<li><b>Live Visualizers</b> — 10-band graphic equalizer and stereo oscilloscope.</li>"
+            "</ul>");
+        cmakeFlag = QStringLiteral("-DBUILD_PLUGIN_AUDIO=ON");
+        targetName = QStringLiteral("bubez_audio");
+        systemDep = QStringLiteral("mpv");
+    }
+
+    QMessageBox prompt(parent);
+    prompt.setWindowTitle(title);
+    prompt.setIcon(QMessageBox::Information);
+    prompt.setTextFormat(Qt::RichText);
+    prompt.setText(tr("<h3>%1</h3>"
+                      "<p>This optional edit module is not installed yet. Activating it will compile and load only this module on demand:</p>"
+                      "%2"
+                      "<p>Do you want to activate it now?</p>")
+                       .arg(header, featuresHtml));
+
+    QPushButton *btnOk = prompt.addButton(tr("OK"), QMessageBox::AcceptRole);
+    prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    prompt.setDefaultButton(btnOk);
+    prompt.exec();
+
+    if (prompt.clickedButton() != btnOk) {
+        return false;
+    }
+
+    // Install optional system library dependency on demand (e.g. libmpv for Multimedia Studio)
+    if (!systemDep.isEmpty()) {
+        QProcess pkgCheck;
+        pkgCheck.start(QStringLiteral("pkg-config"), {QStringLiteral("--exists"), systemDep});
+        pkgCheck.waitForFinished(3000);
+        if (pkgCheck.exitCode() != 0) {
+            if (!PackageManagerHelper::installComponentInteractive(systemDep, parent)) {
+                return false;
+            }
+        }
+    }
+
+    QProgressDialog progress(tr("Compiling and activating %1...").arg(targetName + QStringLiteral(".so")),
+                             QString(), 0, 0, parent);
+    progress.setWindowTitle(title);
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setMinimumDuration(0);
+    progress.show();
+    QApplication::processEvents();
+
+    auto runProcessAsync = [&](const QString &program, const QStringList &args, QString *outLog) -> bool {
+        QProcess proc;
+        proc.setProcessChannelMode(QProcess::MergedChannels);
+        QEventLoop loop;
+        QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                         &loop, &QEventLoop::quit);
+        proc.start(program, args);
+        if (!proc.waitForStarted(5000)) {
+            if (outLog) *outLog = tr("Failed to start %1").arg(program);
+            return false;
+        }
+        loop.exec();
+        if (outLog) *outLog = QString::fromUtf8(proc.readAllStandardOutput());
+        return (proc.exitStatus() == QProcess::NormalExit && proc.exitCode() == 0);
+    };
+
+    const QString home = QDir::homePath();
+    const QString userPluginsDir = home + QStringLiteral("/.local/share/bubezview/plugins");
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString devRoot = BuildConfig::projectDevRoot();
+    const QString soFileName = targetName + QStringLiteral(".so");
+
+    bool buildOk = false;
+    QString lastLog;
+
+    // Strategy 1: Local source tree available (devRoot or parent of build dir) -> fast direct single-target build
+    QString sourceDir;
+    if (!devRoot.isEmpty() && QFile::exists(devRoot + QStringLiteral("/CMakeLists.txt"))) {
+        sourceDir = devRoot;
+    } else if (QFile::exists(appDir + QStringLiteral("/../CMakeLists.txt"))) {
+        sourceDir = QDir(appDir + QStringLiteral("/..")).canonicalPath();
+    }
+
+    if (!sourceDir.isEmpty()) {
+        QString buildDir;
+        if (QFile::exists(appDir + QStringLiteral("/CMakeCache.txt"))) {
+            buildDir = appDir;
+        } else if (QFile::exists(sourceDir + QStringLiteral("/build_install/CMakeCache.txt"))) {
+            buildDir = sourceDir + QStringLiteral("/build_install");
+        } else if (QFile::exists(sourceDir + QStringLiteral("/build_deb/CMakeCache.txt"))) {
+            buildDir = sourceDir + QStringLiteral("/build_deb");
+        } else {
+            buildDir = sourceDir + QStringLiteral("/build_install");
+        }
+        QDir().mkpath(buildDir);
+
+        const int jobs = qMax(1, QThread::idealThreadCount());
+        if (runProcessAsync(QStringLiteral("cmake"),
+                            {QStringLiteral("-S"), sourceDir, QStringLiteral("-B"), buildDir,
+                             QStringLiteral("-DCMAKE_BUILD_TYPE=Release"),
+                             QStringLiteral("-DBUILD_TESTS=OFF"), cmakeFlag},
+                            &lastLog)) {
+            if (runProcessAsync(QStringLiteral("cmake"),
+                                {QStringLiteral("--build"), buildDir,
+                                 QStringLiteral("--target"), targetName,
+                                 QStringLiteral("--parallel"), QString::number(jobs)},
+                                &lastLog)) {
+                const QString builtSo = buildDir + QStringLiteral("/plugins/") + soFileName;
+                if (QFile::exists(builtSo)) {
+                    QDir().mkpath(userPluginsDir);
+                    const QString destPath = userPluginsDir + QLatin1Char('/') + soFileName;
+                    QFile::remove(destPath);
+                    buildOk = QFile::copy(builtSo, destPath);
+                }
+            }
+        }
+    } else {
+        // Strategy 2: Installed standalone user binary -> delegate to saved Install.sh --build-plugin <id>
+        const QString installerPath = home + QStringLiteral("/.local/share/bubezview/Install.sh");
+        if (QFile::exists(installerPath)) {
+            buildOk = runProcessAsync(QStringLiteral("bash"),
+                                      {installerPath, QStringLiteral("--build-plugin"), id},
+                                      &lastLog);
+        } else {
+            lastLog = tr("No local source directory or installer script found (%1).").arg(installerPath);
+        }
+    }
+
+    progress.close();
+
+    if (buildOk) {
+        discoverPlugins();
+    }
+
+    if (!isStudioModuleLoaded(id)) {
+        const QString tail = lastLog.right(900).trimmed();
+        QMessageBox::warning(
+            parent,
+            tr("Module Activation Failed"),
+            tr("Could not compile or load %1.\n\n%2")
+                .arg(soFileName, tail.isEmpty() ? tr("Check compiler and development dependencies.") : tail));
+        return false;
+    }
+
+    return true;
+}
+
+bool PluginManager::uninstallStudioModule(const QString &moduleId)
+{
+    const QString id = moduleId.trimmed().toLower();
+    QStringList soNames;
+    QString loadedPath;
+
+    if (id == QLatin1String("folder")) {
+        soNames << QStringLiteral("bubez_folder.so");
+        loadedPath = m_folderStudioPath;
+    } else if (id == QLatin1String("image")) {
+        soNames << QStringLiteral("bubez_image.so");
+        loadedPath = m_imageStudioPath;
+    } else if (id == QLatin1String("video")) {
+        soNames << QStringLiteral("bubez_video.so");
+        loadedPath = m_videoStudioPath;
+    } else if (id == QLatin1String("pdf")) {
+        soNames << QStringLiteral("bubez_pdf.so");
+        for (const auto &desc : m_plugins) {
+            if (desc.category == FileCategory::Pdf && desc.filePath != QLatin1String("builtin")) {
+                loadedPath = desc.filePath;
+                break;
+            }
+        }
+    } else if (id == QLatin1String("audio") || id == QLatin1String("media")) {
+        soNames << QStringLiteral("bubez_audio.so") << QStringLiteral("bubez_media.so");
+        for (const auto &desc : m_plugins) {
+            if (desc.category == FileCategory::Media && desc.filePath != QLatin1String("builtin")) {
+                loadedPath = desc.filePath;
+                break;
+            }
+        }
+    } else {
+        return false;
+    }
+
+    bool removed = unloadPlugin(id);
+
+    if (!loadedPath.isEmpty() && loadedPath != QLatin1String("builtin") && QFile::exists(loadedPath)) {
+        if (QFile::remove(loadedPath)) {
+            removed = true;
+        }
+    }
+
+    const QString home = QDir::homePath();
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString devRoot = BuildConfig::projectDevRoot();
+
+    QStringList dirs = {
+        appDir + QStringLiteral("/plugins"),
+        home + QStringLiteral("/.local/share/bubezview/plugins"),
+        home + QStringLiteral("/.local/lib/bubezview/plugins"),
+        home + QStringLiteral("/.local/lib/x86_64-linux-gnu/bubezview/plugins"),
+        home + QStringLiteral("/.local/lib64/bubezview/plugins")
+    };
+    if (!devRoot.isEmpty()) {
+        dirs << (devRoot + QStringLiteral("/build_install/plugins"))
+             << (devRoot + QStringLiteral("/build_deb/plugins"))
+             << (devRoot + QStringLiteral("/container/.local/lib/bubezview/plugins"))
+             << (devRoot + QStringLiteral("/container/.local/share/bubezview/plugins"));
+    }
+
+    for (const QString &d : dirs) {
+        for (const QString &soName : soNames) {
+            const QString p = d + QLatin1Char('/') + soName;
+            if (QFile::exists(p) && QFile::remove(p)) {
+                removed = true;
+            }
+        }
+    }
+
+    emit pluginsChanged();
+    return removed;
 }

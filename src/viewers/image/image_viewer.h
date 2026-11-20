@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/interfaces/i_pdf_viewer.h"
 #include <QWidget>
 #include <QImage>
 #include <QPixmap>
@@ -9,6 +10,7 @@
 #include "core/services/image_processor.h"
 
 class ImageCanvasWidget;
+class IImageStudioWidget;
 class QTimer;
 
 /**
@@ -128,6 +130,34 @@ public:
     void setEditMode(bool editMode);
     bool isEditMode() const { return m_isEditMode; }
 
+    /**
+     * @brief Attaches a modular Image Studio panel loaded from bubez_image.so.
+     * @param studioWidget Newly created IImageStudioWidget instance (owned by ImageViewer).
+     */
+    void attachStudioWidget(IImageStudioWidget *studioWidget);
+
+    /**
+     * @brief Synchronously detaches and destroys the attached Image Studio panel (safe before plugin unload).
+     */
+    void detachStudioWidget();
+
+    /**
+     * @brief Builds visual timeline steps from the image undo/redo stacks for the History dialog.
+     * @return Ordered list of history snapshots with thumbnails.
+     */
+    QList<PdfHistoryStep> historySteps() const;
+
+    /**
+     * @brief Restores the image to a specific snapshot index from historySteps().
+     * @param index Target timeline index.
+     */
+    void restoreHistoryStep(int index);
+
+    /**
+     * @brief Returns whether a modular Image Studio panel is currently attached.
+     */
+    bool hasStudioWidget() const { return m_studioWidget != nullptr; }
+
     // Geometric & visual transformations
     void rotateClockwise();
     void rotateCounterClockwise();
@@ -245,6 +275,7 @@ private:
 
     QScrollArea *m_scrollArea = nullptr;
     ImageCanvasWidget *m_canvas = nullptr;
+    IImageStudioWidget *m_studioWidget = nullptr;
     QTimer *m_smoothResizeTimer = nullptr;
 
     QImage m_originalImage;

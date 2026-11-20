@@ -14,6 +14,9 @@
 
 class IViewerWidget;
 class ViewerPluginInterface;
+class IFolderStudioPlugin;
+class IImageStudioPlugin;
+class IVideoStudioPlugin;
 class QPluginLoader;
 
 /**
@@ -118,6 +121,48 @@ public:
     QList<PluginDescriptor> discoveredPlugins() const;
 
     /**
+     * @brief Returns the loaded modular Folder Studio plugin (bubez_folder.so), or nullptr if not installed.
+     * @return Pointer to IFolderStudioPlugin or nullptr.
+     */
+    IFolderStudioPlugin *folderStudioPlugin() const { return m_folderStudioPlugin; }
+
+    /**
+     * @brief Returns the loaded modular Image Studio plugin (bubez_image.so), or nullptr if not installed.
+     * @return Pointer to IImageStudioPlugin or nullptr.
+     */
+    IImageStudioPlugin *imageStudioPlugin() const { return m_imageStudioPlugin; }
+
+    /**
+     * @brief Returns the loaded modular Video Studio plugin (bubez_video.so), or nullptr if not installed.
+     * @return Pointer to IVideoStudioPlugin or nullptr.
+     */
+    IVideoStudioPlugin *videoStudioPlugin() const { return m_videoStudioPlugin; }
+
+    /**
+     * @brief Checks whether a modular Edit Studio .so ("folder", "pdf", "media") is currently loaded.
+     * @param moduleId Module identifier ("folder", "pdf", or "media").
+     * @return True if the module is loaded and ready.
+     */
+    bool isStudioModuleLoaded(const QString &moduleId) const;
+
+    /**
+     * @brief Prompts the user with a feature summary (OK / Cancel), installs any missing system
+     *        dependency on demand, compiles only the requested Edit Studio .so module, and
+     *        hot-loads it without restarting BubezView.
+     * @param moduleId Module identifier ("folder", "pdf", or "media").
+     * @param parent Optional parent widget for modal dialogs.
+     * @return True if the module is now loaded and ready for immediate use; false if cancelled or failed.
+     */
+    bool activateStudioModuleInteractive(const QString &moduleId, QWidget *parent = nullptr);
+
+    /**
+     * @brief Unloads a modular Edit Studio .so and removes its binary from user plugin directories.
+     * @param moduleId Module identifier ("folder", "pdf", or "media").
+     * @return True if at least one plugin binary was removed or unloaded.
+     */
+    bool uninstallStudioModule(const QString &moduleId);
+
+    /**
      * @brief Queries distro package name for a plugin's core dependency.
      * @param pluginId Engine identifier ("pdf", "archive", "media").
      * @return Package name string.
@@ -133,6 +178,17 @@ public:
     static QImage renderPdfThumbnail(const QString &filePath, int maxDimension);
 
 signals:
+    /**
+     * @brief Emitted synchronously immediately before a plugin shared library is unloaded.
+     *
+     * Listeners (such as BaseSkin) MUST synchronously detach and destroy any live
+     * widgets/objects instantiated from this plugin before returning, preventing
+     * use-after-unload crashes once dlclose() runs.
+     *
+     * @param pluginId Canonical plugin identifier ("image", "video", "folder", "audio", "pdf", "archive").
+     */
+    void aboutToUnloadPlugin(const QString &pluginId);
+
     /**
      * @brief Emitted whenever the set of loaded plugins changes.
      */
@@ -152,4 +208,15 @@ private:
     static const QStringList s_officeExtensions;
 
     QMap<QString, PluginDescriptor> m_plugins;
+    IFolderStudioPlugin *m_folderStudioPlugin = nullptr;
+    QPluginLoader *m_folderStudioLoader = nullptr;
+    QString m_folderStudioPath;
+
+    IImageStudioPlugin *m_imageStudioPlugin = nullptr;
+    QPluginLoader *m_imageStudioLoader = nullptr;
+    QString m_imageStudioPath;
+
+    IVideoStudioPlugin *m_videoStudioPlugin = nullptr;
+    QPluginLoader *m_videoStudioLoader = nullptr;
+    QString m_videoStudioPath;
 };

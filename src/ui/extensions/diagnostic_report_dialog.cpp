@@ -330,13 +330,13 @@ void DiagnosticReportDialog::setGlobalReportData(int passedCount,
     m_txtLog->setPlainText(fullLog);
 
     const QString timestamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss"));
-    m_fullPlainTextReport = QString(
-        "BUBEZVIEW — VERIFICA COMPONENTI\n"
-        "Data: %1 | Stato: %2 (%3/%4 Operativi)\n\n"
+    m_fullPlainTextReport = tr(
+        "BUBEZVIEW — COMPONENT VERIFICATION\n"
+        "Date: %1 | Status: %2 (%3/%4 Operational)\n\n"
         "%5\n"
     ).arg(
         timestamp,
-        allOk ? QStringLiteral("OPERATIVO") : QStringLiteral("ANOMALIE RILEVATE"),
+        allOk ? tr("OPERATIONAL") : tr("ISSUES DETECTED"),
         QString::number(passedCount),
         QString::number(totalCount),
         fullLog
@@ -406,17 +406,17 @@ void DiagnosticReportDialog::setRuntimeReportData(const QString &componentName,
     m_txtLog->setPlainText(rawOutput + subSection);
 
     const QString timestamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss"));
-    m_fullPlainTextReport = QString(
-        "BUBEZVIEW — STATO COMPONENTE: %2\n"
-        "Data: %1 | Stato: %3 (Codice: %4)\n"
-        "Comando: %5\n\n"
+    m_fullPlainTextReport = tr(
+        "BUBEZVIEW — COMPONENT STATUS: %2\n"
+        "Date: %1 | Status: %3 (Exit Code: %4)\n"
+        "Command: %5\n\n"
         "%6%7\n"
     ).arg(
         timestamp,
         componentName,
-        success ? QStringLiteral("OPERATIVO") : QStringLiteral("ERRORE"),
+        success ? tr("OPERATIONAL") : tr("ERROR"),
         QString::number(exitCode),
-        command.isEmpty() ? QStringLiteral("(interno)") : command,
+        command.isEmpty() ? tr("(internal)") : command,
         rawOutput,
         subSection
     );
@@ -446,16 +446,16 @@ void DiagnosticReportDialog::setBuildReadinessReportData(const QString &componen
     m_txtLog->setPlainText(rawLog);
 
     const QString timestamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss"));
-    m_fullPlainTextReport = QString(
-        "BUBEZVIEW — PREREQUISITI COMPILAZIONE: %2\n"
-        "Data: %1 | Idoneità: %3\n"
-        "Mancano: %4\n\n"
+    m_fullPlainTextReport = tr(
+        "BUBEZVIEW — BUILD PREREQUISITES: %2\n"
+        "Date: %1 | Readiness: %3\n"
+        "Missing: %4\n\n"
         "%5\n"
     ).arg(
         timestamp,
         componentName,
-        ready ? QStringLiteral("PRONTO A COMPILARE") : QStringLiteral("DIPENDENZE MANCANTI"),
-        missingList.isEmpty() ? QStringLiteral("(nessuna)") : missingList.join(QStringLiteral(", ")),
+        ready ? tr("READY TO COMPILE") : tr("MISSING DEPENDENCIES"),
+        missingList.isEmpty() ? tr("(none)") : missingList.join(QStringLiteral(", ")),
         rawLog
     );
 }

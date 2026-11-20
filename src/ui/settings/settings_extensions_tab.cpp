@@ -9,6 +9,7 @@
 #include "diagnostic_report_dialog.h"
 #include "theme_manager.h"
 #include "build_config.h"
+#include "plugin_manager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -19,10 +20,14 @@
 #include <QFrame>
 #include <QProcess>
 #include <QDateTime>
+#include <QMessageBox>
+#include <QFileInfo>
+#include <QDir>
+#include <QCoreApplication>
 
 SettingsExtensionsTab::SettingsExtensionsTab(QWidget *parent)
     : QWidget(parent)
-    , m_activeCategory(QStringLiteral("PDF"))
+    , m_activeCategory(QStringLiteral("Studio"))
 {
     setupUi();
 }
@@ -57,6 +62,7 @@ void SettingsExtensionsTab::setupUi()
         QString label;
     };
     QList<CatDef> categories = {
+        {QStringLiteral("Studio"), tr("Studio (5)")},
         {QStringLiteral("PDF"), tr("Documents (%1)").arg(pdfMods.size())},
         {QStringLiteral("Archive"), tr("Archives (%1)").arg(archMods.size())},
         {QStringLiteral("Media"), tr("Audio && Video (%1)").arg(mediaMods.size())},
@@ -135,7 +141,162 @@ void SettingsExtensionsTab::populateCategoryGrid(const QString &catId)
     }
 
     // Set Card title based on category
-    if (catId == QLatin1String("PDF")) {
+    if (catId == QLatin1String("Studio")) {
+        m_grpActiveCategory->setTitle(tr("Modular Edit Studio Plugins (.so) — Install or Uninstall Independently"));
+
+        struct StudioDef {
+            QString id;
+            QString soFile;
+            QString name;
+            QString desc;
+        };
+        const QList<StudioDef> studios = {
+            {QStringLiteral("image"),  QStringLiteral("bubez_image.so"),  tr("Image Studio"),  tr("Auto-enhance, light & color grading, presets, sharpen, blur, vignette.")},
+            {QStringLiteral("folder"), QStringLiteral("bubez_folder.so"), tr("Folder Studio"), tr("Visual duplicates, PhotoRec recovery, tree organizer, batch rename & cleanup.")},
+            {QStringLiteral("pdf"),    QStringLiteral("bubez_pdf.so"),    tr("PDF Studio"),    tr("Annotations, drawing, digital signatures, watermarks, page organizer & merge.")},
+            {QStringLiteral("audio"),  QStringLiteral("bubez_audio.so"),  tr("Audio Studio"),  tr("MPV 64-bit audio, waveform cutter, filters, pitch, equalizer & tag editor.")},
+            {QStringLiteral("video"),  QStringLiteral("bubez_video.so"),  tr("Video Studio"),  tr("Lossless trim/cut, frame snapshot, audio extraction, rotate, scale & speed.")}
+        };
+
+        auto findPluginFile = [](const QString &soFile) -> QString {
+            const QString home = QDir::homePath();
+            const QString appDir = QCoreApplication::applicationDirPath();
+            const QString devRoot = BuildConfig::projectDevRoot();
+            QStringList dirs = {
+                home + QStringLiteral("/.local/share/bubezview/plugins"),
+                home + QStringLiteral("/.local/lib/bubezview/plugins"),
+                home + QStringLiteral("/.local/lib/x86_64-linux-gnu/bubezview/plugins"),
+                home + QStringLiteral("/.local/lib64/bubezview/plugins"),
+                appDir + QStringLiteral("/plugins")
+            };
+            if (!devRoot.isEmpty()) {
+                dirs << (devRoot + QStringLiteral("/build_install/plugins"))
+                     << (devRoot + QStringLiteral("/build_deb/plugins"));
+            }
+            for (const QString &d : dirs) {
+                const QString p = d + QLatin1Char('/') + soFile;
+                if (QFileInfo::exists(p)) return p;
+            }
+            return QString();
+        };
+
+        const bool isDark = ThemeManager::isDark(ThemeManager::effectivePreset(ThemeManager::currentPreset()));
+        const QString tileBg = isDark ? QStringLiteral("rgba(255, 255, 255, 0.04)") : QStringLiteral("rgba(15, 23, 42, 0.035)");
+        const QString tileBorder = isDark ? QStringLiteral("rgba(255, 255, 255, 0.10)") : QStringLiteral("rgba(15, 23, 42, 0.12)");
+        const QString subCol = isDark ? QStringLiteral("#94a3b8") : QStringLiteral("#64748b");
+
+        for (int i = 0; i < studios.size(); ++i) {
+            const StudioDef &st = studios.at(i);
+            const QString foundPath = findPluginFile(st.soFile);
+            const bool installed = !foundPath.isEmpty() || PluginManager::instance().isStudioModuleLoaded(st.id);
+
+            auto *card = new QFrame(m_grpActiveCategory);
+            card->setStyleSheet(QStringLiteral(
+                "QFrame { background-color: %1; border: 1px solid %2; border-radius: 10px; }").arg(tileBg, tileBorder));
+            auto *cLay = new QVBoxLayout(card);
+            cLay->setContentsMargins(12, 10, 12, 10);
+            cLay->setSpacing(6);
+
+            auto *topRow = new QHBoxLayout();
+            topRow->setSpacing(6);
+            auto *lblName = new QLabel(QStringLiteral("<b>%1</b> <span style='color:%2; font-size:11px;'>(%3)</span>")
+                                           .arg(st.name, subCol, st.soFile), card);
+            lblName->setStyleSheet(QStringLiteral("background: transparent; border: none; font-size: 12.5px;"));
+            topRow->addWidget(lblName, 1);
+
+            QString statusTxt = tr("Not installed");
+            QString badgeCss = QStringLiteral(
+                "background: rgba(148, 163, 184, 0.18); color: %1; border: none; border-radius: 6px; padding: 2px 8px; font-size: 10.5px; font-weight: 600;")
+                .arg(subCol);
+            if (installed) {
+                const qint64 kb = foundPath.isEmpty() ? 0 : qMax<qint64>(1, QFileInfo(foundPath).size() / 1024);
+                statusTxt = kb > 0 ? tr("Active (%1 KB)").arg(kb) : tr("Active");
+                badgeCss = QStringLiteral(
+                    "background: rgba(34, 197, 94, 0.16); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 6px; padding: 2px 8px; font-size: 10.5px; font-weight: 700;");
+            }
+            auto *lblStatus = new QLabel(statusTxt, card);
+            lblStatus->setStyleSheet(badgeCss);
+            topRow->addWidget(lblStatus);
+            cLay->addLayout(topRow);
+
+            auto *btnRow = new QHBoxLayout();
+            btnRow->setSpacing(6);
+            btnRow->addStretch(1);
+            const QString modId = st.id;
+            const QString modName = st.name;
+            const QString modSo = st.soFile;
+            const QString modDesc = st.desc;
+
+            // Compact Info button opening a popup with full module details instead of clipping text inside the tile
+            auto *btnInfo = new QPushButton(QStringLiteral("i"), card);
+            btnInfo->setCursor(Qt::PointingHandCursor);
+            btnInfo->setFixedSize(26, 26);
+            btnInfo->setToolTip(tr("Module information"));
+            btnInfo->setStyleSheet(QStringLiteral(
+                "QPushButton { background: rgba(148, 163, 184, 0.16); color: %1; border: 1px solid %2; border-radius: 13px; font-weight: 700; font-size: 12px; padding: 0px; }"
+                "QPushButton:hover { background: rgba(56, 189, 248, 0.22); color: #38bdf8; border-color: rgba(56, 189, 248, 0.45); }")
+                .arg(subCol, tileBorder));
+            connect(btnInfo, &QPushButton::clicked, this, [this, modName, modSo, modDesc, installed, foundPath]() {
+                const QString statusLine = installed
+                    ? (foundPath.isEmpty()
+                           ? tr("Installed and active")
+                           : tr("Installed (%1 KB)\n%2").arg(qMax<qint64>(1, QFileInfo(foundPath).size() / 1024)).arg(foundPath))
+                    : tr("Not installed");
+                QMessageBox::information(
+                    this,
+                    modName,
+                    tr("<b>%1</b> (<code>%2</code>)<br><br>%3<br><br><b>Status:</b> %4")
+                        .arg(modName.toHtmlEscaped(), modSo.toHtmlEscaped(),
+                             modDesc.toHtmlEscaped(), statusLine.toHtmlEscaped().replace(QLatin1Char('\n'), QStringLiteral("<br>"))));
+            });
+            btnRow->addWidget(btnInfo);
+
+            if (installed) {
+                auto *btnRemove = new QPushButton(tr("Uninstall"), card);
+                btnRemove->setCursor(Qt::PointingHandCursor);
+                btnRemove->setFixedHeight(26);
+                btnRemove->setStyleSheet(QStringLiteral(
+                    "QPushButton { background: rgba(239, 68, 68, 0.16); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 7px; padding: 0px 12px; font-weight: 600; font-size: 11px; }"
+                    "QPushButton:hover { background: #ef4444; color: #ffffff; }"));
+                connect(btnRemove, &QPushButton::clicked, this, [this, modId, modName, modSo]() {
+                    const auto reply = QMessageBox::question(
+                        this,
+                        tr("Uninstall Studio Module"),
+                        tr("Remove %1 (%2)?\nYou can re-activate it anytime by clicking Edit.")
+                            .arg(modName, modSo),
+                        QMessageBox::Yes | QMessageBox::No,
+                        QMessageBox::No);
+                    if (reply == QMessageBox::Yes) {
+                        PluginManager::instance().uninstallStudioModule(modId);
+                        populateCategoryGrid(QStringLiteral("Studio"));
+                        emit pendingStateChanged();
+                    }
+                });
+                btnRow->addWidget(btnRemove);
+            } else {
+                auto *btnActivate = new QPushButton(tr("Activate"), card);
+                btnActivate->setCursor(Qt::PointingHandCursor);
+                btnActivate->setFixedHeight(26);
+                btnActivate->setStyleSheet(QStringLiteral(
+                    "QPushButton { background: #0284c7; color: #ffffff; border: none; border-radius: 7px; padding: 0px 12px; font-weight: 600; font-size: 11px; }"
+                    "QPushButton:hover { background: #0369a1; }"));
+                connect(btnActivate, &QPushButton::clicked, this, [this, modId]() {
+                    if (PluginManager::instance().activateStudioModuleInteractive(modId, this)) {
+                        populateCategoryGrid(QStringLiteral("Studio"));
+                        emit pendingStateChanged();
+                    }
+                });
+                btnRow->addWidget(btnActivate);
+            }
+            cLay->addLayout(btnRow);
+
+            m_gridLayout->addWidget(card, i / 2, i % 2);
+        }
+
+        updateCapsuleSelection();
+        updateThemeStyles();
+        return;
+    } else if (catId == QLatin1String("PDF")) {
         m_grpActiveCategory->setTitle(tr("Documents (PDF && Text)"));
     } else if (catId == QLatin1String("Archive")) {
         m_grpActiveCategory->setTitle(tr("Archives && Compression"));
@@ -190,10 +351,10 @@ void SettingsExtensionsTab::updateCapsuleSelection()
                 "    background: %1;"
                 "    color: %2;"
                 "    font-weight: bold;"
-                "    font-size: 11px;"
+                "    font-size: 10.5px;"
                 "    border: 1px solid %3;"
                 "    border-radius: 11px;"
-                "    padding: 0 12px;"
+                "    padding: 0 9px;"
                 "}"
             ).arg(activeBg, activeText, activeBorder));
         } else {
@@ -201,11 +362,11 @@ void SettingsExtensionsTab::updateCapsuleSelection()
                 "QPushButton {"
                 "    background: transparent;"
                 "    color: #a1a1aa;"
-                "    font-size: 11px;"
+                "    font-size: 10.5px;"
                 "    font-weight: 500;"
                 "    border: none;"
                 "    border-radius: 11px;"
-                "    padding: 0 10px;"
+                "    padding: 0 7px;"
                 "}"
                 "QPushButton:hover {"
                 "    background: rgba(255, 255, 255, 0.08);"

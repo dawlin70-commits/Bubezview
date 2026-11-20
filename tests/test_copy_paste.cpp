@@ -13,8 +13,8 @@
 
 #define private public
 #define protected public
-#include "viewers/pdf/pdf_page_widget.h"
-#include "viewers/pdf/pdf_transform_box.h"
+#include "plugins/pdf/pdf_page_widget.h"
+#include "plugins/pdf/pdf_transform_box.h"
 #include "viewers/pdf/pdf_document_ops.h"
 #include "core/system/font_resolution_helper.h"
 #include "ui/dialogs/font_resolution_dialog.h"

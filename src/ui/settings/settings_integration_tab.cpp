@@ -118,7 +118,6 @@ public:
 
         auto *layout = contentLayout();
         layout->setSpacing(12);
-        layout->setContentsMargins(4, 4, 4, 4);
         layout->setContentsMargins(20, 18, 20, 18);
 
         auto *lblHeader = new QLabel(SettingsIntegrationTab::tr("<h3>📋 Shortcut Setup for Unsupported Desktops</h3>"), this);

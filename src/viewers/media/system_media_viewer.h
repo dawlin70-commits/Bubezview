@@ -28,6 +28,8 @@
 #include "vinyl_sleeve_widget.h"
 #include "smooth_waveform_scrubber.h"
 
+class IVideoStudioWidget;
+
 /**
  * @class SystemMediaViewer
  * @brief Native media viewer providing audio and video playback via Qt6 Multimedia
@@ -92,8 +94,24 @@ public:
     /**
      * @brief Sets or checks edit mode state.
      */
-    void setEditMode(bool editMode) override { m_isEditMode = editMode; }
+    void setEditMode(bool editMode) override;
     bool isEditMode() const override { return m_isEditMode; }
+
+    /**
+     * @brief Attaches a modular Video Studio side panel loaded from bubez_video.so.
+     * @param studioWidget Newly created IVideoStudioWidget instance (owned by SystemMediaViewer).
+     */
+    void attachVideoStudioWidget(IVideoStudioWidget *studioWidget);
+
+    /**
+     * @brief Synchronously detaches and destroys the Video Studio side panel (safe before plugin unload).
+     */
+    void detachVideoStudioWidget();
+
+    /**
+     * @brief Returns whether a modular Video Studio panel is currently attached.
+     */
+    bool hasVideoStudioWidget() const { return m_videoStudioWidget != nullptr; }
 
     /**
      * @brief Switches the active audio workspace page.
@@ -290,4 +308,7 @@ private:
     bool m_isCompactAudioLayout = false;
     float m_previousVolume = 1.0f;
     double m_playbackRate = 1.0;
+
+    QHBoxLayout *m_rootSplitLayout = nullptr;
+    IVideoStudioWidget *m_videoStudioWidget = nullptr;
 };

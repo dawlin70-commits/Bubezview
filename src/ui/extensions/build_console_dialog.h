@@ -114,6 +114,14 @@ private:
     void setupUi();
 
     /**
+     * @brief Shared helper that locates the installer script, resets console UI state,
+     *        configures the child process group, and starts the build with the given extra arguments.
+     * @param extraArgs Additional CLI arguments appended after base flags and before CMake args.
+     * @return true if the build process was started successfully.
+     */
+    bool launchBuildProcess(const QStringList &extraArgs);
+
+    /**
      * @brief Safely terminates compiler process and all spawned child processes.
      */
     void terminateProcessGroup();

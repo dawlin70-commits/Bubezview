@@ -79,4 +79,5 @@ private:
     QList<CoverCandidate> m_candidates;
     QList<CoverCardWidget*> m_cardWidgets;
     QNetworkAccessManager m_netMgr;
+    bool m_isSearching = false;
 };

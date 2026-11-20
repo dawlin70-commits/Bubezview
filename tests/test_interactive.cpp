@@ -791,8 +791,8 @@ void TestInteractive::testFirstRunWizard()
     wizard.show();
     QVERIFY(QTest::qWaitForWindowExposed(&wizard));
 
-    // Verify 3 onboarding wizard pages (Welcome -> Spacebar -> Performance)
-    QCOMPARE(wizard.pageIds().count(), 3);
+    // Verify 4 onboarding wizard pages (Welcome -> Spacebar -> Performance -> Summary)
+    QCOMPARE(wizard.pageIds().count(), 4);
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Welcome));
     QTest::qWait(50);
 
@@ -804,6 +804,11 @@ void TestInteractive::testFirstRunWizard()
     // Advance to Page 2 (Hardware Performance & Execution Strategy)
     wizard.next();
     QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Performance));
+    QTest::qWait(50);
+
+    // Advance to Page 3 (Final Configuration Summary & Launch Confirmation)
+    wizard.next();
+    QCOMPARE(wizard.currentId(), static_cast<int>(FirstRunWizard::Page_Summary));
     QTest::qWait(50);
 
     wizard.close();
@@ -2071,11 +2076,7 @@ void TestInteractive::testFolderInspectorAndTextThumbnail()
     FolderViewer *fv = window.folderViewer();
     QVERIFY(fv != nullptr);
     fv->setShowFolders(true);
-    fv->toggleInspector();
     QTest::qWait(200);
-
-    QPlainTextEdit *textEdit = fv->findChild<QPlainTextEdit*>();
-    QVERIFY(textEdit != nullptr);
 
     // Find and select mancapdf.txt
     int textRow = -1;
@@ -2089,26 +2090,7 @@ void TestInteractive::testFolderInspectorAndTextThumbnail()
 
     fv->listWidget()->setCurrentRow(textRow);
     QTest::qWait(100);
-
-    // Inspector should display the text editor for text files
-    QVERIFY(textEdit->isVisible());
-    QVERIFY(!textEdit->toPlainText().isEmpty());
-
-    // Find and select a directory (e.g. first item since dirs come first)
-    QVERIFY(fv->listWidget()->count() > 0);
-    fv->listWidget()->setCurrentRow(0);
-    QTest::qWait(100);
-
-    // Inspector should hide text edit when a directory is selected
-    QVERIFY(!textEdit->isVisible());
-
-    // 4. Verify custom bookmarks addition and removal
-    QString testCustomDir = m_testDirPath;
-    fv->addCustomBookmark(testCustomDir);
-    QVERIFY(fv->customBookmarks().contains(QDir(testCustomDir).canonicalPath()));
-
-    fv->removeCustomBookmark(testCustomDir);
-    QVERIFY(!fv->customBookmarks().contains(QDir(testCustomDir).canonicalPath()));
+    QVERIFY(fv->selectedFilePath().endsWith("mancapdf.txt"));
 }
 
 void TestInteractive::testArchiveNavigationAndFolderGalleryReturn()

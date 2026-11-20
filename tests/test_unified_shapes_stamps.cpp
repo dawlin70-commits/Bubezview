@@ -9,9 +9,9 @@
 
 #define private public
 #define protected public
-#include "viewers/pdf/pdf_viewer.h"
-#include "viewers/pdf/pdf_page_widget.h"
-#include "viewers/pdf/pdf_transform_box.h"
+#include "plugins/pdf/pdf_viewer.h"
+#include "plugins/pdf/pdf_page_widget.h"
+#include "plugins/pdf/pdf_transform_box.h"
 #include "viewers/pdf/pdf_canvas_tools.h"
 #include "viewers/pdf/pdf_document_ops.h"
 

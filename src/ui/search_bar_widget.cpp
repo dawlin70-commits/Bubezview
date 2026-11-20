@@ -1,4 +1,5 @@
 #include "search_bar_widget.h"
+#include "theme_manager.h"
 #include <QKeyEvent>
 #include <QIcon>
 
@@ -24,37 +25,8 @@ SearchBarWidget::SearchBarWidget(QWidget *parent)
 
 void SearchBarWidget::setupUi()
 {
-    setStyleSheet(
-        "SearchBarWidget {"
-        "   background-color: palette(window);"
-        "   border: 1px solid palette(mid);"
-        "   border-radius: 8px;"
-        "}"
-        "QLineEdit {"
-        "   background-color: palette(base);"
-        "   color: palette(text);"
-        "   border: 1px solid palette(mid);"
-        "   border-radius: 4px;"
-        "   padding: 2px 6px;"
-        "   font-size: 11px;"
-        "}"
-        "QPushButton {"
-        "   background-color: palette(button);"
-        "   color: palette(button-text);"
-        "   border: 1px solid palette(mid);"
-        "   border-radius: 4px;"
-        "   padding: 2px 6px;"
-        "   font-size: 11px;"
-        "}"
-        "QPushButton:hover {"
-        "   background-color: palette(highlight);"
-        "   color: palette(highlighted-text);"
-        "}"
-        "QCheckBox {"
-        "   color: palette(window-text);"
-        "   font-size: 10px;"
-        "}"
-    );
+    setAttribute(Qt::WA_StyledBackground, true);
+    updateTheme();
 
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(6, 4, 6, 4);
@@ -188,6 +160,63 @@ void SearchBarWidget::updateWidgetSize()
     } else {
         setFixedSize(380, 36);
     }
+}
+
+void SearchBarWidget::updateTheme()
+{
+    const ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    const bool isLight = ThemeManager::isLight(preset);
+    const bool isZinc = (preset == ThemePreset::ZincGray);
+
+    const QString bg = isLight ? QStringLiteral("rgba(248, 250, 252, 0.96)")
+                               : (isZinc ? QStringLiteral("rgba(52, 53, 58, 0.96)")
+                                         : QStringLiteral("rgba(24, 30, 44, 0.96)"));
+    const QString border = isLight ? QStringLiteral("rgba(15, 23, 42, 0.16)")
+                                   : (isZinc ? QStringLiteral("rgba(255, 255, 255, 0.18)")
+                                             : QStringLiteral("rgba(56, 189, 248, 0.28)"));
+    const QString inputBg = isLight ? QStringLiteral("#ffffff")
+                                    : (isZinc ? QStringLiteral("#2a2b2e")
+                                              : QStringLiteral("#131824"));
+    const QString text = isLight ? QStringLiteral("#0f172a") : QStringLiteral("#f1f5f9");
+    const QString btnBg = isLight ? QStringLiteral("rgba(15, 23, 42, 0.06)")
+                                  : (isZinc ? QStringLiteral("#585960")
+                                            : QStringLiteral("rgba(255, 255, 255, 0.08)"));
+    const QString accent = isZinc ? QStringLiteral("#6b6c74") : QStringLiteral("#0284c7");
+
+    setStyleSheet(QString(
+        "SearchBarWidget {"
+        "   background-color: %1;"
+        "   border: 1px solid %2;"
+        "   border-radius: 10px;"
+        "}"
+        "QLineEdit {"
+        "   background-color: %3;"
+        "   color: %4;"
+        "   border: 1px solid %2;"
+        "   border-radius: 6px;"
+        "   padding: 2px 6px;"
+        "   font-size: 11px;"
+        "}"
+        "QLineEdit:focus {"
+        "   border-color: %6;"
+        "}"
+        "QPushButton {"
+        "   background-color: %5;"
+        "   color: %4;"
+        "   border: 1px solid %2;"
+        "   border-radius: 6px;"
+        "   padding: 2px 6px;"
+        "   font-size: 11px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: %6;"
+        "   color: #ffffff;"
+        "}"
+        "QCheckBox {"
+        "   color: %4;"
+        "   font-size: 10px;"
+        "}"
+    ).arg(bg, border, inputBg, text, btnBg, accent));
 }
 
 QString SearchBarWidget::searchText() const

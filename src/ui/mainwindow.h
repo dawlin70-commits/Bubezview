@@ -85,20 +85,9 @@ private:
     void updateStatusBar() override;
 
     MinimalHeaderBar *m_minimalHeaderBar;
-    QWidget *m_breadcrumbWidget;
-    QHBoxLayout *m_breadcrumbLayout;
-    QString m_lastBreadcrumbDir;
-    QLabel *m_fileIndexLabel;
-    QLabel *m_fileInfoLabel;
-    QLabel *m_statusLabel;
-
-    void updateBreadcrumbs();
 
     void openPdfMergeDialog();
 
-    QPushButton *m_btnUpdateNotification;
-    QTimer *m_updateBlinkTimer;
-    bool m_updateBlinkState;
     ReleaseInfo m_availableRelease;
 
     QFrame *m_updateBanner;
@@ -109,7 +98,6 @@ private:
     void showUpdateDialog(const struct ReleaseInfo &info);
     void setupUpdateBanner();
     void setupDebugBanner();
-    void updateBlinkEffect();
 
     QString currentActiveTargetFilePath() const;
 
@@ -124,7 +112,6 @@ private:
     void updateFramelessBorderStyle();
 
     QWidget *m_borderOverlay = nullptr;
-    QSize m_lastMaskSize;
     bool m_isFrameless = true;
     bool m_wasMaximizedBeforeEdit = false;
     QRect m_preEditGeometry;

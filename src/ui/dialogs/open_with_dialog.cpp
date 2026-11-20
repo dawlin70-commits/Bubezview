@@ -1,4 +1,5 @@
 #include "open_with_dialog.h"
+#include "core/services/theme_manager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -25,6 +26,13 @@ void OpenWithDialog::setupUi()
     setWindowTitle(tr("Open With... — BubezView"));
     resize(460, 480);
 
+    const bool isDark = ThemeManager::isDarkTheme();
+    const QString textCol = isDark ? QStringLiteral("#f1f5f9") : QStringLiteral("#0f172a");
+    const QString subCol = isDark ? QStringLiteral("#94a3b8") : QStringLiteral("#64748b");
+    const QString inputBg = isDark ? QStringLiteral("rgba(15, 23, 42, 0.72)") : QStringLiteral("#ffffff");
+    const QString borderCol = isDark ? QStringLiteral("rgba(255, 255, 255, 0.14)") : QStringLiteral("rgba(15, 23, 42, 0.16)");
+    const QString hoverBg = isDark ? QStringLiteral("rgba(255, 255, 255, 0.08)") : QStringLiteral("rgba(15, 23, 42, 0.06)");
+
     QVBoxLayout *mainLay = contentLayout();
     mainLay->setContentsMargins(4, 4, 4, 4);
     mainLay->setSpacing(10);
@@ -35,8 +43,8 @@ void OpenWithDialog::setupUi()
     if (mime.isEmpty()) mime = db.mimeTypeForFile(m_filePath).name();
 
     QLabel *lblHeader = new QLabel(
-        QString("<b>%1</b><br><small style='color: #888;'>%2 • %3</small>")
-            .arg(fi.fileName(), mime, fi.dir().path()),
+        QString("<b style='color: %1;'>%2</b><br><small style='color: %3;'>%4 • %5</small>")
+            .arg(textCol, fi.fileName().toHtmlEscaped(), subCol, mime.toHtmlEscaped(), fi.dir().path().toHtmlEscaped()),
         this
     );
     lblHeader->setWordWrap(true);
@@ -45,17 +53,33 @@ void OpenWithDialog::setupUi()
     m_filterEdit = new QLineEdit(this);
     m_filterEdit->setPlaceholderText(tr("Search installed applications..."));
     m_filterEdit->setClearButtonEnabled(true);
+    m_filterEdit->setStyleSheet(QStringLiteral(
+        "QLineEdit { background: %1; color: %2; border: 1px solid %3; border-radius: 8px; padding: 6px 10px; }")
+        .arg(inputBg, textCol, borderCol));
     connect(m_filterEdit, &QLineEdit::textChanged, this, &OpenWithDialog::onFilterChanged);
     mainLay->addWidget(m_filterEdit);
 
     m_listWidget = new QListWidget(this);
     m_listWidget->setIconSize(QSize(28, 28));
-    m_listWidget->setStyleSheet(
+    m_listWidget->setStyleSheet(QStringLiteral(
+        "QListWidget {"
+        "   background: %1;"
+        "   color: %2;"
+        "   border: 1px solid %3;"
+        "   border-radius: 8px;"
+        "   padding: 4px;"
+        "}"
         "QListWidget::item {"
         "   padding: 6px 8px;"
-        "   border-radius: 4px;"
+        "   border-radius: 6px;"
         "}"
-    );
+        "QListWidget::item:hover {"
+        "   background: %4;"
+        "}"
+        "QListWidget::item:selected {"
+        "   background: #0284c7;"
+        "   color: #ffffff;"
+        "}").arg(inputBg, textCol, borderCol, hoverBg));
     connect(m_listWidget, &QListWidget::itemDoubleClicked, this, &OpenWithDialog::onAppItemDoubleClicked);
     mainLay->addWidget(m_listWidget, 1);
 

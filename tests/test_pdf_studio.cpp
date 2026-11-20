@@ -23,13 +23,13 @@
 #include "core/services/theme_manager.h"
 #include "core/system/build_config.h"
 
-#include "ui/pdf/pdf_studio_panel.h"
+#include "plugins/pdf/pdf_studio_panel.h"
 #include "ui/pdf/pdf_history_widget.h"
-#include "viewers/pdf/pdf_transform_box.h"
+#include "plugins/pdf/pdf_transform_box.h"
 #include "viewers/pdf/pdf_canvas_tools.h"
 #include "ui/minimal_header_bar.h"
 #include "ui/contextual_action_bar.h"
-#include "ui/pdf/pdf_signature_dialog.h"
+#include "plugins/pdf/pdf_signature_dialog.h"
 #include "ui/dialogs/unified_export_dialog.h"
 #include "ui/pdf/pdf_image_extract_dialog.h"
 

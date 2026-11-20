@@ -1501,8 +1501,28 @@ void PdfViewer::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     updateHudPosition();
-    if (m_fitToWidthMode && m_doc && m_resizeTimer) {
-        m_resizeTimer->start(35);
+    if (m_fitToWidthMode && m_doc && m_pageWidget && m_scrollArea) {
+        // Stage 1 (0 ms, synchronous): immediately rescale page layout using cached pixmaps
+        // so the PDF tracks window / fullscreen transitions in the exact same frame with zero lag.
+        QScrollBar *vbar = m_scrollArea->verticalScrollBar();
+        const double scrollRatio = (vbar && vbar->maximum() > 0)
+            ? static_cast<double>(vbar->value()) / static_cast<double>(vbar->maximum())
+            : 0.0;
+
+        const int availWidth = std::max(120, m_scrollArea->viewport()->width() - 48);
+        {
+            std::unique_ptr<QSignalBlocker> blockV;
+            if (vbar) blockV = std::make_unique<QSignalBlocker>(vbar);
+            m_pageWidget->fastRescaleForWidth(availWidth);
+            if (vbar && vbar->maximum() > 0) {
+                vbar->setValue(qRound(scrollRatio * vbar->maximum()));
+            }
+        }
+
+        // Stage 2 (debounced 65 ms): re-render crisp native DPI via Poppler once resize settles
+        if (m_resizeTimer) {
+            m_resizeTimer->start(65);
+        }
     }
 }
 

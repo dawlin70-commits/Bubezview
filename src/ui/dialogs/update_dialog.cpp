@@ -5,6 +5,8 @@
 
 #include "update_dialog.h"
 #include "build_options_dialog.h"
+#include "build_config.h"
+#include "core/services/theme_manager.h"
 #include "mainwindow.h"
 #include "base_skin.h"
 #include <QVBoxLayout>
@@ -15,6 +17,11 @@
 #include <QUrl>
 #include <QDir>
 #include <QFile>
+
+#if defined(Q_OS_UNIX)
+#include <signal.h>
+#include <unistd.h>
+#endif
 
 UpdateDialog::UpdateDialog(const ReleaseInfo &info, QWidget *parent)
     : FramelessDialog(parent)
@@ -39,6 +46,17 @@ UpdateDialog::UpdateDialog(const ReleaseInfo &info, QWidget *parent)
 UpdateDialog::~UpdateDialog()
 {
     if (m_process && m_process->state() != QProcess::NotRunning) {
+#if defined(Q_OS_UNIX)
+        const qint64 pid = m_process->processId();
+        if (pid > 0) {
+            ::kill(-static_cast<pid_t>(pid), SIGTERM);
+            if (!m_process->waitForFinished(500)) {
+                ::kill(-static_cast<pid_t>(pid), SIGKILL);
+                m_process->waitForFinished(500);
+            }
+            return;
+        }
+#endif
         m_process->kill();
         m_process->waitForFinished(1000);
     }
@@ -72,14 +90,19 @@ void UpdateDialog::setupUi()
     }
     mainLayout->addWidget(lblSecurity);
 
+    const bool isDark = ThemeManager::isDarkTheme();
     m_lblChangelog = new QLabel(this);
     m_lblChangelog->setWordWrap(true);
     m_lblChangelog->setText(QString("<b>%1</b><br>%2").arg(tr("Changelog:"), m_info.changelog));
-    m_lblChangelog->setStyleSheet("background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 10px;");
+    m_lblChangelog->setStyleSheet(isDark
+        ? QStringLiteral("background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; padding: 10px; color: #e2e8f0;")
+        : QStringLiteral("background-color: rgba(15, 23, 42, 0.04); border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 6px; padding: 10px; color: #1e293b;"));
     mainLayout->addWidget(m_lblChangelog);
 
     m_lblStatus = new QLabel(tr("Ready to update. Existing compilation optimizations will be preserved."), this);
-    m_lblStatus->setStyleSheet("color: #38bdf8; font-size: 11px;");
+    m_lblStatus->setStyleSheet(isDark
+        ? QStringLiteral("color: #38bdf8; font-size: 11px;")
+        : QStringLiteral("color: #0284c7; font-size: 11px;"));
     mainLayout->addWidget(m_lblStatus);
 
     m_progressBar = new QProgressBar(this);
@@ -193,13 +216,23 @@ void UpdateDialog::startUpdate()
 
     m_process = new QProcess(this);
     m_process->setProcessChannelMode(QProcess::MergedChannels);
+#if defined(Q_OS_UNIX)
+    // Run the update build in its own process group so closing the dialog cleanly stops child compilers
+    m_process->setChildProcessModifier([]() {
+        ::setpgid(0, 0);
+    });
+#endif
 
     connect(m_process, &QProcess::readyReadStandardOutput, this, &UpdateDialog::onProcessOutput);
     connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, &UpdateDialog::onProcessFinished);
 
     QStringList args;
-    args << "--update" << "--cli";
+    args << QStringLiteral("--update") << QStringLiteral("--cli");
+    if (BuildConfig::instance().activeHardwareProfile() != BuildConfig::HardwareProfile::SystemPackages) {
+        args << QStringLiteral("--no-sudo");
+    }
+    args.append(BuildConfig::instance().toCMakeArgs());
     m_process->start(scriptPath, args);
 }
 

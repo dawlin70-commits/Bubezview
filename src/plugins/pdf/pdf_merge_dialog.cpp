@@ -42,9 +42,12 @@ PdfMergeDialog::PdfMergeDialog(const QStringList &initialFiles, QWidget *parent)
 
 PdfMergeDialog::~PdfMergeDialog()
 {
-    if (m_process && m_process->state() == QProcess::Running) {
-        m_process->kill();
-        m_process->waitForFinished(500);
+    if (m_process) {
+        m_process->disconnect(this);
+        if (m_process->state() != QProcess::NotRunning) {
+            m_process->kill();
+            m_process->waitForFinished(500);
+        }
     }
 }
 
@@ -289,7 +292,7 @@ void PdfMergeDialog::onProcessFinished(int exitCode)
     m_btnBrowseOutput->setEnabled(true);
     m_fileListWidget->setEnabled(true);
 
-    if (exitCode == 0 && QFileInfo::exists(m_outPath)) {
+    if (m_process->exitStatus() == QProcess::NormalExit && exitCode == 0 && QFileInfo::exists(m_outPath)) {
         BuildConfig::incrementPdfMergeCount();
         m_lblStatus->setText(tr("Merge completed successfully!"));
         emit fileMerged(m_outPath);

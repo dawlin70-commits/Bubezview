@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.16)
 # BubezView — Modern Modular Document & Media Viewer
 # Root Build System Configuration
 # ==============================================================================
-project(bubezview VERSION 0.5.0 LANGUAGES CXX)
-set(BUBEZVIEW_VERSION_STRING "0.5.0")
+project(bubezview VERSION 0.5 LANGUAGES CXX)
+set(BUBEZVIEW_VERSION_STRING "0.5")
 add_compile_definitions(BUBEZVIEW_VERSION="${BUBEZVIEW_VERSION_STRING}")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -41,6 +41,15 @@ option(STATIC_ARCHIVE "Statically embed and optimize Archive engine (LibArchive)
 option(STATIC_OFFICE "Embed internal Office document parser" OFF)
 option(ENABLE_INTERNAL_OFFICE "Enable internal Office document parser (librevenge)" OFF)
 option(OPTIMIZE_FOR_NATIVE_CPU "Enable native CPU microarchitecture tuning (-march=native)" ON)
+
+# Modular Edit Studio plugins (.so): disabled by default for fast core builds, compiled on demand
+option(BUILD_ALL_PLUGINS "Build all optional Edit Studio .so modules" OFF)
+option(BUILD_PLUGIN_FOLDER "Build Folder Studio module (bubez_folder.so)" OFF)
+option(BUILD_PLUGIN_PDF "Build PDF Studio module (bubez_pdf.so)" OFF)
+option(BUILD_PLUGIN_AUDIO "Build Audio Studio module (bubez_audio.so)" OFF)
+option(BUILD_PLUGIN_VIDEO "Build Video Studio module (bubez_video.so)" OFF)
+option(BUILD_PLUGIN_IMAGE "Build Image Studio module (bubez_image.so)" OFF)
+option(BUILD_PLUGIN_MEDIA "Legacy alias for BUILD_PLUGIN_AUDIO" OFF)
 
 # -----------------------------------------------------------------------------
 # 2. Optimization Level & CPU Instruction Tuning

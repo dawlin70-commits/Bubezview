@@ -9,6 +9,8 @@
 #include "core/interfaces/i_pdf_viewer.h"
 #include "core/interfaces/i_archive_viewer.h"
 #include "core/interfaces/i_media_viewer.h"
+#include "core/interfaces/i_image_studio_plugin.h"
+#include "core/interfaces/i_video_studio_plugin.h"
 #include "viewers/media/system_media_viewer.h"
 #include "engine_prompt_card.h"
 #include "build_options_dialog.h"
@@ -240,7 +242,6 @@ BaseSkin::BaseSkin(QWidget *parent)
     , m_currentCategory(FileCategory::Unknown)
     , m_transitionOverlay(nullptr)
     , m_galleryTransition(nullptr)
-    , m_overlayOpacity(nullptr)
     , m_animGroup(nullptr)
     , m_lastSwitchTimeMs(0)
     , m_slideshowTimer(nullptr)
@@ -292,58 +293,56 @@ BaseSkin::BaseSkin(QWidget *parent)
         }
     });
 
+    // Synchronously tear down any live plugin widgets/viewers before dlclose()
+    connect(&PluginManager::instance(), &PluginManager::aboutToUnloadPlugin,
+            this, &BaseSkin::onPluginAboutToUnload, Qt::DirectConnection);
+
     // 7. Unsupported File Technical Inspection Card
     m_unsupportedViewer = new QWidget(this);
     QVBoxLayout *unsupLay = new QVBoxLayout(m_unsupportedViewer);
     unsupLay->setAlignment(Qt::AlignCenter);
     unsupLay->setSpacing(14);
 
-    QFrame *cardFrame = new QFrame(m_unsupportedViewer);
-    cardFrame->setObjectName("unsupportedCard");
-    cardFrame->setStyleSheet("#unsupportedCard { background-color: rgba(30, 41, 59, 0.7); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; padding: 24px; }");
-    cardFrame->setMaximumWidth(540);
-    cardFrame->setMinimumWidth(320);
+    m_unsupportedCardFrame = new QFrame(m_unsupportedViewer);
+    m_unsupportedCardFrame->setObjectName("unsupportedCard");
+    m_unsupportedCardFrame->setMaximumWidth(540);
+    m_unsupportedCardFrame->setMinimumWidth(320);
 
-    QVBoxLayout *cardLay = new QVBoxLayout(cardFrame);
+    QVBoxLayout *cardLay = new QVBoxLayout(m_unsupportedCardFrame);
     cardLay->setSpacing(14);
     cardLay->setAlignment(Qt::AlignCenter);
 
-    m_lblUnsupportedIcon = new QLabel(cardFrame);
+    m_lblUnsupportedIcon = new QLabel(m_unsupportedCardFrame);
     m_lblUnsupportedIcon->setAlignment(Qt::AlignCenter);
     cardLay->addWidget(m_lblUnsupportedIcon);
 
-    m_lblUnsupportedName = new QLabel(cardFrame);
+    m_lblUnsupportedName = new QLabel(m_unsupportedCardFrame);
     m_lblUnsupportedName->setAlignment(Qt::AlignCenter);
-    m_lblUnsupportedName->setStyleSheet("font-size: 16px; font-weight: bold; color: #f8fafc;");
     m_lblUnsupportedName->setWordWrap(true);
     cardLay->addWidget(m_lblUnsupportedName);
 
-    m_lblUnsupportedDetails = new QLabel(cardFrame);
+    m_lblUnsupportedDetails = new QLabel(m_unsupportedCardFrame);
     m_lblUnsupportedDetails->setAlignment(Qt::AlignLeft);
-    m_lblUnsupportedDetails->setStyleSheet("font-size: 12px; color: #cbd5e1; line-height: 1.6; padding: 12px; background-color: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.15);");
     m_lblUnsupportedDetails->setWordWrap(true);
     cardLay->addWidget(m_lblUnsupportedDetails);
 
     QHBoxLayout *unsupBtnLay = new QHBoxLayout();
     unsupBtnLay->setSpacing(12);
 
-    m_btnUnsupportedOpenWith = new QPushButton(tr("Open with another application..."), cardFrame);
+    m_btnUnsupportedOpenWith = new QPushButton(tr("Open with another application..."), m_unsupportedCardFrame);
     m_btnUnsupportedOpenWith->setCursor(Qt::PointingHandCursor);
-    m_btnUnsupportedOpenWith->setStyleSheet("QPushButton { background-color: #0284c7; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px; font-size: 12px; }"
-                                           "QPushButton:hover { background-color: #0369a1; }");
     connect(m_btnUnsupportedOpenWith, &QPushButton::clicked, this, &BaseSkin::openCurrentWithExternal);
 
-    m_btnUnsupportedHexDump = new QPushButton(tr("View Hex Dump"), cardFrame);
+    m_btnUnsupportedHexDump = new QPushButton(tr("View Hex Dump"), m_unsupportedCardFrame);
     m_btnUnsupportedHexDump->setCursor(Qt::PointingHandCursor);
-    m_btnUnsupportedHexDump->setStyleSheet("QPushButton { background-color: rgba(100, 116, 139, 0.25); color: #f1f5f9; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(100, 116, 139, 0.35); }"
-                                          "QPushButton:hover { background-color: rgba(100, 116, 139, 0.4); color: white; }");
     connect(m_btnUnsupportedHexDump, &QPushButton::clicked, this, &BaseSkin::showCurrentHexDump);
 
     unsupBtnLay->addWidget(m_btnUnsupportedOpenWith);
     unsupBtnLay->addWidget(m_btnUnsupportedHexDump);
     cardLay->addLayout(unsupBtnLay);
 
-    unsupLay->addWidget(cardFrame);
+    unsupLay->addWidget(m_unsupportedCardFrame);
+    updateUnsupportedCardTheme();
 
     m_stackedWidget->addWidget(m_imageViewer);       // 0
     m_stackedWidget->addWidget(m_textViewer);        // 1
@@ -491,15 +490,9 @@ IPdfViewer *BaseSkin::ensurePdfViewerCreated()
     if (m_pdfViewer) {
         return m_pdfViewer;
     }
-    IPdfViewer *newViewer = nullptr;
-    if (PluginManager::instance().isEngineAvailable(FileCategory::Pdf)) {
-        auto *vw = PluginManager::instance().createViewer(FileCategory::Pdf, this);
-        newViewer = dynamic_cast<IPdfViewer*>(vw);
-    }
-    if (!newViewer) {
-        newViewer = new PdfBaseViewer(this);
-    }
-    m_pdfViewer = newViewer;
+    // Always open PDFs in lightweight Core PdfBaseViewer in View Mode;
+    // bubez_pdf.so (PDF Studio) is promoted lazily only when entering Edit Mode.
+    m_pdfViewer = new PdfBaseViewer(this);
 
     if (m_pdfViewer) {
         safeReplaceStackedWidget(2, m_pdfViewer->widget());
@@ -524,7 +517,7 @@ IPdfViewer *BaseSkin::ensurePdfViewerCreated()
     return m_pdfViewer;
 }
 
-void BaseSkin::safeReplaceStackedWidget(int index, QWidget *newWidget)
+void BaseSkin::safeReplaceStackedWidget(int index, QWidget *newWidget, bool synchronousDelete)
 {
     if (!m_stackedWidget || !newWidget) return;
 
@@ -540,7 +533,78 @@ void BaseSkin::safeReplaceStackedWidget(int index, QWidget *newWidget)
         oldW->hide();
         m_stackedWidget->removeWidget(oldW);
         oldW->setParent(nullptr);
-        oldW->deleteLater();
+        if (synchronousDelete) {
+            delete oldW;
+        } else {
+            oldW->deleteLater();
+        }
+    }
+}
+
+void BaseSkin::onPluginAboutToUnload(const QString &pluginId)
+{
+    const QString id = pluginId.trimmed().toLower();
+    if (id == QLatin1String("image")) {
+        if (m_imageViewer) {
+            m_imageViewer->detachStudioWidget();
+        }
+        if (m_isEditMode && m_currentCategory == FileCategory::Image) {
+            setEditMode(false);
+        }
+    } else if (id == QLatin1String("video")) {
+        if (auto *sysMv = dynamic_cast<SystemMediaViewer*>(m_mediaViewer)) {
+            sysMv->detachVideoStudioWidget();
+        }
+        if (m_isEditMode && m_currentCategory == FileCategory::Media
+            && m_mediaViewer && !m_mediaViewer->isAudioOnly()) {
+            setEditMode(false);
+        }
+    } else if (id == QLatin1String("folder")) {
+        if (m_folderViewer) {
+            m_folderViewer->detachStudioWidget();
+        }
+        if (m_isEditMode && m_currentCategory == FileCategory::Folder) {
+            setEditMode(false);
+        }
+    } else if (id == QLatin1String("audio") || id == QLatin1String("media")) {
+        // If m_mediaViewer is the plugin MPV MediaViewer (not built-in SystemMediaViewer),
+        // synchronously replace it with SystemMediaViewer before bubez_audio.so is unloaded
+        if (m_mediaViewer && !dynamic_cast<SystemMediaViewer*>(m_mediaViewer)) {
+            m_mediaViewer->clear();
+            auto *fallback = new SystemMediaViewer(this);
+            m_mediaViewer = fallback;
+            safeReplaceStackedWidget(4, m_mediaViewer->widget(), true);
+            m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
+                openFile(path);
+            });
+            m_mediaViewer->setOnUpgradeToProRequested([this]() {
+                promoteMediaViewerToStudio();
+            });
+            m_mediaViewer->updateTheme();
+            if (m_isEditMode && m_currentCategory == FileCategory::Media) {
+                setEditMode(false);
+            }
+        }
+    } else if (id == QLatin1String("pdf")) {
+        // If m_pdfViewer is the plugin PdfViewer (not built-in PdfBaseViewer),
+        // synchronously replace it with a lightweight placeholder before bubez_pdf.so is unloaded
+        if (m_pdfViewer && !dynamic_cast<PdfBaseViewer*>(m_pdfViewer)) {
+            m_pdfViewer->clear();
+            m_pdfViewer = nullptr;
+            safeReplaceStackedWidget(2, new QWidget(this), true);
+            if (m_isEditMode && m_currentCategory == FileCategory::Pdf) {
+                setEditMode(false);
+            }
+        }
+    } else if (id == QLatin1String("archive")) {
+        if (m_archiveViewer) {
+            m_archiveViewer->clear();
+            m_archiveViewer = nullptr;
+            safeReplaceStackedWidget(3, new QWidget(this), true);
+            if (m_isEditMode && m_currentCategory == FileCategory::Archive) {
+                setEditMode(false);
+            }
+        }
     }
 }
 
@@ -556,15 +620,11 @@ bool BaseSkin::promotePdfViewerToStudio()
         return true;
     }
 
-    // Check if the PDF Studio plugin is available
+    // Check if the PDF Studio plugin is available; if missing, prompt user to activate & compile on demand
     if (!PluginManager::instance().isEngineAvailable(FileCategory::Pdf)) {
-        QMessageBox::information(
-            this,
-            tr("PDF Studio Plugin Required"),
-            tr("<p>The <b>PDF Studio</b> module (<code>bubez_pdf.so</code>) is required for editing, digital signatures, and page management.</p>"
-               "<p>You can compile or install this module from Settings → Extensions.</p>")
-        );
-        return false;
+        if (!PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("pdf"), this)) {
+            return false;
+        }
     }
 
     int curPage = m_pdfViewer->currentPage();
@@ -681,24 +741,10 @@ IArchiveViewer *BaseSkin::ensureArchiveViewerCreated()
 
 IMediaViewer *BaseSkin::ensureMediaViewerCreated()
 {
-    QSettings s("Bubez", "BubezView");
-    const bool mpvEnabled = s.value("modules/mpv_enabled", true).toBool();
-    const bool canUseMpv = mpvEnabled && PluginManager::instance().isEngineAvailable(FileCategory::Media);
-    const bool isSystemViewer = (dynamic_cast<SystemMediaViewer*>(m_mediaViewer) != nullptr);
-
-    if (!m_mediaViewer || (canUseMpv && isSystemViewer) || (!canUseMpv && !isSystemViewer)) {
-        if (m_mediaViewer) {
-            m_mediaViewer->clear();
-        }
-        IMediaViewer *newViewer = nullptr;
-        if (canUseMpv) {
-            auto *mv = PluginManager::instance().createViewer(FileCategory::Media, this);
-            newViewer = dynamic_cast<IMediaViewer*>(mv);
-        }
-        if (!newViewer) {
-            newViewer = new SystemMediaViewer(this);
-        }
-        m_mediaViewer = newViewer;
+    // Always open Audio & Video in lightweight Core SystemMediaViewer in View Mode;
+    // bubez_audio.so (Audio Studio) and bubez_video.so (Video Studio) load lazily on Edit Mode.
+    if (!m_mediaViewer) {
+        m_mediaViewer = new SystemMediaViewer(this);
         safeReplaceStackedWidget(4, m_mediaViewer->widget());
         m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
             openFile(path);
@@ -719,48 +765,18 @@ bool BaseSkin::promoteMediaViewerToStudio()
     }
     if (!m_mediaViewer) return false;
 
-    // If it's already the MPV studio plugin (not SystemMediaViewer), nothing to do
+    // If it's already the MPV Audio Studio plugin (not SystemMediaViewer), nothing to do
     if (!dynamic_cast<SystemMediaViewer*>(m_mediaViewer)) {
         return true;
     }
 
-    // Check if the Media Studio plugin is available
+    // Check if the Audio Studio plugin (bubez_audio.so) is available; refresh discovery once first
+    // in case it was installed after startup, and only prompt/build if genuinely missing.
     if (!PluginManager::instance().isEngineAvailable(FileCategory::Media)) {
-        const QString distro = PackageManagerHelper::distroDisplayName();
-        const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("mpv"));
-        QMessageBox prompt(this);
-        prompt.setWindowTitle(tr("Multimedia Studio (Pro Mode)"));
-        prompt.setIcon(QMessageBox::Information);
-        prompt.setText(tr("<h3>Activate Multimedia Studio (Pro Mode)</h3>"
-                          "<p>The <b>Multimedia Studio (MPV)</b> engine unlocks precision seeking, 64-bit float audio playback, and full audio editing tools (cutter, tags, filters, pitch shifting, and equalizer).</p>"
-                          "<p>Detected distribution: <b>%1</b></p>"
-                          "<p>Installation command:<br><code>%2</code></p>")
-                          .arg(distro, installCmd));
-
-        QPushButton *btnInstall = prompt.addButton(tr("⚡ Install & Activate Pro Mode"), QMessageBox::AcceptRole);
-        QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
-        Q_UNUSED(btnCancel);
-        prompt.setDefaultButton(btnInstall);
-        prompt.exec();
-
-        if (prompt.clickedButton() == btnInstall) {
-            if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
-                // If bubez_media.so has not been compiled yet, attempt to build it
-                QString appDir = QCoreApplication::applicationDirPath();
-                QString pluginPath = appDir + QStringLiteral("/plugins/bubez_media.so");
-                if (!QFile::exists(pluginPath)) {
-                    QProcess configProc;
-                    configProc.start(QStringLiteral("cmake"), {QStringLiteral("-B"), appDir});
-                    configProc.waitForFinished(30000);
-
-                    QProcess buildProc;
-                    buildProc.start(QStringLiteral("cmake"), {QStringLiteral("--build"), appDir, QStringLiteral("--target"), QStringLiteral("bubez_media"), QStringLiteral("-j4")});
-                    buildProc.waitForFinished(60000);
-                }
-                PluginManager::instance().discoverPlugins();
-            }
-        }
-        if (!PluginManager::instance().isEngineAvailable(FileCategory::Media)) {
+        PluginManager::instance().discoverPlugins();
+    }
+    if (!PluginManager::instance().isEngineAvailable(FileCategory::Media)) {
+        if (!PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("audio"), this)) {
             return false;
         }
     }
@@ -821,12 +837,15 @@ FolderViewer *BaseSkin::ensureFolderViewerCreated()
             updateWindowTitle();
         }
     });
-    connect(m_folderViewer, &FolderViewer::filePreviewRequested, this, [this](const QString &path) {
-        openFileFromGalleryWithZoom(path);
+    connect(m_folderViewer, &FolderViewer::filePreviewRequested, this,
+            [this](const QString &path, const QStringList &contextFiles) {
+        openFileFromGalleryWithZoom(path, contextFiles);
     });
     connect(m_folderViewer, &FolderViewer::itemContextMenuRequested, this, [this](const QPoint &globalPos, const QString &) {
         showContextMenuAt(globalPos);
     });
+    connect(m_folderViewer, &FolderViewer::trashSelectedRequested, this, &BaseSkin::deleteCurrentFile);
+    connect(m_folderViewer, &FolderViewer::propertiesRequested, this, &BaseSkin::showFileInfo);
 
     onViewerInitialized(FileCategory::Folder);
     return m_folderViewer;
@@ -834,6 +853,14 @@ FolderViewer *BaseSkin::ensureFolderViewerCreated()
 
 BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
 {
+    cancelStandbyTimer();
+
+    // Refresh system theme dynamically if the OS light/dark preference changed while in RAM standby
+    if (ThemeManager::currentPreset() == ThemePreset::System &&
+        ThemeManager::effectivePreset(ThemePreset::System) != ThemeManager::lastAppliedEffectivePreset()) {
+        applyCurrentTheme();
+    }
+
     QFileInfo info(filePath);
     if (!info.exists()) {
         return OpenResult::Failed;
@@ -943,50 +970,14 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
 
         if (isExotic) {
             if (!hasMpv) {
-                const QString distro = PackageManagerHelper::distroDisplayName();
-                const QString installCmd = PackageManagerHelper::getInstallCommand(QStringLiteral("mpv"));
-                QMessageBox prompt(this);
-                prompt.setWindowTitle(tr("Multimedia Studio Module Required"));
-                prompt.setIcon(QMessageBox::Warning);
-                prompt.setText(tr("<h3>Advanced Media Engine Required</h3>"
-                                  "<p>The audio format <b>.%1</b> requires the <b>Multimedia Studio</b> engine (<code>bubez_media.so</code> / <code>libmpv</code>) for decoding and playback.</p>"
-                                  "<p>Detected distribution: <b>%2</b></p>"
-                                  "<p>Manual installation command:<br><code>%3</code></p>")
-                                  .arg(ext.toUpper(), distro, installCmd));
-
-                QPushButton *btnInstall = prompt.addButton(tr("Install MPV Engine"), QMessageBox::AcceptRole);
-                QPushButton *btnCancel = prompt.addButton(tr("Cancel"), QMessageBox::RejectRole);
-                Q_UNUSED(btnCancel);
-                prompt.setDefaultButton(btnInstall);
-                prompt.exec();
-
-                if (prompt.clickedButton() == btnInstall) {
-                    if (PackageManagerHelper::installComponentInteractive(QStringLiteral("mpv"), this)) {
-                        QString appDir = QCoreApplication::applicationDirPath();
-                        QString pluginPath = appDir + QStringLiteral("/plugins/bubez_media.so");
-                        if (!QFile::exists(pluginPath)) {
-                            QProcess configProc;
-                            configProc.start(QStringLiteral("cmake"), {QStringLiteral("-B"), appDir});
-                            configProc.waitForFinished(30000);
-
-                            QProcess buildProc;
-                            buildProc.start(QStringLiteral("cmake"), {QStringLiteral("--build"), appDir, QStringLiteral("--target"), QStringLiteral("bubez_media"), QStringLiteral("-j4")});
-                            buildProc.waitForFinished(60000);
-                        }
-                        PluginManager::instance().discoverPlugins();
-                    }
-                }
-                if (!PluginManager::instance().isEngineAvailable(FileCategory::Media)) {
+                if (!PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("audio"), this)) {
                     return OpenResult::Failed;
                 }
             }
             promoteMediaViewerToStudio();
-        } else {
-            // If the high-performance MPV engine is available, use it directly for hardware-accelerated playback
-            if (hasMpv) {
-                promoteMediaViewerToStudio();
-            }
         }
+        // Standard audio & video files always open in lightweight Core SystemMediaViewer;
+        // bubez_audio.so (Audio Studio) and bubez_video.so (Video Studio) load lazily on Edit Mode.
 
         ensureMediaViewerCreated();
         m_stackedWidget->setCurrentIndex(4);
@@ -1026,7 +1017,6 @@ BaseSkin::OpenResult BaseSkin::openFile(const QString &filePath)
         // Asynchronously prefetch adjacent candidate files into memory
         if (!m_siblingFiles.isEmpty() && m_currentIndex >= 0) {
             PreloadCacheManager::instance().requestPrefetchNeighbors(m_siblingFiles, m_currentIndex);
-            PreloadCacheManager::instance().inspectFolderForPdfs(m_siblingFiles);
         }
 
         if (m_transitionOverlay && m_animGroup && m_animGroup->state() == QAbstractAnimation::Running) {
@@ -1066,13 +1056,17 @@ void BaseSkin::scanDirectory(const QString &currentFilePath)
     QFileInfo info(currentFilePath);
     const QString absPath = info.absoluteFilePath();
 
-    // Fast path: if file is already present in sibling list, avoid redundant disk scan
-    const int existingIdx = m_siblingFiles.indexOf(absPath);
-    if (existingIdx != -1) {
-        m_currentIndex = existingIdx;
-        return;
+    // Fast path: if file is already present in sibling list (including scoped filter/studio playlists),
+    // avoid redundant disk scan and preserve the active navigation scope
+    if (!info.isDir()) {
+        const int existingIdx = m_siblingFiles.indexOf(absPath);
+        if (existingIdx != -1) {
+            m_currentIndex = existingIdx;
+            return;
+        }
     }
 
+    m_scopedNavigationActive = false;
     QDir dir = info.dir();
 
     QDir::Filters filters = QDir::Files;
@@ -1318,25 +1312,14 @@ void BaseSkin::showFileInfo()
         return;
     }
 
-    QFileInfo fi(targetPath);
-    QString info = QString(
-        "<b>" + tr("Name:") + "</b> %1<br>"
-        "<b>" + tr("Path:") + "</b> %2<br>"
-        "<b>" + tr("Size:") + "</b> %3<br>"
-        "<b>" + tr("Last modified:") + "</b> %4<br>"
-        "<b>" + tr("Permissions:") + "</b> %5<br>"
-    ).arg(fi.fileName(), fi.absoluteFilePath(), formatFileSize(fi.size()),
-          fi.lastModified().toString("dd/MM/yyyy HH:mm:ss"),
-          QString::number(fi.permissions(), 8));
-
-    if (m_stackedWidget && m_stackedWidget->currentIndex() == 2 && m_pdfViewer) {
-        info += QString("<b>" + tr("Total pages:") + "</b> %1<br>").arg(m_pdfViewer->pageCount());
-    } else if (m_stackedWidget && m_stackedWidget->currentIndex() == 1 && m_textViewer) {
-        info += QString("<b>" + tr("Text lines:") + "</b> %1<br><b>" + tr("Characters:") + "</b> %2<br>")
-            .arg(m_textViewer->lineCount()).arg(m_textViewer->charCount());
+    QList<QPair<QString, QString>> extraFields;
+    if (m_stackedWidget && m_stackedWidget->currentIndex() == 1 && m_textViewer) {
+        extraFields.append({tr("Text Lines:"), QString::number(m_textViewer->lineCount())});
+        extraFields.append({tr("Characters:"), QString::number(m_textViewer->charCount())});
     }
 
-    QMessageBox::information(this, tr("File Metadata & Properties"), info);
+    ImageInspectorDialog dlg(targetPath, QImage(), this, extraFields);
+    dlg.exec();
 }
 
 void BaseSkin::searchInDocument()
@@ -1517,6 +1500,31 @@ void BaseSkin::exportCurrentFileAs()
             if (QFile::exists(targetPath)) QFile::remove(targetPath);
             success = QFile::copy(m_currentFilePath, targetPath);
         }
+    } else if (m_currentCategory == FileCategory::Media) {
+        if (QStandardPaths::findExecutable(QStringLiteral("ffmpeg")).isEmpty()) {
+            if (!PackageManagerHelper::installComponentInteractive(QStringLiteral("ffmpeg"), this)) {
+                return;
+            }
+        }
+        QStringList args = {QStringLiteral("-y"), QStringLiteral("-i"), m_currentFilePath, QStringLiteral("-vn")};
+        if (ext == QLatin1String("mp3")) {
+            args << QStringLiteral("-c:a") << QStringLiteral("libmp3lame") << QStringLiteral("-b:a") << QStringLiteral("320k");
+        } else if (ext == QLatin1String("flac")) {
+            args << QStringLiteral("-c:a") << QStringLiteral("flac");
+        } else if (ext == QLatin1String("wav")) {
+            args << QStringLiteral("-c:a") << QStringLiteral("pcm_s16le");
+        } else if (ext == QLatin1String("ogg")) {
+            args << QStringLiteral("-c:a") << QStringLiteral("libvorbis") << QStringLiteral("-q:a") << QStringLiteral("6");
+        } else if (ext == QLatin1String("opus")) {
+            args << QStringLiteral("-c:a") << QStringLiteral("libopus") << QStringLiteral("-b:a") << QStringLiteral("160k");
+        }
+        args << targetPath;
+        QProcess proc;
+        proc.start(QStringLiteral("ffmpeg"), args);
+        success = proc.waitForFinished(120000)
+                  && proc.exitStatus() == QProcess::NormalExit
+                  && proc.exitCode() == 0
+                  && QFile::exists(targetPath);
     } else {
         if (QFile::exists(targetPath)) QFile::remove(targetPath);
         success = QFile::copy(m_currentFilePath, targetPath);
@@ -1553,9 +1561,16 @@ void BaseSkin::deleteCurrentFile()
     // Utilize FreeDesktop trash spec via QFile::moveToTrash for safe recovery
     if (QFile::moveToTrash(fileToDelete)) {
         PreloadCacheManager::instance().remove(fileToDelete);
+        if (m_folderViewer) {
+            m_folderViewer->notifyStudioFileRemoved(fileToDelete);
+        }
         if (!m_siblingFiles.isEmpty() && indexToRemove >= 0 && indexToRemove < m_siblingFiles.size()) {
             m_siblingFiles.removeAt(indexToRemove);
             if (m_siblingFiles.isEmpty()) {
+                if (m_returnToFolderStudio && !m_returnStudioFolder.isEmpty() && QDir(m_returnStudioFolder).exists()) {
+                    returnToFolderStudio();
+                    return;
+                }
                 m_currentIndex = -1;
                 m_currentFilePath.clear();
                 updateWindowTitle();
@@ -2008,6 +2023,13 @@ bool BaseSkin::isDaemonMode() const
     return m_isDaemonMode;
 }
 
+void BaseSkin::cancelStandbyTimer()
+{
+    if (m_backgroundTimer && m_backgroundTimer->isActive()) {
+        m_backgroundTimer->stop();
+    }
+}
+
 bool BaseSkin::promptAndSaveIfModified()
 {
     bool isImgMod = (m_stackedWidget->currentIndex() == 0 && m_imageViewer && m_imageViewer->isModified());
@@ -2095,8 +2117,9 @@ void BaseSkin::repositionSearchBar()
 {
     if (m_searchBar && m_centralContainer) {
         m_searchBar->adjustSize();
-        int x = m_centralContainer->width() - m_searchBar->width() - 24;
-        int y = 14;
+        int x = m_centralContainer->width() - m_searchBar->width() - 20;
+        // Float below the header bar (inside the stacked document viewport) so top controls are never occluded
+        int y = (m_stackedWidget ? m_stackedWidget->y() : 54) + 12;
         m_searchBar->move(qMax(10, x), y);
         m_searchBar->raise();
     }
@@ -2326,6 +2349,9 @@ void BaseSkin::openAppearanceSettings()
 void BaseSkin::applyCurrentTheme()
 {
     ThemeManager::applyTheme(qobject_cast<QApplication*>(QApplication::instance()), this);
+    if (m_filmstrip) m_filmstrip->updateTheme();
+    if (m_searchBar) m_searchBar->updateTheme();
+    updateUnsupportedCardTheme();
     if (m_imageViewer) m_imageViewer->updateTheme();
     if (m_archiveViewer) m_archiveViewer->updateTheme();
     if (m_folderViewer) m_folderViewer->updateTheme();
@@ -2333,6 +2359,34 @@ void BaseSkin::applyCurrentTheme()
     if (m_textViewer) m_textViewer->updateTheme();
     if (m_officeViewer) m_officeViewer->updateTheme();
     if (m_mediaViewer) m_mediaViewer->updateTheme();
+}
+
+void BaseSkin::updateUnsupportedCardTheme()
+{
+    if (!m_unsupportedCardFrame) return;
+    const ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    const bool isLight = ThemeManager::isLight(preset);
+    const bool isZinc = (preset == ThemePreset::ZincGray);
+
+    if (isLight) {
+        m_unsupportedCardFrame->setStyleSheet("#unsupportedCard { background-color: rgba(255, 255, 255, 0.82); border: 1px solid rgba(15, 23, 42, 0.14); border-radius: 12px; padding: 24px; }");
+        if (m_lblUnsupportedName) m_lblUnsupportedName->setStyleSheet("font-size: 16px; font-weight: bold; color: #0f172a;");
+        if (m_lblUnsupportedDetails) m_lblUnsupportedDetails->setStyleSheet("font-size: 12px; color: #334155; line-height: 1.6; padding: 12px; background-color: rgba(241, 245, 249, 0.85); border-radius: 8px; border: 1px solid rgba(15, 23, 42, 0.10);");
+        if (m_btnUnsupportedOpenWith) m_btnUnsupportedOpenWith->setStyleSheet("QPushButton { background-color: #0284c7; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: none; } QPushButton:hover { background-color: #0369a1; }");
+        if (m_btnUnsupportedHexDump) m_btnUnsupportedHexDump->setStyleSheet("QPushButton { background-color: rgba(15, 23, 42, 0.06); color: #1e293b; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(15, 23, 42, 0.16); } QPushButton:hover { background-color: rgba(15, 23, 42, 0.12); }");
+    } else if (isZinc) {
+        m_unsupportedCardFrame->setStyleSheet("#unsupportedCard { background-color: rgba(54, 55, 60, 0.85); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 24px; }");
+        if (m_lblUnsupportedName) m_lblUnsupportedName->setStyleSheet("font-size: 16px; font-weight: bold; color: #ffffff;");
+        if (m_lblUnsupportedDetails) m_lblUnsupportedDetails->setStyleSheet("font-size: 12px; color: #e5e7eb; line-height: 1.6; padding: 12px; background-color: rgba(38, 39, 43, 0.80); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12);");
+        if (m_btnUnsupportedOpenWith) m_btnUnsupportedOpenWith->setStyleSheet("QPushButton { background-color: #585960; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.25); } QPushButton:hover { background-color: #6b6c74; }");
+        if (m_btnUnsupportedHexDump) m_btnUnsupportedHexDump->setStyleSheet("QPushButton { background-color: rgba(255, 255, 255, 0.08); color: #f3f4f6; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(255, 255, 255, 0.16); } QPushButton:hover { background-color: rgba(255, 255, 255, 0.16); color: white; }");
+    } else {
+        m_unsupportedCardFrame->setStyleSheet("#unsupportedCard { background-color: rgba(30, 41, 59, 0.7); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; padding: 24px; }");
+        if (m_lblUnsupportedName) m_lblUnsupportedName->setStyleSheet("font-size: 16px; font-weight: bold; color: #f8fafc;");
+        if (m_lblUnsupportedDetails) m_lblUnsupportedDetails->setStyleSheet("font-size: 12px; color: #cbd5e1; line-height: 1.6; padding: 12px; background-color: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.15);");
+        if (m_btnUnsupportedOpenWith) m_btnUnsupportedOpenWith->setStyleSheet("QPushButton { background-color: #0284c7; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: none; } QPushButton:hover { background-color: #0369a1; }");
+        if (m_btnUnsupportedHexDump) m_btnUnsupportedHexDump->setStyleSheet("QPushButton { background-color: rgba(100, 116, 139, 0.25); color: #f1f5f9; padding: 8px 16px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(100, 116, 139, 0.35); } QPushButton:hover { background-color: rgba(100, 116, 139, 0.4); color: white; }");
+    }
 }
 
 QString BaseSkin::fileIndexText() const
@@ -2489,29 +2543,88 @@ void BaseSkin::setEditMode(bool editMode)
         }
     }
     if (editMode && m_currentCategory == FileCategory::Media) {
-        if (!promoteMediaViewerToStudio()) {
-            return;
+        const bool isAudio = (m_mediaViewer && m_mediaViewer->isAudioOnly());
+        if (isAudio) {
+            if (!promoteMediaViewerToStudio()) {
+                return;
+            }
+        } else {
+            // Video Edit Mode -> activate modular Video Studio (bubez_video.so)
+            if (!PluginManager::instance().videoStudioPlugin()) {
+                if (!PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("video"), this)) {
+                    return;
+                }
+            }
+            // Ensure SystemMediaViewer hosts the Video Studio side panel cleanly
+            auto *sysMv = dynamic_cast<SystemMediaViewer*>(m_mediaViewer);
+            if (!sysMv) {
+                const QString curPath = m_currentFilePath;
+                if (m_mediaViewer) m_mediaViewer->clear();
+                sysMv = new SystemMediaViewer(this);
+                m_mediaViewer = sysMv;
+                safeReplaceStackedWidget(4, m_mediaViewer->widget());
+                m_mediaViewer->setOnTrackChangeRequested([this](const QString &path) {
+                    openFile(path);
+                });
+                m_mediaViewer->setOnUpgradeToProRequested([this]() {
+                    promoteMediaViewerToStudio();
+                });
+                m_mediaViewer->updateTheme();
+                onViewerInitialized(FileCategory::Media);
+                if (!curPath.isEmpty() && QFile::exists(curPath)) {
+                    m_mediaViewer->loadFile(curPath);
+                }
+            }
+            if (sysMv && !sysMv->hasVideoStudioWidget()) {
+                if (auto *vidPlugin = PluginManager::instance().videoStudioPlugin()) {
+                    sysMv->attachVideoStudioWidget(vidPlugin->createStudioWidget(sysMv));
+                }
+            }
+        }
+    }
+    if (editMode && m_currentCategory == FileCategory::Folder) {
+        if (!PluginManager::instance().folderStudioPlugin()) {
+            if (!PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("folder"), this)) {
+                return;
+            }
+        }
+    }
+    if (editMode && m_currentCategory == FileCategory::Image) {
+        if (!PluginManager::instance().imageStudioPlugin()) {
+            if (!PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("image"), this)) {
+                return;
+            }
+        }
+        if (m_imageViewer && !m_imageViewer->hasStudioWidget()) {
+            if (auto *imgPlugin = PluginManager::instance().imageStudioPlugin()) {
+                m_imageViewer->attachStudioWidget(imgPlugin->createStudioWidget(m_imageViewer));
+            }
         }
     }
 
     m_isEditMode = editMode;
+    // Propagate editMode=true only to the active category's viewer so inactive viewers
+    // never show background studio panels or grab edit state
     if (m_imageViewer) {
-        m_imageViewer->setEditMode(editMode);
+        m_imageViewer->setEditMode(editMode && m_currentCategory == FileCategory::Image);
     }
     if (m_textViewer) {
-        m_textViewer->setEditMode(editMode);
+        m_textViewer->setEditMode(editMode && m_currentCategory == FileCategory::Text);
     }
     if (m_pdfViewer) {
-        m_pdfViewer->setEditMode(editMode);
+        m_pdfViewer->setEditMode(editMode && m_currentCategory == FileCategory::Pdf);
     }
     if (m_archiveViewer) {
-        m_archiveViewer->setEditMode(editMode);
+        m_archiveViewer->setEditMode(editMode && m_currentCategory == FileCategory::Archive);
     }
     if (m_mediaViewer) {
-        m_mediaViewer->setEditMode(editMode);
+        m_mediaViewer->setEditMode(editMode && m_currentCategory == FileCategory::Media);
     }
     if (m_officeViewer) {
-        m_officeViewer->setEditMode(editMode);
+        m_officeViewer->setEditMode(editMode && m_currentCategory == FileCategory::Office);
+    }
+    if (m_folderViewer) {
+        m_folderViewer->setEditMode(editMode && m_currentCategory == FileCategory::Folder);
     }
 }
 
@@ -2531,6 +2644,10 @@ void BaseSkin::handleEscapeAction()
         m_archiveEntries.clear();
         m_archiveCurrentEntryIndex = -1;
         openFile(returnArchive);
+        return;
+    }
+    if (m_returnToFolderStudio && !m_returnStudioFolder.isEmpty() && QDir(m_returnStudioFolder).exists()) {
+        returnToFolderStudio();
         return;
     }
     close();
@@ -3101,6 +3218,11 @@ void BaseSkin::openCurrentFolderInGallery()
         return;
     }
 
+    if (m_returnToFolderStudio && !m_returnStudioFolder.isEmpty() && QDir(m_returnStudioFolder).exists()) {
+        returnToFolderStudio();
+        return;
+    }
+
     m_previousFilePathBeforeGallery = m_currentFilePath;
     QString dir;
     if (!m_archiveOriginPath.isEmpty()) {
@@ -3113,9 +3235,57 @@ void BaseSkin::openCurrentFolderInGallery()
     returnToFolderWithZoom(dir, m_previousFilePathBeforeGallery);
 }
 
-void BaseSkin::openFileFromGalleryWithZoom(const QString &filePath)
+void BaseSkin::returnToFolderStudio()
 {
-    if (ThemeManager::currentTransition() == TransitionEffect::None || !m_galleryTransition || !m_folderViewer) {
+    const QString targetDir = m_returnStudioFolder;
+    const int targetTool = m_returnStudioTool;
+    m_returnToFolderStudio = false;
+    m_returnStudioFolder.clear();
+    m_scopedNavigationActive = false;
+
+    if (targetDir.isEmpty() || !QDir(targetDir).exists()) {
+        return;
+    }
+
+    openFile(targetDir);
+    if (m_folderViewer) {
+        m_folderViewer->setStudioTool(targetTool);
+    }
+    setEditMode(true);
+}
+
+void BaseSkin::openFileFromGalleryWithZoom(const QString &filePath, const QStringList &contextFiles)
+{
+    // Remember if we are launching preview from Folder Studio so Esc/Back returns right to the scan results
+    const bool fromStudio = (m_folderViewer && m_folderViewer->isEditMode());
+    if (fromStudio) {
+        m_returnToFolderStudio = true;
+        m_returnStudioFolder = m_folderViewer->currentFolder();
+        m_returnStudioTool = m_folderViewer->activeStudioTool();
+    } else {
+        m_returnToFolderStudio = false;
+        m_returnStudioFolder.clear();
+    }
+
+    // Apply scoped Prev/Next navigation list when provided (duplicate group, recovery list, or filtered gallery)
+    const QString absTarget = QFileInfo(filePath).absoluteFilePath();
+    QStringList validContext;
+    validContext.reserve(contextFiles.size());
+    for (const QString &p : contextFiles) {
+        const QString abs = QFileInfo(p).absoluteFilePath();
+        if (!abs.isEmpty() && QFileInfo::exists(abs) && !QFileInfo(abs).isDir() && !validContext.contains(abs)) {
+            validContext.append(abs);
+        }
+    }
+    if (!validContext.isEmpty() && validContext.contains(absTarget)) {
+        m_siblingFiles = validContext;
+        m_currentIndex = validContext.indexOf(absTarget);
+        m_scopedNavigationActive = true;
+    } else {
+        m_scopedNavigationActive = false;
+    }
+
+    if (fromStudio || ThemeManager::currentTransition() == TransitionEffect::None || !m_galleryTransition || !m_folderViewer) {
         openFile(filePath);
         return;
     }
@@ -3362,9 +3532,9 @@ void BaseSkin::showAboutDialog()
     const bool isDev = (QCoreApplication::applicationDirPath().contains("build_deb") ||
                         QCoreApplication::applicationDirPath().contains("Progetti/BubezView"));
     aboutBox.setText(
-        QString("<h3>BubezView v%1%2</h3>").arg(QApplication::applicationVersion(), isDev ? QStringLiteral(" <span style='color: #38bdf8;'>[Sviluppo / Dev Build]</span>") : QString()) +
+        QString("<h3>BubezView v%1%2</h3>").arg(QApplication::applicationVersion(), isDev ? (QStringLiteral(" <span style='color: #38bdf8;'>[") + tr("Dev Build") + QStringLiteral("]</span>")) : QString()) +
         "<p><b>" + tr("Native C++ / Qt6 Universal Viewer for Linux") + "</b>" +
-        (isDev ? ("<br><small style='color: #a855f7;'>Percorso: " + QCoreApplication::applicationFilePath() + "</small>") : QString()) + "</p>"
+        (isDev ? ("<br><small style='color: #a855f7;'>" + tr("Path:") + " " + QCoreApplication::applicationFilePath() + "</small>") : QString()) + "</p>"
         "<p>" + tr("Developed by <b>Davide (Bubez)</b>.<br>Designed to be ultra-fast, responsive, and well integrated into the Linux desktop ecosystem.") + "</p>"
         "<hr>"
         "<p><b>" + tr("Active engines and libraries:") + "</b><br>"
@@ -3593,8 +3763,30 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
     bool isFolder = (m_currentCategory == FileCategory::Folder && (targetPath == m_currentFilePath || QFileInfo(targetPath).isDir()));
 
     QMenu menu(this);
-    ThemePreset preset = ThemeManager::currentPreset();
-    if (ThemeManager::isDark(preset)) {
+    const ThemePreset preset = ThemeManager::effectivePreset(ThemeManager::currentPreset());
+    if (preset == ThemePreset::ZincGray) {
+        menu.setStyleSheet(
+            "QMenu {"
+            "   background-color: #343539;"
+            "   color: #ffffff;"
+            "   border: 1px solid rgba(255, 255, 255, 0.16);"
+            "   border-radius: 8px;"
+            "   padding: 4px 0px;"
+            "}"
+            "QMenu::item {"
+            "   padding: 6px 24px 6px 12px;"
+            "}"
+            "QMenu::item:selected {"
+            "   background-color: #585960;"
+            "   color: #ffffff;"
+            "}"
+            "QMenu::separator {"
+            "   height: 1px;"
+            "   background: rgba(255, 255, 255, 0.14);"
+            "   margin: 4px 8px;"
+            "}"
+        );
+    } else if (ThemeManager::isDark(preset)) {
         menu.setStyleSheet(
             "QMenu {"
             "   background-color: #21252b;"
@@ -3646,36 +3838,16 @@ void BaseSkin::showContextMenuAt(const QPoint &globalPos)
             openFile(targetPath);
         });
         menu.addSeparator();
-    } else if (m_currentCategory == FileCategory::Folder && isFolder && !targetPath.isEmpty()) {
-        menu.addAction(QIcon::fromTheme("bookmark-new"), tr("Add to Bookmarks"), this, [this, targetPath]() {
-            if (m_folderViewer) {
-                m_folderViewer->addCustomBookmark(targetPath);
-            }
-        });
+    }
+
+    // 1. Standard actions: Copy (only for active file viewers, not Folder view)
+    if (m_currentCategory != FileCategory::Folder) {
+        QAction *actCopy = menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy"), this, &BaseSkin::copyToClipboard);
+        actCopy->setShortcut(QKeySequence("Ctrl+C"));
         menu.addSeparator();
     }
 
-    // 1. Standard actions: Copy
-    QAction *actCopy = menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy"), this, &BaseSkin::copyToClipboard);
-    actCopy->setShortcut(QKeySequence("Ctrl+C"));
-
-    menu.addSeparator();
-
-    // 2. Open With... & Share submenus
-    if (m_currentCategory == FileCategory::Folder) {
-        QMenu *menuOpenWith = menu.addMenu(QIcon::fromTheme("system-run"), tr("Open With..."));
-        QList<AppInfo> apps = AppLauncher::getAssociatedApps(targetPath);
-        if (!apps.isEmpty()) {
-            for (const AppInfo &app : apps) {
-                QIcon icon = app.iconName.isEmpty() ? QIcon::fromTheme("application-x-executable") : QIcon::fromTheme(app.iconName);
-                menuOpenWith->addAction(icon, app.name, this, [targetPath, app]() {
-                    AppLauncher::launchApp(app, targetPath);
-                });
-            }
-            menuOpenWith->addSeparator();
-        }
-        menuOpenWith->addAction(QIcon::fromTheme("applications-other"), tr("Other Application..."), this, &BaseSkin::openWithOther);
-    }
+    // 2. Share submenu
 
     QMenu *menuShare = menu.addMenu(QIcon::fromTheme("document-share"), tr("Share"));
     QAction *actCopyPath = menuShare->addAction(QIcon::fromTheme("edit-copy-path"), tr("Copy File Path"), this, [targetPath]() {
@@ -3854,7 +4026,7 @@ void BaseSkin::showCurrentHexDump()
 
     QString hexView;
     hexView.reserve(data.size() * 5);
-    hexView += QString("--- HEX DUMP (primi %1 byte di %2): %3 ---\n\n")
+    hexView += tr("--- HEX DUMP (first %1 bytes of %2): %3 ---\n\n")
         .arg(data.size())
         .arg(formatFileSize(QFileInfo(m_currentFilePath).size()))
         .arg(QFileInfo(m_currentFilePath).fileName());
@@ -3894,7 +4066,7 @@ void BaseSkin::updateWindowTitle()
 {
     const QString devBadge = (QCoreApplication::applicationDirPath().contains("build_deb") ||
                               QCoreApplication::applicationDirPath().contains("Progetti/BubezView"))
-                             ? QStringLiteral(" [Sviluppo]") : QString();
+                             ? (QStringLiteral(" [") + tr("Dev") + QStringLiteral("]")) : QString();
 
     if (m_currentFilePath.isEmpty()) {
         setWindowTitle(tr("BubezView") + devBadge);

@@ -5,6 +5,7 @@
 
 #include "settings_extra_tab.h"
 #include "first_run_wizard.h"
+#include "build_console_dialog.h"
 #include "plugin_manager.h"
 #include "build_config.h"
 #include "theme_manager.h"
@@ -514,6 +515,12 @@ void SettingsExtraTab::launchSetupWizard()
 {
     FirstRunWizard wizard(this);
     if (wizard.exec() == QDialog::Accepted) {
+        const QStringList pendingBuild = wizard.pendingBuildComponents();
+        if (!pendingBuild.isEmpty()) {
+            BuildConsoleDialog console(this);
+            console.startBuildComponents(pendingBuild);
+            console.exec();
+        }
         emit setupWizardCompleted();
         emit themeChanged();
     }
@@ -542,22 +549,18 @@ void SettingsExtraTab::reinstallIntegrations()
         DesktopIntegrator::enableGnomeNemo();
     }
 
-    // 4. Update system desktop databases
+    // 4. Update system desktop database (kbuildsycoca is already handled inside enableDolphin)
     const QString home = QDir::homePath();
     QProcess::execute(QStringLiteral("update-desktop-database"), QStringList() << (home + QStringLiteral("/.local/share/applications")));
-    if (de == DesktopIntegrator::DesktopEnv::KDE) {
-        QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca6"), QStringList() << QStringLiteral("--noincremental"));
-        QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca5"), QStringList() << QStringLiteral("--noincremental"));
-    }
 
-    const QString msg = tr("Le integrazioni desktop per <b>%1</b> sono state ripristinate con successo!<br><br>"
-                           "• <b>Menu Applicazioni:</b> Registrato <code>bubezview.desktop</code> in <code>~/.local/share/applications</code><br>"
-                           "• <b>Menu Contestuale:</b> Azioni del file manager attive (Dolphin / Nautilus / Nemo)<br>"
-                           "• <b>Anteprima Rapida (QuickLook):</b> Scorciatoia <b>%2</b> riconfigurata<br>"
-                           "• <b>Cache di Sistema:</b> Database desktop e sycoca aggiornati.")
+    const QString msg = tr("Desktop integrations for <b>%1</b> have been restored successfully!<br><br>"
+                           "• <b>Application Menu:</b> Registered <code>bubezview.desktop</code> in <code>~/.local/share/applications</code><br>"
+                           "• <b>Context Menu:</b> File manager actions active (Dolphin / Nautilus / Nemo)<br>"
+                           "• <b>QuickLook Preview:</b> Shortcut <b>%2</b> reconfigured<br>"
+                           "• <b>System Cache:</b> Desktop database and sycoca updated.")
                            .arg(deName, chosenShortcut);
 
-    QMessageBox::information(this, tr("Integrazioni Ripristinate"), msg);
+    QMessageBox::information(this, tr("Integrations Restored"), msg);
 }
 
 void SettingsExtraTab::clearThumbnailCache()
@@ -595,56 +598,56 @@ void SettingsExtraTab::clearThumbnailCache()
         }
     }
 
-    const QString msg = tr("La cache di BubezView è stata svuotata con successo!<br><br>"
-                           "• <b>Spazio liberato su disco:</b> %1<br>"
-                           "• <b>File temporanei rimossi:</b> %2<br>"
-                           "• <b>Cache in memoria:</b> azzerata e rilasciata")
+    const QString msg = tr("BubezView cache has been cleared successfully!<br><br>"
+                           "• <b>Disk space freed:</b> %1<br>"
+                           "• <b>Temporary files removed:</b> %2<br>"
+                           "• <b>In-memory cache:</b> cleared and released")
                            .arg(formatBytesHuman(totalFreed), QString::number(filesRemoved));
 
-    QMessageBox::information(this, tr("Cache Svuotata"), msg);
+    QMessageBox::information(this, tr("Cache Cleared"), msg);
 }
 
 void SettingsExtraTab::uninstallApplication()
 {
     QDialog dlg(this);
-    dlg.setWindowTitle(tr("Disinstalla BubezView"));
+    dlg.setWindowTitle(tr("Uninstall BubezView"));
     dlg.setMinimumWidth(460);
 
     QVBoxLayout *dlgLay = new QVBoxLayout(&dlg);
     dlgLay->setSpacing(12);
     dlgLay->setContentsMargins(18, 18, 18, 18);
 
-    QLabel *lblTitle = new QLabel(tr("<h3>Disinstallazione di BubezView</h3>"), &dlg);
+    QLabel *lblTitle = new QLabel(tr("<h3>Uninstall BubezView</h3>"), &dlg);
     dlgLay->addWidget(lblTitle);
 
     QLabel *lblDesc = new QLabel(
-        tr("Stai per rimuovere <b>BubezView</b> dal tuo account utente.<br><br>"
-           "Verranno rimossi i seguenti componenti di sistema:<br>"
-           "• Eseguibili utente (<code>~/.local/bin/bubezview*</code>)<br>"
-           "• Estensioni e moduli (<code>~/.local/lib/bubezview/</code>)<br>"
-           "• Collegamento menu applicazioni (<code>bubezview.desktop</code>)<br>"
-           "• Azioni contestuali del file manager (Dolphin, Nautilus, Nemo)"),
+        tr("You are about to remove <b>BubezView</b> from your user account.<br><br>"
+           "The following user-level components will be removed:<br>"
+           "• User executables (<code>~/.local/bin/bubezview*</code>)<br>"
+           "• Extensions and modules (<code>~/.local/lib/bubezview/</code>)<br>"
+           "• Application menu entry (<code>bubezview.desktop</code>)<br>"
+           "• File manager context menu actions (Dolphin, Nautilus, Nemo)"),
         &dlg
     );
     lblDesc->setWordWrap(true);
     dlgLay->addWidget(lblDesc);
 
-    QCheckBox *chkCache = new QCheckBox(tr("Svuota e rimuovi la cache miniature (~/.cache/Bubez)"), &dlg);
+    QCheckBox *chkCache = new QCheckBox(tr("Clear and remove thumbnail cache (~/.cache/Bubez)"), &dlg);
     chkCache->setChecked(true);
     dlgLay->addWidget(chkCache);
 
-    QCheckBox *chkConfig = new QCheckBox(tr("Rimuovi impostazioni personali, cronologia e layout (~/.config/Bubez)"), &dlg);
+    QCheckBox *chkConfig = new QCheckBox(tr("Remove personal settings, history, and layout (~/.config/Bubez)"), &dlg);
     chkConfig->setChecked(false);
     dlgLay->addWidget(chkConfig);
 
-    QLabel *lblWarn = new QLabel(tr("<span style='color: #ef4444; font-weight: 500;'>⚠️ Al termine della disinstallazione, l'applicazione verrà chiusa.</span>"), &dlg);
+    QLabel *lblWarn = new QLabel(tr("<span style='color: #ef4444; font-weight: 500;'>⚠️ The application will close once uninstallation completes.</span>"), &dlg);
     lblWarn->setWordWrap(true);
     dlgLay->addWidget(lblWarn);
 
     QDialogButtonBox *btnBox = new QDialogButtonBox(&dlg);
-    QPushButton *btnCancel = btnBox->addButton(tr("Annulla"), QDialogButtonBox::RejectRole);
+    QPushButton *btnCancel = btnBox->addButton(tr("Cancel"), QDialogButtonBox::RejectRole);
     btnCancel->setCursor(Qt::PointingHandCursor);
-    QPushButton *btnConfirm = btnBox->addButton(tr("Disinstalla Ora"), QDialogButtonBox::AcceptRole);
+    QPushButton *btnConfirm = btnBox->addButton(tr("Uninstall Now"), QDialogButtonBox::AcceptRole);
     btnConfirm->setCursor(Qt::PointingHandCursor);
     btnConfirm->setStyleSheet(
         QStringLiteral("QPushButton {"
@@ -714,17 +717,15 @@ void SettingsExtraTab::uninstallApplication()
         if (cfg2.exists()) cfg2.removeRecursively();
     }
 
-    // 6. Update Desktop Database
+    // 6. Update Desktop Database (kbuildsycoca is already handled inside disableDolphin)
     QProcess::execute(QStringLiteral("update-desktop-database"), QStringList() << (home + QStringLiteral("/.local/share/applications")));
-    QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca6"), QStringList() << QStringLiteral("--noincremental"));
-    QProcess::execute(QStringLiteral("/usr/bin/kbuildsycoca5"), QStringList() << QStringLiteral("--noincremental"));
 
     // 7. Inform user and exit application
     QMessageBox::information(
         nullptr,
-        tr("Disinstallazione Completata"),
-        tr("<b>BubezView</b> è stato rimosso con successo dal sistema.<br><br>"
-           "Grazie per aver utilizzato BubezView! L'applicazione verrà ora chiusa.")
+        tr("Uninstall Completed"),
+        tr("<b>BubezView</b> has been successfully removed from your system.<br><br>"
+           "Thank you for using BubezView! The application will now close.")
     );
 
     QCoreApplication::quit();

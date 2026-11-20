@@ -29,13 +29,13 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QTimer>
+#include <QDateTime>
 #include <QClipboard>
 #include <QProcess>
 #include <QFrame>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QActionGroup>
-#include <QBitmap>
 #include <QPainter>
 #include <QPainterPath>
 
@@ -53,14 +53,19 @@ public:
         setAttribute(Qt::WA_NoSystemBackground, true);
     }
 
+    void setLightTheme(bool isLight)
+    {
+        if (m_isLight != isLight) {
+            m_isLight = isLight;
+            update();
+        }
+    }
+
 protected:
     void paintEvent(QPaintEvent *) override
     {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing, true);
-
-        const ThemePreset preset = ThemeManager::currentPreset();
-        const bool isLight = (preset == ThemePreset::ModernLight || preset == ThemePreset::BreezeLight);
 
         const qreal radius = 18.0;
         const QRectF outerBounds = QRectF(rect());
@@ -77,7 +82,7 @@ protected:
 
         // Draw glossy top-lit Liquid Glass gradient border ring around the window
         QLinearGradient rimGrad(0, 0, 0, height());
-        if (isLight) {
+        if (m_isLight) {
             rimGrad.setColorAt(0.0, QColor(255, 255, 255, 220));
             rimGrad.setColorAt(0.25, QColor(15, 23, 42, 35));
             rimGrad.setColorAt(1.0, QColor(15, 23, 42, 55));
@@ -90,20 +95,15 @@ protected:
         p.setBrush(Qt::NoBrush);
         p.drawRoundedRect(innerBounds, radius, radius);
     }
+
+private:
+    bool m_isLight = false;
 };
 } // namespace
 
 MainWindow::MainWindow(QWidget *parent)
     : BaseSkin(parent)
     , m_minimalHeaderBar(nullptr)
-    , m_breadcrumbWidget(nullptr)
-    , m_breadcrumbLayout(nullptr)
-    , m_fileIndexLabel(nullptr)
-    , m_fileInfoLabel(nullptr)
-    , m_statusLabel(nullptr)
-    , m_btnUpdateNotification(nullptr)
-    , m_updateBlinkTimer(nullptr)
-    , m_updateBlinkState(false)
     , m_updateBanner(nullptr)
     , m_lblUpdateBannerText(nullptr)
 {
@@ -139,17 +139,13 @@ MainWindow::MainWindow(QWidget *parent)
         connect(m_textViewer, &TextViewer::editModeChanged, this, [this](bool) {
             updateStatusBar();
         });
-        connect(m_textViewer, &TextViewer::modificationChanged, this, [this](bool) {
-            updateStatusBar();
-            updateWindowTitle();
-        });
     }
 
     if (qApp) {
         qApp->installEventFilter(this);
     }
     setEditMode(false);
-    updateFramelessBorderStyle();
+    applyCurrentTheme();
 }
 
 MainWindow::~MainWindow()
@@ -230,22 +226,19 @@ void MainWindow::setupUi()
     connect(m_minimalHeaderBar, &MinimalHeaderBar::undoRequested, this, &MainWindow::undo);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::redoRequested, this, &MainWindow::redo);
     connect(m_minimalHeaderBar, &MinimalHeaderBar::historyStepRestoreRequested, this, [this](int idx) {
-        if (m_pdfViewer) {
+        if (m_currentCategory == FileCategory::Image && m_imageViewer) {
+            m_imageViewer->restoreHistoryStep(idx);
+        } else if (m_currentCategory == FileCategory::Pdf && m_pdfViewer) {
             m_pdfViewer->restoreHistoryStep(idx);
         }
     });
     connect(m_minimalHeaderBar, &MinimalHeaderBar::showHistoryTimelineRequested, this, [this]() {
-        if (m_pdfViewer) {
+        if (m_currentCategory == FileCategory::Image && m_imageViewer) {
+            m_minimalHeaderBar->setHistorySteps(m_imageViewer->historySteps());
+        } else if (m_currentCategory == FileCategory::Pdf && m_pdfViewer) {
             m_minimalHeaderBar->setHistorySteps(m_pdfViewer->historySteps());
         }
     });
-    if (m_minimalHeaderBar->historyMenu()) {
-        connect(m_minimalHeaderBar->historyMenu(), &QMenu::aboutToShow, this, [this]() {
-            if (m_pdfViewer) {
-                m_minimalHeaderBar->setHistorySteps(m_pdfViewer->historySteps());
-            }
-        });
-    }
 
     // Direct Contextual Action Bar Text Replacement
     connect(m_minimalHeaderBar, &MinimalHeaderBar::pdfTextReplaceRequested, this, [this](const QString &text, const QFont &font, const QColor &color, bool whiteout) {
@@ -548,6 +541,11 @@ void MainWindow::setupUi()
         if (m_mediaViewer) m_mediaViewer->switchAudioWorkspace(6);
     });
 
+    // Folder Studio (0=Duplicates, 1=Recovery, 2=Organize, 3=Batch)
+    connect(m_minimalHeaderBar, &MinimalHeaderBar::folderStudioToolRequested, this, [this](int toolIndex) {
+        if (m_folderViewer) m_folderViewer->setStudioTool(toolIndex);
+    });
+
     setupMediaViewerConnections();
 
     // Embed minimal header bar at top of central container
@@ -557,49 +555,13 @@ void MainWindow::setupUi()
         m_minimalHeaderBar->setOverlayContainer(m_centralContainer);
     }
 
-    // Status bar with Breadcrumbs
-    QStatusBar *bar = statusBar();
-
-    m_breadcrumbWidget = new QWidget(this);
-    m_breadcrumbLayout = new QHBoxLayout(m_breadcrumbWidget);
-    m_breadcrumbLayout->setContentsMargins(4, 0, 8, 0);
-    m_breadcrumbLayout->setSpacing(4);
-
-    m_fileIndexLabel = new QLabel(this);
-    m_fileIndexLabel->setStyleSheet("color: #8a9098; padding-left: 6px; padding-right: 8px; font-size: 11px;");
-    m_fileInfoLabel = new QLabel(this);
-    m_fileInfoLabel->setStyleSheet("color: #a0a6af; font-size: 11px;");
-    m_statusLabel = new QLabel(tr("⚡ Native C++ Engine"), this);
-    m_statusLabel->setStyleSheet("color: #10b981; font-weight: bold; padding-right: 8px; font-size: 11px;");
-
-    m_btnUpdateNotification = new QPushButton(this);
-    m_btnUpdateNotification->setCursor(Qt::PointingHandCursor);
-    m_btnUpdateNotification->setFlat(true);
-    m_btnUpdateNotification->setStyleSheet(
-        "QPushButton {"
-        "   background-color: #0284c7;"
-        "   color: #ffffff;"
-        "   font-weight: bold;"
-        "   font-size: 11px;"
-        "   padding: 2px 8px;"
-        "   border-radius: 4px;"
-        "   margin-right: 6px;"
-        "}"
-        "QPushButton:hover {"
-        "   background-color: #0369a1;"
-        "}"
-    );
-    m_btnUpdateNotification->hide();
-
-    bar->addWidget(m_breadcrumbWidget);
-    bar->addWidget(m_fileIndexLabel);
-    bar->addWidget(m_fileInfoLabel, 1);
-    bar->addPermanentWidget(m_btnUpdateNotification);
-    bar->addPermanentWidget(m_statusLabel);
-    bar->hide();
-    bar->setFixedHeight(0);
-    bar->setMaximumHeight(0);
-    bar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    // Keep classic QStatusBar hidden in the canvas-first MinimalHeaderBar skin
+    if (QStatusBar *bar = statusBar()) {
+        bar->hide();
+        bar->setFixedHeight(0);
+        bar->setMaximumHeight(0);
+        bar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    }
 }
 
 void MainWindow::setEditMode(bool editMode)
@@ -787,8 +749,14 @@ void MainWindow::setupGlobalShortcuts()
     });
 
     // View & Navigation
-    addWindowAction(QKeySequence(Qt::Key_Left), &BaseSkin::prevFile);
-    addWindowAction(QKeySequence(Qt::Key_Right), &BaseSkin::nextFile);
+    addWindowAction(QKeySequence(Qt::Key_Left), [this, isTextInputFocused]() {
+        if (isTextInputFocused() || m_isEditMode || m_currentCategory == FileCategory::Folder) return;
+        prevFile();
+    });
+    addWindowAction(QKeySequence(Qt::Key_Right), [this, isTextInputFocused]() {
+        if (isTextInputFocused() || m_isEditMode || m_currentCategory == FileCategory::Folder) return;
+        nextFile();
+    });
     addWindowAction(QKeySequence(Qt::Key_PageUp), [this]() {
         if (m_pdfViewer) m_pdfViewer->prevPage();
         else if (m_officeViewer && m_officeViewer->isPdfMode() && m_officeViewer->pdfViewer()) m_officeViewer->pdfViewer()->prevPage();
@@ -901,100 +869,7 @@ void MainWindow::onFileLoaded(const QString &filePath, FileCategory category)
 
 void MainWindow::updateStatusBar()
 {
-    if (!statusBar() || !statusBar()->isVisible()) return;
-    updateBreadcrumbs();
-    m_fileIndexLabel->setText(fileIndexText());
-    m_fileInfoLabel->setText(fileInfoText());
-}
-
-void MainWindow::updateBreadcrumbs()
-{
-    if (!m_breadcrumbLayout) return;
-
-    if (m_currentFilePath.isEmpty()) {
-        m_lastBreadcrumbDir.clear();
-        QLayoutItem *child;
-        while ((child = m_breadcrumbLayout->takeAt(0)) != nullptr) {
-            if (child->widget()) {
-                child->widget()->deleteLater();
-            }
-            delete child;
-        }
-        return;
-    }
-
-    QFileInfo fi(m_currentFilePath);
-    QDir d = fi.isDir() ? QDir(m_currentFilePath) : fi.dir();
-    QString canonical = d.canonicalPath();
-
-    if (canonical == m_lastBreadcrumbDir && !m_lastBreadcrumbDir.isEmpty()) {
-        return;
-    }
-    m_lastBreadcrumbDir = canonical;
-
-    // Clear old breadcrumbs
-    QLayoutItem *child;
-    while ((child = m_breadcrumbLayout->takeAt(0)) != nullptr) {
-        if (child->widget()) {
-            child->widget()->deleteLater();
-        }
-        delete child;
-    }
-
-    QString home = QDir::homePath();
-    QString displayPath = canonical;
-    bool isUnderHome = false;
-    if (canonical.startsWith(home)) {
-        displayPath = "~" + canonical.mid(home.length());
-        isUnderHome = true;
-    }
-
-    QStringList parts = displayPath.split("/", Qt::SkipEmptyParts);
-    QString accumulated = isUnderHome ? home : "";
-
-    QLabel *lblIcon = new QLabel("📁", m_breadcrumbWidget);
-    lblIcon->setStyleSheet("font-size: 12px; margin-right: 2px;");
-    m_breadcrumbLayout->addWidget(lblIcon);
-
-    for (int i = 0; i < parts.size(); ++i) {
-        const QString &part = parts[i];
-        if (isUnderHome && i == 0 && part == "~") {
-            // accumulated already set to home
-        } else {
-            accumulated += "/" + part;
-        }
-
-        QPushButton *btn = new QPushButton(part, m_breadcrumbWidget);
-        btn->setCursor(Qt::PointingHandCursor);
-        btn->setFlat(true);
-        btn->setStyleSheet(
-            "QPushButton {"
-            "   border: none;"
-            "   color: #38bdf8;"
-            "   font-size: 11px;"
-            "   font-weight: 500;"
-            "   padding: 1px 4px;"
-            "   border-radius: 3px;"
-            "}"
-            "QPushButton:hover {"
-            "   background-color: #334155;"
-            "   color: #ffffff;"
-            "}"
-        );
-
-        QString targetFolder = accumulated;
-        connect(btn, &QPushButton::clicked, this, [this, targetFolder]() {
-            openFile(targetFolder);
-        });
-
-        m_breadcrumbLayout->addWidget(btn);
-
-        if (i < parts.size() - 1) {
-            QLabel *sep = new QLabel("›", m_breadcrumbWidget);
-            sep->setStyleSheet("color: #64748b; font-size: 11px; margin: 0 1px;");
-            m_breadcrumbLayout->addWidget(sep);
-        }
-    }
+    // Status bar is intentionally hidden in the canvas-first MinimalHeaderBar skin.
 }
 
 void MainWindow::applyCurrentTheme()
@@ -1112,10 +987,11 @@ void MainWindow::setupUpdateBanner()
 
     m_updateBanner->hide();
 
-    // Insert banner at the very top of central container (index 0)
+    // Insert banner immediately below MinimalHeaderBar (index 1) so top rounded header corners remain intact
     QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(m_centralContainer->layout());
     if (vbox) {
-        vbox->insertWidget(0, m_updateBanner, 0);
+        const int insertIdx = (m_minimalHeaderBar && vbox->indexOf(m_minimalHeaderBar) == 0) ? 1 : 0;
+        vbox->insertWidget(insertIdx, m_updateBanner, 0);
     }
 }
 
@@ -1197,55 +1073,11 @@ void MainWindow::setupDebugBanner()
     });
     bannerLayout->addWidget(btnCloseBanner);
 
+    // Insert debug banner immediately below MinimalHeaderBar so frameless window controls remain at the top
     QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(m_centralContainer->layout());
     if (vbox) {
-        vbox->insertWidget(0, m_debugBanner, 0);
-    }
-}
-
-void MainWindow::updateBlinkEffect()
-{
-    if (!m_btnUpdateNotification || !m_btnUpdateNotification->isVisible()) return;
-
-    m_updateBlinkState = !m_updateBlinkState;
-
-    if (m_updateBlinkState) {
-        // Bright glowing Amber state
-        m_btnUpdateNotification->setText(QString("🔔 ") + tr("Update: v%1").arg(m_availableRelease.version));
-        m_btnUpdateNotification->setStyleSheet(
-            "QPushButton {"
-            "   background-color: #f59e0b;"
-            "   color: #0f172a;"
-            "   font-weight: bold;"
-            "   font-size: 11px;"
-            "   padding: 2px 8px;"
-            "   border-radius: 4px;"
-            "   margin-right: 6px;"
-            "   border: 1px solid #fbbf24;"
-            "}"
-            "QPushButton:hover {"
-            "   background-color: #d97706;"
-            "   color: #ffffff;"
-            "}"
-        );
-    } else {
-        // Crisp Sky Blue state
-        m_btnUpdateNotification->setText(QString("✨ ") + tr("Update: v%1").arg(m_availableRelease.version));
-        m_btnUpdateNotification->setStyleSheet(
-            "QPushButton {"
-            "   background-color: #0284c7;"
-            "   color: #ffffff;"
-            "   font-weight: bold;"
-            "   font-size: 11px;"
-            "   padding: 2px 8px;"
-            "   border-radius: 4px;"
-            "   margin-right: 6px;"
-            "   border: 1px solid #38bdf8;"
-            "}"
-            "QPushButton:hover {"
-            "   background-color: #0369a1;"
-            "}"
-        );
+        const int insertIdx = (m_minimalHeaderBar && vbox->indexOf(m_minimalHeaderBar) == 0) ? 1 : 0;
+        vbox->insertWidget(insertIdx, m_debugBanner, 0);
     }
 }
 
@@ -1264,28 +1096,7 @@ void MainWindow::setupUpdateChecker()
             m_updateBanner->show();
         }
 
-        // 2. Configure and show pulsing/blinking status bar button
-        if (m_btnUpdateNotification) {
-            m_btnUpdateNotification->setToolTip(
-                tr("New version v%1 available! Click here to inspect and update.").arg(info.version)
-            );
-            m_btnUpdateNotification->disconnect();
-            connect(m_btnUpdateNotification, &QPushButton::clicked, this, [this, info]() {
-                showUpdateDialog(info);
-            });
-            m_btnUpdateNotification->show();
-
-            // Start blinking animation timer (alternating styles every 750ms)
-            if (!m_updateBlinkTimer) {
-                m_updateBlinkTimer = new QTimer(this);
-                connect(m_updateBlinkTimer, &QTimer::timeout, this, &MainWindow::updateBlinkEffect);
-            }
-            m_updateBlinkState = false;
-            updateBlinkEffect();
-            m_updateBlinkTimer->start(750);
-        }
-
-        // 3. Fire native desktop notification if notify-send is available
+        // 2. Fire native desktop notification if notify-send is available
         QProcess::startDetached("notify-send", {
             "-a", "BubezView",
             "-i", "system-software-update",
@@ -1294,10 +1105,20 @@ void MainWindow::setupUpdateChecker()
         });
     });
 
-    // Run silent check in background after 2.5 seconds to guarantee 0ms instant startup
-    QTimer::singleShot(2500, this, []() {
-        UpdateManager::instance().checkForUpdates(true);
-    });
+    // Throttle automatic startup update checks to at most once every 24 hours
+    // to avoid spinning up QNetworkAccessManager / TLS on every quick Spacebar preview
+    QSettings settings("Bubez", "BubezView");
+    const qint64 nowEpoch = QDateTime::currentSecsSinceEpoch();
+    const qint64 lastCheckEpoch = settings.value("updates/last_check_epoch", 0).toLongLong();
+    constexpr qint64 kUpdateIntervalSecs = 24 * 60 * 60;
+
+    if (nowEpoch - lastCheckEpoch >= kUpdateIntervalSecs) {
+        QTimer::singleShot(2500, this, [nowEpoch]() {
+            QSettings s("Bubez", "BubezView");
+            s.setValue("updates/last_check_epoch", nowEpoch);
+            UpdateManager::instance().checkForUpdates(true);
+        });
+    }
 }
 
 void MainWindow::showUpdateDialog(const ReleaseInfo &info)
@@ -1535,30 +1356,16 @@ void MainWindow::updateFramelessBorderStyle()
             m_borderOverlay = new FramelessBorderOverlay(this);
         }
 
-        // Only regenerate and apply the 18px rounded corner window mask when the window size actually changes
-        if (m_lastMaskSize != size()) {
-            m_lastMaskSize = size();
-            QBitmap maskBmp(size());
-            maskBmp.fill(Qt::color0);
-            {
-                QPainter maskPainter(&maskBmp);
-                maskPainter.setRenderHint(QPainter::Antialiasing, true);
-                maskPainter.setPen(Qt::NoPen);
-                maskPainter.setBrush(Qt::color1);
-                maskPainter.drawRoundedRect(rect(), 18, 18);
-            }
-            setMask(maskBmp);
-        }
-
+        // Rely on WA_TranslucentBackground + FramelessBorderOverlay's antialiased CompositionMode_Clear
+        // instead of a 1-bit QBitmap setMask() so all 4 rounded corners render smoothly without jagged edges.
+        static_cast<FramelessBorderOverlay*>(m_borderOverlay)->setLightTheme(
+            ThemeManager::isLight(ThemeManager::currentPreset())
+        );
         m_borderOverlay->setGeometry(rect());
         m_borderOverlay->show();
         m_borderOverlay->raise();
         m_borderOverlay->update();
     } else {
-        if (!m_lastMaskSize.isEmpty()) {
-            m_lastMaskSize = QSize();
-            clearMask();
-        }
         if (m_borderOverlay) {
             m_borderOverlay->hide();
         }

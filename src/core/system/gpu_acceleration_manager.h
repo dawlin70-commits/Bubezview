@@ -42,7 +42,7 @@ public:
     /**
      * @brief Whether hardware OpenGL acceleration is available and supported by driver.
      */
-    bool isGpuAvailable() const { return m_gpuAvailable; }
+    bool isGpuAvailable() const;
 
     /**
      * @brief Whether GPU acceleration is enabled by user in settings.
@@ -58,22 +58,22 @@ public:
     /**
      * @brief Detected GPU vendor string (e.g. "NVIDIA Corporation", "AMD", "Intel").
      */
-    QString gpuVendor() const { return m_vendor; }
+    QString gpuVendor() const;
 
     /**
      * @brief Detected GPU renderer string (e.g. "NVIDIA GeForce RTX 4070 Laptop GPU").
      */
-    QString gpuRenderer() const { return m_renderer; }
+    QString gpuRenderer() const;
 
     /**
      * @brief Detected OpenGL driver version string.
      */
-    QString glVersion() const { return m_version; }
+    QString glVersion() const;
 
     /**
      * @brief Detected OpenGL shading language (GLSL) version.
      */
-    QString glslVersion() const { return m_glslVersion; }
+    QString glslVersion() const;
 
     /**
      * @brief Estimated VRAM footprint of UI hardware acceleration.

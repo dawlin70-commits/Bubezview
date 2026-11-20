@@ -61,6 +61,12 @@ public:
     static FormFactor detectedFormFactor();
 
     /**
+     * @brief Checks whether the host is running inside a virtual machine (hypervisor flag or virtual DMI product).
+     * @return True if running inside a VM; false on bare-metal hardware.
+     */
+    static bool isVirtualMachine();
+
+    /**
      * @brief Suggests the optimal build profile based on detected hardware ("native", "balanced", or "standard").
      * @return Profile identifier string.
      */

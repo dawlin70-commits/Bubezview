@@ -82,6 +82,11 @@ public:
      */
     void focusReplaceInput();
 
+    /**
+     * @brief Re-applies the visual stylesheet to match the active application theme.
+     */
+    void updateTheme();
+
 public slots:
     /**
      * @brief Shows the search bar in search-only mode and sets focus to the search line edit.

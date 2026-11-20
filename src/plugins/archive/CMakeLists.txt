@@ -12,6 +12,7 @@ if(LIBARCHIVE_FOUND OR STATIC_ARCHIVE)
     set(ARCHIVE_PLUGIN_SOURCES
         archive_plugin.cpp
         ${CMAKE_SOURCE_DIR}/src/viewers/archive/archive_viewer.cpp
+        ${CMAKE_SOURCE_DIR}/src/ui/dialogs/frameless_dialog.cpp
         ${BUBEZVIEW_RESOURCES}
     )
 

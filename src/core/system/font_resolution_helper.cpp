@@ -233,7 +233,7 @@ bool FontResolutionHelper::downloadGoogleFont(const QString &familyName, QString
 {
     QString targetFamily = cleanFontFamilyName(familyName);
     if (targetFamily.isEmpty()) {
-        if (outError) *outError = QStringLiteral("Nome famiglia font vuoto");
+        if (outError) *outError = QObject::tr("Font family name is empty.");
         return false;
     }
 
@@ -258,7 +258,7 @@ bool FontResolutionHelper::downloadGoogleFont(const QString &familyName, QString
     loop.exec();
 
     if (!cssReply->isFinished() || cssReply->error() != QNetworkReply::NoError) {
-        if (outError) *outError = QStringLiteral("Impossibile connettersi a Google Fonts per '%1'.").arg(targetFamily);
+        if (outError) *outError = QObject::tr("Unable to connect to Google Fonts for '%1'.").arg(targetFamily);
         cssReply->deleteLater();
         return false;
     }
@@ -270,7 +270,7 @@ bool FontResolutionHelper::downloadGoogleFont(const QString &familyName, QString
     static const QRegularExpression urlRegex(QStringLiteral("url\\((https://[^\\)]+\\.(?:ttf|otf|woff2))\\)"));
     QRegularExpressionMatch match = urlRegex.match(cssContent);
     if (!match.hasMatch()) {
-        if (outError) *outError = QStringLiteral("Font '%1' non disponibile nel catalogo Google Fonts.").arg(targetFamily);
+        if (outError) *outError = QObject::tr("Font '%1' is not available in the Google Fonts catalog.").arg(targetFamily);
         return false;
     }
 
@@ -287,7 +287,7 @@ bool FontResolutionHelper::downloadGoogleFont(const QString &familyName, QString
     loop.exec();
 
     if (!fontReply->isFinished() || fontReply->error() != QNetworkReply::NoError) {
-        if (outError) *outError = QStringLiteral("Errore durante il download del file font per '%1'.").arg(targetFamily);
+        if (outError) *outError = QObject::tr("Error downloading font file for '%1'.").arg(targetFamily);
         fontReply->deleteLater();
         return false;
     }
@@ -296,7 +296,7 @@ bool FontResolutionHelper::downloadGoogleFont(const QString &familyName, QString
     fontReply->deleteLater();
 
     if (fontData.size() < 1024) {
-        if (outError) *outError = QStringLiteral("Dati font non validi o corrotti ricevuti.");
+        if (outError) *outError = QObject::tr("Received invalid or corrupted font data.");
         return false;
     }
 
@@ -311,7 +311,7 @@ bool FontResolutionHelper::downloadGoogleFont(const QString &familyName, QString
 
     QFile file(destFilePath);
     if (!file.open(QIODevice::WriteOnly)) {
-        if (outError) *outError = QStringLiteral("Impossibile salvare il file font in %1").arg(destFilePath);
+        if (outError) *outError = QObject::tr("Unable to save font file to %1.").arg(destFilePath);
         return false;
     }
     file.write(fontData);

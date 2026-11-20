@@ -120,9 +120,8 @@ void MinimalHeaderBar::setupUi()
 
     mainLayout->addWidget(m_windowControlsWidget, 0, Qt::AlignVCenter);
 
-    // Install hover event filter to show/hide glyph inside close button
+    // Install event filter to allow dragging from empty margins inside windowControlsWidget
     m_windowControlsWidget->installEventFilter(this);
-    updateTrafficLightIcons(false);
 
     // Left Edit Mode Capsule Island: [✕ Discard | ↶ Undo | ⏱ Timeline]
     m_editLeftWidget = new QFrame(m_primaryBar);
@@ -339,7 +338,7 @@ void MinimalHeaderBar::setupUi()
     m_btnEdit->setFixedSize(50, 38);
     m_btnEdit->setIconSize(QSize(22, 22));
     m_btnEdit->setCursor(Qt::PointingHandCursor);
-    m_btnEdit->setToolTip(tr("Edit Mode (Ctrl+E)"));
+    m_btnEdit->setToolTip(tr("Edit Mode (Ctrl+T)"));
     connect(m_btnEdit, &QPushButton::clicked, this, [this]() {
         if (m_pageOrganizerMode) {
             emit pdfOrganizerBackRequested();
@@ -375,11 +374,18 @@ void MinimalHeaderBar::updateDisplayTitle()
     if (!m_lblTitle) return;
     QString displayTitle = m_rawTitle.isEmpty() ? tr("BubezView") : m_rawTitle;
 
-    int leftWidth = m_windowControlsWidget ? m_windowControlsWidget->sizeHint().width() : 110;
-    int rightWidth = 200; // estimated width of right action buttons
+    int leftWidth = m_windowControlsWidget ? m_windowControlsWidget->sizeHint().width() : 140;
+    int rightWidth = 0;
+    if (m_rightActionsIslandFrame && m_rightActionsIslandFrame->isVisible()) {
+        rightWidth += m_rightActionsIslandFrame->sizeHint().width();
+    }
+    if (m_btnEdit && m_btnEdit->isVisible()) {
+        rightWidth += m_btnEdit->width();
+    }
+    rightWidth = qMax(rightWidth + 56, 220);
     int availableWidth = width() - leftWidth - rightWidth;
     if (m_lblBadge && m_lblBadge->isVisible()) {
-        availableWidth -= (m_lblBadge->sizeHint().width() + 12);
+        availableWidth -= (m_lblBadge->sizeHint().width() + 14);
     }
     int maxTitleWidth = qBound(60, availableWidth, 650);
 
@@ -469,9 +475,8 @@ void MinimalHeaderBar::showContextualTextBar(const QString &text, const QFont &f
                                             const QColor &bgColor)
 {
     if (!m_editMode) return;
-    if (m_btnPdfHighlight && m_btnPdfHighlight->isChecked()) {
-        QSignalBlocker blocker(m_btnPdfHighlight);
-        m_btnPdfHighlight->setChecked(false);
+    if (m_pdfHighlightActive) {
+        m_pdfHighlightActive = false;
         emit pdfHighlightToolToggled(false);
     }
     if (m_btnPdfText && !m_btnPdfText->isChecked()) {
@@ -503,10 +508,7 @@ void MinimalHeaderBar::showContextualHighlightBar()
         m_btnPdfText->setChecked(false);
         emit pdfTextToolToggled(false);
     }
-    if (m_btnPdfHighlight && !m_btnPdfHighlight->isChecked()) {
-        QSignalBlocker blocker(m_btnPdfHighlight);
-        m_btnPdfHighlight->setChecked(true);
-    }
+    m_pdfHighlightActive = true;
     if (m_contextualBar) {
         m_contextualBar->setMode(ContextBarMode::Highlight);
     }
@@ -521,9 +523,8 @@ void MinimalHeaderBar::showContextualShapesBar(int shapeType)
         m_btnPdfText->setChecked(false);
         emit pdfTextToolToggled(false);
     }
-    if (m_btnPdfHighlight && m_btnPdfHighlight->isChecked()) {
-        QSignalBlocker blocker(m_btnPdfHighlight);
-        m_btnPdfHighlight->setChecked(false);
+    if (m_pdfHighlightActive) {
+        m_pdfHighlightActive = false;
         emit pdfHighlightToolToggled(false);
     }
     if (m_contextualBar) {
@@ -541,9 +542,8 @@ void MinimalHeaderBar::showContextualRedactBar()
         m_btnPdfText->setChecked(false);
         emit pdfTextToolToggled(false);
     }
-    if (m_btnPdfHighlight && m_btnPdfHighlight->isChecked()) {
-        QSignalBlocker blocker(m_btnPdfHighlight);
-        m_btnPdfHighlight->setChecked(false);
+    if (m_pdfHighlightActive) {
+        m_pdfHighlightActive = false;
         emit pdfHighlightToolToggled(false);
     }
     if (m_contextualBar) {
@@ -560,9 +560,8 @@ void MinimalHeaderBar::showContextualStampBar()
         m_btnPdfText->setChecked(false);
         emit pdfTextToolToggled(false);
     }
-    if (m_btnPdfHighlight && m_btnPdfHighlight->isChecked()) {
-        QSignalBlocker blocker(m_btnPdfHighlight);
-        m_btnPdfHighlight->setChecked(false);
+    if (m_pdfHighlightActive) {
+        m_pdfHighlightActive = false;
         emit pdfHighlightToolToggled(false);
     }
     if (m_contextualBar) {
@@ -585,9 +584,8 @@ void MinimalHeaderBar::hideContextualBar()
     }
     emit pdfTextToolToggled(false);
 
-    if (m_btnPdfHighlight && m_btnPdfHighlight->isChecked()) {
-        QSignalBlocker blocker(m_btnPdfHighlight);
-        m_btnPdfHighlight->setChecked(false);
+    if (m_pdfHighlightActive) {
+        m_pdfHighlightActive = false;
     }
     emit pdfHighlightToolToggled(false);
 
@@ -657,6 +655,26 @@ void MinimalHeaderBar::updateHeaderGeometry()
         m_btnEdit->setIconSize(QSize(qRound(22 * m_uiScale), qRound(22 * m_uiScale)));
     }
 
+    // Scale contextual edit buttons inside EditToolsIsland
+    if (m_btnImgRotateLeft) { m_btnImgRotateLeft->setFixedSize(btnW38, btnH); m_btnImgRotateLeft->setIconSize(sz); }
+    if (m_btnImgRotateRight) { m_btnImgRotateRight->setFixedSize(btnW38, btnH); m_btnImgRotateRight->setIconSize(sz); }
+    if (m_btnImgFlipH) { m_btnImgFlipH->setFixedSize(btnW38, btnH); m_btnImgFlipH->setIconSize(sz); }
+    if (m_btnImgFlipV) { m_btnImgFlipV->setFixedSize(btnW38, btnH); m_btnImgFlipV->setIconSize(sz); }
+    if (m_btnImgCrop) { m_btnImgCrop->setFixedSize(btnW38, btnH); m_btnImgCrop->setIconSize(sz); }
+    if (m_btnImgResize) { m_btnImgResize->setFixedSize(btnW38, btnH); m_btnImgResize->setIconSize(sz); }
+    if (m_btnImgInvert) { m_btnImgInvert->setFixedSize(btnW38, btnH); m_btnImgInvert->setIconSize(sz); }
+    if (m_btnImgInspector) { m_btnImgInspector->setFixedSize(btnW38, btnH); m_btnImgInspector->setIconSize(sz); }
+    if (m_btnOfficeEditLo) { m_btnOfficeEditLo->setFixedSize(btnW38, btnH); m_btnOfficeEditLo->setIconSize(sz); }
+    if (m_btnOfficeSavePdf) { m_btnOfficeSavePdf->setFixedSize(btnW38, btnH); m_btnOfficeSavePdf->setIconSize(sz); }
+    if (m_btnOfficeExtractImages) { m_btnOfficeExtractImages->setFixedSize(btnW38, btnH); m_btnOfficeExtractImages->setIconSize(sz); }
+    if (m_btnPdfText) { m_btnPdfText->setFixedSize(qRound(40 * m_uiScale), btnH); m_btnPdfText->setIconSize(sz); }
+    if (m_btnPdfShapes) { m_btnPdfShapes->setFixedSize(qRound(50 * m_uiScale), btnH); m_btnPdfShapes->setIconSize(sz); }
+    if (m_btnPdfSign) { m_btnPdfSign->setFixedSize(qRound(50 * m_uiScale), btnH); m_btnPdfSign->setIconSize(sz); }
+    if (m_btnPdfPages) { m_btnPdfPages->setFixedSize(qRound(40 * m_uiScale), btnH); m_btnPdfPages->setIconSize(sz); }
+    if (m_btnTxtNumbers) { m_btnTxtNumbers->setFixedSize(btnW38, btnH); m_btnTxtNumbers->setIconSize(sz); }
+    if (m_btnTxtSyntax) { m_btnTxtSyntax->setFixedSize(btnW38, btnH); m_btnTxtSyntax->setIconSize(sz); }
+    if (m_btnTxtWrap) { m_btnTxtWrap->setFixedSize(btnW38, btnH); m_btnTxtWrap->setIconSize(sz); }
+
     updateGeometry();
     updateContextualBarPosition();
 }
@@ -690,7 +708,7 @@ void MinimalHeaderBar::setEditMode(bool editMode)
 
         if (m_btnEdit) {
             m_btnEdit->setText(QString());
-            m_btnEdit->setToolTip(tr("Edit Mode (Ctrl+E)"));
+            m_btnEdit->setToolTip(tr("Edit Mode (Ctrl+T)"));
         }
 
         // Exiting edit mode: switch immediately to preview page 0 so its minimumSizeHint
@@ -964,9 +982,8 @@ void MinimalHeaderBar::setupEditTools()
         QColor textIconColor = checked ? QColor("#ffffff") : (isLight ? QColor("#0f172a") : QColor("#f1f5f9"));
         m_btnPdfText->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::EditorText, textIconColor, 21));
         if (checked) {
-            if (m_btnPdfHighlight && m_btnPdfHighlight->isChecked()) {
-                QSignalBlocker blocker(m_btnPdfHighlight);
-                m_btnPdfHighlight->setChecked(false);
+            if (m_pdfHighlightActive) {
+                m_pdfHighlightActive = false;
                 emit pdfHighlightToolToggled(false);
             }
             showContextualTextBar();
@@ -979,12 +996,7 @@ void MinimalHeaderBar::setupEditTools()
         }
     });
 
-    // Pill 2: Highlight (Kept as invisible object for state tracking)
-    m_btnPdfHighlight = new QPushButton(this);
-    m_btnPdfHighlight->setVisible(false);
-    m_btnPdfHighlight->hide();
-
-    // Pill 3: Insert ▾ (Geometric shapes, images, highlighter, and rubber stamps)
+    // Pill 2: Insert ▾ (Geometric shapes, images, highlighter, and rubber stamps)
     m_btnPdfShapes = new QToolButton(m_editToolsIslandFrame);
     m_btnPdfShapes->setFixedSize(50, 30);
     m_btnPdfShapes->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -1042,19 +1054,11 @@ void MinimalHeaderBar::setupEditTools()
     m_btnPdfPages->setToolButtonStyle(Qt::ToolButtonIconOnly);
     m_btnPdfPages->setIconSize(QSize(21, 21));
     m_btnPdfPages->setCursor(Qt::PointingHandCursor);
-    m_btnPdfPages->setToolTip(tr("Manage pages"));
-    connect(m_btnPdfPages, &QToolButton::clicked, this, &MinimalHeaderBar::pdfPagesRequested);
-    lay->addWidget(m_btnPdfPages, 0, Qt::AlignVCenter);
-
-    // Dummy legacy pointers initialized and hidden for backwards compatibility
-    m_btnPdfStudio = new QPushButton(m_editToolContainer); m_btnPdfStudio->hide();
-    m_btnPdfSelectArea = new QToolButton(m_editToolContainer); m_btnPdfSelectArea->hide();
-    m_btnPdfDraw = new QToolButton(m_editToolContainer); m_btnPdfDraw->hide();
-    m_btnPdfType = new QToolButton(m_editToolContainer); m_btnPdfType->hide();
-    m_btnPdfShape = new QToolButton(m_editToolContainer); m_btnPdfShape->hide();
-    m_btnPdfStamp = new QToolButton(m_editToolContainer); m_btnPdfStamp->hide();
-    m_btnPdfRedact = new QToolButton(m_editToolContainer); m_btnPdfRedact->hide();
-    m_btnPdfRepair = new QToolButton(m_editToolContainer); m_btnPdfRepair->hide();
+    if (m_btnPdfPages) {
+        m_btnPdfPages->setToolTip(tr("Manage pages"));
+        connect(m_btnPdfPages, &QToolButton::clicked, this, &MinimalHeaderBar::pdfPagesRequested);
+        lay->addWidget(m_btnPdfPages, 0, Qt::AlignVCenter);
+    }
 
     // --- Archive Tools ---
     makePillBtn(m_btnArcExtract, tr("Extract All"), tr("Extract all files from archive"));
@@ -1120,6 +1124,32 @@ void MinimalHeaderBar::setupEditTools()
 
     m_btnAudStudio->setChecked(true);
 
+    // --- Folder Studio Tools (0=Duplicates, 1=Recovery, 2=Organize, 3=Batch) ---
+    m_fldToolsGroup = new QButtonGroup(this);
+    m_fldToolsGroup->setExclusive(true);
+
+    makePillBtn(m_btnFldDuplicates, tr("Duplicates"), tr("Find exact and multi-format equivalent files"));
+    m_btnFldDuplicates->setCheckable(true);
+    m_fldToolsGroup->addButton(m_btnFldDuplicates, 0);
+    connect(m_btnFldDuplicates, &QPushButton::clicked, this, [this]() { emit folderStudioToolRequested(0); });
+
+    makePillBtn(m_btnFldRecovery, tr("Recovery"), tr("PhotoRec / TestDisk signature repair, integrity check && smart naming"));
+    m_btnFldRecovery->setCheckable(true);
+    m_fldToolsGroup->addButton(m_btnFldRecovery, 1);
+    connect(m_btnFldRecovery, &QPushButton::clicked, this, [this]() { emit folderStudioToolRequested(1); });
+
+    makePillBtn(m_btnFldOrganize, tr("Organize"), tr("Smart folder tree organization && flattening with Dry-Run preview"));
+    m_btnFldOrganize->setCheckable(true);
+    m_fldToolsGroup->addButton(m_btnFldOrganize, 2);
+    connect(m_btnFldOrganize, &QPushButton::clicked, this, [this]() { emit folderStudioToolRequested(2); });
+
+    makePillBtn(m_btnFldBatch, tr("Batch"), tr("Token-based batch rename && empty folder / junk cleaner"));
+    m_btnFldBatch->setCheckable(true);
+    m_fldToolsGroup->addButton(m_btnFldBatch, 3);
+    connect(m_btnFldBatch, &QPushButton::clicked, this, [this]() { emit folderStudioToolRequested(3); });
+
+    m_btnFldDuplicates->setChecked(true);
+
     outerLay->addWidget(m_editToolsIslandFrame, 0, Qt::AlignVCenter);
     // Right stretch to balance the centering
     outerLay->addStretch(1);
@@ -1175,6 +1205,7 @@ void MinimalHeaderBar::updateContextualToolsVisibility()
     const bool isTxt = (m_currentCategory == FileCategory::Text);
     const bool isAud = (m_currentCategory == FileCategory::Media) && m_audioToolsAvailable;
     const bool isOff = (m_currentCategory == FileCategory::Office);
+    const bool isFld = (m_currentCategory == FileCategory::Folder);
 
     if (m_btnImgRotateLeft) m_btnImgRotateLeft->setVisible(isImg);
     if (m_btnImgRotateRight) m_btnImgRotateRight->setVisible(isImg);
@@ -1190,28 +1221,15 @@ void MinimalHeaderBar::updateContextualToolsVisibility()
     if (m_btnOfficeExtractImages) m_btnOfficeExtractImages->setVisible(isOff);
 
     if (m_btnPdfText) m_btnPdfText->setVisible(isPdf);
-    if (m_btnPdfHighlight) m_btnPdfHighlight->setVisible(false);
     if (m_btnPdfShapes) m_btnPdfShapes->setVisible(isPdf);
     if (m_btnPdfSign) m_btnPdfSign->setVisible(isPdf);
     if (m_btnPdfPages) m_btnPdfPages->setVisible(isPdf);
-    if (m_actPagesRepair) m_actPagesRepair->setVisible(isPdf);
-
-    if (m_btnPdfStudio) m_btnPdfStudio->setVisible(false);
-    if (m_btnPdfSelectArea) m_btnPdfSelectArea->setVisible(false);
-    if (m_btnPdfDraw) m_btnPdfDraw->setVisible(false);
-    if (m_btnPdfType) m_btnPdfType->setVisible(false);
-    if (m_btnPdfShape) m_btnPdfShape->setVisible(false);
-    if (m_btnPdfStamp) m_btnPdfStamp->setVisible(false);
-    if (m_btnPdfRedact) m_btnPdfRedact->setVisible(false);
     if (m_btnExport && !m_pageOrganizerMode) m_btnExport->show();
 
-    if (m_sepPdf1) m_sepPdf1->setVisible(false);
-    if (m_sepPdf2) m_sepPdf2->setVisible(false);
     if (m_sepImg1) m_sepImg1->setVisible(isImg);
     if (m_sepImg2) m_sepImg2->setVisible(isImg);
     if (m_sepOffice1) m_sepOffice1->setVisible(isOff);
     if (m_sepArc1) m_sepArc1->setVisible(isArc);
-    if (m_sepExport) m_sepExport->setVisible(false);
 
     if (m_btnArcExtract) m_btnArcExtract->setVisible(isArc);
     if (m_btnArcAdd) m_btnArcAdd->setVisible(isArc);
@@ -1229,8 +1247,26 @@ void MinimalHeaderBar::updateContextualToolsVisibility()
     if (m_btnAudTags) m_btnAudTags->setVisible(isAud);
     if (m_btnAudSummary) m_btnAudSummary->setVisible(isAud);
 
+    if (m_btnFldDuplicates) m_btnFldDuplicates->setVisible(isFld);
+    if (m_btnFldRecovery) m_btnFldRecovery->setVisible(isFld);
+    if (m_btnFldOrganize) m_btnFldOrganize->setVisible(isFld);
+    if (m_btnFldBatch) m_btnFldBatch->setVisible(isFld);
+
     if (m_editToolsIslandFrame) {
-        m_editToolsIslandFrame->setVisible(isImg || isPdf || isArc || isTxt || isAud || isOff);
+        m_editToolsIslandFrame->setVisible(isImg || isPdf || isArc || isTxt || isAud || isOff || isFld);
+    }
+
+    // In Folder Edit Mode, hide file-save/export island and document-undo buttons since Studio tools apply directly with Undo
+    if (m_editMode && !m_pageOrganizerMode) {
+        if (isFld) {
+            if (m_btnExport) m_btnExport->hide();
+            if (m_rightActionsIslandFrame) m_rightActionsIslandFrame->hide();
+            if (m_btnQuickUndo) m_btnQuickUndo->hide();
+            if (m_btnHistory) m_btnHistory->hide();
+        } else {
+            if (m_btnQuickUndo) m_btnQuickUndo->show();
+            if (m_btnHistory) m_btnHistory->show();
+        }
     }
 
     if (m_btnZoom && !m_pageOrganizerMode) {
@@ -1414,11 +1450,20 @@ void MinimalHeaderBar::updateButtonStyles()
     const int closeSz = qRound(36 * m_uiScale);
     const int closeRadius = closeSz / 2;
     const int closeIconSz = qRound(18 * m_uiScale);
+    const int iconSz = qRound(20 * m_uiScale);
 
-    QString closeBtnBg = isLight
-        ? "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.90), stop:1 rgba(241, 245, 249, 0.80))"
-        : "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.10), stop:1 rgba(255, 255, 255, 0.04))";
-    QString closeBtnBorder = isLight ? "rgba(15, 23, 42, 0.12)" : "rgba(255, 255, 255, 0.12)";
+    QString closeBtnBg;
+    QString closeBtnBorder;
+    if (isLight) {
+        closeBtnBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.90), stop:1 rgba(241, 245, 249, 0.80))");
+        closeBtnBorder = QStringLiteral("rgba(15, 23, 42, 0.12)");
+    } else if (isZinc) {
+        closeBtnBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #585960, stop:1 #47484e)");
+        closeBtnBorder = QStringLiteral("rgba(255, 255, 255, 0.20)");
+    } else {
+        closeBtnBg = QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.10), stop:1 rgba(255, 255, 255, 0.04))");
+        closeBtnBorder = QStringLiteral("rgba(255, 255, 255, 0.12)");
+    }
 
     QString closeBtnStyle = QString(
         "QToolButton {"
@@ -1436,84 +1481,60 @@ void MinimalHeaderBar::updateButtonStyles()
     ).arg(closeBtnBg, closeBtnBorder, QString::number(closeRadius));
 
     if (m_btnClose) {
-        m_btnClose->setFixedSize(closeSz, closeSz);
-        m_btnClose->setIconSize(QSize(closeIconSz, closeIconSz));
         m_btnClose->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Close, getIconColor(VectorIcons::UiIcon::Close), closeIconSz));
         m_btnClose->setStyleSheet(closeBtnStyle);
     }
 
     // 5. Left Navigation Island Buttons (< | > | Gallery)
     if (m_btnPrev) {
-        m_btnPrev->setFixedSize(34, 30);
-        m_btnPrev->setIconSize(QSize(20, 20));
-        m_btnPrev->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronLeft, getIconColor(VectorIcons::UiIcon::ChevronLeft), 20));
+        m_btnPrev->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronLeft, getIconColor(VectorIcons::UiIcon::ChevronLeft), iconSz));
         m_btnPrev->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnNext) {
-        m_btnNext->setFixedSize(34, 30);
-        m_btnNext->setIconSize(QSize(20, 20));
-        m_btnNext->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronRight, getIconColor(VectorIcons::UiIcon::ChevronRight), 20));
+        m_btnNext->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::ChevronRight, getIconColor(VectorIcons::UiIcon::ChevronRight), iconSz));
         m_btnNext->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnGallery) {
-        m_btnGallery->setFixedSize(38, 30);
-        m_btnGallery->setIconSize(QSize(21, 21));
-        m_btnGallery->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Grid, getIconColor(VectorIcons::UiIcon::Grid), 21));
+        m_btnGallery->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Grid, getIconColor(VectorIcons::UiIcon::Grid), iconSz));
         m_btnGallery->setStyleSheet(islandInnerBtnStyle);
     }
 
     // 6. Right Actions Island Buttons (Search, Zoom, Rotate, Trash, Info, Share, Settings, Export/Save)
     if (m_btnSearch) {
-        m_btnSearch->setFixedSize(38, 30);
-        m_btnSearch->setIconSize(QSize(21, 21));
-        m_btnSearch->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Search, getIconColor(VectorIcons::UiIcon::Search), 21));
+        m_btnSearch->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Search, getIconColor(VectorIcons::UiIcon::Search), iconSz));
         m_btnSearch->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnZoom) {
-        m_btnZoom->setFixedSize(38, 30);
-        m_btnZoom->setIconSize(QSize(21, 21));
-        m_btnZoom->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Zoom, getIconColor(VectorIcons::UiIcon::Zoom), 21));
+        m_btnZoom->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Zoom, getIconColor(VectorIcons::UiIcon::Zoom), iconSz));
         m_btnZoom->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnRotate) {
-        m_btnRotate->setFixedSize(38, 30);
-        m_btnRotate->setIconSize(QSize(21, 21));
-        m_btnRotate->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::RotateRight, getIconColor(VectorIcons::UiIcon::RotateRight), 21));
+        m_btnRotate->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::RotateRight, getIconColor(VectorIcons::UiIcon::RotateRight), iconSz));
         m_btnRotate->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnTrash) {
-        m_btnTrash->setFixedSize(38, 30);
-        m_btnTrash->setIconSize(QSize(21, 21));
-        m_btnTrash->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Trash, getIconColor(VectorIcons::UiIcon::Trash), 21));
+        m_btnTrash->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Trash, getIconColor(VectorIcons::UiIcon::Trash), iconSz));
         m_btnTrash->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnInspector) {
-        m_btnInspector->setFixedSize(38, 30);
-        m_btnInspector->setIconSize(QSize(21, 21));
-        m_btnInspector->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Info, getIconColor(VectorIcons::UiIcon::Info), 21));
+        m_btnInspector->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Info, getIconColor(VectorIcons::UiIcon::Info), iconSz));
         m_btnInspector->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnShare) {
-        m_btnShare->setFixedSize(38, 30);
-        m_btnShare->setIconSize(QSize(21, 21));
-        m_btnShare->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Share, getIconColor(VectorIcons::UiIcon::Share), 21));
+        m_btnShare->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Share, getIconColor(VectorIcons::UiIcon::Share), iconSz));
         m_btnShare->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnSettings) {
-        m_btnSettings->setFixedSize(38, 30);
-        m_btnSettings->setIconSize(QSize(21, 21));
-        m_btnSettings->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Settings, getIconColor(VectorIcons::UiIcon::Settings), 21));
+        m_btnSettings->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Settings, getIconColor(VectorIcons::UiIcon::Settings), iconSz));
         m_btnSettings->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnExport) {
-        m_btnExport->setFixedSize(38, 30);
-        m_btnExport->setIconSize(QSize(21, 21));
         m_btnExport->setStyleSheet(islandInnerBtnStyle);
         if (m_editMode) {
-            m_btnExport->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::EditorSave, getIconColor(VectorIcons::UiIcon::EditorSave), 21));
+            m_btnExport->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::EditorSave, getIconColor(VectorIcons::UiIcon::EditorSave), iconSz));
             m_btnExport->setToolTip(tr("Save document (Ctrl+S)"));
         } else {
-            m_btnExport->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::EditorExport, getIconColor(VectorIcons::UiIcon::EditorExport), 21));
+            m_btnExport->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::EditorExport, getIconColor(VectorIcons::UiIcon::EditorExport), iconSz));
             m_btnExport->setToolTip(tr("Export document (Ctrl+E)"));
         }
     }
@@ -1594,9 +1615,6 @@ void MinimalHeaderBar::updateButtonStyles()
         QColor textIconColor = m_btnPdfText->isChecked() ? QColor("#ffffff") : getIconColor(VectorIcons::UiIcon::EditorText);
         m_btnPdfText->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::EditorText, textIconColor, 21));
         m_btnPdfText->setStyleSheet(islandInnerBtnStyle);
-    }
-    if (m_btnPdfHighlight) {
-        m_btnPdfHighlight->setStyleSheet(islandInnerBtnStyle);
     }
     if (m_btnPdfShapes) {
         m_btnPdfShapes->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::EditorInsert, getIconColor(VectorIcons::UiIcon::EditorInsert), 21));
@@ -1731,29 +1749,45 @@ void MinimalHeaderBar::updateButtonStyles()
         m_btnAudSummary->setStyleSheet(contextualPillStyle);
     }
 
+    // Folder Studio tools
+    if (m_btnFldDuplicates) {
+        m_btnFldDuplicates->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Search, iconColor, 17));
+        m_btnFldDuplicates->setStyleSheet(contextualPillStyle);
+    }
+    if (m_btnFldRecovery) {
+        m_btnFldRecovery->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Repair, iconColor, 17));
+        m_btnFldRecovery->setStyleSheet(contextualPillStyle);
+    }
+    if (m_btnFldOrganize) {
+        m_btnFldOrganize->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Grid, iconColor, 17));
+        m_btnFldOrganize->setStyleSheet(contextualPillStyle);
+    }
+    if (m_btnFldBatch) {
+        m_btnFldBatch->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Tag, iconColor, 17));
+        m_btnFldBatch->setStyleSheet(contextualPillStyle);
+    }
+
     // Dividers inside capsule islands
     QString sepStyle = QString("background-color: %1; border: none;").arg(
         isLight ? "rgba(15, 23, 42, 0.14)" : "rgba(255, 255, 255, 0.14)"
     );
     if (m_sepNavIsland) m_sepNavIsland->setStyleSheet(sepStyle);
-    if (m_sepPdf1) m_sepPdf1->setStyleSheet(sepStyle);
-    if (m_sepPdf2) m_sepPdf2->setStyleSheet(sepStyle);
     if (m_sepImg1) m_sepImg1->setStyleSheet(sepStyle);
+    if (m_sepImg2) m_sepImg2->setStyleSheet(sepStyle);
+    if (m_sepOffice1) m_sepOffice1->setStyleSheet(sepStyle);
     if (m_sepArc1) m_sepArc1->setStyleSheet(sepStyle);
-    if (m_sepExport) m_sepExport->setStyleSheet(sepStyle);
 
-    // 9. Standalone Primary Edit / Done Accent Pill (50x38, vibrant #38bdf8 -> #2563eb gradient, white icon)
+    // 9. Standalone Primary Edit / Done Accent Pill (scaled dynamically, vibrant #38bdf8 -> #2563eb gradient)
     if (m_btnEdit) {
-        m_btnEdit->setFixedSize(50, 38);
+        const int editIconSz = qRound(22 * m_uiScale);
         m_btnEdit->setText(QString());
-        m_btnEdit->setIconSize(QSize(22, 22));
 
-        QString primaryEditPillStyle = QStringLiteral(
+        QString primaryEditPillStyle = QString(
             "QPushButton {"
             "   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #38bdf8, stop:1 #2563eb);"
             "   color: #ffffff;"
             "   border: 1px solid rgba(255, 255, 255, 0.35);"
-            "   border-radius: 14px;"
+            "   border-radius: %1px;"
             "   padding: 0px;"
             "}"
             "QPushButton:hover {"
@@ -1763,25 +1797,19 @@ void MinimalHeaderBar::updateButtonStyles()
             "QPushButton:pressed {"
             "   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0284c7, stop:1 #1d4ed8);"
             "}"
-        );
+        ).arg(islandRadius);
 
         if (m_pageOrganizerMode || m_editMode) {
             m_btnEdit->setToolTip(tr("Done / Exit Edit Mode (Esc)"));
-            m_btnEdit->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Check, QColor("#ffffff"), 22));
+            m_btnEdit->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Check, QColor("#ffffff"), editIconSz));
         } else {
-            m_btnEdit->setToolTip(tr("Edit Mode (Ctrl+E)"));
-            m_btnEdit->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Edit, QColor("#ffffff"), 22));
+            m_btnEdit->setToolTip(tr("Edit Mode (Ctrl+T)"));
+            m_btnEdit->setIcon(VectorIcons::createUiIcon(VectorIcons::UiIcon::Edit, QColor("#ffffff"), editIconSz));
         }
         m_btnEdit->setStyleSheet(primaryEditPillStyle);
     }
 
     updateHeaderGeometry();
-    updateTrafficLightIcons(m_trafficLightsHovered);
-}
-
-void MinimalHeaderBar::updateTrafficLightIcons(bool hovered)
-{
-    m_trafficLightsHovered = hovered;
 }
 
 void MinimalHeaderBar::paintEvent(QPaintEvent *event)
@@ -1858,20 +1886,14 @@ bool MinimalHeaderBar::eventFilter(QObject *watched, QEvent *event)
         return true;
     }
 
-    if (watched == m_windowControlsWidget) {
-        if (event->type() == QEvent::Enter) {
-            updateTrafficLightIcons(true);
-        } else if (event->type() == QEvent::Leave) {
-            updateTrafficLightIcons(false);
-        } else if (event->type() == QEvent::MouseButtonPress) {
-            QMouseEvent *me = static_cast<QMouseEvent*>(event);
-            if (me->button() == Qt::LeftButton) {
-                // If clicked on margin/padding area rather than traffic light buttons, initiate window move
-                QWidget *child = m_windowControlsWidget->childAt(me->pos());
-                if (!child || child == m_windowControlsWidget) {
-                    mousePressEvent(me);
-                    return true;
-                }
+    if (watched == m_windowControlsWidget && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        if (me->button() == Qt::LeftButton) {
+            // If clicked on margin/padding area rather than control buttons, initiate window move
+            QWidget *child = m_windowControlsWidget->childAt(me->pos());
+            if (!child || child == m_windowControlsWidget) {
+                mousePressEvent(me);
+                return true;
             }
         }
     }
@@ -1957,6 +1979,14 @@ void MinimalHeaderBar::setAudioWorkspaceToolsAvailable(bool available)
     if (m_audioToolsAvailable == available) return;
     m_audioToolsAvailable = available;
     updateContextualToolsVisibility();
+}
+
+void MinimalHeaderBar::setActiveFolderStudioTool(int index)
+{
+    if (!m_fldToolsGroup) return;
+    if (auto *btn = m_fldToolsGroup->button(index)) {
+        btn->setChecked(true);
+    }
 }
 
 void MinimalHeaderBar::setAudioWorkspaceModified(int index, bool modified)

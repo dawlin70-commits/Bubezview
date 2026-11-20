@@ -38,6 +38,7 @@ public:
         if (!loadedImage.isNull()) {
             PreloadCacheManager::instance().insert(m_filePath, loadedImage);
         }
+        PreloadCacheManager::instance().markPrefetchFinished(m_filePath);
     }
 
 private:
@@ -55,7 +56,6 @@ PreloadCacheManager::PreloadCacheManager(QObject *parent)
     : QObject(parent)
     , m_budgetMb(256)
     , m_prefetchDistance(1)
-    , m_popplerWarmedUp(false)
 {
     // Limit pool concurrency to prevent background thread starvation
     m_threadPool.setMaxThreadCount(2);
@@ -65,7 +65,15 @@ PreloadCacheManager::PreloadCacheManager(QObject *parent)
     int savedBudget = settings.value("cache_budget_mb", 256).toInt();
     setBudgetMb(savedBudget);
 
-    m_prefetchDistance = settings.value("prefetch_distance", 1).toInt();
+    m_prefetchDistance = qBound(0, settings.value("prefetch_distance", 1).toInt(), 3);
+}
+
+PreloadCacheManager::~PreloadCacheManager()
+{
+    // Cancel pending background decodes and wait briefly for active workers so they never
+    // access m_cache/m_mutex after singleton teardown begins.
+    m_threadPool.clear();
+    m_threadPool.waitForDone(500);
 }
 
 void PreloadCacheManager::setBudgetMb(int maxMegaBytes)
@@ -149,17 +157,18 @@ void PreloadCacheManager::remove(const QString &filePath)
     m_cache.remove(filePath);
 }
 
-void PreloadCacheManager::inspectFolderForPdfs(const QStringList &siblingFiles)
-{
-    Q_UNUSED(siblingFiles);
-}
-
 void PreloadCacheManager::requestPrefetchNeighbors(const QStringList &siblingFiles, int currentIndex)
 {
-    if (!isEnabled() || siblingFiles.isEmpty() || m_prefetchDistance <= 0) return;
+    int dist = 0;
+    {
+        QMutexLocker locker(&m_mutex);
+        if (m_budgetMb <= 0 || m_prefetchDistance <= 0) return;
+        dist = m_prefetchDistance;
+    }
+    if (siblingFiles.isEmpty()) return;
 
     QStringList candidates;
-    for (int step = 1; step <= m_prefetchDistance; ++step) {
+    for (int step = 1; step <= dist; ++step) {
         // Next file (N + step)
         if (currentIndex + step < siblingFiles.size()) {
             candidates.append(siblingFiles.at(currentIndex + step));
@@ -173,20 +182,35 @@ void PreloadCacheManager::requestPrefetchNeighbors(const QStringList &siblingFil
     for (const QString &path : candidates) {
         {
             QMutexLocker locker(&m_mutex);
-            if (m_cache.contains(path)) {
-                continue; // Already prefetched
+            if (m_cache.contains(path) || m_inFlightPaths.contains(path)) {
+                continue; // Already prefetched or currently decoding
             }
         }
 
         FileCategory cat = PluginManager::categorizeFile(path);
         if (cat == FileCategory::Image) {
+            {
+                QMutexLocker locker(&m_mutex);
+                if (m_cache.contains(path) || m_inFlightPaths.contains(path)) {
+                    continue;
+                }
+                m_inFlightPaths.insert(path);
+            }
             m_threadPool.start(new PreloadWorker(path), QThread::LowPriority);
         }
     }
 }
 
-void PreloadCacheManager::clear()
+void PreloadCacheManager::markPrefetchFinished(const QString &filePath)
 {
     QMutexLocker locker(&m_mutex);
+    m_inFlightPaths.remove(filePath);
+}
+
+void PreloadCacheManager::clear()
+{
+    m_threadPool.clear();
+    QMutexLocker locker(&m_mutex);
     m_cache.clear();
+    m_inFlightPaths.clear();
 }

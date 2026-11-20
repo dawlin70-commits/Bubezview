@@ -4,6 +4,7 @@
  */
 
 #include "extension_row_widget.h"
+#include "core/services/plugin_manager.h"
 #include "diagnostic_report_dialog.h"
 #include "core/system/package_manager_helper.h"
 #include "core/system/build_config.h"
@@ -381,7 +382,17 @@ void ExtensionRowWidget::handleInstallClicked()
             wantsSource = true;
         }
 
-        if (wantsSource && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
+        if (m_mod.id == QLatin1String("engine-folder")) {
+            success = PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("folder"), this);
+        } else if (m_mod.id == QLatin1String("engine-image")) {
+            success = PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("image"), this);
+        } else if (m_mod.id == QLatin1String("engine-video")) {
+            success = PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("video"), this);
+        } else if (m_mod.id == QLatin1String("engine-mpv")) {
+            success = PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("audio"), this);
+        } else if (m_mod.id == QLatin1String("engine-poppler")) {
+            success = PluginManager::instance().activateStudioModuleInteractive(QStringLiteral("pdf"), this);
+        } else if (wantsSource && (m_mod.canCompile || PackageManagerHelper::isCompilableEngine(m_mod.id))) {
             QString targetId = m_mod.id;
             if (!PackageManagerHelper::isCompilableEngine(m_mod.id)) {
                 if (m_mod.id == QLatin1String("poppler-data")) targetId = QStringLiteral("poppler-data");

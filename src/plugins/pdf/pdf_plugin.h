@@ -21,15 +21,25 @@ public:
     explicit PdfPlugin(QObject *parent = nullptr);
     ~PdfPlugin() override = default;
 
+    /** @copydoc ViewerPluginInterface::pluginId */
     QString pluginId() const override { return QStringLiteral("pdf"); }
+
+    /** @copydoc ViewerPluginInterface::displayName */
     QString displayName() const override { return tr("Poppler Qt6 PDF Document Engine"); }
+
+    /** @copydoc ViewerPluginInterface::description */
     QString description() const override {
         return tr("High-resolution vector rendering, annotations, and text extraction for PDF documents.");
     }
+
+    /** @copydoc ViewerPluginInterface::category */
     FileCategory category() const override { return FileCategory::Pdf; }
+
+    /** @copydoc ViewerPluginInterface::supportedExtensions */
     QStringList supportedExtensions() const override {
         return {QStringLiteral("pdf"), QStringLiteral("ai")};
     }
 
+    /** @copydoc ViewerPluginInterface::createViewer */
     IViewerWidget *createViewer(QWidget *parent = nullptr) override;
 };

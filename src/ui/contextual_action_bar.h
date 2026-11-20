@@ -236,7 +236,6 @@ private:
     QToolButton *m_btnTextColor = nullptr;
     QComboBox *m_cmbTextBgMode = nullptr;
     QToolButton *m_btnTextBgColor = nullptr;
-    QCheckBox *m_chkWhiteout = nullptr;
     QToolButton *m_btnCloseText = nullptr;
     QColor m_textColor = Qt::black;
     PdfTextBgMode m_textBgMode = PdfTextBgMode::Transparent;
@@ -247,9 +246,6 @@ private:
     QToolButton *m_btnHlColor = nullptr;
     QSlider *m_sldHlOpacity = nullptr;
     QLabel *m_lblHlOpacityVal = nullptr;
-    QButtonGroup *m_hlModeGroup = nullptr;
-    QToolButton *m_btnHlModeText = nullptr;
-    QToolButton *m_btnHlModeSpotlight = nullptr;
     QToolButton *m_btnCloseHighlight = nullptr;
     QColor m_highlighterColor = QColor(QStringLiteral("#fef08a")); // Warm highlighter yellow
     QList<QToolButton*> m_hlPaletteButtons;

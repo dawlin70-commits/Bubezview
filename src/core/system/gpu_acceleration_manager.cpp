@@ -105,13 +105,53 @@ void GpuAccelerationManager::setGpuAccelerationEnabled(bool enabled)
     emit gpuAccelerationChanged(enabled);
 }
 
+bool GpuAccelerationManager::isGpuAvailable() const
+{
+    if (!m_initialized) {
+        const_cast<GpuAccelerationManager *>(this)->initialize();
+    }
+    return m_gpuAvailable;
+}
+
+QString GpuAccelerationManager::gpuVendor() const
+{
+    if (!m_initialized) {
+        const_cast<GpuAccelerationManager *>(this)->initialize();
+    }
+    return m_vendor;
+}
+
+QString GpuAccelerationManager::gpuRenderer() const
+{
+    if (!m_initialized) {
+        const_cast<GpuAccelerationManager *>(this)->initialize();
+    }
+    return m_renderer;
+}
+
+QString GpuAccelerationManager::glVersion() const
+{
+    if (!m_initialized) {
+        const_cast<GpuAccelerationManager *>(this)->initialize();
+    }
+    return m_version;
+}
+
+QString GpuAccelerationManager::glslVersion() const
+{
+    if (!m_initialized) {
+        const_cast<GpuAccelerationManager *>(this)->initialize();
+    }
+    return m_glslVersion;
+}
+
 QWidget *GpuAccelerationManager::createAcceleratedViewport(QWidget *parent) const
 {
     if (QGuiApplication::platformName() == QStringLiteral("offscreen")) {
         return new QWidget(parent);
     }
 
-    if (m_gpuAvailable && isGpuAccelerationEnabled()) {
+    if (isGpuAvailable() && isGpuAccelerationEnabled()) {
         return new QOpenGLWidget(parent);
     }
 

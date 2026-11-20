@@ -18,6 +18,8 @@
 #include <QProgressDialog>
 #include <QApplication>
 #include <QRegularExpression>
+#include <QMutex>
+#include <QMutexLocker>
 #include <unistd.h>
 
 bool PackageManagerHelper::isImmutableSystem()
@@ -350,9 +352,10 @@ bool PackageManagerHelper::installComponentInteractive(const QString &componentI
         return false;
     }
 
-    if (compilable) {
-        auto hwProf = BuildConfig::instance().activeHardwareProfile();
-        auto mode = BuildConfig::instance().componentSourceMode(componentId);
+    const auto hwProf = BuildConfig::instance().activeHardwareProfile();
+    const auto mode = BuildConfig::instance().componentSourceMode(componentId);
+
+    if (compilable && hwProf != BuildConfig::HardwareProfile::SystemPackages) {
         if (mode == BuildConfig::ComponentSourceMode::LocalSource ||
             hwProf == BuildConfig::HardwareProfile::AllSource ||
             hwProf == BuildConfig::HardwareProfile::AllStable ||
@@ -845,25 +848,39 @@ bool PackageManagerHelper::uninstallComponentInteractive(const QString &componen
     return runPrivilegedUninstall(QStringList() << pkg, parentWidget);
 }
 
+static QMutex s_candidateCacheMutex;
 static QMap<QString, QString> s_candidateVersionCache;
 
 bool PackageManagerHelper::isCandidateVersionCached(const QString &componentId)
 {
+    QMutexLocker locker(&s_candidateCacheMutex);
     return s_candidateVersionCache.contains(componentId.trimmed().toLower());
 }
 
 void PackageManagerHelper::clearCaches()
 {
-    s_candidateVersionCache.clear();
+    {
+        QMutexLocker locker(&s_candidateCacheMutex);
+        s_candidateVersionCache.clear();
+    }
     BuildConfig::clearPackageCache();
 }
 
 QString PackageManagerHelper::queryPackageCandidateVersion(const QString &componentId)
 {
     const QString compKey = componentId.trimmed().toLower();
-    if (s_candidateVersionCache.contains(compKey)) {
-        return s_candidateVersionCache.value(compKey);
+    {
+        QMutexLocker locker(&s_candidateCacheMutex);
+        auto it = s_candidateVersionCache.constFind(compKey);
+        if (it != s_candidateVersionCache.constEnd()) {
+            return it.value();
+        }
     }
+
+    auto storeCache = [&compKey](const QString &val) {
+        QMutexLocker locker(&s_candidateCacheMutex);
+        s_candidateVersionCache.insert(compKey, val);
+    };
 
     DistroFamily fam = detectFamily();
     QString pkg = packageNameForComponent(componentId);
@@ -901,7 +918,7 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
     }
 
     if (program.isEmpty() || QStandardPaths::findExecutable(program).isEmpty()) {
-        s_candidateVersionCache.insert(compKey, QString());
+        storeCache(QString());
         return QString();
     }
 
@@ -910,7 +927,7 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
     if (!proc.waitForFinished(3000)) {
         proc.kill();
         proc.waitForFinished(200);
-        s_candidateVersionCache.insert(compKey, QString());
+        storeCache(QString());
         return QString();
     }
 
@@ -920,14 +937,14 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
         if (!proc.waitForFinished(2000)) {
             proc.kill();
             proc.waitForFinished(200);
-            s_candidateVersionCache.insert(compKey, QString());
+            storeCache(QString());
             return QString();
         }
     }
 
     QString output = QString::fromUtf8(proc.readAllStandardOutput());
     if (output.isEmpty()) {
-        s_candidateVersionCache.insert(compKey, QString());
+        storeCache(QString());
         return QString();
     }
 
@@ -981,7 +998,7 @@ QString PackageManagerHelper::queryPackageCandidateVersion(const QString &compon
         }
     }
 
-    s_candidateVersionCache.insert(compKey, foundVersion);
+    storeCache(foundVersion);
     return foundVersion;
 }
 

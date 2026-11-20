@@ -6,6 +6,7 @@
 #include "font_resolution_dialog.h"
 #include "font_resolution_helper.h"
 #include "package_manager_helper.h"
+#include "core/services/theme_manager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
@@ -27,16 +28,26 @@ FontResolutionDialog::FontResolutionDialog(const QString &rawFontName,
 {
     setWindowTitle(tr("PDF Font Resolution"));
     setMinimumWidth(520);
+
+    const bool isDark = ThemeManager::isDarkTheme();
+    const QString textCol = isDark ? QStringLiteral("#f8fafc") : QStringLiteral("#0f172a");
+    const QString groupCol = isDark ? QStringLiteral("#cbd5e1") : QStringLiteral("#334155");
+    const QString groupBorder = isDark ? QStringLiteral("#334155") : QStringLiteral("#cbd5e1");
+    const QString secBg = isDark ? QStringLiteral("#334155") : QStringLiteral("#e2e8f0");
+    const QString secFg = isDark ? QStringLiteral("#f8fafc") : QStringLiteral("#1e293b");
+    const QString secBorder = isDark ? QStringLiteral("#475569") : QStringLiteral("#cbd5e1");
+    const QString secHover = isDark ? QStringLiteral("#475569") : QStringLiteral("#cbd5e1");
+
     setStyleSheet(QStringLiteral(
-        "QLabel { color: #f8fafc; }"
-        "QGroupBox { font-weight: bold; border: 1px solid #334155; border-radius: 8px; margin-top: 12px; padding-top: 14px; color: #cbd5e1; }"
+        "QLabel { color: %1; }"
+        "QGroupBox { font-weight: bold; border: 1px solid %3; border-radius: 8px; margin-top: 12px; padding-top: 14px; color: %2; }"
         "QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 4px; }"
         "QPushButton { background-color: #3b82f6; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-weight: 600; font-size: 13px; }"
         "QPushButton:hover { background-color: #2563eb; }"
         "QPushButton:pressed { background-color: #1d4ed8; }"
-        "QPushButton#BtnSecondary { background-color: #334155; color: #f8fafc; border: 1px solid #475569; }"
-        "QPushButton#BtnSecondary:hover { background-color: #475569; }"
-    ));
+        "QPushButton#BtnSecondary { background-color: %4; color: %5; border: 1px solid %6; }"
+        "QPushButton#BtnSecondary:hover { background-color: %7; }"
+    ).arg(textCol, groupCol, groupBorder, secBg, secFg, secBorder, secHover));
 
     setupUi();
     updateStatusDisplay();
@@ -44,13 +55,17 @@ FontResolutionDialog::FontResolutionDialog(const QString &rawFontName,
 
 void FontResolutionDialog::setupUi()
 {
+    const bool isDark = ThemeManager::isDarkTheme();
+    const QString titleCol = isDark ? QStringLiteral("#ffffff") : QStringLiteral("#0f172a");
+    const QString subCol = isDark ? QStringLiteral("#94a3b8") : QStringLiteral("#475569");
+
     QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setSpacing(14);
     mainLayout->setContentsMargins(4, 4, 4, 4);
 
     // Header with font name and status
     m_lblFontTitle = new QLabel(this);
-    m_lblFontTitle->setStyleSheet(QStringLiteral("font-size: 17px; font-weight: bold; color: #ffffff;"));
+    m_lblFontTitle->setStyleSheet(QStringLiteral("font-size: 17px; font-weight: bold; color: %1;").arg(titleCol));
     mainLayout->addWidget(m_lblFontTitle);
 
     m_lblStatusBadge = new QLabel(this);
@@ -64,7 +79,7 @@ void FontResolutionDialog::setupUi()
     QVBoxLayout *distroLayout = new QVBoxLayout(boxDistro);
     m_lblDistroDesc = new QLabel(tr("Recommended package for your distribution: <b>%1</b>").arg(distroPkg), boxDistro);
     m_lblDistroDesc->setWordWrap(true);
-    m_lblDistroDesc->setStyleSheet(QStringLiteral("color: #94a3b8; font-size: 12px;"));
+    m_lblDistroDesc->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(subCol));
     distroLayout->addWidget(m_lblDistroDesc);
 
     QHBoxLayout *distroBtnLayout = new QHBoxLayout();
@@ -84,7 +99,7 @@ void FontResolutionDialog::setupUi()
         tr("Automatically downloads the original font or a faithful metric alternative (<b>%1</b>) without root privileges.").arg(freeAlt),
         boxGoogle);
     lblGoogleDesc->setWordWrap(true);
-    lblGoogleDesc->setStyleSheet(QStringLiteral("color: #94a3b8; font-size: 12px;"));
+    lblGoogleDesc->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(subCol));
     googleLayout->addWidget(lblGoogleDesc);
 
     QHBoxLayout *googleBtnLayout = new QHBoxLayout();

@@ -144,7 +144,10 @@ void SettingsDialog::setupUi()
     m_tabWidget->addTab(m_extensionsTab, tr("Extensions && Modules"));
 
     m_extraTab = new SettingsExtraTab(this);
-    connect(m_extraTab, &SettingsExtraTab::themeChanged, this, &SettingsDialog::themeChanged);
+    connect(m_extraTab, &SettingsExtraTab::themeChanged, this, [this]() {
+        updateAllThemeStyles();
+        emit themeChanged();
+    });
     connect(m_extraTab, &SettingsExtraTab::setupWizardCompleted, this, &SettingsDialog::refreshStatuses);
     connect(m_extraTab, &SettingsExtraTab::recompileRequested, this, [this](const QString &t) { startRecompilation(t); });
     m_tabWidget->addTab(m_extraTab, tr("System Tools"));
@@ -499,8 +502,8 @@ void SettingsDialog::performManualResize(const QPoint &globalPos)
 {
     QPoint delta = globalPos - m_resizeStartPos;
     QRect newGeom = m_resizeStartGeom;
-    const int minW = 760;
-    const int minH = 560;
+    const int minW = minimumWidth();
+    const int minH = minimumHeight();
 
     if (m_resizeEdges & Qt::LeftEdge) {
         int targetWidth = m_resizeStartGeom.width() - delta.x();

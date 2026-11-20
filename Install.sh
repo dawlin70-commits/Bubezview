@@ -27,6 +27,7 @@ NO_SUDO=0
 ACTION=""
 PURGE=0
 TARGET_COMPONENT=""
+BUILD_ONLY_PLUGIN=""
 CUSTOM_GIT_URL=""
 CUSTOM_GIT_BRANCH=""
 CUSTOM_BUILD_FLAGS=""
@@ -97,6 +98,12 @@ while [ "$#" -gt 0 ]; do
             ACTION="build_component"
             TARGET_COMPONENT="tesseract"
             FORCE_CLI=1
+            ;;
+        --build-plugin)
+            BUILD_ONLY_PLUGIN="${2:-}"
+            FORCE_CLI=1
+            IS_UPDATE=1
+            shift
             ;;
         -D*)
             EXTRA_CMAKE_ARGS+=("$1")
@@ -671,13 +678,13 @@ do_reinstall() {
 }
 
 do_uninstall() {
-    if [ "$FORCE_CLI" -eq 0 ] && [ "$UI_MODE" != "cli" ]; then
+    if [ "$IS_UPDATE" -eq 0 ]; then
         if ! ui_ask_yesno "Disinstallazione BubezView" "Sei sicuro di voler disinstallare BubezView dal tuo sistema?"; then
             echo -e "${YELLOW}[*] Disinstallazione annullata dall'utente.${NC}"
             exit 0
         fi
         if [ "$PURGE" -eq 0 ]; then
-            if ui_ask_yesno "Elimina configurazione" "Vuoi rimuovere anche i file di configurazione, la cache e i dati locali (~/.config/Bubez, ~/.cache/Bubez, ecc.)?"; then
+            if ui_ask_yesno "Cancella tutto" "Vuoi eliminare anche configurazioni, cache, moduli .so e componenti compilati localmente (~/.config/Bubez, ~/.cache/BubezView, ~/.local/lib/bubezview, ecc.)?"; then
                 PURGE=1
             fi
         fi
@@ -685,10 +692,16 @@ do_uninstall() {
 
     echo -e "${BLUE}${BOLD}[*] Disinstallazione di $APP_NAME in corso...${NC}"
 
-    # 1. Rimuovi binario e cartella share
+    # 0. Ferma eventuali istanze di BubezView in standby/background prima di rimuovere i file
+    pkill -x "$APP_ID" 2>/dev/null || true
+    sleep 0.3
+
+    # 1. Rimuovi binario, plugin .so e cartelle share/lib
     rm -f "$HOME/.local/bin/$APP_ID"
     rm -rf "$HOME/.local/share/$APP_ID"
     rm -rf "$HOME/.local/lib/$APP_ID"
+    rm -rf "$HOME/.local/lib/x86_64-linux-gnu/$APP_ID"
+    rm -rf "$HOME/.local/lib64/$APP_ID"
 
     # 2. Rimuovi lanciatori .desktop (standard e sviluppo)
     rm -f "$HOME/.local/share/applications/$APP_ID.desktop"
@@ -723,9 +736,9 @@ do_uninstall() {
         fi
     done
 
-    # 5. Se PURGE=1, rimuovi anche configurazione, dati Qt e cache
+    # 5. Se PURGE=1, rimuovi anche configurazione, dati Qt, cache e componenti compilati in ~/.local
     if [ "$PURGE" -eq 1 ]; then
-        echo -e "${YELLOW}[*] Rimozione file di configurazione, dati Qt e cache...${NC}"
+        echo -e "${YELLOW}[*] Rimozione completa configurazione, dati Qt, cache e motori locali...${NC}"
         rm -rf "$HOME/.config/Bubez"
         rm -rf "$HOME/.config/bubezview"
         rm -rf "$HOME/.config/bubezview-dev"
@@ -734,6 +747,19 @@ do_uninstall() {
         rm -rf "$HOME/.cache/bubezview"
         rm -rf "$HOME/.local/share/Bubez"
         rm -f "$HOME/.local/state/BubezViewstaterc"
+        rm -f "$HOME/.local/bin/pdfimages" "$HOME/.local/bin/pdfunite" "$HOME/.local/bin/pdftoppm" \
+              "$HOME/.local/bin/pdftotext" "$HOME/.local/bin/pdfinfo" "$HOME/.local/bin/pdffonts" \
+              "$HOME/.local/bin/qpdf" "$HOME/.local/bin/tesseract" "$HOME/.local/bin/7zz" \
+              "$HOME/.local/bin/7z" "$HOME/.local/bin/7za" "$HOME/.local/bin/zstd" \
+              "$HOME/.local/bin/xz" "$HOME/.local/bin/mpv" "$HOME/.local/bin/bsdtar" \
+              "$HOME/.local/bin/bsdunzip" 2>/dev/null || true
+        rm -rf "$HOME/.local/share/poppler" "$HOME/.local/share/tessdata" 2>/dev/null || true
+        rm -f "$HOME/.local/lib/libpoppler"* "$HOME/.local/lib/libarchive"* \
+              "$HOME/.local/lib/libqpdf"* "$HOME/.local/lib/libtesseract"* \
+              "$HOME/.local/lib/libzstd"* "$HOME/.local/lib/liblzma"* \
+              "$HOME/.local/lib64/libpoppler"* "$HOME/.local/lib64/libarchive"* \
+              "$HOME/.local/lib64/libqpdf"* "$HOME/.local/lib64/libtesseract"* \
+              "$HOME/.local/lib64/libzstd"* "$HOME/.local/lib64/liblzma"* 2>/dev/null || true
         rm -rf /tmp/${APP_ID}_installer_* /tmp/${APP_ID}*.log 2>/dev/null || true
     fi
 
@@ -1033,6 +1059,48 @@ except Exception:
     local build_log="$work_dir/${APP_ID}_build.log"
     rm -f "$build_log" 2>/dev/null || true
 
+    # Selective modular .so plugin flags:
+    # Always pass explicit ON/OFF for every module so stale CMakeCache.txt values
+    # can never silently re-enable an uninstalled plugin.
+    local flag_folder="OFF"
+    local flag_pdf="OFF"
+    local flag_audio="OFF"
+    local flag_video="OFF"
+    local flag_image="OFF"
+
+    if [ -n "$BUILD_ONLY_PLUGIN" ]; then
+        case "$BUILD_ONLY_PLUGIN" in
+            folder)      flag_folder="ON" ;;
+            pdf)         flag_pdf="ON" ;;
+            audio|media) BUILD_ONLY_PLUGIN="audio"; flag_audio="ON" ;;
+            video)       flag_video="ON" ;;
+            image)       flag_image="ON" ;;
+            *)
+                echo -e "${RED}[!] Modulo plugin sconosciuto: $BUILD_ONLY_PLUGIN${NC}"
+                exit 1
+                ;;
+        esac
+    else
+        local check_plugins_dirs=("$HOME/.local/share/$APP_ID/plugins" "$HOME/.local/lib/$APP_ID/plugins")
+        for pdir in "${check_plugins_dirs[@]}"; do
+            [ -f "$pdir/bubez_folder.so" ] && flag_folder="ON"
+            [ -f "$pdir/bubez_pdf.so" ]    && flag_pdf="ON"
+            [ -f "$pdir/bubez_audio.so" ]  && flag_audio="ON"
+            [ -f "$pdir/bubez_video.so" ]  && flag_video="ON"
+            [ -f "$pdir/bubez_image.so" ]  && flag_image="ON"
+        done
+    fi
+
+    local plugin_cmake_flags=(
+        "-DBUILD_ALL_PLUGINS=OFF"
+        "-DBUILD_PLUGIN_MEDIA=OFF"
+        "-DBUILD_PLUGIN_FOLDER=${flag_folder}"
+        "-DBUILD_PLUGIN_PDF=${flag_pdf}"
+        "-DBUILD_PLUGIN_AUDIO=${flag_audio}"
+        "-DBUILD_PLUGIN_VIDEO=${flag_video}"
+        "-DBUILD_PLUGIN_IMAGE=${flag_image}"
+    )
+
     # Configurazione CMake
     local cfg_ret=0
     local cfg_status_file="$work_dir/cfg_status"
@@ -1041,13 +1109,13 @@ except Exception:
     if [ "$UI_MODE" = "zenity" ]; then
         (
             echo "# Configurazione del progetto con CMake..."
-            cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
+            cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${plugin_cmake_flags[@]}" "${EXTRA_CMAKE_ARGS[@]}" >> "$build_log" 2>&1
             echo "$?" > "$cfg_status_file"
         ) | zenity --progress --title="CMake Configure - $APP_NAME" --text="Preparazione della configurazione..." --pulsate --auto-close 2>/dev/null || true
         cfg_ret=$(cat "$cfg_status_file" 2>/dev/null || echo "1")
     else
         echo -e "${BLUE}[*] Esecuzione configurazione CMake...${NC}"
-        cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
+        cmake -S "$extract_dir" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF "${make_flag[@]}" "${plugin_cmake_flags[@]}" "${EXTRA_CMAKE_ARGS[@]}" 2>&1 | tee -a "$build_log"
         cfg_ret=${PIPESTATUS[0]}
     fi
 
@@ -1060,6 +1128,27 @@ except Exception:
 
     local cpu_cores
     cpu_cores=$(nproc 2>/dev/null || echo "2")
+
+    # Fast single-plugin on-demand build path (--build-plugin <folder|pdf|media>)
+    if [ -n "$BUILD_ONLY_PLUGIN" ]; then
+        local target_name="bubez_${BUILD_ONLY_PLUGIN}"
+        echo -e "${BLUE}[*] Compilazione modulo opzionale '${target_name}.so' (${cpu_cores} core)...${NC}"
+        if ! cmake --build "$build_dir" --target "$target_name" --parallel "$cpu_cores" 2>&1 | tee -a "$build_log"; then
+            echo -e "${RED}[!] Compilazione del modulo ${target_name}.so fallita. Log: $build_log${NC}"
+            exit 1
+        fi
+        local built_so
+        built_so=$(find "$build_dir/plugins" -type f -name "${target_name}.so" 2>/dev/null | head -n 1 || true)
+        if [ -z "$built_so" ] || [ ! -f "$built_so" ]; then
+            echo -e "${RED}[!] File ${target_name}.so non generato.${NC}"
+            exit 1
+        fi
+        local plugins_dir="$HOME/.local/share/$APP_ID/plugins"
+        mkdir -p "$plugins_dir"
+        cp -f "$built_so" "$plugins_dir/${target_name}.so"
+        echo -e "${GREEN}[✓] Modulo ${target_name}.so installato in ${plugins_dir}!${NC}"
+        exit 0
+    fi
 
     # Compilazione con tracciamento avanzamento reale per Zenity
     local build_ret=0

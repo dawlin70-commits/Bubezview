@@ -38,13 +38,6 @@ public:
      */
     ~ShareDialog() override;
 
-    /**
-     * @brief Helper to share directly via LocalSend without opening the QR code dialog.
-     * @param filePath Absolute path to the file.
-     * @param parent Optional parent widget.
-     */
-    static void shareViaLocalSend(const QString &filePath, QWidget *parent = nullptr);
-
 private slots:
     /**
      * @brief Slot triggered when the user clicks the LocalSend action button.

@@ -5,6 +5,8 @@
 #include <QVector>
 #include <QMouseEvent>
 #include <QPair>
+#include <atomic>
+#include <memory>
 
 /**
  * @class StereoOscilloscopeWidget
@@ -100,5 +102,6 @@ private:
     double m_phase;
     QString m_currentFilePath;
     bool m_isMouseSeeking;
+    std::shared_ptr<std::atomic<bool>> m_aliveFlag;
 };
 

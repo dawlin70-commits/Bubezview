@@ -34,13 +34,28 @@ void DBusPreviewer::ShowFile(const QString &uri, int xid, bool closeIfAlreadySho
         return;
     }
 
+    m_window->cancelStandbyTimer();
     m_lastUri = uri;
     MainWindow::OpenResult result = m_window->openFile(localPath);
     if (result != MainWindow::OpenResult::DelegatedToPlugin) {
-        m_window->show();
+        if (m_window->isMinimized()) {
+            m_window->showNormal();
+        } else {
+            m_window->show();
+        }
         m_window->raise();
         m_window->activateWindow();
     }
+}
+
+void DBusPreviewer::ShowFileWithToken(const QString &uri, const QString &activationToken)
+{
+    if (!activationToken.isEmpty()) {
+        // Qt6 Wayland QPA reads XDG_ACTIVATION_TOKEN during activateWindow() to request
+        // compositor focus transfer without triggering Focus Stealing Prevention.
+        qputenv("XDG_ACTIVATION_TOKEN", activationToken.toUtf8());
+    }
+    ShowFile(uri, 0, false);
 }
 
 void DBusPreviewer::Close()

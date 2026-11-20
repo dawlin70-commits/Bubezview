@@ -5,16 +5,19 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QFrame>
-#include <QScrollArea>
 #include <QStyledItemDelegate>
 #include <QThread>
 #include <QPointer>
 #include <QHash>
 #include <QMap>
+#include <QSet>
 #include <atomic>
 
-class QPlainTextEdit;
 class QLineEdit;
+class QComboBox;
+class QStackedWidget;
+class QTimer;
+class IFolderStudioWidget;
 
 /**
  * @brief Background worker thread for asynchronous folder thumbnail generation.
@@ -177,30 +180,48 @@ public:
      */
     QString selectedFilePath() const;
 
+    /**
+     * @brief Toggles Folder Studio Edit Mode (loads bubez_folder.so lazily on demand).
+     * @param editMode True to display Folder Studio; false to return to the gallery grid.
+     */
+    void setEditMode(bool editMode);
+
+    /**
+     * @brief Returns whether Folder Studio Edit Mode is currently active.
+     */
+    bool isEditMode() const { return m_isEditMode; }
+
+    /**
+     * @brief Switches the active workspace tool inside Folder Studio Edit Mode.
+     * @param toolIndex Tool index (0=Duplicates, 1=Recovery, 2=Organize, 3=Batch).
+     */
+    void setStudioTool(int toolIndex);
+
+    /**
+     * @brief Returns the active Folder Studio tool index (0=Duplicates, 1=Recovery, 2=Organize, 3=Batch).
+     */
+    int activeStudioTool() const { return m_activeStudioTool; }
+
+    /**
+     * @brief Returns the ordered list of currently visible (filtered) non-directory file paths in the gallery.
+     * @return List of absolute file paths currently visible in the folder grid.
+     */
+    QStringList visibleFilePaths() const;
+
+    /**
+     * @brief Notifies the embedded Folder Studio widget that a file was removed externally (e.g. during preview).
+     * @param filePath Absolute path of the removed file.
+     */
+    void notifyStudioFileRemoved(const QString &filePath);
+
+    /**
+     * @brief Synchronously detaches and destroys the Folder Studio widget (safe before plugin unload).
+     */
+    void detachStudioWidget();
+
 public slots:
     /** @brief Navigates to the parent directory of the current folder if one exists. */
     void goUpDirectory();
-
-    /** @brief Shows or hides the right-side details/inspector panel. */
-    void toggleInspector();
-
-    /**
-     * @brief Adds a custom folder to persistent bookmarks.
-     * @param folderPath Absolute directory path.
-     */
-    void addCustomBookmark(const QString &folderPath);
-
-    /**
-     * @brief Removes a custom folder from persistent bookmarks.
-     * @param folderPath Absolute directory path.
-     */
-    void removeCustomBookmark(const QString &folderPath);
-
-    /**
-     * @brief Returns the list of custom bookmark directory paths.
-     * @return List of absolute folder paths.
-     */
-    QStringList customBookmarks() const;
 
     /**
      * @brief Updates thumbnail icon for a single file card in the gallery.
@@ -213,8 +234,10 @@ signals:
     /**
      * @brief Emitted when a file card is double-clicked to open it in its primary viewer.
      * @param filePath Absolute path to the file.
+     * @param contextFiles Optional ordered list of scoped files for Prev/Next navigation
+     *                     (e.g. duplicate group items or currently filtered gallery files).
      */
-    void filePreviewRequested(const QString &filePath);
+    void filePreviewRequested(const QString &filePath, const QStringList &contextFiles = QStringList());
 
     /**
      * @brief Emitted when a folder has finished scanning items.
@@ -237,6 +260,16 @@ signals:
      */
     void itemContextMenuRequested(const QPoint &globalPos, const QString &selectedFilePath);
 
+    /**
+     * @brief Emitted when the user clicks the Trash button in the folder top bar.
+     */
+    void trashSelectedRequested();
+
+    /**
+     * @brief Emitted when the user presses I to open the unified Properties Inspector.
+     */
+    void propertiesRequested();
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 
@@ -245,49 +278,50 @@ private slots:
     void onItemSelectionChanged();
     void onThumbnailReady(const QString &filePath, const QImage &image);
     void onFilterTextChanged(const QString &text);
-    void openSelectedItem();
+    void applyCombinedFilter();
+    void triggerAsyncDeepFilter();
 
 private:
     void setupUi();
-    void populateBookmarks();
-    void updateBookmarksHighlight();
-    void updateInspectorPane(const QString &filePath);
+    void ensureStudioWidget();
     QString formatSize(qint64 bytes) const;
     QIcon getFolderIcon(const QString &path) const;
     QIcon getFileIcon(const QString &path) const;
 
+    QStackedWidget *m_viewStack = nullptr;
+    QWidget *m_galleryPage = nullptr;
+    QWidget *m_studioContainer = nullptr;
+    IFolderStudioWidget *m_studioWidget = nullptr;
+    QLabel *m_lblStudioFallback = nullptr;
+
     QWidget *m_topBar;
     QPushButton *m_btnUp;
+    QPushButton *m_btnShowFolders;
+    QPushButton *m_btnTrash;
     QFrame *m_pillBadge;
     QLabel *m_pillIcon;
     QLabel *m_pillText;
+    QComboBox *m_comboCategoryFilter = nullptr;
     QLineEdit *m_filterEdit;
-    QPushButton *m_btnToggleInspector;
+    QPushButton *m_btnDeepFilter = nullptr;
+    QTimer *m_deepFilterTimer = nullptr;
 
-    // Layout Components
-    QListWidget *m_bookmarksWidget;
+    // Main Card Grid
     QListWidget *m_listWidget;
-    
-    // Right Column: Modern Inspector & Preview
-    QWidget *m_previewPane;
-    QLabel *m_inspectorBadge;
-    QPushButton *m_btnCloseInspector;
-    QFrame *m_previewCard;
-    QLabel *m_previewImgLabel;
-    QPlainTextEdit *m_previewTextEdit;
-    QScrollArea *m_metaScrollArea;
-    QLabel *m_previewTitleLabel;
-    QLabel *m_previewMetaLabel;
-    QPushButton *m_btnOpenSelected;
 
     QPointer<ThumbnailWorker> m_worker;
     QHash<QString, QListWidgetItem*> m_pathToItem;
     QMap<QString, int> m_folderScrollPositions;
+    QSet<QString> m_deepMatchedPaths;
+    bool m_hasDeepResults = false;
 
     QString m_currentFolder;
     QString m_cardHiddenForTransition;
     quint64 m_loadGeneration = 0;
+    std::atomic<quint64> m_deepFilterGeneration{0};
     bool m_showFolders = false;
+    bool m_isEditMode = false;
+    int m_activeStudioTool = 0;
     int m_itemCount;
     qint64 m_totalSize;
 };

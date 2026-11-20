@@ -5,7 +5,7 @@
 #include <QPainterPath>
 #include <QLinearGradient>
 #include <QThreadPool>
-#include <QPointer>
+#include <QCoreApplication>
 #include <cmath>
 #include <algorithm>
 
@@ -23,6 +23,7 @@ StereoOscilloscopeWidget::StereoOscilloscopeWidget(QWidget *parent)
     , m_peakR(0.0f)
     , m_phase(0.0)
     , m_isMouseSeeking(false)
+    , m_aliveFlag(std::make_shared<std::atomic<bool>>(true))
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setFixedHeight(115);
@@ -34,6 +35,9 @@ StereoOscilloscopeWidget::StereoOscilloscopeWidget(QWidget *parent)
 
 StereoOscilloscopeWidget::~StereoOscilloscopeWidget()
 {
+    if (m_aliveFlag) {
+        m_aliveFlag->store(false, std::memory_order_release);
+    }
     if (m_timer) {
         m_timer->stop();
     }
@@ -51,17 +55,22 @@ void StereoOscilloscopeWidget::loadAudioWaveform(const QString &filePath)
     if (filePath.isEmpty()) return;
 
     // Asynchronously decode and compute stereo peaks in background to prevent GUI freeze
-    QPointer<StereoOscilloscopeWidget> guard(this);
+    auto alive = m_aliveFlag;
+    StereoOscilloscopeWidget *rawSelf = this;
     QString targetPath = filePath;
-    QThreadPool::globalInstance()->start([guard, targetPath]() {
+    QThreadPool::globalInstance()->start([rawSelf, alive, targetPath]() {
+        if (!alive->load(std::memory_order_acquire)) return;
         auto pair = AudioProcessor::generateStereoWaveformPeaks(targetPath, 400);
-        QMetaObject::invokeMethod(qApp, [guard, targetPath, pair]() {
-            if (guard && guard->m_currentFilePath == targetPath) {
-                guard->m_peaksL = pair.first;
-                guard->m_peaksR = pair.second;
-                guard->update();
-            }
-        });
+        if (!alive->load(std::memory_order_acquire)) return;
+        if (QCoreApplication *app = QCoreApplication::instance()) {
+            QMetaObject::invokeMethod(app, [rawSelf, alive, targetPath, pair]() {
+                if (alive->load(std::memory_order_acquire) && rawSelf->m_currentFilePath == targetPath) {
+                    rawSelf->m_peaksL = pair.first;
+                    rawSelf->m_peaksR = pair.second;
+                    rawSelf->update();
+                }
+            }, Qt::QueuedConnection);
+        }
     });
 }
 

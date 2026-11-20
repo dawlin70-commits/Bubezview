@@ -71,9 +71,25 @@ public:
 
     /**
      * @brief Checks if the desktop environment / system palette prefers a dark theme.
-     * @return True if system palette indicates dark mode.
+     *
+     * Checks KDE's active color scheme (`~/.config/kdeglobals` `[Colors:Window]`),
+     * then Qt 6's platform `colorScheme()` hint (XDG Desktop Portal / GNOME / etc.),
+     * and finally falls back to the initial un-overridden system `QPalette`.
+     *
+     * @return True if the desktop environment indicates dark mode.
      */
     static bool isSystemDark();
+
+    /**
+     * @brief Captures the original OS QPalette once before BubezView applies any custom palette.
+     */
+    static void captureInitialSystemPalette();
+
+    /**
+     * @brief Returns the last concrete ThemePreset applied at the QApplication level.
+     * @return Last applied effective ThemePreset, or ThemePreset::System if none applied yet.
+     */
+    static ThemePreset lastAppliedEffectivePreset();
 
     /**
      * @brief Resolves ThemePreset::System to either DarkSlate or ModernLight.

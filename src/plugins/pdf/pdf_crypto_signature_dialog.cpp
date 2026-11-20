@@ -437,21 +437,28 @@ void PdfCryptoSignatureDialog::onGenerateSelfSignedClicked()
     }
 
     // 2. Export to PKCS#12 (.p12) with friendly name "bubez_signer"
+    // Pass password via environment variable so it is never exposed in /proc/<pid>/cmdline
+    QProcessEnvironment p12Env = QProcessEnvironment::systemEnvironment();
+    p12Env.insert(QStringLiteral("BUBEZ_P12_PASS"), password);
+
     QProcess p12Proc;
+    p12Proc.setProcessEnvironment(p12Env);
     p12Proc.start(opensslExe, {
         "pkcs12", "-export",
         "-out", p12Path,
         "-inkey", keyPath,
         "-in", crtPath,
         "-name", "bubez_signer",
-        "-passout", "pass:" + password
+        "-passout", "env:BUBEZ_P12_PASS"
     });
-    p12Proc.waitForFinished(6000);
+    const bool p12Ok = p12Proc.waitForFinished(6000)
+                       && p12Proc.exitStatus() == QProcess::NormalExit
+                       && p12Proc.exitCode() == 0;
 
     QFile::remove(keyPath);
     QFile::remove(crtPath);
 
-    if (p12Proc.exitCode() != 0 || !QFile::exists(p12Path)) {
+    if (!p12Ok || !QFile::exists(p12Path)) {
         QMessageBox::warning(this, tr("PKCS#12 Export Error"),
             tr("Failed to create .p12 certificate file:\n%1").arg(QString::fromUtf8(p12Proc.readAllStandardError())));
         return;
@@ -505,16 +512,26 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
         QString pemKey  = tmpDir.filePath("signer_key.pem");
 
         const QString opensslExe = BuildConfig::opensslExecutable();
+        // Pass PKCS#12 password via environment variable to avoid leaking it in process arguments
+        QProcessEnvironment p12Env = QProcessEnvironment::systemEnvironment();
+        p12Env.insert(QStringLiteral("BUBEZ_P12_PASS"), password);
+
         // Extract cert and key from .p12
         QProcess extCert;
-        extCert.start(opensslExe, {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "pass:" + password});
-        extCert.waitForFinished(5000);
+        extCert.setProcessEnvironment(p12Env);
+        extCert.start(opensslExe, {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "env:BUBEZ_P12_PASS"});
+        const bool certOk = extCert.waitForFinished(5000)
+                            && extCert.exitStatus() == QProcess::NormalExit
+                            && extCert.exitCode() == 0;
 
         QProcess extKey;
-        extKey.start(opensslExe, {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "pass:" + password});
-        extKey.waitForFinished(5000);
+        extKey.setProcessEnvironment(p12Env);
+        extKey.start(opensslExe, {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "env:BUBEZ_P12_PASS"});
+        const bool keyOk = extKey.waitForFinished(5000)
+                           && extKey.exitStatus() == QProcess::NormalExit
+                           && extKey.exitCode() == 0;
 
-        if (extCert.exitCode() != 0 || extKey.exitCode() != 0) {
+        if (!certOk || !keyOk) {
             QMessageBox::warning(this, tr("Invalid Password or Certificate"),
                 tr("Failed to unlock the .p12 certificate. Please verify that the password is correct."));
             return;
@@ -530,9 +547,11 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
             "-out", targetWritePath,
             "-md", "sha256"
         });
-        cmsSign.waitForFinished(10000);
+        const bool cmsOk = cmsSign.waitForFinished(10000)
+                           && cmsSign.exitStatus() == QProcess::NormalExit
+                           && cmsSign.exitCode() == 0;
 
-        if (cmsSign.exitCode() == 0 && QFile::exists(targetWritePath)) {
+        if (cmsOk && QFile::exists(targetWritePath)) {
             if (overwriteSource) {
                 QFile::remove(savePath);
                 QFile::rename(targetWritePath, savePath);
@@ -642,19 +661,29 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
     }
 
     QTemporaryDir tmpDir;
+    if (!tmpDir.isValid()) return;
     QString pemCert = tmpDir.filePath("signer_cert.pem");
     QString pemKey  = tmpDir.filePath("signer_key.pem");
 
     const QString opensslExe = BuildConfig::opensslExecutable();
+    QProcessEnvironment p12Env = QProcessEnvironment::systemEnvironment();
+    p12Env.insert(QStringLiteral("BUBEZ_P12_PASS"), password);
+
     QProcess extCert;
-    extCert.start(opensslExe, {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "pass:" + password});
-    extCert.waitForFinished(5000);
+    extCert.setProcessEnvironment(p12Env);
+    extCert.start(opensslExe, {"pkcs12", "-in", certPath, "-clcerts", "-nokeys", "-out", pemCert, "-passin", "env:BUBEZ_P12_PASS"});
+    const bool certOk = extCert.waitForFinished(5000)
+                        && extCert.exitStatus() == QProcess::NormalExit
+                        && extCert.exitCode() == 0;
 
     QProcess extKey;
-    extKey.start(opensslExe, {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "pass:" + password});
-    extKey.waitForFinished(5000);
+    extKey.setProcessEnvironment(p12Env);
+    extKey.start(opensslExe, {"pkcs12", "-in", certPath, "-nocerts", "-nodes", "-out", pemKey, "-passin", "env:BUBEZ_P12_PASS"});
+    const bool keyOk = extKey.waitForFinished(5000)
+                       && extKey.exitStatus() == QProcess::NormalExit
+                       && extKey.exitCode() == 0;
 
-    if (extCert.exitCode() != 0 || extKey.exitCode() != 0) {
+    if (!certOk || !keyOk) {
         QMessageBox::warning(this, tr("Invalid Password"),
             tr("Unable to open the .p12 certificate. Please check your password."));
         return;
@@ -670,9 +699,11 @@ void PdfCryptoSignatureDialog::onSignDocumentClicked()
         "-out", p7mWritePath,
         "-md", "sha256"
     });
-    cmsSign.waitForFinished(10000);
+    const bool cmsOk = cmsSign.waitForFinished(10000)
+                       && cmsSign.exitStatus() == QProcess::NormalExit
+                       && cmsSign.exitCode() == 0;
 
-    if (cmsSign.exitCode() == 0 && QFile::exists(p7mWritePath)) {
+    if (cmsOk && QFile::exists(p7mWritePath)) {
         if (overwriteP7mSource) {
             QFile::remove(p7mSave);
             QFile::rename(p7mWritePath, p7mSave);

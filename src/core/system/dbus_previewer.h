@@ -40,6 +40,15 @@ public slots:
     Q_SCRIPTABLE void ShowFile(const QString &uri, int xid, bool closeIfAlreadyShown);
 
     /**
+     * @brief D-Bus method invoked by a second BubezView instance to preview a file URI
+     *        while forwarding a Wayland XDG_ACTIVATION_TOKEN so KWin/compositors raise
+     *        the standby window cleanly above the file manager.
+     * @param uri URI of the file to preview (e.g. file:///path/to/file).
+     * @param activationToken Wayland xdg-activation token captured from the launcher process.
+     */
+    Q_SCRIPTABLE void ShowFileWithToken(const QString &uri, const QString &activationToken);
+
+    /**
      * @brief D-Bus method to request closing the active preview window.
      */
     Q_SCRIPTABLE void Close();

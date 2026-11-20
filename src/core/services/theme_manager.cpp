@@ -18,6 +18,71 @@
 #include <QHeaderView>
 #include <QTreeView>
 #include <QListView>
+#include <QStyleHints>
+#include <QFile>
+#include <QElapsedTimer>
+
+namespace {
+QPalette s_initialSystemPalette;
+bool s_hasInitialSystemPalette = false;
+ThemePreset s_lastAppliedAppPreset = ThemePreset::System;
+bool s_hasAppliedAppPreset = false;
+
+/**
+ * @brief Parses an "R,G,B" comma-separated color entry from KDE kdeglobals.
+ */
+QColor parseKdeRgb(const QString &raw)
+{
+    const QStringList parts = raw.split(QLatin1Char(','), Qt::SkipEmptyParts);
+    if (parts.size() < 3) return QColor();
+    bool okR = false, okG = false, okB = false;
+    const int r = parts[0].trimmed().toInt(&okR);
+    const int g = parts[1].trimmed().toInt(&okG);
+    const int b = parts[2].trimmed().toInt(&okB);
+    if (!okR || !okG || !okB) return QColor();
+    return QColor(qBound(0, r, 255), qBound(0, g, 255), qBound(0, b, 255));
+}
+
+/**
+ * @brief Reads KDE Plasma's active [Colors:Window] brightness directly from kdeglobals.
+ *
+ * Reading kdeglobals directly prevents stale widgetStyle plugins (e.g. kvantum-dark)
+ * from overriding QGuiApplication::palette() with dark colors when the user's active
+ * KDE color scheme (used by Dolphin and Plasma) is light.
+ *
+ * @param outIsDark Output flag set to true if KDE window scheme is dark.
+ * @return True if kdeglobals contained a valid [Colors:Window] BackgroundNormal entry.
+ */
+bool detectKdeGlobalsDark(bool &outIsDark)
+{
+    QString kdeGlobalsPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+                             + QStringLiteral("/kdeglobals");
+    if (!QFile::exists(kdeGlobalsPath)) {
+        kdeGlobalsPath = QDir::homePath() + QStringLiteral("/.config/kdeglobals");
+    }
+    if (!QFile::exists(kdeGlobalsPath)) {
+        return false;
+    }
+
+    QSettings kdeCfg(kdeGlobalsPath, QSettings::IniFormat);
+    kdeCfg.beginGroup(QStringLiteral("Colors:Window"));
+    const QString bgRaw = kdeCfg.value(QStringLiteral("BackgroundNormal")).toString();
+    const QString fgRaw = kdeCfg.value(QStringLiteral("ForegroundNormal")).toString();
+    kdeCfg.endGroup();
+
+    const QColor bg = parseKdeRgb(bgRaw);
+    if (!bg.isValid()) {
+        return false;
+    }
+    const QColor fg = parseKdeRgb(fgRaw);
+    if (fg.isValid()) {
+        outIsDark = (fg.lightness() > bg.lightness());
+    } else {
+        outIsDark = (bg.lightness() < 128);
+    }
+    return true;
+}
+} // namespace
 
 ThemePreset ThemeManager::currentPreset()
 {
@@ -33,12 +98,71 @@ void ThemeManager::setPreset(ThemePreset preset)
     settings.sync();
 }
 
+void ThemeManager::captureInitialSystemPalette()
+{
+    if (!s_hasInitialSystemPalette && QGuiApplication::instance()) {
+        s_initialSystemPalette = QGuiApplication::palette();
+        s_hasInitialSystemPalette = true;
+    }
+}
+
+ThemePreset ThemeManager::lastAppliedEffectivePreset()
+{
+    return s_hasAppliedAppPreset ? s_lastAppliedAppPreset : ThemePreset::System;
+}
+
 bool ThemeManager::isSystemDark()
 {
-    const QPalette pal = QGuiApplication::palette();
+    // Throttle filesystem/portal checks to at most once every 500ms so frequent UI
+    // repaints or cascading theme queries do not repeatedly parse kdeglobals from disk.
+    static QElapsedTimer s_cacheTimer;
+    static bool s_cachedDark = false;
+    static bool s_hasCache = false;
+    if (s_hasCache && s_cacheTimer.isValid() && s_cacheTimer.elapsed() < 500) {
+        return s_cachedDark;
+    }
+
+    auto storeAndReturn = [&](bool dark) -> bool {
+        s_cachedDark = dark;
+        s_hasCache = true;
+        s_cacheTimer.restart();
+        return dark;
+    };
+
+    // 1. On KDE Plasma, prefer [Colors:Window] in ~/.config/kdeglobals so active color schemes
+    //    always match Dolphin/Plasma even if a legacy widgetStyle (e.g. kvantum-dark) is set.
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toUpper();
+    if (desktop.contains(QStringLiteral("KDE")) || desktop.contains(QStringLiteral("PLASMA")) ||
+        qEnvironmentVariableIsSet("KDE_FULL_SESSION")) {
+        bool kdeDark = false;
+        if (detectKdeGlobalsDark(kdeDark)) {
+            return storeAndReturn(kdeDark);
+        }
+    }
+
+    // 2. Check Qt 6.5+ native platform color scheme hint (XDG Desktop Portal / GNOME / Wayland)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    if (QGuiApplication::instance() && QGuiApplication::styleHints()) {
+        const Qt::ColorScheme scheme = QGuiApplication::styleHints()->colorScheme();
+        if (scheme == Qt::ColorScheme::Dark) return storeAndReturn(true);
+        if (scheme == Qt::ColorScheme::Light) return storeAndReturn(false);
+    }
+#endif
+
+    // 3. Fallback: try kdeglobals even if XDG_CURRENT_DESKTOP is unset (e.g. inside containers)
+    {
+        bool kdeDark = false;
+        if (detectKdeGlobalsDark(kdeDark)) {
+            return storeAndReturn(kdeDark);
+        }
+    }
+
+    // 4. Final fallback: use the original OS QPalette captured before BubezView modified it
+    captureInitialSystemPalette();
+    const QPalette &pal = s_hasInitialSystemPalette ? s_initialSystemPalette : QGuiApplication::palette();
     const int bgLightness = pal.color(QPalette::Window).lightness();
     const int textLightness = pal.color(QPalette::WindowText).lightness();
-    return textLightness > bgLightness;
+    return storeAndReturn(textLightness > bgLightness);
 }
 
 QString ThemeManager::presetToString(ThemePreset preset)
@@ -217,17 +341,19 @@ protected:
 
 void ThemeManager::applyTheme(QApplication *app, QMainWindow *window)
 {
+    captureInitialSystemPalette();
+
     static bool s_filterInstalled = false;
     if (app && !s_filterInstalled) {
         app->installEventFilter(new FileDialogEventFilter(app));
         s_filterInstalled = true;
     }
 
-    ThemePreset preset = effectivePreset(currentPreset());
-    static ThemePreset s_lastAppliedAppPreset = static_cast<ThemePreset>(-1);
-    const bool shouldUpdateApp = (app != nullptr && (s_lastAppliedAppPreset != preset || currentPreset() == ThemePreset::System));
+    const ThemePreset preset = effectivePreset(currentPreset());
+    const bool shouldUpdateApp = (app != nullptr && (!s_hasAppliedAppPreset || s_lastAppliedAppPreset != preset));
     if (shouldUpdateApp) {
         s_lastAppliedAppPreset = preset;
+        s_hasAppliedAppPreset = true;
     }
 
     if (preset == ThemePreset::ModernLight) {
@@ -1055,6 +1181,7 @@ void ThemeManager::applyTheme(QApplication *app, QMainWindow *window)
 
 QString ThemeManager::scrollBarStyleSheet(ThemePreset preset)
 {
+    preset = effectivePreset(preset);
     if (preset == ThemePreset::ModernLight) {
         // High-contrast Modern Light scrollbars: frosted satin track with smooth gray pill handle
         return QStringLiteral(
@@ -1223,6 +1350,62 @@ QString ThemeManager::scrollBarStyleSheet(ThemePreset preset)
             "   background: none;"
             "}"
         );
+    } else if (preset == ThemePreset::ZincGray) {
+        // High-contrast ZincGray scrollbars: neutral dark zinc track with lighter neutral handle
+        return QStringLiteral(
+            "QScrollBar:vertical {"
+            "   background: #2b2c30;"
+            "   width: 12px;"
+            "   margin: 0px;"
+            "   border: none;"
+            "   border-radius: 6px;"
+            "}"
+            "QScrollBar::handle:vertical {"
+            "   background: #63646c;"
+            "   min-height: 28px;"
+            "   border-radius: 4px;"
+            "   margin: 2px;"
+            "}"
+            "QScrollBar::handle:vertical:hover {"
+            "   background: #787982;"
+            "}"
+            "QScrollBar::handle:vertical:pressed {"
+            "   background: #8d8e98;"
+            "}"
+            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+            "   height: 0px;"
+            "   background: none;"
+            "}"
+            "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+            "   background: none;"
+            "}"
+            "QScrollBar:horizontal {"
+            "   background: #2b2c30;"
+            "   height: 12px;"
+            "   margin: 0px;"
+            "   border: none;"
+            "   border-radius: 6px;"
+            "}"
+            "QScrollBar::handle:horizontal {"
+            "   background: #63646c;"
+            "   min-width: 28px;"
+            "   border-radius: 4px;"
+            "   margin: 2px;"
+            "}"
+            "QScrollBar::handle:horizontal:hover {"
+            "   background: #787982;"
+            "}"
+            "QScrollBar::handle:horizontal:pressed {"
+            "   background: #8d8e98;"
+            "}"
+            "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
+            "   width: 0px;"
+            "   background: none;"
+            "}"
+            "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+            "   background: none;"
+            "}"
+        );
     } else { // BreezeDark
         // High-contrast BreezeDark scrollbars: track is deep charcoal, handle is distinctively lighter
         return QStringLiteral(
@@ -1293,12 +1476,18 @@ QString ThemeManager::scrollBarStyleSheet(ThemePreset preset)
  */
 QString ThemeManager::fileDialogStyleSheet(ThemePreset preset)
 {
+    preset = effectivePreset(preset);
     const bool dark = isDark(preset);
     if (dark) {
-        const QString accent = (preset == ThemePreset::DarkSlate) ? QStringLiteral("#0284c7") : QStringLiteral("#3daee9");
-        const QString accentHover = (preset == ThemePreset::DarkSlate) ? QStringLiteral("#0369a1") : QStringLiteral("#2980b9");
-        const QString bg = (preset == ThemePreset::DarkSlate) ? QStringLiteral("#22262b") : QStringLiteral("#181b1d");
-        const QString border = (preset == ThemePreset::DarkSlate) ? QStringLiteral("#2d333b") : QStringLiteral("#282e34");
+        const bool isZinc = (preset == ThemePreset::ZincGray);
+        const QString accent = isZinc ? QStringLiteral("#585960")
+                                      : ((preset == ThemePreset::DarkSlate) ? QStringLiteral("#0284c7") : QStringLiteral("#3daee9"));
+        const QString accentHover = isZinc ? QStringLiteral("#6b6c74")
+                                           : ((preset == ThemePreset::DarkSlate) ? QStringLiteral("#0369a1") : QStringLiteral("#2980b9"));
+        const QString bg = isZinc ? QStringLiteral("#343539")
+                                  : ((preset == ThemePreset::DarkSlate) ? QStringLiteral("#22262b") : QStringLiteral("#181b1d"));
+        const QString border = isZinc ? QStringLiteral("rgba(255, 255, 255, 0.14)")
+                                      : ((preset == ThemePreset::DarkSlate) ? QStringLiteral("#2d333b") : QStringLiteral("#282e34"));
 
         return QString(
             "QFileDialog { background-color: %1; color: #eff0f1; }\n"
@@ -1617,8 +1806,9 @@ void ThemeManager::configureFileDialog(QFileDialog *dialog)
 {
     if (!dialog) return;
 
-    // Set vector icon provider matching BubezView FolderViewer design
-    dialog->setIconProvider(new BubezFileIconProvider);
+    // Reuse a single static icon provider instance (QFileDialog does not take ownership)
+    static BubezFileIconProvider s_iconProvider;
+    dialog->setIconProvider(&s_iconProvider);
 
     // 1. Configure Places Sidebar with canonical deduplication
     QList<QUrl> sidebarUrls;
@@ -1630,16 +1820,13 @@ void ThemeManager::configureFileDialog(QFileDialog *dialog)
         if (!dir.exists()) return;
         const QString canonical = dir.canonicalPath();
         if (canonicalAdded.contains(canonical)) {
-            return; // Prevent duplicate entries (e.g. /home/davide and /run/host/home/davide)
+            return; // Prevent duplicate entries (e.g. /home/user and /run/host/home/user)
         }
         canonicalAdded.append(canonical);
         sidebarUrls << QUrl::fromLocalFile(rawPath);
     };
 
-    QString home = QDir::homePath();
-    if (!QDir(home + "/Documenti").exists() && QDir("/home/davide/Documenti").exists()) {
-        home = "/home/davide";
-    }
+    const QString home = QDir::homePath();
     addPath(home);
 
     auto addDir = [&](QStandardPaths::StandardLocation loc, const QStringList &fallbacks) {

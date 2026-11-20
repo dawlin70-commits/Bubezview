@@ -10,6 +10,8 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QComboBox>
+#include <QListView>
+#include <QDir>
 #include <QMessageBox>
 #include <QApplication>
 #include <QDesktopServices>
@@ -152,6 +154,7 @@ void BuildOptionsDialog::setupUi()
     QLabel *lblVerPrompt = new QLabel(tr("Poppler Source Release:"), m_pdfVersionContainer);
     lblVerPrompt->setStyleSheet("color: #94a3b8; font-size: 11px;");
     m_comboPdfVersion = new QComboBox(m_pdfVersionContainer);
+    m_comboPdfVersion->setView(new QListView(m_comboPdfVersion));
     m_comboPdfVersion->setMinimumWidth(280);
 
     QString detectedVer = PackageManagerHelper::queryPackageCandidateVersion("poppler-qt6");
@@ -354,7 +357,11 @@ void BuildOptionsDialog::onRecompileClicked()
     }
 
     QStringList args;
-    args << "--cli" << "--update";
+    args << QStringLiteral("--cli") << QStringLiteral("--update");
+    if (BuildConfig::instance().activeHardwareProfile() != BuildConfig::HardwareProfile::SystemPackages) {
+        args << QStringLiteral("--no-sudo");
+    }
+    args.append(BuildConfig::instance().toCMakeArgs());
     m_process->start(scriptPath, args);
 }
 
@@ -391,7 +398,12 @@ void BuildOptionsDialog::onProcessFinished(int exitCode, QProcess::ExitStatus ex
             QMessageBox::Yes
         );
         if (cleanQ == QMessageBox::Yes) {
-            QProcess::startDetached("cmake", QStringList() << "--build" << "build_deb" << "--target" << "clean");
+            const QString devRoot = BuildConfig::projectDevRoot();
+            const QString buildDir = devRoot.isEmpty() ? QString() : (devRoot + QStringLiteral("/build"));
+            if (!buildDir.isEmpty() && QDir(buildDir).exists()) {
+                QProcess::startDetached(QStringLiteral("cmake"),
+                                        QStringList() << QStringLiteral("--build") << buildDir << QStringLiteral("--target") << QStringLiteral("clean"));
+            }
             m_lblBuildStatus->setText(tr("✅ Compilation completed and temporary files cleaned up!"));
         }
     } else {

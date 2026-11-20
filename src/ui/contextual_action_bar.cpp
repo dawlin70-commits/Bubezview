@@ -174,10 +174,6 @@ void ContextualActionBar::setupTextPage()
     connect(m_cmbTextBgMode, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
         auto mode = static_cast<PdfTextBgMode>(m_cmbTextBgMode->itemData(index).toInt());
         m_textBgMode = mode;
-        if (m_chkWhiteout) {
-            QSignalBlocker b(m_chkWhiteout);
-            m_chkWhiteout->setChecked(mode != PdfTextBgMode::Transparent);
-        }
         if (mode == PdfTextBgMode::Custom) {
             openColorDialog(5);
         } else {
@@ -185,9 +181,6 @@ void ContextualActionBar::setupTextPage()
             emit textPropertiesChanged(textFont(), m_textColor, isWhiteout());
         }
     });
-
-    m_chkWhiteout = new QCheckBox(tr("Whiteout background"), m_textPage);
-    m_chkWhiteout->setVisible(false);
 
     m_txtEditContent = new QLineEdit(m_textPage);
     m_txtEditContent->setVisible(false);
@@ -774,15 +767,22 @@ void ContextualActionBar::applyThemePreset(ThemePreset preset)
 
 void ContextualActionBar::updateThemeStyles()
 {
-    bool isDark = ThemeManager::isDark(m_currentPreset);
+    const ThemePreset eff = ThemeManager::effectivePreset(m_currentPreset);
+    const bool isDark = ThemeManager::isDark(eff);
+    const bool isZinc = (eff == ThemePreset::ZincGray);
 
-    QString barBg = isDark
-        ? QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 39, 58, 0.94), stop:1 rgba(18, 24, 38, 0.96))")
-        : QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.96), stop:1 rgba(241, 245, 249, 0.94))");
-    QString borderCol = isDark ? QStringLiteral("rgba(255, 255, 255, 0.14)") : QStringLiteral("rgba(15, 23, 42, 0.12)");
+    QString barBg = isZinc
+        ? QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(62, 63, 68, 0.96), stop:1 rgba(44, 45, 49, 0.97))")
+        : (isDark
+            ? QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(30, 39, 58, 0.94), stop:1 rgba(18, 24, 38, 0.96))")
+            : QStringLiteral("qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 255, 255, 0.96), stop:1 rgba(241, 245, 249, 0.94))"));
+    QString borderCol = isZinc ? QStringLiteral("rgba(255, 255, 255, 0.18)")
+                               : (isDark ? QStringLiteral("rgba(255, 255, 255, 0.14)") : QStringLiteral("rgba(15, 23, 42, 0.12)"));
     QString textColor = isDark ? QStringLiteral("#f1f5f9") : QStringLiteral("#0f172a");
-    QString btnBg = isDark ? QStringLiteral("rgba(255, 255, 255, 0.08)") : QStringLiteral("rgba(15, 23, 42, 0.06)");
-    QString btnHover = isDark ? QStringLiteral("rgba(255, 255, 255, 0.15)") : QStringLiteral("rgba(15, 23, 42, 0.11)");
+    QString btnBg = isZinc ? QStringLiteral("#585960")
+                           : (isDark ? QStringLiteral("rgba(255, 255, 255, 0.08)") : QStringLiteral("rgba(15, 23, 42, 0.06)"));
+    QString btnHover = isZinc ? QStringLiteral("#6b6c74")
+                              : (isDark ? QStringLiteral("rgba(255, 255, 255, 0.15)") : QStringLiteral("rgba(15, 23, 42, 0.11)"));
     QString btnChecked = QStringLiteral("#0284c7");
 
     setStyleSheet(QString(
@@ -986,10 +986,6 @@ void ContextualActionBar::setWhiteout(bool whiteout)
 void ContextualActionBar::setTextBgMode(PdfTextBgMode mode)
 {
     m_textBgMode = mode;
-    if (m_chkWhiteout) {
-        QSignalBlocker b(m_chkWhiteout);
-        m_chkWhiteout->setChecked(mode != PdfTextBgMode::Transparent);
-    }
     if (m_cmbTextBgMode) {
         int idx = m_cmbTextBgMode->findData(static_cast<int>(mode));
         if (idx >= 0 && m_cmbTextBgMode->currentIndex() != idx) {

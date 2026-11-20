@@ -7,6 +7,21 @@
 #include <QCoreApplication>
 #include <QDomDocument>
 #include <QRegularExpression>
+#include <QSettings>
+#include <QStandardPaths>
+
+static void runKbuildsycoca()
+{
+    const QString k6 = QStandardPaths::findExecutable(QStringLiteral("kbuildsycoca6"));
+    if (!k6.isEmpty()) {
+        QProcess::execute(k6, QStringList() << QStringLiteral("--noincremental"));
+        return;
+    }
+    const QString k5 = QStandardPaths::findExecutable(QStringLiteral("kbuildsycoca5"));
+    if (!k5.isEmpty()) {
+        QProcess::execute(k5, QStringList() << QStringLiteral("--noincremental"));
+    }
+}
 
 DesktopIntegrator::DesktopEnv DesktopIntegrator::currentDesktop()
 {
@@ -64,8 +79,14 @@ static void updateXmlGuiFile(const QString &filePath, bool enable, const QString
     if (root.isNull()) {
         root = doc.createElement("gui");
         root.setAttribute("name", "dolphin");
-        root.setAttribute("version", "1");
+        root.setAttribute("version", "49");
         doc.appendChild(root);
+    } else {
+        // Ensure KXmlGui version is at least 49 so Dolphin 26+ never discards local overrides as stale
+        const int curVer = root.attribute("version").toInt();
+        if (curVer < 49) {
+            root.setAttribute("version", "49");
+        }
     }
 
     QList<QDomElement> apList;
@@ -133,6 +154,30 @@ static void updateXmlGuiFile(const QString &filePath, bool enable, const QString
     }
 }
 
+/**
+ * @brief Synchronizes Dolphin's [Shortcuts] section in ~/.config/dolphinrc
+ *        so Spacebar persists across tab switches and KXmlGui session saves.
+ */
+static void updateDolphinRcShortcuts(bool enable, const QString &shortcut = QStringLiteral("Space"))
+{
+    const QString rcPath = QDir::homePath() + QStringLiteral("/.config/dolphinrc");
+    QSettings dolphinRc(rcPath, QSettings::IniFormat);
+    dolphinRc.beginGroup(QStringLiteral("Shortcuts"));
+    if (enable) {
+        dolphinRc.setValue(QStringLiteral("servicemenu_bubezview.desktop::bubezview"), shortcut);
+        if (shortcut == QLatin1String("Space")) {
+            dolphinRc.setValue(QStringLiteral("toggle_selection_mode"), QStringLiteral("none"));
+        } else {
+            dolphinRc.remove(QStringLiteral("toggle_selection_mode"));
+        }
+    } else {
+        dolphinRc.remove(QStringLiteral("servicemenu_bubezview.desktop::bubezview"));
+        dolphinRc.remove(QStringLiteral("toggle_selection_mode"));
+    }
+    dolphinRc.endGroup();
+    dolphinRc.sync();
+}
+
 bool DesktopIntegrator::isDolphinEnabled()
 {
     QString home = QDir::homePath();
@@ -159,25 +204,41 @@ bool DesktopIntegrator::isDolphinEnabled()
 
 QString DesktopIntegrator::currentDolphinShortcut()
 {
-    QString home = QDir::homePath();
-    QStringList rcFiles = {
-        home + "/.local/share/kxmlgui5/dolphin/dolphinui.rc",
-        home + "/.local/share/kxmlgui6/dolphin/dolphinui.rc"
+    const QString home = QDir::homePath();
+
+    // 1. Check ~/.config/dolphinrc [Shortcuts] first (authoritative for Plasma 6 / Dolphin 26+)
+    const QString rcPath = home + QStringLiteral("/.config/dolphinrc");
+    if (QFile::exists(rcPath)) {
+        QSettings dolphinRc(rcPath, QSettings::IniFormat);
+        dolphinRc.beginGroup(QStringLiteral("Shortcuts"));
+        const QString sc = dolphinRc.value(QStringLiteral("servicemenu_bubezview.desktop::bubezview")).toString().trimmed();
+        dolphinRc.endGroup();
+        if (!sc.isEmpty() && sc.compare(QLatin1String("none"), Qt::CaseInsensitive) != 0) {
+            return sc;
+        }
+    }
+
+    // 2. Fallback to KXmlGui dolphinui.rc
+    const QStringList rcFiles = {
+        home + QStringLiteral("/.local/share/kxmlgui6/dolphin/dolphinui.rc"),
+        home + QStringLiteral("/.local/share/kxmlgui5/dolphin/dolphinui.rc")
     };
+
+    static const QRegularExpression scRegex(
+        QStringLiteral(R"(name=\"servicemenu_bubezview\.desktop::bubezview\"[^>]*shortcut=\"([^\"]+)\")"));
 
     for (const QString &rc : rcFiles) {
         if (!QFile::exists(rc)) continue;
         QFile f(rc);
         if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QString content = f.readAll();
-            if (content.contains("shortcut=\"Ctrl+Space\"")) {
-                return "Ctrl+Space";
-            } else if (content.contains("shortcut=\"Space\"")) {
-                return "Space";
+            const QString content = QString::fromUtf8(f.readAll());
+            const auto match = scRegex.match(content);
+            if (match.hasMatch() && !match.captured(1).trimmed().isEmpty()) {
+                return match.captured(1).trimmed();
             }
         }
     }
-    return "Space";
+    return QStringLiteral("Space");
 }
 
 bool DesktopIntegrator::enableDolphin(const QString &shortcut)
@@ -213,12 +274,16 @@ bool DesktopIntegrator::enableDolphin(const QString &shortcut)
         "Actions=bubezview;\n"
         "X-KDE-ServiceTypes=KonqPopupMenu/Plugin\n"
         "X-KDE-Priority=TopLevel\n"
-        "X-KDE-Shortcuts=%3\n\n"
+        "X-KDE-Shortcuts=%3\n"
+        "StartupNotify=false\n"
+        "X-KDE-StartupNotify=false\n\n"
         "[Desktop Action bubezview]\n"
         "Name=BubezView (Quick Preview)\n"
         "Name[it]=BubezView (Anteprima rapida)\n"
         "Icon=%1\n"
         "Exec=%2\n"
+        "StartupNotify=false\n"
+        "X-KDE-StartupNotify=false\n"
     ).arg(icon, execCmd, shortcut);
 
     for (const QString &mDir : menuDirs) {
@@ -235,9 +300,9 @@ bool DesktopIntegrator::enableDolphin(const QString &shortcut)
 
     updateXmlGuiFile(home + "/.local/share/kxmlgui5/dolphin/dolphinui.rc", true, shortcut);
     updateXmlGuiFile(home + "/.local/share/kxmlgui6/dolphin/dolphinui.rc", true, shortcut);
+    updateDolphinRcShortcuts(true, shortcut);
 
-    QProcess::execute("/usr/bin/kbuildsycoca6", QStringList() << "--noincremental");
-    QProcess::execute("/usr/bin/kbuildsycoca5", QStringList() << "--noincremental");
+    runKbuildsycoca();
     QProcess::execute("killall", QStringList() << "dolphin");
 
     return true;
@@ -252,9 +317,9 @@ bool DesktopIntegrator::disableDolphin()
 
     updateXmlGuiFile(home + "/.local/share/kxmlgui5/dolphin/dolphinui.rc", false);
     updateXmlGuiFile(home + "/.local/share/kxmlgui6/dolphin/dolphinui.rc", false);
+    updateDolphinRcShortcuts(false);
 
-    QProcess::execute("/usr/bin/kbuildsycoca6", QStringList() << "--noincremental");
-    QProcess::execute("/usr/bin/kbuildsycoca5", QStringList() << "--noincremental");
+    runKbuildsycoca();
     QProcess::execute("killall", QStringList() << "dolphin");
 
     return true;
@@ -326,9 +391,6 @@ bool DesktopIntegrator::enableGnomeNemo()
                              QFileDevice::ReadOther | QFileDevice::ExeOther);
         }
     }
-
-    // 3. Register global shortcut Ctrl+Space in Cinnamon & GNOME via gsettings
-    QProcess::execute("gsettings", QStringList() << "set" << "org.gnome.desktop.default-applications.terminal" << "exec" << "konsole"); // dummy check
 
     // Reload DBus and restart file managers
     QProcess::execute("dbus-send", QStringList() << "--session" << "--type=method_call" << "--dest=org.freedesktop.DBus" << "/" << "org.freedesktop.DBus.ReloadConfig");
@@ -484,8 +546,7 @@ bool DesktopIntegrator::installAppMenu()
     }
 
     QProcess::execute("update-desktop-database", QStringList() << appDir);
-    QProcess::execute("/usr/bin/kbuildsycoca6", QStringList() << "--noincremental");
-    QProcess::execute("/usr/bin/kbuildsycoca5", QStringList() << "--noincremental");
+    runKbuildsycoca();
 
     return true;
 }
@@ -497,8 +558,7 @@ bool DesktopIntegrator::uninstallAppMenu()
     QFile::remove(appDir + "/bubezview.desktop");
 
     QProcess::execute("update-desktop-database", QStringList() << appDir);
-    QProcess::execute("/usr/bin/kbuildsycoca6", QStringList() << "--noincremental");
-    QProcess::execute("/usr/bin/kbuildsycoca5", QStringList() << "--noincremental");
+    runKbuildsycoca();
 
     return true;
 }

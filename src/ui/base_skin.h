@@ -200,6 +200,11 @@ public slots:
      */
     bool isDaemonMode() const;
 
+    /**
+     * @brief Stops any pending background RAM standby quit timer when the window wakes up.
+     */
+    void cancelStandbyTimer();
+
     // Help & Updates
     void showAboutDialog();
     void showShortcutsDialog();
@@ -263,6 +268,7 @@ protected:
     FolderViewer *m_folderViewer;
     EnginePromptCard *m_enginePromptCard;
     QWidget *m_unsupportedViewer;
+    class QFrame *m_unsupportedCardFrame = nullptr;
     QLabel *m_lblUnsupportedIcon;
     QLabel *m_lblUnsupportedName;
     QLabel *m_lblUnsupportedDetails;
@@ -270,6 +276,7 @@ protected:
     QPushButton *m_btnUnsupportedHexDump;
 
     bool loadUnsupportedFileInfo(const QString &filePath);
+    void updateUnsupportedCardTheme();
 
     bool m_filmstripWanted;
 
@@ -282,16 +289,21 @@ protected:
     QStringList m_siblingFiles;
     int m_currentIndex;
     FileCategory m_currentCategory;
+    bool m_scopedNavigationActive = false;
+    bool m_returnToFolderStudio = false;
+    QString m_returnStudioFolder;
+    int m_returnStudioTool = 0;
 
     void openArchiveFile(const QString &extractedFilePath, const QString &internalEntryPath);
-    void openFileFromGalleryWithZoom(const QString &filePath);
+    void openFileFromGalleryWithZoom(const QString &filePath, const QStringList &contextFiles = QStringList());
     void returnToFolderWithZoom(const QString &dir, const QString &targetFilePath);
-    void safeReplaceStackedWidget(int index, QWidget *newWidget);
+    void returnToFolderStudio();
+    void safeReplaceStackedWidget(int index, QWidget *newWidget, bool synchronousDelete = false);
+    void onPluginAboutToUnload(const QString &pluginId);
 
     // Fast-Skip Transition System
     class TransitionOverlayWidget *m_transitionOverlay;
     class GalleryZoomTransition *m_galleryTransition;
-    class QGraphicsOpacityEffect *m_overlayOpacity;
     class QParallelAnimationGroup *m_animGroup;
     qint64 m_lastSwitchTimeMs;
 

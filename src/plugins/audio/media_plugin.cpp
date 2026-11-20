@@ -4,7 +4,7 @@
  */
 
 #include "media_plugin.h"
-#include "viewers/media/media_viewer.h"
+#include "media_viewer.h"
 
 MediaPlugin::MediaPlugin(QObject *parent)
     : QObject(parent)

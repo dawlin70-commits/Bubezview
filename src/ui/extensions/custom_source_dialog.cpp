@@ -11,6 +11,7 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QComboBox>
+#include <QListView>
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QPushButton>
@@ -144,6 +145,7 @@ void CustomSourceDialog::setupUi()
 
     // 1. Preset Selector
     m_comboPreset = new QComboBox(tabSource);
+    m_comboPreset->setView(new QListView(m_comboPreset));
     m_comboPreset->addItem(tr("Official Stable"), "stable");
     m_comboPreset->addItem(tr("Development Git (main/master)"), "git");
     m_comboPreset->addItem(tr("Custom Git URL"), "custom");

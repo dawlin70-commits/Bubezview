@@ -22,6 +22,10 @@
 #include <QFileDialog>
 #include <QStyleFactory>
 #include <QDBusConnection>
+#include <QDBusConnectionInterface>
+#include <QDBusInterface>
+#include <QDBusReply>
+#include <QUrl>
 #include <QThread>
 #include <QTranslator>
 #include <QLocale>
@@ -173,8 +177,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Initialize GPU acceleration detection and driver capabilities
-    GpuAccelerationManager::instance().initialize();
+    // GPU acceleration detection is now initialized lazily on first access to keep cold startup fast.
 
     // Ensure Qt discovers image and multimedia plugins in user-local directories (~/.local)
     // especially critical on immutable distributions (SteamOS, Fedora Silverblue, Bazzite)
@@ -289,6 +292,38 @@ int main(int argc, char *argv[])
     parser.addPositionalArgument("file", QCoreApplication::translate("main", "File or folder to preview (optional)"));
 
     parser.process(app);
+
+    // Fast-path single-instance D-Bus handoff:
+    // If a BubezView instance is already running (e.g. in RAM standby), forward the target file
+    // over D-Bus and exit immediately (< 5 ms) so Dolphin/KIO launcher jobs complete cleanly.
+    const QStringList fastPathArgs = parser.positionalArguments();
+    if (!fastPathArgs.isEmpty() &&
+        !parser.isSet(previewerOption) &&
+        !parser.isSet(screenshotOption) &&
+        !parser.isSet(wizardOption) &&
+        !parser.isSet(settingsSnapshotsOption)) {
+        QDBusConnection existingBus = QDBusConnection::sessionBus();
+        if (existingBus.isConnected() && existingBus.interface() &&
+            existingBus.interface()->isServiceRegistered(QStringLiteral("org.bubez.BubezView"))) {
+            QDBusInterface iface(QStringLiteral("org.bubez.BubezView"),
+                                 QStringLiteral("/org/bubez/BubezView"),
+                                 QStringLiteral("org.nemo.Preview"),
+                                 existingBus);
+            if (iface.isValid()) {
+                const QString absPath = QFileInfo(fastPathArgs.first()).absoluteFilePath();
+                const QString fileUri = QUrl::fromLocalFile(absPath).toString();
+                const QString activationToken = qEnvironmentVariable("XDG_ACTIVATION_TOKEN");
+                QDBusReply<void> reply = iface.call(QStringLiteral("ShowFileWithToken"), fileUri, activationToken);
+                if (!reply.isValid()) {
+                    // Fallback for older running standby instances exposing only ShowFile
+                    reply = iface.call(QStringLiteral("ShowFile"), fileUri, 0, false);
+                }
+                if (reply.isValid()) {
+                    return 0;
+                }
+            }
+        }
+    }
 
     // Configure logging verbosity if debug mode was requested via CLI or saved settings
     const bool debugMode = parser.isSet(debugOption) || settings.value("debug_mode", false).toBool();
@@ -543,7 +578,7 @@ int main(int argc, char *argv[])
             pixCopied.save(QString("%1/diagnostic_dialog_copied_feedback.png").arg(outDir));
         }
 
-        // Capture FirstRunWizard 3 Pages (ZincGray Theme)
+        // Capture FirstRunWizard 4 Pages (ZincGray Theme)
         {
             qputenv("XDG_CURRENT_DESKTOP", "KDE");
             ThemeManager::setPreset(ThemePreset::ZincGray);
@@ -553,7 +588,8 @@ int main(int argc, char *argv[])
             QStringList pageNames = {
                 QStringLiteral("wizard_page_0_welcome.png"),
                 QStringLiteral("wizard_page_1_spacebar.png"),
-                QStringLiteral("wizard_page_2_performance.png")
+                QStringLiteral("wizard_page_2_performance.png"),
+                QStringLiteral("wizard_page_3_summary.png")
             };
             for (int p = 0; p < pageNames.size(); ++p) {
                 for (int w = 0; w < 10; ++w) {
@@ -661,14 +697,15 @@ int main(int argc, char *argv[])
 
     MainWindow window;
     window.setDaemonMode(parser.isSet(previewerOption));
-    ThemeManager::applyTheme(&app, &window);
     DBusPreviewer dbusPreviewer(&window);
 
-    // Register DBus services so spacebar in Nemo/Nautilus can invoke BubezView
+    // Register DBus services so spacebar in Dolphin/Nemo/Nautilus can invoke BubezView instantaneously
     QDBusConnection sessionBus = QDBusConnection::sessionBus();
     if (sessionBus.isConnected()) {
+        sessionBus.registerService("org.bubez.BubezView");
         sessionBus.registerService("org.nemo.Preview");
         sessionBus.registerService("org.gnome.NautilusPreviewer");
+        sessionBus.registerObject("/org/bubez/BubezView", &dbusPreviewer, QDBusConnection::ExportAllSlots);
         sessionBus.registerObject("/org/nemo/Preview", &dbusPreviewer, QDBusConnection::ExportAllSlots);
         sessionBus.registerObject("/org/gnome/NautilusPreviewer", &dbusPreviewer, QDBusConnection::ExportAllSlots);
     }
@@ -684,42 +721,9 @@ int main(int argc, char *argv[])
     if ((!firstRunCompleted || parser.isSet(wizardOption)) && !parser.isSet(screenshotOption)) {
         FirstRunWizard wizard(&window);
         if (wizard.exec() == QDialog::Accepted) {
-            ThemeManager::applyTheme(&app, &window);
+            window.applyCurrentTheme();
 
-            const auto hwProf = BuildConfig::instance().activeHardwareProfile();
-            QStringList pendingBuild;
-            const QString home = QDir::homePath();
-
-            if (hwProf == BuildConfig::HardwareProfile::MissingOnly) {
-                const QStringList candidates = {
-                    "poppler-data", "zstd", "xz", "7zip", "mpv"
-                };
-                for (const QString &comp : candidates) {
-                    if (!BuildConfig::hasSystemBinary(comp) && !BuildConfig::hasSourceBinary(comp)) {
-                        pendingBuild.append(comp);
-                    }
-                }
-            } else if (hwProf == BuildConfig::HardwareProfile::AllStable ||
-                       hwProf == BuildConfig::HardwareProfile::AllSource) {
-                const QStringList candidates = {
-                    "poppler-data", "zstd", "xz", "7zip", "poppler", "libarchive"
-                };
-                for (const QString &comp : candidates) {
-                    if (comp == QLatin1String("poppler")) {
-                        if (!QFile::exists(home + "/.local/bin/pdfimages")) {
-                            pendingBuild.append(comp);
-                        }
-                    } else if (comp == QLatin1String("libarchive")) {
-                        if (!QFile::exists(home + "/.local/lib/libarchive.so") &&
-                            !QFile::exists(home + "/.local/lib64/libarchive.so")) {
-                            pendingBuild.append(comp);
-                        }
-                    } else if (!BuildConfig::hasSourceBinary(comp)) {
-                        pendingBuild.append(comp);
-                    }
-                }
-            }
-
+            const QStringList pendingBuild = wizard.pendingBuildComponents();
             if (!pendingBuild.isEmpty()) {
                 BuildConsoleDialog console(&window);
                 console.startBuildComponents(pendingBuild);

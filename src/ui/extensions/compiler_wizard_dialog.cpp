@@ -6,6 +6,7 @@
 #include "compiler_wizard_dialog.h"
 #include "cpu_info.h"
 #include "build_config.h"
+#include "theme_manager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -13,6 +14,7 @@
 #include <QLabel>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QListView>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QScrollArea>
@@ -235,12 +237,16 @@ void CompilerWizardDialog::setupUi()
     mainLayout->addWidget(cardCpu);
 
     // 2. Presets Toolbar
+    const bool isDark = ThemeManager::isDarkTheme();
     QHBoxLayout *rowToolbar = new QHBoxLayout();
     QLabel *lblPreset = new QLabel(tr("<b>Quick Preset:</b>"), this);
-    lblPreset->setStyleSheet("font-size: 12px; color: #334155;");
+    lblPreset->setStyleSheet(isDark
+        ? QStringLiteral("font-size: 12px; color: #cbd5e1;")
+        : QStringLiteral("font-size: 12px; color: #334155;"));
     rowToolbar->addWidget(lblPreset);
 
     m_comboPreset = new QComboBox(this);
+    m_comboPreset->setView(new QListView(m_comboPreset));
     m_comboPreset->setCursor(Qt::PointingHandCursor);
     m_comboPreset->addItem(tr("🔄 Active Configuration in Use"), 0);
     m_comboPreset->addItem(tr("🟢 Recommended for Host CPU (Zero Risk)"), 1);
@@ -331,7 +337,9 @@ void CompilerWizardDialog::setupUi()
 
     // 4. Preview Text Box
     QLabel *lblPreview = new QLabel(tr("<b>Generated Compiler Flags:</b>"), this);
-    lblPreview->setStyleSheet("font-size: 11px; color: #475569;");
+    lblPreview->setStyleSheet(isDark
+        ? QStringLiteral("font-size: 11px; color: #94a3b8;")
+        : QStringLiteral("font-size: 11px; color: #475569;"));
     mainLayout->addWidget(lblPreview);
 
     m_txtPreview = new QTextEdit(this);
@@ -407,12 +415,17 @@ void CompilerWizardDialog::updatePreview()
     }
 
     if (m_lblScopeHint) {
+        const bool isDark = ThemeManager::isDarkTheme();
         if (requiresPluginRecompilation()) {
             m_lblScopeHint->setText(tr("🧩 <b>Plugin Recompilation Required:</b> This configuration extends deep optimizations to the underlying media and document engines. Recompiling will prompt you to update plugins (<code>bubez_pdf.so</code>, <code>bubez_archive.so</code>) or manage them manually."));
-            m_lblScopeHint->setStyleSheet("QLabel { background-color: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 5px; padding: 6px 10px; color: #854d0e; font-size: 11px; }");
+            m_lblScopeHint->setStyleSheet(QStringLiteral(
+                "QLabel { background-color: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 5px; padding: 6px 10px; color: %1; font-size: 11px; }")
+                .arg(isDark ? QStringLiteral("#fde047") : QStringLiteral("#854d0e")));
         } else {
             m_lblScopeHint->setText(tr("⚡ <b>Fast UI & Image Build:</b> Only BubezView main executable will be recompiled (~2s). Modular plugins will not be touched."));
-            m_lblScopeHint->setStyleSheet("QLabel { background-color: rgba(34, 197, 94, 0.10); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 5px; padding: 6px 10px; color: #166534; font-size: 11px; }");
+            m_lblScopeHint->setStyleSheet(QStringLiteral(
+                "QLabel { background-color: rgba(34, 197, 94, 0.10); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 5px; padding: 6px 10px; color: %1; font-size: 11px; }")
+                .arg(isDark ? QStringLiteral("#86efac") : QStringLiteral("#166534")));
         }
     }
 }

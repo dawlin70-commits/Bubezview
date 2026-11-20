@@ -33,7 +33,7 @@ WaveformWidget::WaveformWidget(QWidget *parent)
     , m_draggingRange(false)
     , m_dragOriginX(0)
 {
-    setMinimumHeight(130);
+    setMinimumHeight(92);
     setCursor(Qt::PointingHandCursor);
 }
 
@@ -889,8 +889,8 @@ bool AudioTrimDialog::eventFilter(QObject *watched, QEvent *event)
 void AudioTrimDialog::setupUi()
 {
     QVBoxLayout *mainLayout = contentLayout();
-    mainLayout->setContentsMargins(4, 4, 4, 4);
-    mainLayout->setSpacing(10);
+    mainLayout->setContentsMargins(4, 2, 4, 2);
+    mainLayout->setSpacing(6);
 
     // 1. Shared Header Information
     m_lblInfo = new QLabel(this);
@@ -979,14 +979,16 @@ void AudioTrimDialog::setupUi()
 
     // 4. Shared Footer: Format, Bitrate, Sample Rate, Tag Editor, Action Buttons
     QHBoxLayout *footerLayout = new QHBoxLayout();
-    footerLayout->setSpacing(10);
+    footerLayout->setContentsMargins(2, 2, 2, 2);
+    footerLayout->setSpacing(6);
 
     QLabel *lblOutFmt = new QLabel(tr("Format:"), this);
     footerLayout->addWidget(lblOutFmt);
 
     m_comboFormat = new QComboBox(this);
-    m_comboFormat->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    m_comboFormat->setMinimumWidth(165);
+    m_comboFormat->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_comboFormat->setMinimumContentsLength(14);
+    m_comboFormat->setMinimumWidth(120);
     m_comboFormat->addItem(tr("Original Format (Lossless Copy)"), "copy");
     m_comboFormat->addItem("MP3", "mp3");
     m_comboFormat->addItem("FLAC", "flac");
@@ -1000,8 +1002,9 @@ void AudioTrimDialog::setupUi()
     footerLayout->addWidget(lblBitrate);
 
     m_comboBitrate = new QComboBox(this);
-    m_comboBitrate->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    m_comboBitrate->setMinimumWidth(110);
+    m_comboBitrate->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_comboBitrate->setMinimumContentsLength(8);
+    m_comboBitrate->setMinimumWidth(82);
     connect(m_comboBitrate, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AudioTrimDialog::onFilterChanged);
     footerLayout->addWidget(m_comboBitrate);
 
@@ -1009,8 +1012,9 @@ void AudioTrimDialog::setupUi()
     footerLayout->addWidget(lblSamplerate);
 
     m_comboSampleRate = new QComboBox(this);
-    m_comboSampleRate->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    m_comboSampleRate->setMinimumWidth(110);
+    m_comboSampleRate->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_comboSampleRate->setMinimumContentsLength(8);
+    m_comboSampleRate->setMinimumWidth(82);
     connect(m_comboSampleRate, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AudioTrimDialog::onFilterChanged);
     footerLayout->addWidget(m_comboSampleRate);
 
@@ -1037,13 +1041,13 @@ void AudioTrimDialog::setupUi()
 
     m_btnSave = new QPushButton(tr("💾 Save Audio..."), this);
     m_btnSave->setCursor(Qt::PointingHandCursor);
-    m_btnSave->setMinimumWidth(145);
+    m_btnSave->setMinimumWidth(118);
     m_btnSave->setStyleSheet(
         "QPushButton {"
         "   background-color: #0284c7;"
         "   color: #ffffff;"
         "   font-weight: bold;"
-        "   padding: 7px 18px;"
+        "   padding: 5px 12px;"
         "   border-radius: 6px;"
         "   border: 1px solid #0369a1;"
         "}"
@@ -1067,8 +1071,8 @@ QWidget *AudioTrimDialog::createTrimTab()
 {
     QWidget *tab = new QWidget(this);
     QVBoxLayout *tabLayout = new QVBoxLayout(tab);
-    tabLayout->setContentsMargins(14, 12, 14, 12);
-    tabLayout->setSpacing(12);
+    tabLayout->setContentsMargins(10, 6, 10, 6);
+    tabLayout->setSpacing(7);
 
     // 1. Waveform Visualizer
     m_waveform = new WaveformWidget(tab);
@@ -1187,8 +1191,9 @@ QWidget *AudioTrimDialog::createTrimTab()
     // 4. Trimming Options (Fades & Lossless)
     QGroupBox *grpTrim = new QGroupBox(tr("Trimming && Fades Options"), tab);
     QGridLayout *grid = new QGridLayout(grpTrim);
-    grid->setHorizontalSpacing(18);
-    grid->setVerticalSpacing(10);
+    grid->setContentsMargins(10, 8, 10, 8);
+    grid->setHorizontalSpacing(14);
+    grid->setVerticalSpacing(6);
 
     QLabel *lblFadeIn = new QLabel(tr("Fade-In (sec):"), grpTrim);
     grid->addWidget(lblFadeIn, 0, 0);
@@ -1214,6 +1219,7 @@ QWidget *AudioTrimDialog::createTrimTab()
 
     m_chkLossless = new QCheckBox(tr("Lightning Lossless Mode (Instant copy, no re-encode)"), grpTrim);
     m_chkLossless->setChecked(true);
+    m_chkLossless->setToolTip(tr("When no fades or audio filters are active, Lossless Mode cuts the audio in ~0.1s preserving 100% original quality without recompression."));
     connect(m_chkLossless, &QCheckBox::toggled, this, [this](bool checked) {
         if (checked) {
             m_spinFadeIn->setValue(0.0);
@@ -1233,13 +1239,6 @@ QWidget *AudioTrimDialog::createTrimTab()
     grid->addWidget(m_chkLossless, 1, 0, 1, 4);
 
     tabLayout->addWidget(grpTrim);
-
-    QLabel *lblTip = new QLabel(tr("⚡ <b>Tip:</b> When no fades or audio filters are active, Lossless Mode cuts the audio in ~0.1s preserving 100% original quality without recompression."), tab);
-    ThemePreset pr = ThemeManager::currentPreset();
-    bool isDarkPr = (pr == ThemePreset::DarkSlate || pr == ThemePreset::BreezeDark);
-    lblTip->setStyleSheet(QString("color: %1; font-size: 12px; margin-top: 4px;").arg(isDarkPr ? "#959ca7" : "#64748b"));
-    lblTip->setWordWrap(true);
-    tabLayout->addWidget(lblTip);
 
     return tab;
 }

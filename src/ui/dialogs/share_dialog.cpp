@@ -1,7 +1,10 @@
 #include "share_dialog.h"
 #include "share_manager.h"
+#include "core/services/theme_manager.h"
 
+#include <QFile>
 #include <QFileInfo>
+#include <QPointer>
 #include <QPainter>
 #include <QProcess>
 #include <QMessageBox>
@@ -46,18 +49,48 @@ void ShareDialog::startHttpServer()
 {
     if (m_filePath.isEmpty() || !QFile::exists(m_filePath)) return;
 
-    // Detect LAN IP (prefer 192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-    QString localIp = "127.0.0.1";
-    const QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
-    for (const QHostAddress &addr : addresses) {
-        if (addr.protocol() == QAbstractSocket::IPv4Protocol && !addr.isLoopback()) {
-            QString ipStr = addr.toString();
-            if (ipStr.startsWith("192.168.") || ipStr.startsWith("10.") || ipStr.startsWith("172.")) {
-                localIp = ipStr;
-                break;
-            } else if (localIp == "127.0.0.1") {
-                localIp = ipStr;
+    // Detect LAN IPv4 address (skip virtual/container bridges like docker0, br-*, veth*, virbr*)
+    QString localIp = QStringLiteral("127.0.0.1");
+    const QList<QNetworkInterface> ifaces = QNetworkInterface::allInterfaces();
+    for (const QNetworkInterface &iface : ifaces) {
+        const auto flags = iface.flags();
+        if (!flags.testFlag(QNetworkInterface::IsUp) ||
+            !flags.testFlag(QNetworkInterface::IsRunning) ||
+            flags.testFlag(QNetworkInterface::IsLoopBack)) {
+            continue;
+        }
+        const QString ifName = iface.name().toLower();
+        if (ifName.startsWith(QLatin1String("docker")) ||
+            ifName.startsWith(QLatin1String("br-")) ||
+            ifName.startsWith(QLatin1String("veth")) ||
+            ifName.startsWith(QLatin1String("virbr")) ||
+            ifName.startsWith(QLatin1String("tun")) ||
+            ifName.startsWith(QLatin1String("tap"))) {
+            continue;
+        }
+
+        for (const QNetworkAddressEntry &entry : iface.addressEntries()) {
+            const QHostAddress addr = entry.ip();
+            if (addr.protocol() != QAbstractSocket::IPv4Protocol || addr.isLoopback()) {
+                continue;
             }
+            const quint32 ipv4 = addr.toIPv4Address();
+            const quint8 octet1 = static_cast<quint8>((ipv4 >> 24) & 0xFF);
+            const quint8 octet2 = static_cast<quint8>((ipv4 >> 16) & 0xFF);
+            const bool isPrivateLan =
+                (octet1 == 192 && octet2 == 168) ||
+                (octet1 == 10) ||
+                (octet1 == 172 && octet2 >= 16 && octet2 <= 31);
+
+            if (isPrivateLan) {
+                localIp = addr.toString();
+                break;
+            } else if (localIp == QLatin1String("127.0.0.1")) {
+                localIp = addr.toString();
+            }
+        }
+        if (localIp != QLatin1String("127.0.0.1")) {
+            break;
         }
     }
 
@@ -85,25 +118,70 @@ void ShareDialog::onNewConnection()
     while (m_tcpServer->hasPendingConnections()) {
         QTcpSocket *socket = m_tcpServer->nextPendingConnection();
         connect(socket, &QTcpSocket::readyRead, this, [this, socket]() {
-            QByteArray req = socket->readAll();
-            if (req.startsWith("GET")) {
-                QFile file(m_filePath);
-                if (file.open(QIODevice::ReadOnly)) {
-                    QByteArray fileData = file.readAll();
-                    QFileInfo fi(m_filePath);
-                    QByteArray header;
-                    header.append("HTTP/1.1 200 OK\r\n");
-                    header.append("Content-Type: application/octet-stream\r\n");
-                    header.append("Content-Disposition: attachment; filename=\"" + fi.fileName().toUtf8() + "\"\r\n");
-                    header.append("Content-Length: " + QByteArray::number(fileData.size()) + "\r\n");
-                    header.append("Connection: close\r\n\r\n");
-                    socket->write(header);
-                    socket->write(fileData);
-                } else {
-                    socket->write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\nFile not found");
-                }
+            const QByteArray req = socket->readAll();
+            // Avoid handling duplicate readyRead events once a response is already streaming
+            if (socket->property("bubez_handled").toBool()) {
+                return;
             }
-            socket->disconnectFromHost();
+            socket->setProperty("bubez_handled", true);
+
+            const bool isGet = req.startsWith("GET ");
+            const bool isHead = req.startsWith("HEAD ");
+            if (!isGet && !isHead) {
+                socket->write("HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\n\r\n");
+                socket->disconnectFromHost();
+                return;
+            }
+
+            // Reject browser favicon requests without reading the shared file
+            if (req.startsWith("GET /favicon.ico") || req.startsWith("HEAD /favicon.ico")) {
+                socket->write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+                socket->disconnectFromHost();
+                return;
+            }
+
+            auto *file = new QFile(m_filePath, socket);
+            if (!file->open(QIODevice::ReadOnly)) {
+                delete file;
+                socket->write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\nFile not found");
+                socket->disconnectFromHost();
+                return;
+            }
+
+            const QFileInfo fi(m_filePath);
+            QByteArray header;
+            header.append("HTTP/1.1 200 OK\r\n");
+            header.append("Content-Type: application/octet-stream\r\n");
+            header.append("Content-Disposition: attachment; filename=\"" + fi.fileName().toUtf8() + "\"\r\n");
+            header.append("Content-Length: " + QByteArray::number(file->size()) + "\r\n");
+            header.append("Connection: close\r\n\r\n");
+            socket->write(header);
+
+            if (isHead || file->size() == 0) {
+                file->close();
+                socket->disconnectFromHost();
+                return;
+            }
+
+            // Stream the file in 64 KB chunks so large videos/archives never spike RAM
+            constexpr qint64 kChunkSize = 64 * 1024;
+            auto pumpNextChunk = [socket, file]() {
+                if (!socket || !file || !file->isOpen()) return;
+                while (socket->bytesToWrite() < kChunkSize * 4 && !file->atEnd()) {
+                    const QByteArray chunk = file->read(kChunkSize);
+                    if (chunk.isEmpty()) break;
+                    socket->write(chunk);
+                }
+                if (file->atEnd()) {
+                    file->close();
+                    socket->disconnectFromHost();
+                }
+            };
+
+            connect(socket, &QTcpSocket::bytesWritten, socket, [pumpNextChunk](qint64) {
+                pumpNextChunk();
+            });
+            pumpNextChunk();
         });
         connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
     }
@@ -111,6 +189,15 @@ void ShareDialog::onNewConnection()
 
 void ShareDialog::setupUi()
 {
+    const bool isDark = ThemeManager::isDarkTheme();
+    const QString titleCol = isDark ? QStringLiteral("#f8fafc") : QStringLiteral("#0f172a");
+    const QString subCol = isDark ? QStringLiteral("#94a3b8") : QStringLiteral("#475569");
+    const QString urlCol = isDark ? QStringLiteral("#38bdf8") : QStringLiteral("#0369a1");
+    const QString closeBg = isDark ? QStringLiteral("rgba(51, 65, 85, 0.85)") : QStringLiteral("rgba(0, 0, 0, 0.06)");
+    const QString closeHoverBg = isDark ? QStringLiteral("rgba(71, 85, 105, 0.95)") : QStringLiteral("rgba(0, 0, 0, 0.12)");
+    const QString closeText = isDark ? QStringLiteral("#f1f5f9") : QStringLiteral("#334155");
+    const QString closeBorder = isDark ? QStringLiteral("rgba(255, 255, 255, 0.14)") : QStringLiteral("rgba(0, 0, 0, 0.12)");
+
     QVBoxLayout *mainLayout = contentLayout();
     mainLayout->setContentsMargins(6, 6, 6, 6);
     mainLayout->setSpacing(14);
@@ -118,7 +205,7 @@ void ShareDialog::setupUi()
     QFileInfo fi(m_filePath);
 
     QLabel *titleLabel = new QLabel(QString(tr("📲 Share: %1")).arg(fi.fileName()), this);
-    titleLabel->setStyleSheet("font-size: 15px; font-weight: bold; padding-bottom: 2px;");
+    titleLabel->setStyleSheet(QStringLiteral("font-size: 15px; font-weight: bold; color: %1; padding-bottom: 2px;").arg(titleCol));
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setWordWrap(true);
     mainLayout->addWidget(titleLabel);
@@ -130,14 +217,16 @@ void ShareDialog::setupUi()
     mainLayout->addWidget(m_qrLabel, 0, Qt::AlignCenter);
 
     m_infoLabel = new QLabel(tr("Scan with your phone (make sure you are on the same Wi-Fi network):"), this);
-    m_infoLabel->setStyleSheet("font-size: 12px;");
+    m_infoLabel->setStyleSheet(QStringLiteral("font-size: 12px; color: %1;").arg(subCol));
     m_infoLabel->setWordWrap(true);
     m_infoLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(m_infoLabel);
 
     m_urlLabel = new QLabel(m_serverUrl, this);
     m_urlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_urlLabel->setStyleSheet("color: #38bdf8; background-color: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.38); border-radius: 12px; padding: 8px 12px; font-size: 12px; font-weight: bold; font-family: monospace;");
+    m_urlLabel->setStyleSheet(QStringLiteral(
+        "color: %1; background-color: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.38); border-radius: 12px; padding: 8px 12px; font-size: 12px; font-weight: bold; font-family: monospace;")
+        .arg(urlCol));
     m_urlLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(m_urlLabel);
 
@@ -188,16 +277,16 @@ void ShareDialog::setupUi()
 
     m_btnClose = new QPushButton(tr("Close"), this);
     m_btnClose->setCursor(Qt::PointingHandCursor);
-    m_btnClose->setStyleSheet(
+    m_btnClose->setStyleSheet(QStringLiteral(
         "QPushButton {"
-        "   background-color: rgba(51, 65, 85, 0.85);"
-        "   color: #f1f5f9;"
-        "   border: 1px solid rgba(255, 255, 255, 0.14);"
+        "   background-color: %1;"
+        "   color: %2;"
+        "   border: 1px solid %3;"
         "   border-radius: 10px;"
         "   padding: 8px 16px;"
         "}"
-        "QPushButton:hover { background-color: rgba(71, 85, 105, 0.95); }"
-    );
+        "QPushButton:hover { background-color: %4; }")
+        .arg(closeBg, closeText, closeBorder, closeHoverBg));
     connect(m_btnClose, &QPushButton::clicked, this, &QDialog::accept);
     btnLayout->addWidget(m_btnClose);
 
@@ -250,9 +339,4 @@ void ShareDialog::generateQrCode()
 void ShareDialog::onSendViaLocalSend()
 {
     ShareManager::shareLocalSend(m_filePath, this);
-}
-
-void ShareDialog::shareViaLocalSend(const QString &filePath, QWidget *parent)
-{
-    ShareManager::shareLocalSend(filePath, parent);
 }

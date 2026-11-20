@@ -22,6 +22,8 @@
 #include <QTimer>
 #include <QMouseEvent>
 #include <QApplication>
+#include <QCoreApplication>
+#include <QPointer>
 
 /**
  * @class CoverCardWidget
@@ -301,6 +303,26 @@ void CoverSelectionDialog::onSearchClicked()
 
 void CoverSelectionDialog::executeSearch(const QString &query)
 {
+    // Prevent re-entrant searches while a nested QEventLoop is active
+    if (m_isSearching) return;
+    m_isSearching = true;
+    if (m_btnSearch) m_btnSearch->setEnabled(false);
+
+    struct SearchGuard {
+        QPointer<CoverSelectionDialog> dlg;
+        ~SearchGuard() {
+            if (dlg) {
+                dlg->m_isSearching = false;
+                if (dlg->m_btnSearch) dlg->m_btnSearch->setEnabled(true);
+            }
+        }
+    } searchGuard{this};
+
+    const QString appVer = QCoreApplication::applicationVersion().isEmpty()
+                               ? QStringLiteral("1.0")
+                               : QCoreApplication::applicationVersion();
+    const QByteArray userAgent = QStringLiteral("BubezView/%1 ( https://github.com/davide/bubezview )").arg(appVer).toUtf8();
+
     m_candidates.clear();
     m_selectedIndex = -1;
     m_btnApply->setEnabled(false);
@@ -314,6 +336,7 @@ void CoverSelectionDialog::executeSearch(const QString &query)
 
     m_lblStatus->setText(tr("Searching iTunes Store & Cover Art Archive for \"%1\"...").arg(query));
     qApp->processEvents();
+    if (!searchGuard.dlg || !isVisible()) return;
 
     // 1. Query iTunes Search API
     QString itunesUrlStr = QString("https://itunes.apple.com/search?term=%1&entity=album&limit=12")
@@ -326,7 +349,12 @@ void CoverSelectionDialog::executeSearch(const QString &query)
     QEventLoop loop;
     QNetworkReply *reply = m_netMgr.get(req);
     connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    connect(this, &QDialog::finished, reply, &QNetworkReply::abort);
     loop.exec();
+    if (!searchGuard.dlg) {
+        reply->deleteLater();
+        return;
+    }
 
     if (reply->error() == QNetworkReply::NoError) {
         QByteArray data = reply->readAll();
@@ -366,13 +394,18 @@ void CoverSelectionDialog::executeSearch(const QString &query)
                                .arg(QString::fromUtf8(QUrl::toPercentEncoding(query)));
         QUrl mbUrl(mbUrlStr);
         QNetworkRequest mbReq(mbUrl);
-        mbReq.setHeader(QNetworkRequest::UserAgentHeader, "BubezView/0.1.8 ( https://github.com/davide/bubezview )");
+        mbReq.setHeader(QNetworkRequest::UserAgentHeader, userAgent);
         mbReq.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
         mbReq.setTransferTimeout(4000);
 
         QNetworkReply *mbReply = m_netMgr.get(mbReq);
         connect(mbReply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        connect(this, &QDialog::finished, mbReply, &QNetworkReply::abort);
         loop.exec();
+        if (!searchGuard.dlg) {
+            mbReply->deleteLater();
+            return;
+        }
 
         if (mbReply->error() == QNetworkReply::NoError) {
             QByteArray mbData = mbReply->readAll();
@@ -386,7 +419,10 @@ void CoverSelectionDialog::executeSearch(const QString &query)
 
                     CoverCandidate mbCand;
                     mbCand.album = rObj.value("title").toString();
-                    mbCand.artist = rObj.value("artist-credit").toArray().first().toObject().value("name").toString();
+                    const QJsonArray credits = rObj.value("artist-credit").toArray();
+                    if (!credits.isEmpty()) {
+                        mbCand.artist = credits.first().toObject().value("name").toString();
+                    }
                     mbCand.year = rObj.value("date").toString().left(4);
                     mbCand.thumbUrl = QString("https://coverartarchive.org/release/%1/front-250").arg(mbid);
                     mbCand.highResUrl = QString("https://coverartarchive.org/release/%1/front-1200").arg(mbid);
@@ -404,31 +440,45 @@ void CoverSelectionDialog::executeSearch(const QString &query)
 
     m_lblStatus->setText(tr("Downloading preview thumbnails (%1 found)...").arg(m_candidates.size()));
     qApp->processEvents();
+    if (!searchGuard.dlg || !isVisible()) return;
 
     fetchThumbnails();
+    if (!searchGuard.dlg || !isVisible()) return;
     populateGrid();
 }
 
 void CoverSelectionDialog::fetchThumbnails()
 {
+    QPointer<CoverSelectionDialog> selfGuard(this);
+    const QString appVer = QCoreApplication::applicationVersion().isEmpty()
+                               ? QStringLiteral("1.0")
+                               : QCoreApplication::applicationVersion();
+    const QByteArray userAgent = QStringLiteral("BubezView/%1").arg(appVer).toUtf8();
+
     QEventLoop loop;
     for (int i = 0; i < m_candidates.size(); ++i) {
-        CoverCandidate &cand = m_candidates[i];
-        QUrl url(cand.thumbUrl);
+        if (!selfGuard || !isVisible()) return;
+        // Copy URL by value before spinning nested QEventLoop (never hold a container reference across loop.exec)
+        const QUrl url(m_candidates.at(i).thumbUrl);
         QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::UserAgentHeader, "BubezView/0.1.8");
+        req.setHeader(QNetworkRequest::UserAgentHeader, userAgent);
         req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
         req.setTransferTimeout(3000);
 
         QNetworkReply *reply = m_netMgr.get(req);
         connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        connect(this, &QDialog::finished, reply, &QNetworkReply::abort);
         loop.exec();
+        if (!selfGuard) {
+            reply->deleteLater();
+            return;
+        }
 
-        if (reply->error() == QNetworkReply::NoError) {
+        if (i < m_candidates.size() && reply->error() == QNetworkReply::NoError) {
             QByteArray imgBytes = reply->readAll();
             QPixmap pix;
             if (pix.loadFromData(imgBytes)) {
-                cand.thumbPixmap = pix;
+                m_candidates[i].thumbPixmap = pix;
             }
         }
         reply->deleteLater();

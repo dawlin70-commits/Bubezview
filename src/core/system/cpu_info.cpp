@@ -163,9 +163,16 @@ CpuInfo::FormFactor CpuInfo::detectedFormFactor()
     if (powerSupplyDir.exists()) {
         const QStringList entries = powerSupplyDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
         for (const QString &entry : entries) {
-            // Check for actual internal laptop battery, ignoring peripheral batteries (e.g. hidpp_battery_*)
+            // Check for actual internal laptop battery, ignoring peripheral batteries (e.g. hidpp_battery_*, scope == Device)
             if (entry.startsWith(QLatin1String("BAT"), Qt::CaseInsensitive) ||
                 entry.startsWith(QLatin1String("battery"), Qt::CaseInsensitive)) {
+                QFile scopeFile(powerSupplyDir.filePath(entry) + QStringLiteral("/scope"));
+                if (scopeFile.open(QIODevice::ReadOnly)) {
+                    const QString scopeStr = QString::fromUtf8(scopeFile.readAll()).trimmed();
+                    if (scopeStr.compare(QLatin1String("Device"), Qt::CaseInsensitive) == 0) {
+                        continue;
+                    }
+                }
                 QFile typeFile(powerSupplyDir.filePath(entry) + QStringLiteral("/type"));
                 if (typeFile.open(QIODevice::ReadOnly)) {
                     QString typeStr = QString::fromUtf8(typeFile.readAll()).trimmed();
@@ -206,18 +213,57 @@ CpuInfo::FormFactor CpuInfo::detectedFormFactor()
     return FormFactor::Balanced;
 }
 
+bool CpuInfo::isVirtualMachine()
+{
+    // 1. Standard Linux x86 hypervisor CPUID flag exposed in /proc/cpuinfo
+    if (hasFlag(QStringLiteral("hypervisor"))) {
+        return true;
+    }
+
+    // 2. Fallback: inspect DMI product_name for known hypervisors
+    QFile dmiFile(QStringLiteral("/sys/class/dmi/id/product_name"));
+    if (dmiFile.open(QIODevice::ReadOnly)) {
+        const QString product = QString::fromUtf8(dmiFile.readAll()).trimmed().toLower();
+        if (product.contains(QLatin1String("virtualbox")) ||
+            product.contains(QLatin1String("vmware")) ||
+            product.contains(QLatin1String("qemu")) ||
+            product.contains(QLatin1String("kvm")) ||
+            product.contains(QLatin1String("bochs")) ||
+            product.contains(QLatin1String("hyper-v"))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 QString CpuInfo::recommendedProfile()
 {
-    FormFactor ff = detectedFormFactor();
-    if (ff == FormFactor::Laptop) {
+    // Virtual machines should default to system packages regardless of vCPU count
+    if (isVirtualMachine()) {
         return QStringLiteral("standard");
     }
+
+    const int threads = logicalCores();
+    const FormFactor ff = detectedFormFactor();
+
+    if (ff == FormFactor::Laptop) {
+        // Powerful laptops (8+ threads) can handle missing-only local builds; lighter laptops use system packages
+        return (threads >= 8) ? QStringLiteral("balanced") : QStringLiteral("standard");
+    }
+
     if (ff == FormFactor::Desktop) {
-        // High performance desktop if 6+ cores and modern instruction tier
-        if (logicalCores() >= 6 && isV3OrHigher()) {
+        // High-performance workstation desktop (16+ threads + x86-64-v3+): full native compilation
+        if (threads >= 16 && isV3OrHigher()) {
             return QStringLiteral("native");
         }
-        return QStringLiteral("balanced");
+        // Mid-range desktop (8-15 threads, e.g. Ryzen 5 3600/5600): compile missing only
+        if (threads >= 8) {
+            return QStringLiteral("balanced");
+        }
+        return QStringLiteral("standard");
     }
-    return QStringLiteral("balanced");
+
+    // Balanced / unknown chassis fallback
+    return (threads >= 8) ? QStringLiteral("balanced") : QStringLiteral("standard");
 }

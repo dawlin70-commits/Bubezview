@@ -13,6 +13,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QProgressBar>
+#include <QRegularExpression>
 #include <QTextEdit>
 #include <QPushButton>
 #include <QProcess>
@@ -88,7 +89,8 @@ void BuildConsoleDialog::setupUi()
     m_progressBar = new QProgressBar(this);
     m_progressBar->setFixedHeight(6);
     m_progressBar->setTextVisible(false);
-    m_progressBar->setRange(0, 0); // Indeterminate / busy
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(0);
     m_progressBar->setStyleSheet("QProgressBar { background-color: rgba(100, 116, 139, 0.2); border: none; border-radius: 3px; }"
                                  "QProgressBar::chunk { background-color: #0284c7; border-radius: 3px; }");
     mainLayout->addWidget(m_progressBar);
@@ -141,13 +143,13 @@ bool BuildConsoleDialog::startBuild()
     return startBuildForComponent(QString());
 }
 
-bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
+bool BuildConsoleDialog::launchBuildProcess(const QStringList &extraArgs)
 {
     if (isBuilding()) {
         return false;
     }
 
-    QString scriptPath = UpdateManager::instance().findInstallerScript();
+    const QString scriptPath = UpdateManager::instance().findInstallerScript();
     if (scriptPath.isEmpty()) {
         m_lblStatus->setText(tr("❌ Installer script not found."));
         m_progressBar->setRange(0, 100);
@@ -162,7 +164,8 @@ bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
     m_txtLog->clear();
     m_txtLog->append(tr(">>> Starting compilation: %1 --cli --update\n").arg(scriptPath));
 
-    m_progressBar->setRange(0, 0);
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(5);
     m_lblStatus->setText(tr("⚙️ Configuring CMake build environment..."));
     m_btnCancel->show();
     m_btnRestart->hide();
@@ -172,6 +175,8 @@ bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
         m_process = new QProcess(this);
         m_process->setProcessChannelMode(QProcess::MergedChannels);
 #if defined(Q_OS_UNIX)
+        // Put the installer and all its spawned ninja/g++ children in a dedicated process group
+        // so terminateProcessGroup() can cleanly abort the entire tree.
         m_process->setChildProcessModifier([]() {
             ::setpgid(0, 0);
         });
@@ -182,82 +187,44 @@ bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
     }
 
     QStringList args;
-    args << "--cli" << "--update";
-    auto hwProf = BuildConfig::instance().activeHardwareProfile();
+    args << QStringLiteral("--cli") << QStringLiteral("--update");
+    const auto hwProf = BuildConfig::instance().activeHardwareProfile();
     if (hwProf != BuildConfig::HardwareProfile::SystemPackages) {
-        args << "--no-sudo";
+        args << QStringLiteral("--no-sudo");
     }
-    if (!targetName.isEmpty()) {
-        args << "--target" << targetName;
-    }
+    args.append(extraArgs);
     args.append(BuildConfig::instance().toCMakeArgs());
     m_process->start(scriptPath, args);
     return true;
 }
 
+bool BuildConsoleDialog::startBuildTarget(const QString &targetName)
+{
+    QStringList extraArgs;
+    if (!targetName.isEmpty()) {
+        extraArgs << QStringLiteral("--target") << targetName;
+    }
+    return launchBuildProcess(extraArgs);
+}
+
 bool BuildConsoleDialog::startBuildForComponent(const QString &componentId)
 {
-    if (isBuilding()) {
-        return false;
-    }
-
-    QString scriptPath = UpdateManager::instance().findInstallerScript();
-    if (scriptPath.isEmpty()) {
-        m_lblStatus->setText(tr("❌ Installer script not found."));
-        m_progressBar->setRange(0, 100);
-        m_progressBar->setValue(0);
-        m_txtLog->append(tr("[Error] Could not locate 'Install' script in system or source repository."));
-        m_btnCancel->hide();
-        m_btnClose->show();
-        return false;
-    }
-
-    m_succeeded = false;
-    m_txtLog->clear();
-    m_txtLog->append(tr(">>> Starting compilation: %1 --cli --update\n").arg(scriptPath));
-
-    m_progressBar->setRange(0, 0);
-    m_lblStatus->setText(tr("⚙️ Configuring CMake build environment..."));
-    m_btnCancel->show();
-    m_btnRestart->hide();
-    m_btnClose->hide();
-
-    if (!m_process) {
-        m_process = new QProcess(this);
-        m_process->setProcessChannelMode(QProcess::MergedChannels);
-#if defined(Q_OS_UNIX)
-        m_process->setChildProcessModifier([]() {
-            ::setpgid(0, 0);
-        });
-#endif
-        connect(m_process, &QProcess::readyReadStandardOutput, this, &BuildConsoleDialog::onReadyReadStandardOutput);
-        connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-                this, &BuildConsoleDialog::onProcessFinished);
-    }
-
-    QStringList args;
-    args << "--cli" << "--update";
-    auto hwProf = BuildConfig::instance().activeHardwareProfile();
-    if (hwProf != BuildConfig::HardwareProfile::SystemPackages) {
-        args << "--no-sudo";
-    }
-    QString normComp = componentId.trimmed().toLower();
+    QStringList extraArgs;
+    const QString normComp = componentId.trimmed().toLower();
     if (!normComp.isEmpty()) {
-        args << "--build-component" << normComp;
-        CustomSourceConfig srcCfg = BuildConfig::instance().customSourceConfig(normComp);
+        extraArgs << QStringLiteral("--build-component") << normComp;
+        const CustomSourceConfig srcCfg = BuildConfig::instance().customSourceConfig(normComp);
         if (!srcCfg.gitUrl.isEmpty()) {
-            args << "--git-url" << srcCfg.gitUrl;
+            extraArgs << QStringLiteral("--git-url") << srcCfg.gitUrl;
         }
         if (!srcCfg.branchTag.isEmpty()) {
-            args << "--git-branch" << srcCfg.branchTag;
+            extraArgs << QStringLiteral("--git-branch") << srcCfg.branchTag;
         }
         if (!srcCfg.buildFlags.isEmpty()) {
-            args << "--extra-build-flags" << srcCfg.buildFlags;
+            extraArgs << QStringLiteral("--extra-build-flags") << srcCfg.buildFlags;
         }
     }
-    args.append(BuildConfig::instance().toCMakeArgs());
-    m_process->start(scriptPath, args);
-    return true;
+    return launchBuildProcess(extraArgs);
 }
 
 bool BuildConsoleDialog::isBuilding() const
@@ -271,6 +238,40 @@ void BuildConsoleDialog::onReadyReadStandardOutput()
     QString out = QString::fromUtf8(m_process->readAllStandardOutput());
     m_txtLog->insertPlainText(out);
     m_txtLog->moveCursor(QTextCursor::End);
+
+    if (m_progressBar) {
+        // Parse deterministic CMake/Make ([ 42%]) or Ninja ([12/48]) progress so the bar
+        // advances smoothly instead of bouncing back and forth in indeterminate mode.
+        static const QRegularExpression kMakePctRx(QStringLiteral(R"(\[\s*(\d{1,3})%\])"));
+        static const QRegularExpression kNinjaFracRx(QStringLiteral(R"(\[\s*(\d+)\s*/\s*(\d+)\s*\])"));
+        int parsedPct = -1;
+        auto itPct = kMakePctRx.globalMatch(out);
+        while (itPct.hasNext()) {
+            const int v = itPct.next().captured(1).toInt();
+            if (v >= 0 && v <= 100) parsedPct = qMax(parsedPct, v);
+        }
+        if (parsedPct < 0) {
+            auto itFrac = kNinjaFracRx.globalMatch(out);
+            while (itFrac.hasNext()) {
+                const auto m = itFrac.next();
+                const int cur = m.captured(1).toInt();
+                const int tot = m.captured(2).toInt();
+                if (tot > 0 && cur >= 0 && cur <= tot) {
+                    parsedPct = qMax(parsedPct, (cur * 100) / tot);
+                }
+            }
+        }
+        if (parsedPct >= 0) {
+            const int mapped = qBound(10, 10 + (parsedPct * 88) / 100, 98);
+            if (mapped > m_progressBar->value()) {
+                m_progressBar->setValue(mapped);
+            }
+        } else if (out.contains(QLatin1String("Configuring done")) && m_progressBar->value() < 12) {
+            m_progressBar->setValue(12);
+        } else if ((out.contains(QLatin1String("Linking")) || out.contains(QLatin1String("collegamento"))) && m_progressBar->value() < 92) {
+            m_progressBar->setValue(92);
+        }
+    }
 
     if (m_lblStatus) {
         if (out.contains("Compilazione") || out.contains("Building") || out.contains("ninja")) {

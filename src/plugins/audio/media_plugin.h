@@ -21,12 +21,21 @@ public:
     explicit MediaPlugin(QObject *parent = nullptr);
     ~MediaPlugin() override = default;
 
-    QString pluginId() const override { return QStringLiteral("media"); }
-    QString displayName() const override { return tr("MPV Audio & Video Engine"); }
+    /** @copydoc ViewerPluginInterface::pluginId */
+    QString pluginId() const override { return QStringLiteral("audio"); }
+
+    /** @copydoc ViewerPluginInterface::displayName */
+    QString displayName() const override { return tr("Audio Studio (MPV)"); }
+
+    /** @copydoc ViewerPluginInterface::description */
     QString description() const override {
-        return tr("Hardware-accelerated video rendering and high-fidelity audio playback.");
+        return tr("High-fidelity 64-bit audio studio: waveform cutter, filters, pitch & channels, equalizer, and tag editor.");
     }
+
+    /** @copydoc ViewerPluginInterface::category */
     FileCategory category() const override { return FileCategory::Media; }
+
+    /** @copydoc ViewerPluginInterface::supportedExtensions */
     QStringList supportedExtensions() const override {
         return {
             // Video Formats
@@ -63,5 +72,6 @@ public:
         };
     }
 
+    /** @copydoc ViewerPluginInterface::createViewer */
     IViewerWidget *createViewer(QWidget *parent = nullptr) override;
 };

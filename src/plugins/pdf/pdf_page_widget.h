@@ -62,6 +62,7 @@ public:
     struct PageLayout {
         int pageIndex = 0;
         QRect rect;
+        QSize origSize;
         double scaleX = 1.0;
         double scaleY = 1.0;
     };
@@ -70,6 +71,14 @@ public:
      * @brief Configures continuous multi-page layout for the entire PDF document.
      */
     void setDocument(Poppler::Document *doc, double zoomFactor, bool fitToWidth, int rotationDegrees, int availWidth);
+
+    /**
+     * @brief Synchronously rescales page layout geometry to match a new viewport width
+     *        using already-cached page pixmaps (zero Poppler calls, <0.2ms), keeping
+     *        window resize / fullscreen transitions visually locked without lag.
+     * @param availWidth New available viewport width in logical pixels.
+     */
+    void fastRescaleForWidth(int availWidth);
 
     /**
      * @brief Sets the active page index (0-based) and loads its text/form interaction data.
@@ -714,6 +723,7 @@ private:
     bool m_fitToWidth = true;
     int m_rotationDegrees = 0;
     int m_availWidth = 800;
+    bool m_needsCrispRerender = false;
     int m_maxCachePages = 8;
     mutable QMap<int, QPixmap> m_pageCache;
 };

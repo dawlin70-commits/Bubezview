@@ -85,5 +85,4 @@ private:
     Qt::Edges m_resizeEdges;
     QPoint m_resizeStartPos;
     QRect m_resizeStartGeom;
-    bool m_isCursorOverridden = false;
 };

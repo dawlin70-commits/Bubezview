@@ -68,6 +68,11 @@ public:
      */
     void updateThumbnail(const QString &filePath, const QImage &image);
 
+    /**
+     * @brief Re-applies the visual stylesheet to match the active application theme.
+     */
+    void updateTheme();
+
 signals:
     /**
      * @brief Emitted when the user clicks or selects a thumbnail in the filmstrip.

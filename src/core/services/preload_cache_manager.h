@@ -9,6 +9,7 @@
 #include <QImage>
 #include <QCache>
 #include <QMutex>
+#include <QSet>
 #include <QStringList>
 #include <QThreadPool>
 #include <QRunnable>
@@ -91,12 +92,6 @@ public:
     void remove(const QString &filePath);
 
     /**
-     * @brief Checks if any PDF file is present in the sibling files list and warms up Poppler.
-     * @param siblingFiles Ordered list of files in the current folder.
-     */
-    void inspectFolderForPdfs(const QStringList &siblingFiles);
-
-    /**
      * @brief Prefetches adjacent files asynchronously in background threads.
      * @param siblingFiles Ordered list of files in the current folder.
      * @param currentIndex Index of currently viewed file.
@@ -108,23 +103,22 @@ public:
      */
     void clear();
 
-signals:
     /**
-     * @brief Emitted when a background prefetch completes for a given file.
-     * @param filePath Path of the file that was prefetched.
+     * @brief Marks an in-flight prefetch path as finished so future requests can re-evaluate it.
+     * @param filePath Absolute path of the file whose background decode completed.
      */
-    void prefetchCompleted(const QString &filePath);
+    void markPrefetchFinished(const QString &filePath);
 
 private:
     explicit PreloadCacheManager(QObject *parent = nullptr);
-    ~PreloadCacheManager() override = default;
+    ~PreloadCacheManager() override;
 
     Q_DISABLE_COPY_MOVE(PreloadCacheManager)
 
     mutable QMutex m_mutex;
     QCache<QString, CachedImageEntry> m_cache;
+    QSet<QString> m_inFlightPaths;
     int m_budgetMb;
     int m_prefetchDistance;
-    bool m_popplerWarmedUp;
     QThreadPool m_threadPool;
 };

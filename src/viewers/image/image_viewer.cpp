@@ -1,4 +1,5 @@
 #include "image_viewer.h"
+#include "core/interfaces/i_image_studio_plugin.h"
 #include "theme_manager.h"
 #include "gpu_acceleration_manager.h"
 #include "core/services/image_processor.h"
@@ -452,6 +453,9 @@ void ImageViewer::removeTransparency(const QColor &fillColor)
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) {
+        m_studioWidget->setSourceImage(m_originalImage);
+    }
     emit undoAvailabilityChanged(canUndo(), canRedo());
 }
 
@@ -485,6 +489,9 @@ void ImageViewer::updateTheme()
     if (m_canvas) {
         m_canvas->update();
     }
+    if (m_studioWidget) {
+        m_studioWidget->updateTheme();
+    }
 }
 
 void ImageViewer::setModified(bool mod)
@@ -515,6 +522,9 @@ bool ImageViewer::loadFile(const QString &filePath)
     m_fitToWindow = true;
     setModified(false);
     updateScaledPixmap();
+    if (m_studioWidget) {
+        m_studioWidget->setSourceImage(m_originalImage);
+    }
     return true;
 }
 
@@ -531,6 +541,9 @@ bool ImageViewer::loadImage(const QImage &image)
     m_fitToWindow = true;
     setModified(false);
     updateScaledPixmap();
+    if (m_studioWidget) {
+        m_studioWidget->setSourceImage(m_originalImage);
+    }
     return true;
 }
 
@@ -541,6 +554,10 @@ void ImageViewer::clear()
     m_scaledPixmap = QPixmap();
     if (m_canvas) {
         m_canvas->setPixmap(m_scaledPixmap, QSize(0, 0));
+    }
+    if (m_studioWidget) {
+        // Release the cached QImage inside the studio panel to avoid retaining memory
+        m_studioWidget->setSourceImage(QImage());
     }
     setModified(false);
 }
@@ -636,9 +653,69 @@ void ImageViewer::zoomAt(const QPoint &viewportPos, double factor)
     emit zoomChanged(m_zoomFactor);
 }
 
+void ImageViewer::attachStudioWidget(IImageStudioWidget *studioWidget)
+{
+    if (!studioWidget || m_studioWidget == studioWidget) return;
+
+    // Cleanly detach and dispose any previously attached studio panel before replacing it
+    if (m_studioWidget) {
+        if (auto *hLay = qobject_cast<QHBoxLayout*>(layout())) {
+            hLay->removeWidget(m_studioWidget);
+        }
+        m_studioWidget->hide();
+        m_studioWidget->deleteLater();
+        m_studioWidget = nullptr;
+    }
+
+    m_studioWidget = studioWidget;
+    m_studioWidget->setParent(this);
+    m_studioWidget->setOnApplyImage([this](const QImage &img) {
+        applyModifiedImage(img);
+    });
+    m_studioWidget->setOnRequestCrop([this]() {
+        setCropModeActive(!isCropModeActive());
+    });
+    m_studioWidget->setOnRequestRotate([this](bool cw) {
+        if (cw) rotateClockwise();
+        else rotateCounterClockwise();
+    });
+    m_studioWidget->setOnRequestFlip([this](bool horizontal) {
+        if (horizontal) flipHorizontal();
+        else flipVertical();
+    });
+    m_studioWidget->setOnRequestRemoveTransparency([this]() {
+        removeTransparency(Qt::white);
+    });
+    if (auto *hLay = qobject_cast<QHBoxLayout*>(layout())) {
+        hLay->addWidget(m_studioWidget);
+    }
+    m_studioWidget->updateTheme();
+    m_studioWidget->setSourceImage(m_originalImage);
+    m_studioWidget->setVisible(m_isEditMode);
+}
+
+void ImageViewer::detachStudioWidget()
+{
+    if (!m_studioWidget) return;
+    if (auto *hLay = qobject_cast<QHBoxLayout*>(layout())) {
+        hLay->removeWidget(m_studioWidget);
+    }
+    m_studioWidget->hide();
+    // Synchronous delete is required so all plugin vtables are destroyed before dlclose()
+    delete m_studioWidget;
+    m_studioWidget = nullptr;
+}
+
 void ImageViewer::setEditMode(bool editMode)
 {
     m_isEditMode = editMode;
+    if (m_studioWidget) {
+        if (editMode) {
+            m_studioWidget->setSourceImage(m_originalImage);
+            m_studioWidget->updateTheme();
+        }
+        m_studioWidget->setVisible(editMode);
+    }
     if (!editMode) {
         cancelCropMode();
         if (m_canvas) {
@@ -660,6 +737,7 @@ void ImageViewer::rotateClockwise()
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
 }
 
 void ImageViewer::rotateCounterClockwise()
@@ -672,6 +750,7 @@ void ImageViewer::rotateCounterClockwise()
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
 }
 
 void ImageViewer::flipHorizontal()
@@ -682,6 +761,7 @@ void ImageViewer::flipHorizontal()
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
 }
 
 void ImageViewer::flipVertical()
@@ -692,6 +772,7 @@ void ImageViewer::flipVertical()
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
 }
 
 void ImageViewer::invertColors()
@@ -702,6 +783,7 @@ void ImageViewer::invertColors()
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
 }
 
 void ImageViewer::updateScaledPixmap()
@@ -915,6 +997,7 @@ void ImageViewer::undo()
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
     emit undoAvailabilityChanged(canUndo(), canRedo());
 }
 
@@ -926,6 +1009,87 @@ void ImageViewer::redo()
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
+    emit undoAvailabilityChanged(canUndo(), canRedo());
+}
+
+QList<PdfHistoryStep> ImageViewer::historySteps() const
+{
+    QList<PdfHistoryStep> steps;
+    if (m_originalImage.isNull()) return steps;
+
+    auto makeThumb = [](const QImage &img) -> QPixmap {
+        if (img.isNull()) return QPixmap();
+        return QPixmap::fromImage(img.scaled(160, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    };
+
+    const QDateTime now = QDateTime::currentDateTime();
+    int idx = 0;
+
+    // 1. Past undo states (chronological oldest -> newest)
+    for (int i = 0; i < m_undoStack.size(); ++i) {
+        PdfHistoryStep st;
+        st.index = idx++;
+        st.description = (i == 0) ? tr("Original Image") : tr("Edit #%1").arg(i);
+        st.timestamp = now;
+        st.thumbnail = makeThumb(m_undoStack.at(i));
+        st.isCurrent = false;
+        steps.append(st);
+    }
+
+    // 2. Current active image state
+    {
+        PdfHistoryStep cur;
+        cur.index = idx++;
+        cur.description = m_undoStack.isEmpty() ? tr("Original Image") : tr("Current State");
+        cur.timestamp = now;
+        cur.thumbnail = makeThumb(m_originalImage);
+        cur.isCurrent = true;
+        steps.append(cur);
+    }
+
+    // 3. Future redo states (top of redoStack is next step)
+    for (int i = m_redoStack.size() - 1; i >= 0; --i) {
+        PdfHistoryStep st;
+        st.index = idx++;
+        st.description = tr("Redo #%1").arg(m_undoStack.size() + (m_redoStack.size() - i));
+        st.timestamp = now;
+        st.thumbnail = makeThumb(m_redoStack.at(i));
+        st.isCurrent = false;
+        steps.append(st);
+    }
+
+    return steps;
+}
+
+void ImageViewer::restoreHistoryStep(int index)
+{
+    if (m_originalImage.isNull()) return;
+    const int curIdx = m_undoStack.size();
+    const int total = m_undoStack.size() + 1 + m_redoStack.size();
+    if (index < 0 || index >= total || index == curIdx) return;
+
+    // Build unified chronological list, then split around target index
+    QList<QImage> timeline;
+    timeline.reserve(total);
+    for (const QImage &img : m_undoStack) timeline.append(img);
+    timeline.append(m_originalImage);
+    for (int i = m_redoStack.size() - 1; i >= 0; --i) timeline.append(m_redoStack.at(i));
+
+    m_undoStack.clear();
+    for (int i = 0; i < index; ++i) {
+        m_undoStack.append(timeline.at(i));
+    }
+    m_originalImage = timeline.at(index);
+    m_redoStack.clear();
+    for (int i = total - 1; i > index; --i) {
+        m_redoStack.append(timeline.at(i));
+    }
+
+    m_scaledPixmap = QPixmap();
+    setModified(index != 0);
+    updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
     emit undoAvailabilityChanged(canUndo(), canRedo());
 }
 
@@ -945,6 +1109,7 @@ void ImageViewer::resizeImage(int newWidth, int newHeight, Qt::TransformationMod
 
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
     emit zoomChanged(m_zoomFactor);
 }
 
@@ -975,6 +1140,7 @@ void ImageViewer::adjustImage(int brightness, int contrast, int saturation,
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
 }
 
 void ImageViewer::applyCrop(const QRect &cropRect)
@@ -988,6 +1154,7 @@ void ImageViewer::applyCrop(const QRect &cropRect)
     m_scaledPixmap = QPixmap();
     setModified(true);
     updateScaledPixmap();
+    if (m_studioWidget) m_studioWidget->setSourceImage(m_originalImage);
 }
 
 void ImageViewer::setCropModeActive(bool active)

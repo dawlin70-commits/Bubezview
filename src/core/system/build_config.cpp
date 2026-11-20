@@ -150,7 +150,6 @@ QStringList BuildConfig::toCMakeArgs() const
     args << QString("-DSTATIC_OFFICE=%1").arg(m_staticOffice ? "ON" : "OFF");
     if (!m_customCompilerFlags.trimmed().isEmpty()) {
         args << QString("-DCUSTOM_CXX_FLAGS=%1").arg(m_customCompilerFlags.trimmed());
-        args << QString("-DCMAKE_CXX_FLAGS=%1").arg(m_customCompilerFlags.trimmed());
     }
     return args;
 }
@@ -164,43 +163,43 @@ CustomSourceConfig BuildConfig::defaultSourceConfig(const QString &componentId)
     if (id == "poppler" || id == "engine-poppler" || id == "poppler-qt6") {
         cfg.gitUrl = "https://gitlab.freedesktop.org/poppler/poppler.git";
         cfg.branchTag = "poppler-26.08.0";
-        cfg.buildFlags = "-DENABLE_QT6=ON -DENABLE_QT5=OFF -DENABLE_GLIB=OFF -DENABLE_CPP=OFF -DENABLE_BOOST=OFF -DENABLE_UTILS=ON -DENABLE_NSS3=OFF -DENABLE_GPGME=OFF -DENABLE_LIBCURL=OFF -DBUILD_QT6_TESTS=OFF -DBUILD_CPP_TESTS=OFF -DBUILD_MANUAL_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe -include cstdint\"";
+        cfg.buildFlags = "-DENABLE_QT6=ON -DENABLE_QT5=OFF -DENABLE_GLIB=OFF -DENABLE_CPP=OFF -DENABLE_BOOST=OFF -DENABLE_UTILS=ON -DENABLE_NSS3=OFF -DENABLE_GPGME=OFF -DENABLE_LIBCURL=OFF -DBUILD_QT6_TESTS=OFF -DBUILD_CPP_TESTS=OFF -DBUILD_MANUAL_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -mcrc32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe -include cstdint\"";
     } else if (id == "tesseract" || id == "ocr" || id == "tesseract-ocr") {
         cfg.gitUrl = "https://github.com/tesseract-ocr/tesseract.git";
         cfg.branchTag = "5.4.1";
-        cfg.buildFlags = "-DBUILD_TRAINEDDATA=OFF -DBUILD_TRAINING_TOOLS=OFF -DBUILD_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe -include cstdint\"";
+        cfg.buildFlags = "-DBUILD_TRAINEDDATA=OFF -DBUILD_TRAINING_TOOLS=OFF -DBUILD_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -flto=auto -fomit-frame-pointer -pipe -include cstdint\"";
     } else if (id == "qpdf") {
         cfg.gitUrl = "https://github.com/qpdf/qpdf.git";
         cfg.branchTag = "v11.9.1";
-        cfg.buildFlags = "-DBUILD_STATIC_LIBS=OFF -DBUILD_DOC=OFF -DREQUIRE_CRYPTO_OPENSSL=ON -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -pipe -include cstdint\"";
+        cfg.buildFlags = "-DBUILD_STATIC_LIBS=OFF -DBUILD_DOC=OFF -DREQUIRE_CRYPTO_OPENSSL=ON -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -flto=auto -fomit-frame-pointer -pipe -include cstdint\"";
     } else if (id == "7zip" || id == "7z" || id == "7zz") {
         cfg.gitUrl = "https://github.com/ip7z/7zip.git";
         cfg.branchTag = "24.08";
-        cfg.buildFlags = "-O3 -march=native -mcrc32 -funroll-loops -falign-loops=32 -flto -fomit-frame-pointer -pipe";
+        cfg.buildFlags = "-O3 -march=native -mcrc32 -flto -fomit-frame-pointer -pipe";
     } else if (id == "zstd") {
         cfg.gitUrl = "https://github.com/facebook/zstd.git";
         cfg.branchTag = "v1.5.6";
-        cfg.buildFlags = "-DZSTD_BUILD_PROGRAMS=ON -DZSTD_BUILD_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -pipe\"";
+        cfg.buildFlags = "-DZSTD_BUILD_PROGRAMS=ON -DZSTD_BUILD_TESTS=OFF -DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -flto=auto -pipe\"";
     } else if (id == "xz") {
         cfg.gitUrl = "https://github.com/tukaani-project/xz.git";
         cfg.branchTag = "v5.6.2";
-        cfg.buildFlags = "-DBUILD_TESTING=OFF -DCMAKE_C_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -falign-loops=32 -flto=auto -pipe\"";
+        cfg.buildFlags = "-DBUILD_TESTING=OFF -DCMAKE_C_FLAGS_RELEASE=\"-O3 -march=native -flto=auto -pipe\"";
     } else if (id == "libarchive" || id == "engine-libarchive" || id == "archive") {
         cfg.gitUrl = "https://github.com/libarchive/libarchive.git";
         cfg.branchTag = "v3.7.4";
-        cfg.buildFlags = "-DENABLE_TEST=OFF -DENABLE_TAR=OFF -DENABLE_CPIO=OFF -DENABLE_CAT=OFF -DCMAKE_C_FLAGS_RELEASE=\"-O3 -march=native -mcrc32 -fno-strict-aliasing -funroll-loops -falign-loops=32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe\"";
+        cfg.buildFlags = "-DENABLE_TEST=OFF -DENABLE_TAR=OFF -DENABLE_CPIO=OFF -DENABLE_CAT=OFF -DCMAKE_C_FLAGS_RELEASE=\"-O3 -march=native -mcrc32 -flto=auto -fomit-frame-pointer -fno-semantic-interposition -pipe\"";
     } else if (id == "librevenge" || id == "office" || id == "engine-office") {
         cfg.gitUrl = "https://git.code.sf.net/p/librevenge/git";
         cfg.branchTag = "master";
     } else if (id == "image-formats" || id == "qtimageformats" || id == "qt6-imageformats" || id == "qt6-image-formats-plugins") {
         cfg.gitUrl = "https://github.com/qt/qtimageformats.git";
         cfg.branchTag = "v6.8.0";
-        cfg.buildFlags = "-DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -flto=auto -pipe\"";
+        cfg.buildFlags = "-DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -flto=auto -pipe\"";
     } else {
         // Safe default: leave URL empty so invalid components do not falsely inherit tesseract-ocr
         cfg.gitUrl = QString();
         cfg.branchTag = QStringLiteral("main");
-        cfg.buildFlags = QStringLiteral("-DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -funroll-loops -flto=auto -pipe\"");
+        cfg.buildFlags = QStringLiteral("-DCMAKE_CXX_FLAGS_RELEASE=\"-O3 -march=native -flto=auto -pipe\"");
     }
     return cfg;
 }
@@ -968,8 +967,14 @@ bool BuildConfig::hasSourceBinary(const QString &componentId)
         if (checkPluginExists("bubez_pdf.so")) return true;
     } else if (id == "engine-libarchive" || id == "libarchive" || id == "archive") {
         if (checkPluginExists("bubez_archive.so")) return true;
-    } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media") {
-        if (checkPluginExists("bubez_media.so")) return true;
+    } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media" || id == "audio" || id == "engine-audio") {
+        if (checkPluginExists("bubez_audio.so") || checkPluginExists("bubez_media.so")) return true;
+    } else if (id == "engine-video" || id == "video" || id == "video-studio") {
+        return checkPluginExists("bubez_video.so");
+    } else if (id == "engine-folder" || id == "folder" || id == "folder-studio") {
+        return checkPluginExists("bubez_folder.so");
+    } else if (id == "engine-image" || id == "image" || id == "image-studio") {
+        return checkPluginExists("bubez_image.so");
     } else if (id == "office" || id == "engine-office" || id == "librevenge") {
         return instance().staticOffice() || instance().enableInternalOffice();
     }
@@ -1202,11 +1207,18 @@ bool BuildConfig::removeLocalSourceBuild(const QString &componentId)
         instance().setStaticArchive(false);
         PluginManager::instance().unloadPlugin(FileCategory::Archive);
         PluginManager::instance().unloadPlugin("archive");
-    } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media") {
+    } else if (id == "engine-mpv" || id == "mpv" || id == "libmpv" || id == "media" || id == "audio" || id == "engine-audio") {
+        removePluginFiles("bubez_audio.so");
         removePluginFiles("bubez_media.so");
         removeExecutables({"mpv"});
         PluginManager::instance().unloadPlugin(FileCategory::Media);
-        PluginManager::instance().unloadPlugin("media");
+        PluginManager::instance().unloadPlugin("audio");
+    } else if (id == "engine-video" || id == "video" || id == "video-studio") {
+        PluginManager::instance().uninstallStudioModule(QStringLiteral("video"));
+    } else if (id == "engine-folder" || id == "folder" || id == "folder-studio") {
+        PluginManager::instance().uninstallStudioModule(QStringLiteral("folder"));
+    } else if (id == "engine-image" || id == "image" || id == "image-studio") {
+        PluginManager::instance().uninstallStudioModule(QStringLiteral("image"));
     } else if (id == "poppler-data") {
         QDir popDir(home + "/.local/share/poppler");
         if (popDir.exists()) popDir.removeRecursively();

@@ -4,7 +4,7 @@
  */
 
 #include "pdf_plugin.h"
-#include "viewers/pdf/pdf_viewer.h"
+#include "pdf_viewer.h"
 
 PdfPlugin::PdfPlugin(QObject *parent)
     : QObject(parent)

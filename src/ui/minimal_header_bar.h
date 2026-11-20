@@ -132,7 +132,6 @@ public:
     QToolButton *quickUndoButton() const { return m_btnQuickUndo; }
     QToolButton *historyButton() const { return m_btnHistory; }
     QToolButton *historyTimelineButton() const { return m_btnHistory; }
-    QMenu *historyMenu() const { return m_menuHistory; }
     PdfHistoryWidget *historyWidget() const { return m_historyWidget; }
     void setHistorySteps(const QList<PdfHistoryStep> &steps);
     void showHistoryDialog();
@@ -140,7 +139,6 @@ public:
     QToolButton *trashButton() const { return m_btnTrash; }
     QToolButton *saveExportButton() const { return m_btnExport; }
     QPushButton *pdfTextButton() const { return m_btnPdfText; }
-    QPushButton *pdfHighlightButton() const { return m_btnPdfHighlight; }
     QToolButton *pdfShapesButton() const { return m_btnPdfShapes; }
     QToolButton *pdfSignButton() const { return m_btnPdfSign; }
     QToolButton *pdfPagesButton() const { return m_btnPdfPages; }
@@ -193,6 +191,12 @@ public:
      * @param available True if the loaded media file is audio-only.
      */
     void setAudioWorkspaceToolsAvailable(bool available);
+
+    /**
+     * @brief Updates the active check state in the Folder Studio capsule bar.
+     * @param index Active tool index (0=Duplicates, 1=Recovery, 2=Organize, 3=Batch).
+     */
+    void setActiveFolderStudioTool(int index);
 
 signals:
     void prevRequested();
@@ -303,6 +307,9 @@ signals:
     void audioTagsRequested();
     void audioSummaryRequested();
 
+    // Folder Studio (0=Duplicates, 1=Recovery, 2=Organize, 3=Batch)
+    void folderStudioToolRequested(int toolIndex);
+
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -317,7 +324,6 @@ private:
     void setupEditTools();
     void setupPageOrganizerTools();
     void updateButtonStyles();
-    void updateTrafficLightIcons(bool hovered);
     void updateContextualToolsVisibility();
     void updateDisplayTitle();
     void startCenterTransition(int targetIndex);
@@ -327,7 +333,6 @@ private:
     bool m_editMode = false;
     bool m_pageOrganizerMode = false;
     bool m_windowControlsVisible = true;
-    bool m_trafficLightsHovered = false;
     bool m_isDragging = false;
     QPoint m_dragStartPosition;
     QPoint m_windowStartPosition;
@@ -378,31 +383,17 @@ private:
     QToolButton *m_btnOfficeSavePdf = nullptr;
     QToolButton *m_btnOfficeExtractImages = nullptr;
 
-    // PDF Clean 5-Pill Editing Cluster
+    // PDF Clean Editing Cluster
     QPushButton *m_btnPdfText = nullptr;
-    QPushButton *m_btnPdfHighlight = nullptr;
+    bool m_pdfHighlightActive = false;
     QToolButton *m_btnPdfShapes = nullptr;
     QToolButton *m_btnPdfSign = nullptr;
     QToolButton *m_btnPdfPages = nullptr;
 
-    // PDF Menus
-    QMenu *m_menuHistory = nullptr;
+    // PDF Menus & History
     PdfHistoryWidget *m_historyWidget = nullptr;
     QMenu *m_menuShapes = nullptr;
     QMenu *m_menuSignature = nullptr;
-    QMenu *m_menuPages = nullptr;
-    QMenu *m_menuExport = nullptr;
-    QAction *m_actPagesRepair = nullptr;
-
-    // PDF Legacy Tool Buttons (preserved for compatibility)
-    QPushButton *m_btnPdfStudio = nullptr;
-    QToolButton *m_btnPdfSelectArea = nullptr;
-    QToolButton *m_btnPdfDraw = nullptr;
-    QToolButton *m_btnPdfType = nullptr;
-    QToolButton *m_btnPdfShape = nullptr;
-    QToolButton *m_btnPdfStamp = nullptr;
-    QToolButton *m_btnPdfRedact = nullptr;
-    QToolButton *m_btnPdfRepair = nullptr;
 
     // Page Organizer Bar Controls (unified single header bar)
     QWidget *m_pageOrganizerToolContainer = nullptr;
@@ -434,6 +425,13 @@ private:
     QPushButton *m_btnAudSummary = nullptr;
     class QButtonGroup *m_audToolsGroup = nullptr;
 
+    // Folder Studio Tool Buttons (0=Duplicates, 1=Recovery, 2=Organize, 3=Batch)
+    QPushButton *m_btnFldDuplicates = nullptr;
+    QPushButton *m_btnFldRecovery = nullptr;
+    QPushButton *m_btnFldOrganize = nullptr;
+    QPushButton *m_btnFldBatch = nullptr;
+    class QButtonGroup *m_fldToolsGroup = nullptr;
+
     QToolButton *m_btnSearch = nullptr;
     QToolButton *m_btnZoom = nullptr;
     QToolButton *m_btnRotate = nullptr;
@@ -455,11 +453,8 @@ private:
     QPushButton *m_btnEdit = nullptr;
 
     // Separators between functional tool clusters
-    QFrame *m_sepPdf1 = nullptr;
-    QFrame *m_sepPdf2 = nullptr;
     QFrame *m_sepImg1 = nullptr;
     QFrame *m_sepImg2 = nullptr;
     QFrame *m_sepOffice1 = nullptr;
-    QFrame *m_sepExport = nullptr;
     QFrame *m_sepArc1 = nullptr;
 };

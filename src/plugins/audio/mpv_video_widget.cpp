@@ -2,6 +2,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLContext>
 #include <QGuiApplication>
+#include <QCoreApplication>
 #include <QVBoxLayout>
 #include <QMetaObject>
 #include <mpv/render_gl.h>
@@ -43,6 +44,9 @@ public:
     void cleanup()
     {
         if (m_mpvGL) {
+            // Unregister update callback first so libmpv worker threads cannot post events during teardown
+            mpv_render_context_set_update_callback(m_mpvGL, nullptr, nullptr);
+            QCoreApplication::removePostedEvents(this);
             if (isValid() && context()) {
                 makeCurrent();
                 mpv_render_context_free(m_mpvGL);

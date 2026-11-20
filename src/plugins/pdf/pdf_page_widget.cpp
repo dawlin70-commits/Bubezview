@@ -208,7 +208,8 @@ void PdfPageWidget::clear()
 
 void PdfPageWidget::setDocument(Poppler::Document *doc, double zoomFactor, bool fitToWidth, int rotationDegrees, int availWidth)
 {
-    const bool sameParams = (m_doc == doc &&
+    const bool sameParams = (!m_needsCrispRerender &&
+                             m_doc == doc &&
                              qFuzzyCompare(m_zoomFactor, zoomFactor) &&
                              m_fitToWidth == fitToWidth &&
                              m_rotationDegrees == rotationDegrees &&
@@ -223,6 +224,7 @@ void PdfPageWidget::setDocument(Poppler::Document *doc, double zoomFactor, bool 
     m_fitToWidth = fitToWidth;
     m_rotationDegrees = rotationDegrees;
     m_availWidth = availWidth;
+    m_needsCrispRerender = false;
 
     m_pageLayouts.clear();
     m_pageCache.clear();
@@ -275,6 +277,7 @@ void PdfPageWidget::setDocument(Poppler::Document *doc, double zoomFactor, bool 
         PageLayout pl;
         pl.pageIndex = i;
         pl.rect = QRect(0, currentY, pw, ph);
+        pl.origSize = origSize;
         pl.scaleX = scaleX;
         pl.scaleY = scaleY;
 
@@ -296,6 +299,47 @@ void PdfPageWidget::setDocument(Poppler::Document *doc, double zoomFactor, bool 
     }
 
     refreshActivePageData();
+    update();
+}
+
+void PdfPageWidget::fastRescaleForWidth(int availWidth)
+{
+    if (!m_doc || !m_fitToWidth || m_pageLayouts.isEmpty() || availWidth < 80 || m_availWidth == availWidth) {
+        return;
+    }
+
+    m_availWidth = availWidth;
+    m_needsCrispRerender = true;
+
+    int maxPageW = 0;
+    int currentY = 12;
+    const int pageSpacing = 16;
+
+    for (auto &pl : m_pageLayouts) {
+        if (pl.origSize.width() <= 0 || pl.origSize.height() <= 0) continue;
+
+        double targetDpi = (static_cast<double>(availWidth) / pl.origSize.width()) * 72.0;
+        double dpi = std::max(20.0, std::min(400.0, targetDpi * m_zoomFactor));
+        double scale = dpi / 72.0;
+
+        int pw = qRound(pl.origSize.width() * scale);
+        int ph = qRound(pl.origSize.height() * scale);
+        if (pw > maxPageW) maxPageW = pw;
+
+        pl.rect = QRect(0, currentY, pw, ph);
+        pl.scaleX = scale;
+        pl.scaleY = scale;
+        currentY += ph + pageSpacing;
+    }
+
+    int totalW = std::max(maxPageW + 24, availWidth);
+    for (auto &pl : m_pageLayouts) {
+        int x = (totalW - pl.rect.width()) / 2;
+        pl.rect.moveLeft(std::max(12, x));
+    }
+
+    int totalH = currentY + 16;
+    setFixedSize(totalW, totalH);
     update();
 }
 
@@ -2784,7 +2828,7 @@ void PdfPageWidget::paintEvent(QPaintEvent *event)
         painter.setClipPath(pageClipPath);
         painter.fillRect(pageR, Qt::white);
         if (!px.isNull()) {
-            painter.drawPixmap(pageR.topLeft(), px);
+            painter.drawPixmap(pageR, px);
         }
         painter.restore();
 

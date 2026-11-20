@@ -4,6 +4,7 @@
  */
 
 #include "system_media_viewer.h"
+#include "core/interfaces/i_video_studio_plugin.h"
 #include "ui/vector_icons.h"
 #include "core/audio/audio_processor.h"
 #include <QFileInfo>
@@ -132,12 +133,18 @@ SystemMediaViewer::~SystemMediaViewer()
 
 void SystemMediaViewer::setupUi()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    m_rootSplitLayout = new QHBoxLayout(this);
+    m_rootSplitLayout->setContentsMargins(0, 0, 0, 0);
+    m_rootSplitLayout->setSpacing(0);
+
+    auto *playerColumn = new QWidget(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(playerColumn);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
+    m_rootSplitLayout->addWidget(playerColumn, 1);
 
     // 1. Central Canvas Container
-    m_canvasContainer = new QWidget(this);
+    m_canvasContainer = new QWidget(playerColumn);
     m_canvasContainer->setStyleSheet("background-color: #0b0f19;");
     QVBoxLayout *canvasLayout = new QVBoxLayout(m_canvasContainer);
     canvasLayout->setContentsMargins(0, 0, 0, 0);
@@ -648,6 +655,9 @@ bool SystemMediaViewer::loadFile(const QString &filePath)
     m_currentPositionMs = 0;
 
     // Cleanly stop any previous media pipeline before switching sources
+    if (m_videoStudioWidget) {
+        m_videoStudioWidget->cancelActiveOperations();
+    }
     if (m_player) {
         m_player->stop();
         m_player->setSource(QUrl());
@@ -888,6 +898,23 @@ bool SystemMediaViewer::loadFile(const QString &filePath)
         }
     }
 
+    if (m_btnProMode) {
+        // Pro Mode promotes audio playback to the libmpv Audio Studio; hide on video files
+        // which use the modular Video Studio (bubez_video.so) via Edit Mode instead.
+        m_btnProMode->setVisible(m_isAudioOnly);
+    }
+
+    if (m_videoStudioWidget) {
+        if (m_isAudioOnly) {
+            m_videoStudioWidget->setTargetVideo(QString(), 0);
+            m_videoStudioWidget->setVisible(false);
+        } else {
+            m_videoStudioWidget->setTargetVideo(m_currentFilePath, m_durationMs);
+            m_videoStudioWidget->setPlaybackPosition(0, m_durationMs);
+            m_videoStudioWidget->setVisible(m_isEditMode);
+        }
+    }
+
     if (m_sliderPosition) {
         QSignalBlocker blocker(m_sliderPosition);
         m_sliderPosition->setRange(0, static_cast<int>(m_durationMs));
@@ -908,6 +935,11 @@ bool SystemMediaViewer::loadFile(const QString &filePath)
 
 void SystemMediaViewer::clear()
 {
+    if (m_videoStudioWidget) {
+        m_videoStudioWidget->cancelActiveOperations();
+        m_videoStudioWidget->setTargetVideo(QString(), 0);
+        m_videoStudioWidget->setVisible(false);
+    }
     stop();
     if (m_player) {
         m_player->setSource(QUrl());
@@ -1104,6 +1136,66 @@ void SystemMediaViewer::updateTheme()
     updateAutoAdvanceUi();
     if (m_isAudioOnly) {
         updateAudioResponsiveLayout();
+    }
+    if (m_videoStudioWidget) {
+        m_videoStudioWidget->updateTheme();
+    }
+}
+
+void SystemMediaViewer::attachVideoStudioWidget(IVideoStudioWidget *studioWidget)
+{
+    if (!studioWidget || m_videoStudioWidget == studioWidget) return;
+
+    // Cleanly detach and dispose any previously attached studio panel before replacing it
+    if (m_videoStudioWidget) {
+        m_videoStudioWidget->cancelActiveOperations();
+        if (m_rootSplitLayout) {
+            m_rootSplitLayout->removeWidget(m_videoStudioWidget);
+        }
+        m_videoStudioWidget->hide();
+        m_videoStudioWidget->deleteLater();
+        m_videoStudioWidget = nullptr;
+    }
+
+    m_videoStudioWidget = studioWidget;
+    m_videoStudioWidget->setParent(this);
+    if (m_rootSplitLayout) {
+        m_rootSplitLayout->addWidget(m_videoStudioWidget);
+    }
+    m_videoStudioWidget->updateTheme();
+    if (!m_isAudioOnly && !m_currentFilePath.isEmpty()) {
+        m_videoStudioWidget->setTargetVideo(m_currentFilePath, m_durationMs);
+        m_videoStudioWidget->setPlaybackPosition(m_currentPositionMs, m_durationMs);
+    }
+    m_videoStudioWidget->setVisible(m_isEditMode && !m_isAudioOnly);
+}
+
+void SystemMediaViewer::detachVideoStudioWidget()
+{
+    if (!m_videoStudioWidget) return;
+    m_videoStudioWidget->cancelActiveOperations();
+    if (m_rootSplitLayout) {
+        m_rootSplitLayout->removeWidget(m_videoStudioWidget);
+    }
+    m_videoStudioWidget->hide();
+    // Synchronous delete is required so all plugin vtables are destroyed before dlclose()
+    delete m_videoStudioWidget;
+    m_videoStudioWidget = nullptr;
+}
+
+void SystemMediaViewer::setEditMode(bool editMode)
+{
+    m_isEditMode = editMode;
+    if (m_videoStudioWidget) {
+        if (editMode && !m_isAudioOnly) {
+            m_videoStudioWidget->setTargetVideo(m_currentFilePath, m_durationMs);
+            m_videoStudioWidget->setPlaybackPosition(m_currentPositionMs, m_durationMs);
+            m_videoStudioWidget->updateTheme();
+            m_videoStudioWidget->setVisible(true);
+        } else {
+            m_videoStudioWidget->cancelActiveOperations();
+            m_videoStudioWidget->setVisible(false);
+        }
     }
 }
 
@@ -1403,6 +1495,9 @@ void SystemMediaViewer::onPositionChanged(qint64 position)
     if (m_waveformScrubber) {
         m_waveformScrubber->setPlaybackPosition(position, m_durationMs);
     }
+    if (m_videoStudioWidget && m_videoStudioWidget->isVisible()) {
+        m_videoStudioWidget->setPlaybackPosition(position, m_durationMs);
+    }
 
     const qint64 currentSec = position / 1000;
     if (currentSec != m_lastReportedSec || position == 0) {
@@ -1421,6 +1516,9 @@ void SystemMediaViewer::onDurationChanged(qint64 duration)
     }
     if (m_waveformScrubber) {
         m_waveformScrubber->setPlaybackPosition(m_currentPositionMs, duration);
+    }
+    if (m_videoStudioWidget && !m_isAudioOnly) {
+        m_videoStudioWidget->setPlaybackPosition(m_currentPositionMs, duration);
     }
     updateTimeLabel(m_currentPositionMs, duration);
 }

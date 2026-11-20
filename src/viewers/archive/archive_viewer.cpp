@@ -2,6 +2,7 @@
 #include "theme_manager.h"
 #include "build_config.h"
 #include "package_manager_helper.h"
+#include "frameless_dialog.h"
 #include <archive.h>
 #include <archive_entry.h>
 #include <QLabel>
@@ -27,7 +28,9 @@
 #include <QDirIterator>
 #include <QDialog>
 #include <QComboBox>
+#include <QListView>
 #include <QListWidget>
+#include <QShortcut>
 #include <QCheckBox>
 #include <QGroupBox>
 #include <QFormLayout>
@@ -3163,13 +3166,36 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
     if (outOpenWhenDone) *outOpenWhenDone = false;
 
     QWidget *uiParent = parentWidget ? parentWidget : this;
-    QDialog dlg(uiParent);
+    FramelessDialog dlg(uiParent);
     dlg.setWindowTitle(tr("📦 Compress / Create Archive"));
-    dlg.setMinimumWidth(560);
-    dlg.setMinimumHeight(480);
+    dlg.resize(620, 560);
+    dlg.setMinimumSize(540, 490);
 
-    QVBoxLayout *mainLay = new QVBoxLayout(&dlg);
-    mainLay->setContentsMargins(16, 16, 16, 16);
+    const bool isDark = ThemeManager::isDarkTheme();
+    const QString textCol = isDark ? QStringLiteral("#f1f5f9") : QStringLiteral("#0f172a");
+    const QString subCol = isDark ? QStringLiteral("#94a3b8") : QStringLiteral("#64748b");
+    const QString cardBg = isDark ? QStringLiteral("rgba(255, 255, 255, 0.04)") : QStringLiteral("rgba(15, 23, 42, 0.03)");
+    const QString inputBg = isDark ? QStringLiteral("rgba(15, 20, 30, 0.72)") : QStringLiteral("#ffffff");
+    const QString btnBg = isDark ? QStringLiteral("rgba(255, 255, 255, 0.08)") : QStringLiteral("rgba(15, 23, 42, 0.06)");
+    const QString btnHover = isDark ? QStringLiteral("rgba(255, 255, 255, 0.14)") : QStringLiteral("rgba(15, 23, 42, 0.12)");
+    const QString borderCol = isDark ? QStringLiteral("rgba(255, 255, 255, 0.14)") : QStringLiteral("rgba(15, 23, 42, 0.15)");
+
+    dlg.setStyleSheet(QStringLiteral(
+        "QGroupBox { color: %1; font-weight: 600; font-size: 12px; background: %3; border: 1px solid %7; border-radius: 10px; margin-top: 12px; padding: 14px 12px 10px 12px; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 6px; color: %2; }"
+        "QLabel, QCheckBox { color: %1; background: transparent; font-size: 12px; }"
+        "QLineEdit { background: %4; color: %1; border: 1px solid %7; border-radius: 8px; padding: 6px 10px; min-height: 22px; }"
+        "QLineEdit:focus { border-color: #38bdf8; }"
+        "QComboBox { background: %4; color: %1; border: 1px solid %7; border-radius: 8px; padding: 5px 26px 5px 10px; min-height: 24px; }"
+        "QComboBox::drop-down { border: none; width: 24px; }"
+        "QListWidget { background: %4; color: %1; border: 1px solid %7; border-radius: 8px; padding: 4px; }"
+        "QListWidget::item { border-radius: 6px; margin: 1px 0; }"
+        "QPushButton { background: %5; color: %1; border: 1px solid %7; border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 12px; }"
+        "QPushButton:hover { background: %6; border-color: #38bdf8; }"
+    ).arg(textCol, subCol, cardBg, inputBg, btnBg, btnHover, borderCol));
+
+    QVBoxLayout *mainLay = dlg.contentLayout();
+    mainLay->setContentsMargins(4, 4, 4, 4);
     mainLay->setSpacing(12);
 
     // 1. Quick Preset Selector (Current File vs Entire Current Folder)
@@ -3184,9 +3210,11 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
 
     QListWidget *listWidget = new QListWidget(&dlg);
     listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    listWidget->setAlternatingRowColors(true);
+    listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    listWidget->setMinimumHeight(130);
 
     QComboBox *cmbFormat = new QComboBox(&dlg);
+    cmbFormat->setView(new QListView(cmbFormat));
     cmbFormat->addItem(tr("ZIP (.zip) — Universal & Compatible (Multi-Core)"), QStringLiteral("zip"));
     cmbFormat->addItem(tr("TAR.GZ (.tar.gz) — Standard Linux Gzip (Multi-Core)"), QStringLiteral("tar.gz"));
     cmbFormat->addItem(tr("TAR.XZ (.tar.xz) — High Compression XZ (Multi-Core)"), QStringLiteral("tar.xz"));
@@ -3194,21 +3222,6 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
     cmbFormat->addItem(tr("7-Zip (.7z) — Maximum Compression (Multi-Core)"), QStringLiteral("7z"));
 
     QLineEdit *editDest = new QLineEdit(&dlg);
-
-    auto populateListWithPaths = [&](const QStringList &paths) {
-        listWidget->clear();
-        for (const QString &p : paths) {
-            QFileInfo fi(p);
-            if (!fi.exists()) continue;
-            QListWidgetItem *it = new QListWidgetItem(
-                QIcon::fromTheme(fi.isDir() ? "folder" : "text-x-generic"),
-                fi.isDir() ? QStringLiteral("📁 %1/  (%2)").arg(fi.fileName(), fi.absoluteFilePath())
-                           : QStringLiteral("📄 %1  (%2)").arg(fi.fileName(), fi.absoluteFilePath())
-            );
-            it->setData(Qt::UserRole, fi.absoluteFilePath());
-            listWidget->addItem(it);
-        }
-    };
 
     auto updateSuggestedDestPath = [&]() {
         QString ext = cmbFormat->currentData().toString();
@@ -3219,7 +3232,7 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
 
         if (listWidget->count() == 1) {
             QFileInfo fi(listWidget->item(0)->data(Qt::UserRole).toString());
-            baseDir = fi.isDir() ? fi.absolutePath() : fi.absolutePath();
+            baseDir = fi.absolutePath();
             baseName = fi.completeBaseName().isEmpty() ? fi.fileName() : fi.completeBaseName();
             if (fi.isDir()) baseName = fi.fileName();
         } else if (listWidget->count() > 1 && !resolvedFolder.isEmpty()) {
@@ -3228,6 +3241,68 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
         }
 
         editDest->setText(QDir(baseDir).filePath(baseName + "." + ext));
+    };
+
+    // Helper that creates a clean row with inline ✕ remove button (no horizontal scrollbar clutter)
+    auto addSourcePathRow = [&](const QString &p) {
+        QFileInfo fi(p);
+        if (!fi.exists()) return;
+        const QString absPath = fi.absoluteFilePath();
+        // Avoid duplicate entries
+        for (int i = 0; i < listWidget->count(); ++i) {
+            if (listWidget->item(i)->data(Qt::UserRole).toString() == absPath) {
+                return;
+            }
+        }
+
+        auto *it = new QListWidgetItem();
+        it->setData(Qt::UserRole, absPath);
+        it->setToolTip(absPath);
+        it->setSizeHint(QSize(0, 40));
+        listWidget->addItem(it);
+
+        auto *rowW = new QWidget(listWidget);
+        rowW->setStyleSheet(QStringLiteral("background: transparent;"));
+        auto *rowLay = new QHBoxLayout(rowW);
+        rowLay->setContentsMargins(8, 3, 6, 3);
+        rowLay->setSpacing(8);
+
+        auto *lblIcon = new QLabel(fi.isDir() ? QStringLiteral("📁") : QStringLiteral("📄"), rowW);
+        lblIcon->setStyleSheet(QStringLiteral("font-size: 15px; background: transparent;"));
+        rowLay->addWidget(lblIcon, 0, Qt::AlignVCenter);
+
+        auto *textColLay = new QVBoxLayout();
+        textColLay->setContentsMargins(0, 0, 0, 0);
+        textColLay->setSpacing(0);
+        auto *lblName = new QLabel(fi.isDir() ? (fi.fileName() + QStringLiteral("/")) : fi.fileName(), rowW);
+        lblName->setStyleSheet(QStringLiteral("font-weight: 600; font-size: 12px; color: %1;").arg(textCol));
+        auto *lblDir = new QLabel(fi.absolutePath(), rowW);
+        lblDir->setStyleSheet(QStringLiteral("font-size: 10px; color: %1;").arg(subCol));
+        textColLay->addWidget(lblName);
+        textColLay->addWidget(lblDir);
+        rowLay->addLayout(textColLay, 1);
+
+        auto *btnRem = new QPushButton(QStringLiteral("✕"), rowW);
+        btnRem->setFixedSize(24, 24);
+        btnRem->setCursor(Qt::PointingHandCursor);
+        btnRem->setToolTip(tr("Remove from archive list"));
+        btnRem->setStyleSheet(QStringLiteral(
+            "QPushButton { background: transparent; color: %1; border: none; border-radius: 12px; font-weight: bold; font-size: 11px; padding: 0; }"
+            "QPushButton:hover { background: rgba(239, 68, 68, 0.22); color: #ef4444; }").arg(subCol));
+        connect(btnRem, &QPushButton::clicked, &dlg, [&, it]() {
+            delete listWidget->takeItem(listWidget->row(it));
+            updateSuggestedDestPath();
+        });
+        rowLay->addWidget(btnRem, 0, Qt::AlignVCenter);
+
+        listWidget->setItemWidget(it, rowW);
+    };
+
+    auto populateListWithPaths = [&](const QStringList &paths) {
+        listWidget->clear();
+        for (const QString &p : paths) {
+            addSourcePathRow(p);
+        }
     };
 
     if (hasSingleFile || hasCurrentFolder) {
@@ -3269,16 +3344,28 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
     // 2. Files & Folders List Box
     QGroupBox *grpItems = new QGroupBox(tr("Files & Folders to Compress"), &dlg);
     QVBoxLayout *itemsLay = new QVBoxLayout(grpItems);
-    itemsLay->addWidget(listWidget);
+    itemsLay->setSpacing(8);
+    itemsLay->addWidget(listWidget, 1);
+
+    // Allow Delete key to remove selected rows quickly
+    auto *delShortcut = new QShortcut(QKeySequence::Delete, listWidget);
+    connect(delShortcut, &QShortcut::activated, &dlg, [&]() {
+        qDeleteAll(listWidget->selectedItems());
+        updateSuggestedDestPath();
+    });
 
     QHBoxLayout *itemBtnsLay = new QHBoxLayout();
-    QPushButton *btnAddFiles = new QPushButton(QIcon::fromTheme("list-add"), tr("+ Add Files..."), grpItems);
-    QPushButton *btnAddFolder = new QPushButton(QIcon::fromTheme("folder-new"), tr("+ Add Folder..."), grpItems);
-    QPushButton *btnRemoveItem = new QPushButton(QIcon::fromTheme("edit-delete"), tr("Remove Selected"), grpItems);
+    itemBtnsLay->setSpacing(8);
+    QPushButton *btnAddFiles = new QPushButton(tr("+ Add Files..."), grpItems);
+    btnAddFiles->setCursor(Qt::PointingHandCursor);
+    QPushButton *btnAddFolder = new QPushButton(tr("+ Add Folder..."), grpItems);
+    btnAddFolder->setCursor(Qt::PointingHandCursor);
+    QPushButton *btnClearAll = new QPushButton(tr("Clear List"), grpItems);
+    btnClearAll->setCursor(Qt::PointingHandCursor);
     itemBtnsLay->addWidget(btnAddFiles);
     itemBtnsLay->addWidget(btnAddFolder);
-    itemBtnsLay->addWidget(btnRemoveItem);
     itemBtnsLay->addStretch(1);
+    itemBtnsLay->addWidget(btnClearAll);
     itemsLay->addLayout(itemBtnsLay);
     mainLay->addWidget(grpItems, 1);
 
@@ -3286,13 +3373,7 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
         QString startDir = !resolvedFolder.isEmpty() ? resolvedFolder : QDir::homePath();
         QStringList files = QFileDialog::getOpenFileNames(&dlg, tr("Add Files to Compress"), startDir);
         for (const QString &f : files) {
-            QFileInfo fi(f);
-            QListWidgetItem *it = new QListWidgetItem(
-                QIcon::fromTheme("text-x-generic"),
-                QStringLiteral("📄 %1  (%2)").arg(fi.fileName(), fi.absoluteFilePath())
-            );
-            it->setData(Qt::UserRole, fi.absoluteFilePath());
-            listWidget->addItem(it);
+            addSourcePathRow(f);
         }
         if (editDest->text().isEmpty() || listWidget->count() == files.size()) {
             updateSuggestedDestPath();
@@ -3303,31 +3384,32 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
         QString startDir = !resolvedFolder.isEmpty() ? resolvedFolder : QDir::homePath();
         QString dir = QFileDialog::getExistingDirectory(&dlg, tr("Add Folder to Compress"), startDir);
         if (!dir.isEmpty()) {
-            QFileInfo fi(dir);
-            QListWidgetItem *it = new QListWidgetItem(
-                QIcon::fromTheme("folder"),
-                QStringLiteral("📁 %1/  (%2)").arg(fi.fileName(), fi.absoluteFilePath())
-            );
-            it->setData(Qt::UserRole, fi.absoluteFilePath());
-            listWidget->addItem(it);
+            addSourcePathRow(dir);
             if (editDest->text().isEmpty() || listWidget->count() == 1) {
                 updateSuggestedDestPath();
             }
         }
     });
 
-    connect(btnRemoveItem, &QPushButton::clicked, &dlg, [&]() {
-        qDeleteAll(listWidget->selectedItems());
+    connect(btnClearAll, &QPushButton::clicked, &dlg, [&]() {
+        listWidget->clear();
         updateSuggestedDestPath();
     });
 
     // 3. Archive Format, Destination, and Optional Password
     QGroupBox *grpOut = new QGroupBox(tr("Output Archive Settings"), &dlg);
     QFormLayout *formLay = new QFormLayout(grpOut);
-    formLay->setSpacing(8);
+    formLay->setVerticalSpacing(10);
+    formLay->setHorizontalSpacing(10);
+    formLay->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
 
-    QHBoxLayout *destLay = new QHBoxLayout();
-    QPushButton *btnBrowseDest = new QPushButton(tr("Browse..."), grpOut);
+    QWidget *destContainer = new QWidget(grpOut);
+    destContainer->setStyleSheet(QStringLiteral("background: transparent;"));
+    QHBoxLayout *destLay = new QHBoxLayout(destContainer);
+    destLay->setContentsMargins(0, 0, 0, 0);
+    destLay->setSpacing(8);
+    QPushButton *btnBrowseDest = new QPushButton(tr("Browse..."), destContainer);
+    btnBrowseDest->setCursor(Qt::PointingHandCursor);
     destLay->addWidget(editDest, 1);
     destLay->addWidget(btnBrowseDest);
 
@@ -3339,7 +3421,7 @@ QString ArchiveViewer::openCreateArchiveDialog(const QString &currentFilePath,
     chkOpenAfter->setChecked(true);
 
     formLay->addRow(tr("Format:"), cmbFormat);
-    formLay->addRow(tr("Destination:"), destLay);
+    formLay->addRow(tr("Destination:"), destContainer);
     formLay->addRow(tr("Password:"), editPass);
     formLay->addRow(QString(), chkOpenAfter);
     mainLay->addWidget(grpOut);

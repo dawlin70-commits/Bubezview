@@ -270,7 +270,7 @@ void SettingsPerformanceTab::setupUi()
         m_grpCompiler
     );
 
-    m_lblOptHint = new QLabel(this);
+    m_lblOptHint = new QLabel(m_grpCompiler);
     m_lblOptHint->setObjectName(QStringLiteral("RowSubtitle"));
     m_lblOptHint->setWordWrap(true);
 
@@ -603,7 +603,7 @@ void SettingsPerformanceTab::updateThemeStyles()
         "}"
         "QPushButton:hover {"
         "  background: %14;"
-        "  border-color: %8;"
+        "  border-color: %15;"
         "}"
         "QComboBox {"
         "  background: %7_combo;"
@@ -615,7 +615,7 @@ void SettingsPerformanceTab::updateThemeStyles()
         "  min-height: 24px;"
         "}"
         "QComboBox:hover {"
-        "  border-color: %8;"
+        "  border-color: %15;"
         "}"
         "QComboBox::drop-down {"
         "  border: none;"
@@ -653,7 +653,7 @@ void SettingsPerformanceTab::updateThemeStyles()
     ).replace("%7_combo", comboBg)
      .arg(titleColor, cardBorder, cardBg, pillBg, pillColor, pillBorder, subColor, dividerColor,
           dark ? QStringLiteral(":/icons/chevron_down_light.svg") : QStringLiteral(":/icons/chevron_down_dark.svg"),
-          comboPopupBg, comboSelectionBg, comboSelectionText, btnBg, btnHover);
+          comboPopupBg, comboSelectionBg, comboSelectionText, btnBg, btnHover, hoverBorder);
 
     setStyleSheet(style);
 

@@ -36,7 +36,6 @@
 #include <QPainterPath>
 #include <QLinearGradient>
 #include <QRadialGradient>
-#include <QThreadPool>
 #include <QApplication>
 #include <algorithm>
 #include <cmath>
@@ -298,8 +297,13 @@ void MediaViewer::requestAlsaDeviceRelease(int cardIndex)
 
     // Distrobox host execution fallback for pw-reserve if available
     if (QFile::exists("/usr/bin/distrobox-host-exec")) {
-        QProcess::startDetached("/usr/bin/distrobox-host-exec", {"pw-reserve", "-n", "Audio0", "-r", "-p", "50"});
-        QProcess::startDetached("/usr/bin/distrobox-host-exec", {"pw-reserve", "-n", "Audio1", "-r", "-p", "50"});
+        for (int card = 0; card < 2; ++card) {
+            if (cardIndex >= 0 && card != cardIndex) continue;
+            QProcess::startDetached(
+                QStringLiteral("/usr/bin/distrobox-host-exec"),
+                {QStringLiteral("pw-reserve"), QStringLiteral("-n"),
+                 QStringLiteral("Audio%1").arg(card), QStringLiteral("-r"), QStringLiteral("-p"), QStringLiteral("50")});
+        }
     }
 }
 

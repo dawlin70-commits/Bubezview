@@ -14,6 +14,8 @@
 #include <QDir>
 #include <QRegularExpression>
 #include <QApplication>
+#include <QCoreApplication>
+#include <QPointer>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -466,20 +468,11 @@ void AudioTagDialog::onChangeCoverClicked()
 {
     QString file = QFileDialog::getOpenFileName(this, tr("Select Cover Image"), QString(), tr("Images (*.jpg *.jpeg *.png *.webp)"));
     if (!file.isEmpty()) {
-        QString savedPath = saveCoverToAlbumFolder(file);
-        m_newCoverPath = savedPath;
+        // Keep cover change staged in memory; persist to album folder and audio tags only on Save/Apply
+        m_newCoverPath = file;
         m_removeCover = false;
         updateCoverPreview();
         checkIfModified();
-        emit coverArtChanged(m_newCoverPath);
-
-        if (savedPath != file) {
-            QMessageBox::information(
-                this,
-                tr("Cover Art Saved"),
-                tr("Cover artwork was successfully copied to your album folder:\n%1").arg(savedPath)
-            );
-        }
     }
 }
 
@@ -512,20 +505,11 @@ void AudioTagDialog::onDownloadCoverClicked()
     if (dlg.exec() == QDialog::Accepted) {
         QString coverPath = dlg.selectedCoverPath();
         if (!coverPath.isEmpty() && QFileInfo::exists(coverPath)) {
-            QString savedPath = saveCoverToAlbumFolder(coverPath);
-            if (savedPath != coverPath && coverPath.startsWith(QDir::tempPath())) {
-                QFile::remove(coverPath);
-            }
-            m_newCoverPath = savedPath;
+            // Stage downloaded cover in memory; persist to album folder and tags only on Save/Apply
+            m_newCoverPath = coverPath;
             m_removeCover = false;
             updateCoverPreview();
-            emit coverArtChanged(m_newCoverPath);
-
-            QMessageBox::information(
-                this,
-                tr("Cover Art Saved"),
-                tr("Album cover art was successfully downloaded and saved directly to your album folder:\n%1").arg(savedPath)
-            );
+            checkIfModified();
         }
     }
 }
@@ -647,19 +631,36 @@ void AudioTagDialog::onSearchOnlineTagsClicked()
     progress.show();
     qApp->processEvents();
 
+    const QString appVer = QCoreApplication::applicationVersion().isEmpty()
+                               ? QStringLiteral("1.0")
+                               : QCoreApplication::applicationVersion();
+    const QByteArray userAgent = QStringLiteral("BubezView/%1 ( https://github.com/davide/bubezview )").arg(appVer).toUtf8();
+
     QNetworkAccessManager netMgr;
     QString mbSearchUrl = QString("https://musicbrainz.org/ws/2/release/?query=%1&fmt=json&limit=5")
                               .arg(QString::fromUtf8(QUrl::toPercentEncoding(query)));
     QUrl targetUrl(mbSearchUrl);
     QNetworkRequest req(targetUrl);
-    req.setHeader(QNetworkRequest::UserAgentHeader, "BubezView/0.1.8 ( https://github.com/davide/bubezview )");
+    req.setHeader(QNetworkRequest::UserAgentHeader, userAgent);
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     req.setTransferTimeout(5000);
 
+    QPointer<AudioTagDialog> selfGuard(this);
     QEventLoop loop;
     QNetworkReply *reply = netMgr.get(req);
     connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    connect(&progress, &QProgressDialog::canceled, reply, &QNetworkReply::abort);
+    connect(this, &QDialog::finished, reply, &QNetworkReply::abort);
     loop.exec();
+
+    if (!selfGuard) {
+        reply->deleteLater();
+        return;
+    }
+    if (progress.wasCanceled()) {
+        reply->deleteLater();
+        return;
+    }
 
     if (reply->error() != QNetworkReply::NoError) {
         progress.close();
@@ -698,13 +699,24 @@ void AudioTagDialog::onSearchOnlineTagsClicked()
     QString detailsUrlStr = QString("https://musicbrainz.org/ws/2/release/%1?inc=recordings+artist-credits&fmt=json").arg(mbid);
     QUrl detailsUrl(detailsUrlStr);
     QNetworkRequest detailsReq(detailsUrl);
-    detailsReq.setHeader(QNetworkRequest::UserAgentHeader, "BubezView/0.1.8 ( https://github.com/davide/bubezview )");
+    detailsReq.setHeader(QNetworkRequest::UserAgentHeader, userAgent);
     detailsReq.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     detailsReq.setTransferTimeout(5000);
 
     QNetworkReply *detailsReply = netMgr.get(detailsReq);
     connect(detailsReply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    connect(&progress, &QProgressDialog::canceled, detailsReply, &QNetworkReply::abort);
+    connect(this, &QDialog::finished, detailsReply, &QNetworkReply::abort);
     loop.exec();
+
+    if (!selfGuard) {
+        detailsReply->deleteLater();
+        return;
+    }
+    if (progress.wasCanceled()) {
+        detailsReply->deleteLater();
+        return;
+    }
 
     if (detailsReply->error() != QNetworkReply::NoError) {
         progress.close();
@@ -898,6 +910,16 @@ void AudioTagDialog::onSaveClicked()
     bool applyGenre = m_chkApplyGenre->isChecked();
     bool applyCover = m_chkApplyCover->isChecked();
 
+    // Persist staged cover artwork to the album folder only now, when the user explicitly clicks Save/Apply
+    QString persistedCoverPath = m_newCoverPath;
+    if (!persistedCoverPath.isEmpty() && !m_removeCover && QFileInfo::exists(persistedCoverPath)) {
+        const QString savedPath = saveCoverToAlbumFolder(persistedCoverPath);
+        if (savedPath != persistedCoverPath && persistedCoverPath.startsWith(QDir::tempPath())) {
+            QFile::remove(persistedCoverPath);
+        }
+        persistedCoverPath = savedPath;
+    }
+
     int successCount = 0;
 
     for (int i = 0; i < m_tracks.size(); ++i) {
@@ -923,7 +945,7 @@ void AudioTagDialog::onSaveClicked()
         QString coverToApply;
         bool stripCover = false;
         if (applyCover || i == m_currentTrackIdx) {
-            coverToApply = m_newCoverPath;
+            coverToApply = persistedCoverPath;
             stripCover = m_removeCover;
         }
 
@@ -938,6 +960,17 @@ void AudioTagDialog::onSaveClicked()
     m_btnSave->setEnabled(true);
 
     if (successCount > 0) {
+        m_initialArtist = commonArtist;
+        m_initialAlbum = commonAlbum;
+        m_initialYear = commonYear;
+        m_initialGenre = commonGenre;
+        m_initialComment = commonComment;
+        const bool hadCoverChange = (!persistedCoverPath.isEmpty() || m_removeCover);
+        m_newCoverPath.clear();
+        m_removeCover = false;
+        if (hadCoverChange) {
+            emit coverArtChanged(persistedCoverPath);
+        }
         emit tagsSaved();
         checkIfModified();
         QMessageBox::information(this, tr("Success"), tr("%1 of %2 audio files updated successfully!").arg(successCount).arg(m_tracks.size()));

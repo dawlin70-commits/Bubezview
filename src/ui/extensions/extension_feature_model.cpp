@@ -414,15 +414,111 @@ QList<ExtensionModuleInfo> ExtensionFeatureRegistry::allModules()
         list.append(m);
     }
 
-    // MPV Media Engine
+    // Image Studio Engine (bubez_image.so)
+    {
+        ExtensionModuleInfo m;
+        m.id = "engine-image";
+        m.displayName = tr("Image Studio");
+        m.systemPackage = QStringLiteral("bubez_image.so");
+        m.category = "Images";
+        m.isEngine = true;
+        m.summary = tr("Optional modular photo studio: auto-enhance, light & color grading, cinematic presets, sharpen/blur/vignette, and geometry tools.");
+        m.canCompile = true;
+        m.isStaticCompiled = false;
+        m.diagnosticCommand = "ls -lh ~/.local/share/bubezview/plugins/bubez_image.so 2>/dev/null || echo 'Not installed'";
+        m.features = {
+            {
+                tr("Auto Enhance & Color Grading"),
+                tr("One-click Natural/Vivid/Backlight/Dehaze profiles plus brightness, contrast, saturation, temperature, and hue controls."),
+                "ImageStudioWidget::applyColorAdjustments()",
+                tr("Image View → Edit Mode"),
+                true
+            },
+            {
+                tr("Cinematic Presets & Effects"),
+                tr("Teal & Orange, Vintage Sepia, Film Noir, Golden Hour, Cyberpunk, Document Enhance, sharpen, blur, and vignette."),
+                "ImageStudioWidget::applySelectedPreset()",
+                tr("Image View → Edit Mode"),
+                true
+            }
+        };
+        refreshModuleStatus(m);
+        list.append(m);
+    }
+
+    // Folder Studio Engine (bubez_folder.so)
+    {
+        ExtensionModuleInfo m;
+        m.id = "engine-folder";
+        m.displayName = tr("Folder Studio");
+        m.systemPackage = QStringLiteral("bubez_folder.so");
+        m.category = "Folder";
+        m.isEngine = true;
+        m.summary = tr("Optional modular folder suite: visual duplicates, PhotoRec/TestDisk recovery, tree organizer, and batch rename/cleanup.");
+        m.canCompile = true;
+        m.isStaticCompiled = false;
+        m.diagnosticCommand = "ls -lh ~/.local/share/bubezview/plugins/bubez_folder.so 2>/dev/null || echo 'Not installed'";
+        m.features = {
+            {
+                tr("Visual Duplicate & Equivalent Finder"),
+                tr("Detects exact SHA-256 copies, visually similar photos, near-duplicate documents, media, and archive-vs-folder matches."),
+                "FolderStudioEngine::scanDuplicates()",
+                tr("Folder View → Edit Mode → Duplicates"),
+                true
+            },
+            {
+                tr("PhotoRec / TestDisk Recovery & Organizer"),
+                tr("Magic-byte header verification, corrupt/junk filtering, smart tree organizer, and token batch renamer with Undo."),
+                "FolderStudioEngine::scanRecovery()",
+                tr("Folder View → Edit Mode → Recovery / Organize / Batch"),
+                true
+            }
+        };
+        refreshModuleStatus(m);
+        list.append(m);
+    }
+
+    // Video Studio Engine (bubez_video.so)
+    {
+        ExtensionModuleInfo m;
+        m.id = "engine-video";
+        m.displayName = tr("Video Studio");
+        m.systemPackage = QStringLiteral("bubez_video.so");
+        m.category = "Media";
+        m.isEngine = true;
+        m.summary = tr("Optional modular video studio: lossless trim/cut, frame snapshot, audio extraction, rotation, scaling, speed, and mute.");
+        m.canCompile = true;
+        m.isStaticCompiled = false;
+        m.diagnosticCommand = "ls -lh ~/.local/share/bubezview/plugins/bubez_video.so 2>/dev/null || echo 'Not installed'";
+        m.features = {
+            {
+                tr("Lossless Trim & Frame Snapshot"),
+                tr("Cut video clips with exact start/end timestamps and capture full-resolution PNG/JPEG frames."),
+                "VideoStudioWidget::exportTrimmedVideo()",
+                tr("Video View → Edit Mode"),
+                true
+            },
+            {
+                tr("Audio Extraction & Transforms"),
+                tr("Extract MP3/FLAC/WAV/Opus tracks, rotate/flip, resize (1080p/720p/480p), change speed, or mute audio."),
+                "VideoStudioWidget::exportTransformedVideo()",
+                tr("Video View → Edit Mode"),
+                true
+            }
+        };
+        refreshModuleStatus(m);
+        list.append(m);
+    }
+
+    // Audio Studio Engine (bubez_audio.so)
     {
         ExtensionModuleInfo m;
         m.id = "engine-mpv";
-        m.displayName = tr("Media Player");
+        m.displayName = tr("Audio Studio (MPV)");
         m.systemPackage = "libmpv2";
         m.category = "Media";
         m.isEngine = true;
-        m.summary = tr("Hardware-accelerated media engine driving GPU zero-copy video decode and PipeWire/ALSA audio.");
+        m.summary = tr("Optional modular audio studio: 64-bit MPV playback, waveform cutter, filters, pitch & channels, equalizer, and tag editor.");
         m.canCompile = false;
         m.isStaticCompiled = false;
         m.diagnosticCommand = "pkg-config --modversion mpv 2>/dev/null || echo 'libmpv present'";
@@ -621,6 +717,12 @@ void ExtensionFeatureRegistry::refreshModuleStatus(ExtensionModuleInfo &module)
         module.isInstalled = BuildConfig::hasSystemBinary("engine-libarchive");
     } else if (module.id == "engine-mpv") {
         module.isInstalled = BuildConfig::isComponentAvailable("engine-mpv");
+    } else if (module.id == "engine-folder") {
+        module.isInstalled = BuildConfig::hasSourceBinary("engine-folder");
+    } else if (module.id == "engine-image") {
+        module.isInstalled = BuildConfig::hasSourceBinary("engine-image");
+    } else if (module.id == "engine-video") {
+        module.isInstalled = BuildConfig::hasSourceBinary("engine-video");
     } else if (module.id == "engine-office") {
         module.isInstalled = BuildConfig::isPkgInstalled("librevenge-0.0") || BuildConfig::instance().enableInternalOffice();
     } else if (module.id == "pdfimages") {
