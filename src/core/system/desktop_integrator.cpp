@@ -353,6 +353,11 @@ bool DesktopIntegrator::enableGnomeNemo()
         "org.nemo.Previewer"
     };
 
+    // Avoid surrounding quotes when path has no spaces for strict dbus-broker compatibility (Fedora / Ubuntu)
+    const QString execBin = appPath.contains(QLatin1Char(' '))
+        ? QStringLiteral("\"%1\"").arg(appPath)
+        : appPath;
+
     for (const QString &svc : services) {
         QString sFile = dbusDir + "/" + svc + ".service";
         QFile f(sFile);
@@ -360,8 +365,8 @@ bool DesktopIntegrator::enableGnomeNemo()
             QString content = QString(
                 "[D-BUS Service]\n"
                 "Name=%1\n"
-                "Exec=\"%2\" --previewer\n"
-            ).arg(svc, appPath);
+                "Exec=%2 --previewer\n"
+            ).arg(svc, execBin);
             f.write(content.toUtf8());
             f.close();
         }

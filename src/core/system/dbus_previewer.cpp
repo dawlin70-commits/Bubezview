@@ -3,10 +3,77 @@
 #include <QFileInfo>
 #include <QDebug>
 
+NautilusPreviewer1Adaptor::NautilusPreviewer1Adaptor(DBusPreviewer *parent)
+    : QDBusAbstractAdaptor(parent)
+    , m_previewer(parent)
+{
+}
+
+void NautilusPreviewer1Adaptor::ShowFile(const QString &uri, int xid, bool closeIfAlreadyShown)
+{
+    if (m_previewer) m_previewer->ShowFile(uri, xid, closeIfAlreadyShown);
+}
+
+void NautilusPreviewer1Adaptor::Close()
+{
+    if (m_previewer) m_previewer->Close();
+}
+
+NautilusPreviewer2Adaptor::NautilusPreviewer2Adaptor(DBusPreviewer *parent)
+    : QDBusAbstractAdaptor(parent)
+    , m_previewer(parent)
+{
+}
+
+QString NautilusPreviewer2Adaptor::parentHandle() const
+{
+    return m_previewer ? m_previewer->lastParentHandle() : QString();
+}
+
+bool NautilusPreviewer2Adaptor::visible() const
+{
+    return m_previewer && m_previewer->isPreviewVisible();
+}
+
+void NautilusPreviewer2Adaptor::ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown)
+{
+    if (m_previewer) m_previewer->ShowFile(uri, windowHandle, closeIfAlreadyShown);
+}
+
+void NautilusPreviewer2Adaptor::Close()
+{
+    if (m_previewer) m_previewer->Close();
+}
+
+NautilusPreviewer3Adaptor::NautilusPreviewer3Adaptor(DBusPreviewer *parent)
+    : QDBusAbstractAdaptor(parent)
+    , m_previewer(parent)
+{
+}
+
+void NautilusPreviewer3Adaptor::ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown, const QString &activationToken)
+{
+    if (m_previewer) m_previewer->ShowFile(uri, windowHandle, closeIfAlreadyShown, activationToken);
+}
+
+void NautilusPreviewer3Adaptor::Close()
+{
+    if (m_previewer) m_previewer->Close();
+}
+
 DBusPreviewer::DBusPreviewer(MainWindow *window, QObject *parent)
     : QObject(parent)
     , m_window(window)
 {
+    // Attach dedicated GNOME D-Bus adaptors so Nautilus 42, 43+ and 45+ all match their exact interface names
+    new NautilusPreviewer1Adaptor(this);
+    new NautilusPreviewer2Adaptor(this);
+    new NautilusPreviewer3Adaptor(this);
+}
+
+bool DBusPreviewer::isPreviewVisible() const
+{
+    return m_window && m_window->isVisible();
 }
 
 void DBusPreviewer::ShowFile(const QString &uri, int xid, bool closeIfAlreadyShown)
@@ -50,13 +117,13 @@ void DBusPreviewer::ShowFile(const QString &uri, int xid, bool closeIfAlreadySho
 
 void DBusPreviewer::ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown)
 {
-    Q_UNUSED(windowHandle);
+    m_lastParentHandle = windowHandle;
     ShowFile(uri, 0, closeIfAlreadyShown);
 }
 
 void DBusPreviewer::ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown, const QString &activationToken)
 {
-    Q_UNUSED(windowHandle);
+    m_lastParentHandle = windowHandle;
     if (!activationToken.isEmpty()) {
         qputenv("XDG_ACTIVATION_TOKEN", activationToken.toUtf8());
     }

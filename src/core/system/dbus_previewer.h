@@ -5,10 +5,88 @@
 
 #pragma once
 
+#include <QDBusAbstractAdaptor>
 #include <QObject>
 #include <QString>
 #include <QUrl>
 #include "mainwindow.h"
+
+class DBusPreviewer;
+
+/**
+ * @class NautilusPreviewer1Adaptor
+ * @brief D-Bus adaptor exposing org.gnome.NautilusPreviewer (GNOME <= 42).
+ */
+class NautilusPreviewer1Adaptor : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.gnome.NautilusPreviewer")
+
+public:
+    explicit NautilusPreviewer1Adaptor(DBusPreviewer *parent);
+
+public slots:
+    /** @brief Preview a file URI (GNOME <= 42 signature). */
+    void ShowFile(const QString &uri, int xid, bool closeIfAlreadyShown);
+    /** @brief Close the active preview window. */
+    void Close();
+
+private:
+    DBusPreviewer *m_previewer;
+};
+
+/**
+ * @class NautilusPreviewer2Adaptor
+ * @brief D-Bus adaptor exposing org.gnome.NautilusPreviewer2 (GNOME 43+).
+ */
+class NautilusPreviewer2Adaptor : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.gnome.NautilusPreviewer2")
+    Q_PROPERTY(QString ParentHandle READ parentHandle)
+    Q_PROPERTY(bool Visible READ visible)
+
+public:
+    explicit NautilusPreviewer2Adaptor(DBusPreviewer *parent);
+
+    QString parentHandle() const;
+    bool visible() const;
+
+public slots:
+    /** @brief Preview a file URI (GNOME 43+ 3-argument signature). */
+    void ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown);
+    /** @brief Close the active preview window. */
+    void Close();
+
+signals:
+    /** @brief Emitted when navigating selection inside Nautilus preview. */
+    void SelectionEvent(ushort direction);
+
+private:
+    DBusPreviewer *m_previewer;
+};
+
+/**
+ * @class NautilusPreviewer3Adaptor
+ * @brief D-Bus adaptor exposing org.gnome.NautilusPreviewer3 (GNOME 45+ / Fedora 45).
+ */
+class NautilusPreviewer3Adaptor : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.gnome.NautilusPreviewer3")
+
+public:
+    explicit NautilusPreviewer3Adaptor(DBusPreviewer *parent);
+
+public slots:
+    /** @brief Preview a file URI with Wayland activation token (GNOME 45+ 4-argument signature). */
+    void ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown, const QString &activationToken);
+    /** @brief Close the active preview window. */
+    void Close();
+
+private:
+    DBusPreviewer *m_previewer;
+};
 
 /**
  * @class DBusPreviewer
@@ -70,8 +148,19 @@ public slots:
      */
     Q_SCRIPTABLE void Close();
 
+    /**
+     * @brief Returns whether the preview window is currently visible.
+     */
+    bool isPreviewVisible() const;
+
+    /**
+     * @brief Returns the last parent window handle passed by Nautilus.
+     */
+    QString lastParentHandle() const { return m_lastParentHandle; }
+
 private:
     MainWindow *m_window;
     QString m_lastUri;
+    QString m_lastParentHandle;
 };
 

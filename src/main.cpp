@@ -707,7 +707,8 @@ int main(int argc, char *argv[])
         sessionBus.registerService("org.gnome.NautilusPreviewer");
         sessionBus.registerObject("/org/bubez/BubezView", &dbusPreviewer, QDBusConnection::ExportAllSlots);
         sessionBus.registerObject("/org/nemo/Preview", &dbusPreviewer, QDBusConnection::ExportAllSlots);
-        sessionBus.registerObject("/org/gnome/NautilusPreviewer", &dbusPreviewer, QDBusConnection::ExportAllSlots);
+        sessionBus.registerObject("/org/gnome/NautilusPreviewer", &dbusPreviewer,
+                                  QDBusConnection::ExportAdaptors | QDBusConnection::ExportAllSlots);
     }
 
     if (parser.isSet(previewerOption)) {
