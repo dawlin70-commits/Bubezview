@@ -32,12 +32,29 @@ public:
 
 public slots:
     /**
-     * @brief D-Bus method invoked to preview a file URI.
+     * @brief D-Bus method invoked to preview a file URI (Nemo / GNOME <= 42).
      * @param uri URI of the file to preview (e.g. file:///path/to/file).
      * @param xid Window ID of the caller file manager window for transient positioning.
      * @param closeIfAlreadyShown If true and the current file is already shown, toggles preview off.
      */
     Q_SCRIPTABLE void ShowFile(const QString &uri, int xid, bool closeIfAlreadyShown);
+
+    /**
+     * @brief D-Bus overload for GNOME 43+ (org.gnome.NautilusPreviewer2).
+     * @param uri URI of the file to preview.
+     * @param windowHandle Wayland/X11 parent window handle string.
+     * @param closeIfAlreadyShown If true and the current file is already shown, toggles preview off.
+     */
+    Q_SCRIPTABLE void ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown);
+
+    /**
+     * @brief D-Bus overload for GNOME 45+ (org.gnome.NautilusPreviewer3).
+     * @param uri URI of the file to preview.
+     * @param windowHandle Wayland/X11 parent window handle string.
+     * @param closeIfAlreadyShown If true and the current file is already shown, toggles preview off.
+     * @param activationToken Wayland xdg-activation token.
+     */
+    Q_SCRIPTABLE void ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown, const QString &activationToken);
 
     /**
      * @brief D-Bus method invoked by a second BubezView instance to preview a file URI

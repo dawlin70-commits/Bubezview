@@ -48,6 +48,21 @@ void DBusPreviewer::ShowFile(const QString &uri, int xid, bool closeIfAlreadySho
     }
 }
 
+void DBusPreviewer::ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown)
+{
+    Q_UNUSED(windowHandle);
+    ShowFile(uri, 0, closeIfAlreadyShown);
+}
+
+void DBusPreviewer::ShowFile(const QString &uri, const QString &windowHandle, bool closeIfAlreadyShown, const QString &activationToken)
+{
+    Q_UNUSED(windowHandle);
+    if (!activationToken.isEmpty()) {
+        qputenv("XDG_ACTIVATION_TOKEN", activationToken.toUtf8());
+    }
+    ShowFile(uri, 0, closeIfAlreadyShown);
+}
+
 void DBusPreviewer::ShowFileWithToken(const QString &uri, const QString &activationToken)
 {
     if (!activationToken.isEmpty()) {
